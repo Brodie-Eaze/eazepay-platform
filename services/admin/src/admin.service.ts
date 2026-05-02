@@ -867,6 +867,123 @@ export class AdminService {
       fields: projected,
     };
   }
+
+  /**
+   * Re-render an Adverse Action Notice with the recipient's actual
+   * legal name + address, sourced via an approved JIT PII unmask
+   * request. The prior anonymous (or earlier personalised) notice is
+   * marked superseded; the new render becomes the active document.
+   *
+   * Hard rules:
+   *  - The unmask request MUST be subjectType=User and subjectId equal
+   *    to the application's userId — defends against unmask-laundering
+   *    one user's PII into another user's notice.
+   *  - The unmask request MUST include legalName.first AND .last; we
+   *    refuse to render a partially-named notice. Address is optional
+   *    (the email/phone fallback for delivery is fine).
+   *  - The compliance-doc + admin services must both be wired or this
+   *    method 409s.
+   */
+  async regenerateAdverseActionNoticeWithUnmask(
+    actorUserId: UserId,
+    applicationId: string,
+    unmaskRequestId: string,
+  ): Promise<{ documentId: string; supersededDocumentId: string | null; sha256: string }> {
+    if (!this.complianceDoc) {
+      throw Conflict({
+        code: 'compliance_doc_unavailable',
+        detail: 'ComplianceDocService not wired',
+      });
+    }
+
+    // Resolve the application early to validate the unmask binds to its userId.
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      select: { id: true, userId: true, status: true },
+    });
+    if (!app) throw NotFound({ code: 'application_not_found' });
+    if (app.status !== 'declined') {
+      throw Conflict({
+        code: 'application_not_declined',
+        detail: `application status=${app.status}`,
+      });
+    }
+
+    // readUnmaskedProfile validates approval + expiry + writes the per-read audit row.
+    const unmask = await this.readUnmaskedProfile(actorUserId, unmaskRequestId);
+    if (unmask.subjectType !== 'User' || unmask.subjectId !== app.userId) {
+      throw Forbidden({
+        code: 'unmask_subject_mismatch',
+        detail: 'unmask request does not bind to this application`s user',
+      });
+    }
+
+    const first = unmask.fields['legalName.first'];
+    const last = unmask.fields['legalName.last'];
+    if (typeof first !== 'string' || typeof last !== 'string') {
+      throw BadRequest({
+        code: 'unmask_missing_legal_name',
+        detail: 'unmask request must include legalName.first AND legalName.last',
+      });
+    }
+    const middle = unmask.fields['legalName.middle'];
+    const legalName = [first, typeof middle === 'string' ? middle : '', last]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    let address:
+      | { line1: string; line2?: string; city: string; state: string; zip: string }
+      | undefined;
+    const al1 = unmask.fields['address.line1'];
+    const acity = unmask.fields['address.city'];
+    const astate = unmask.fields['address.state'];
+    const azip = unmask.fields['address.zip'];
+    if (
+      typeof al1 === 'string' &&
+      typeof acity === 'string' &&
+      typeof astate === 'string' &&
+      typeof azip === 'string'
+    ) {
+      const al2 = unmask.fields['address.line2'];
+      address = {
+        line1: al1,
+        ...(typeof al2 === 'string' && al2 ? { line2: al2 } : {}),
+        city: acity,
+        state: astate,
+        zip: azip,
+      };
+    }
+
+    const result = await this.complianceDoc.generateAdverseActionNoticeForApplication(
+      applicationId,
+      {
+        recipientOverride: { legalName, ...(address ? { address } : {}) },
+        supersedePrior: true,
+      },
+    );
+
+    await this.prisma.auditOutbox.create({
+      data: {
+        actorType: 'admin',
+        actorId: actorUserId,
+        action: 'admin.adverse_action_notice.regenerated',
+        targetType: 'Application',
+        targetId: applicationId,
+        after: {
+          documentId: result.documentId,
+          supersededDocumentId: result.supersededDocumentId,
+          unmaskRequestId,
+        },
+      },
+    });
+
+    return {
+      documentId: result.documentId,
+      supersededDocumentId: result.supersededDocumentId,
+      sha256: result.sha256,
+    };
+  }
 }
 
 /** Project a dotted-path subset of a nested object. Unknown paths are

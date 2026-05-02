@@ -221,6 +221,24 @@ export class AdminController {
   ): Promise<unknown> {
     return this.admin.readUnmaskedProfile(adminUserId, id);
   }
+
+  @Post('applications/:id/regenerate-adverse-action-notice')
+  @Idempotent()
+  @ApiOperation({
+    summary:
+      'Re-render the Adverse Action Notice with the consumer`s real legal name + address, sourced via an approved JIT PII unmask request. Prior notice is superseded.',
+  })
+  regenerateAdverseActionNotice(
+    @CurrentUser() adminUserId: UserId,
+    @Param('id', new ParseUUIDPipe()) applicationId: string,
+    @Body() dto: RegenerateAanDto,
+  ): Promise<unknown> {
+    return this.admin.regenerateAdverseActionNoticeWithUnmask(
+      adminUserId,
+      applicationId,
+      dto.unmaskRequestId,
+    );
+  }
 }
 
 // ---------- DTOs ----------
@@ -298,3 +316,8 @@ const ApprovePiiUnmaskSchema = z.object({
   ttlSeconds: z.number().int().min(60).max(3600).optional(),
 });
 class ApprovePiiUnmaskDto extends createZodDto(ApprovePiiUnmaskSchema) {}
+
+const RegenerateAanSchema = z.object({
+  unmaskRequestId: z.string().uuid(),
+});
+class RegenerateAanDto extends createZodDto(RegenerateAanSchema) {}

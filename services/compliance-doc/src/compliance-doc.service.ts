@@ -38,19 +38,54 @@ export class ComplianceDocService {
 
   /**
    * Render and persist an Adverse Action Notice for a declined
-   * application. Idempotent on the (application, kind) pair: if a
-   * notice already exists with status='active' it is returned without
+   * application. Idempotent on the (application, kind) pair when
+   * `recipientOverride` and `supersedePrior` are not set: if a notice
+   * already exists with status='active' it is returned without
    * re-rendering.
    *
-   * Inputs are pulled from the live row to avoid stale-data renders.
-   * The result is a Document row + a stored PDF in object storage,
-   * both anchored by SHA-256 of the rendered bytes.
+   * Pass `recipientOverride` (paired with the JIT PII unmask flow on
+   * the admin side) to render a personalised notice; the prior active
+   * notice is then marked status='superseded' and a new Document row
+   * + new SHA-256 + new object-storage key replace it.
    */
   async generateAdverseActionNoticeForApplication(
     applicationId: string,
-    opts?: { policyVersion?: string; bureau?: BureauContributor },
-  ): Promise<{ documentId: string; sha256: string; sizeBytes: number; isNew: boolean }> {
-    // Idempotency: return existing active notice if present.
+    opts?: {
+      policyVersion?: string;
+      bureau?: BureauContributor;
+      /** Override the "Applicant" placeholder; usually sourced from a
+       *  JIT PII unmask read. */
+      recipientOverride?: {
+        legalName: string;
+        address?: {
+          line1: string;
+          line2?: string;
+          city: string;
+          state: string;
+          zip: string;
+        };
+      };
+      /** When true, an existing active notice is marked superseded and
+       *  the new render becomes the active one. Caller is responsible
+       *  for the audit row that explains why (typically an admin
+       *  regenerate action). Required when recipientOverride is set. */
+      supersedePrior?: boolean;
+    },
+  ): Promise<{
+    documentId: string;
+    sha256: string;
+    sizeBytes: number;
+    isNew: boolean;
+    supersededDocumentId: string | null;
+  }> {
+    if (opts?.recipientOverride && !opts.supersedePrior) {
+      throw new Error(
+        'compliance-doc: recipientOverride requires supersedePrior=true',
+      );
+    }
+
+    // Idempotency: return existing active notice if present AND we're
+    // not asked to supersede.
     const existing = await this.prisma.document.findFirst({
       where: {
         ownerType: 'Application',
@@ -60,9 +95,10 @@ export class ComplianceDocService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    if (existing) {
+    if (existing && !opts?.supersedePrior) {
       return {
         documentId: existing.id,
+        supersededDocumentId: null,
         sha256: existing.sha256,
         sizeBytes: existing.sizeBytes,
         isNew: false,
@@ -100,11 +136,20 @@ export class ComplianceDocService {
     };
 
     const content = buildAdverseActionNotice({
-      recipient: {
-        legalName: 'Applicant', // PII unmask path replaces this in V1
-        email: app.user.email,
-        phone: app.user.phoneE164,
-      },
+      recipient: opts?.recipientOverride
+        ? {
+            legalName: opts.recipientOverride.legalName,
+            email: app.user.email,
+            phone: app.user.phoneE164,
+            ...(opts.recipientOverride.address
+              ? { address: opts.recipientOverride.address }
+              : {}),
+          }
+        : {
+            legalName: 'Applicant', // anonymous render — JIT unmask path personalises
+            email: app.user.email,
+            phone: app.user.phoneE164,
+          },
       application: {
         id: app.id,
         amountDisplay: `$${(Number(app.requestedAmountCents) / 100).toFixed(2)}`,
@@ -137,7 +182,26 @@ export class ComplianceDocService {
     const retainUntil = new Date();
     retainUntil.setUTCMonth(retainUntil.getUTCMonth() + ADVERSE_ACTION_RETENTION_MONTHS);
 
-    const doc = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
+      let supersededId: string | null = null;
+      if (opts?.supersedePrior) {
+        // Mark every existing active notice for this application as
+        // superseded BEFORE inserting the new one. There is at most one
+        // active row by uniqueness convention; updateMany covers
+        // historical duplicates safely.
+        const updated = await tx.document.updateMany({
+          where: {
+            ownerType: 'Application',
+            ownerId: applicationId,
+            kind: 'adverse_action_notice',
+            status: 'active',
+          },
+          data: { status: 'superseded' },
+        });
+        if (updated.count > 0 && existing) {
+          supersededId = existing.id;
+        }
+      }
       const d = await tx.document.create({
         data: {
           ownerType: 'Application',
@@ -154,6 +218,8 @@ export class ComplianceDocService {
             policyVersion: content.policyVersion,
             reasonCodes: content.reasonCodes,
             generatedAt: content.generatedAt,
+            personalised: !!opts?.recipientOverride,
+            ...(supersededId ? { supersededDocumentId: supersededId } : {}),
           },
         },
         select: { id: true },
@@ -162,7 +228,9 @@ export class ComplianceDocService {
         data: {
           actorType: 'service',
           actorId: null,
-          action: 'compliance.adverse_action_notice.generated',
+          action: supersededId
+            ? 'compliance.adverse_action_notice.regenerated'
+            : 'compliance.adverse_action_notice.generated',
           targetType: 'Document',
           targetId: d.id,
           after: {
@@ -170,10 +238,12 @@ export class ComplianceDocService {
             sha256: sha,
             sizeBytes: pdf.length,
             policyVersion: content.policyVersion,
+            personalised: !!opts?.recipientOverride,
+            ...(supersededId ? { supersededDocumentId: supersededId } : {}),
           },
         },
       });
-      return d;
+      return { id: d.id, supersededId };
     });
 
     if (this.notify) {
@@ -181,14 +251,25 @@ export class ComplianceDocService {
         .notify({
           userId: app.userId,
           templateKey: 'application.declined',
-          payload: { reasonCodes: content.reasonCodes, hasNotice: true, documentId: doc.id },
+          payload: {
+            reasonCodes: content.reasonCodes,
+            hasNotice: true,
+            documentId: result.id,
+            personalised: !!opts?.recipientOverride,
+          },
           subjectType: 'Application',
           subjectId: applicationId,
         })
         .catch((err) => this.logger.error({ err }, 'AAN notify failed'));
     }
 
-    return { documentId: doc.id, sha256: sha, sizeBytes: pdf.length, isNew: true };
+    return {
+      documentId: result.id,
+      supersededDocumentId: result.supersededId,
+      sha256: sha,
+      sizeBytes: pdf.length,
+      isNew: true,
+    };
   }
 
   /**
