@@ -249,6 +249,21 @@ enum PiiUnmaskReasonCode {
   notice_re_render
 }
 
+enum WebhookEndpointStatus {
+  active
+  paused
+  disabled
+  revoked
+}
+
+enum WebhookDeliveryStatus {
+  pending
+  in_flight
+  delivered
+  failed
+  dead_letter
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -960,6 +975,79 @@ model Document {
   @@index([status, retainUntil])
   @@index([sha256])
   @@map("documents")
+}
+
+// Outbound webhook subscription. Owned by a merchant; carries a per-
+// endpoint shared secret used for HMAC-SHA256 signatures on every
+// delivery. The secret is returned ONCE at creation time and stored
+// hashed thereafter — same pattern as the partner-facing API keys.
+model WebhookEndpoint {
+  id         String                 @id @default(uuid()) @db.Uuid
+  merchantId String                 @db.Uuid @map("merchant_id")
+  /// Public destination URL. https-only enforced at controller level.
+  url        String
+  /// SECRET — SHA-256 hash of the per-endpoint signing secret. The raw
+  /// value is returned at creation time and never again. Rotation is a
+  /// separate POST that returns a new secret + invalidates the old hash.
+  secretHash String                 @map("secret_hash")
+  /// Subscribed event types. Matched as exact strings against the
+  /// publish call's event name.
+  events     String[]               @default([])
+  status     WebhookEndpointStatus  @default(active)
+  /// Optional human label so a merchant with multiple endpoints can
+  /// distinguish them.
+  description String?
+  /// Updated by the dispatcher on every successful delivery. Used to
+  /// surface "last seen" metrics in the merchant dashboard.
+  lastDeliveredAt DateTime?          @db.Timestamptz(6) @map("last_delivered_at")
+  /// Consecutive failure count for circuit-breaking. Reset on first
+  /// successful delivery.
+  consecutiveFailures Int            @default(0) @map("consecutive_failures")
+  createdAt DateTime                 @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime                 @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  deliveries WebhookDelivery[]
+
+  @@index([merchantId, status])
+  @@map("webhook_endpoints")
+}
+
+// One row per (endpoint, event) pair. Created at publish time; drained
+// by the dispatcher cron with exponential-backoff retries up to 24h
+// before transitioning to dead_letter. Replayable from the merchant
+// dashboard.
+model WebhookDelivery {
+  id          String                @id @default(uuid()) @db.Uuid
+  endpointId  String                @db.Uuid @map("endpoint_id")
+  endpoint    WebhookEndpoint       @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  eventType   String                @map("event_type")
+  /// Stable event id from the publishing service; allows a merchant
+  /// receiving multiple deliveries (one per endpoint) to dedupe.
+  eventId     String                @map("event_id")
+  /// Subject anchor — typically (Application, applicationId).
+  subjectType String?               @map("subject_type")
+  subjectId   String?               @map("subject_id")
+  /// JSON payload as posted to the endpoint. Sensitive PII never lives
+  /// here; payload references entity ids and the merchant fetches via
+  /// authenticated APIs.
+  payload     Json                  @default("{}")
+
+  status      WebhookDeliveryStatus @default(pending)
+  attempts    Int                   @default(0)
+  /// Earliest UTC time the dispatcher may attempt the next call.
+  nextAttemptAt DateTime?           @db.Timestamptz(6) @map("next_attempt_at")
+  /// Final / last delivery time on terminal states.
+  deliveredAt   DateTime?           @db.Timestamptz(6) @map("delivered_at")
+  /// Recorded HTTP status code from the most recent attempt.
+  lastStatusCode Int?               @map("last_status_code")
+  lastError      String?            @map("last_error")
+  createdAt   DateTime              @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt   DateTime              @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@unique([endpointId, eventId])
+  @@index([status, nextAttemptAt])
+  @@index([endpointId, createdAt])
+  @@map("webhook_deliveries")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

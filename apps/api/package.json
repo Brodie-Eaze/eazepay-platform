@@ -27,6 +27,7 @@
     "@eazepay/service-payment": "workspace:*",
     "@eazepay/service-risk": "workspace:*",
     "@eazepay/service-user": "workspace:*",
+    "@eazepay/service-webhook": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
     "ioredis": "^5.4.0",

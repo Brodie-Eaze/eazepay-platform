@@ -13,6 +13,7 @@ import { MerchantModule } from '@eazepay/service-merchant';
 import { NotificationModule } from '@eazepay/service-notification';
 import { PaymentModule } from '@eazepay/service-payment';
 import { RiskModule } from '@eazepay/service-risk';
+import { WebhookModule } from '@eazepay/service-webhook';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -72,6 +73,10 @@ const env = loadEnv();
       bucket: env.COMPLIANCE_DOC_BUCKET,
     }),
     AdminModule.forRoot({ prismaToken: PrismaService }),
+    WebhookModule.forRoot({
+      prismaToken: PrismaService,
+      dispatcherEnabled: env.WEBHOOK_DISPATCHER_ENABLED,
+    }),
     LenderModule.forRoot({
       prismaToken: PrismaService,
       adapters: ['buzzpay', 'mock_prime'],

@@ -54,6 +54,11 @@ const EnvSchema = z.object({
     .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
     .transform((v) => v === true || v === 'true' || v === '1')
     .default(false),
+  /** Per-process flag for the outbound webhook dispatcher cron. */
+  WEBHOOK_DISPATCHER_ENABLED: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .transform((v) => v === true || v === 'true' || v === '1')
+    .default(false),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   CORS_ORIGINS: z

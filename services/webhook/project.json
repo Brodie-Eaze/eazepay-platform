@@ -1,0 +1,21 @@
+{
+  "name": "service-webhook",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/webhook/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:webhook"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/webhook/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/webhook/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/webhook" }
+    }
+  }
+}
