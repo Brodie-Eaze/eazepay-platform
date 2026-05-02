@@ -1,0 +1,30 @@
+# Default — anything not matched below requires founder review
+*                                       @brodie
+
+# Apps
+/apps/consumer-mobile/                  @brodie
+/apps/consumer-web/                     @brodie
+/apps/merchant-dashboard/               @brodie
+/apps/admin-console/                    @brodie
+/apps/partner-portal/                   @brodie
+/apps/developer-portal/                 @brodie
+/apps/api/                              @brodie
+/apps/workers/                          @brodie
+/apps/webhooks/                         @brodie
+
+# Money / regulated services — extra scrutiny required
+/services/auth/                         @brodie
+/services/payment/                      @brodie
+/services/orchestration/                @brodie
+/services/decision/                     @brodie
+/services/lender/                       @brodie
+/services/compliance/                   @brodie
+/services/risk/                         @brodie
+/services/audit/                        @brodie
+
+# Architecture decisions — never silently changed
+/docs/adr/                              @brodie
+/docs/ARCHITECTURE.md                   @brodie
+
+# CI / supply chain
+/.github/                               @brodie
