@@ -18,6 +18,7 @@
   "dependencies": {
     "@eazepay/service-admin": "workspace:*",
     "@eazepay/service-application": "workspace:*",
+    "@eazepay/service-audit": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
     "@eazepay/service-compliance-doc": "workspace:*",
     "@eazepay/service-lender": "workspace:*",

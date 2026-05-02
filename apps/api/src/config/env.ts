@@ -59,6 +59,14 @@ const EnvSchema = z.object({
     .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
     .transform((v) => v === true || v === 'true' || v === '1')
     .default(false),
+  /** Audit sink: 'local-fs' for dev, 'dynamodb' in prod. */
+  AUDIT_SINK: z.enum(['local-fs', 'dynamodb']).default('local-fs'),
+  AUDIT_LOCAL_FS_ROOT: z.string().default('./tmp/audit-sink'),
+  /** Per-process flag for the audit-drain cron. */
+  AUDIT_DRAIN_ENABLED: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .transform((v) => v === true || v === 'true' || v === '1')
+    .default(false),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   CORS_ORIGINS: z

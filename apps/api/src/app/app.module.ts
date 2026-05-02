@@ -6,6 +6,7 @@ import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
 import { UserModule } from '@eazepay/service-user';
 import { AdminModule } from '@eazepay/service-admin';
 import { ApplicationModule } from '@eazepay/service-application';
+import { AuditModule } from '@eazepay/service-audit';
 import { ComplianceDocModule } from '@eazepay/service-compliance-doc';
 import { LenderModule } from '@eazepay/service-lender';
 import { OrchestrationModule } from '@eazepay/service-orchestration';
@@ -76,6 +77,13 @@ const env = loadEnv();
     WebhookModule.forRoot({
       prismaToken: PrismaService,
       dispatcherEnabled: env.WEBHOOK_DISPATCHER_ENABLED,
+    }),
+    AuditModule.forRoot({
+      prismaToken: PrismaService,
+      sink: env.AUDIT_SINK,
+      localFsRoot: env.AUDIT_LOCAL_FS_ROOT,
+      drainEnabled: env.AUDIT_DRAIN_ENABLED,
+      isDevelopment: env.NODE_ENV === 'development',
     }),
     LenderModule.forRoot({
       prismaToken: PrismaService,
