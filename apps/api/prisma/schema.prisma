@@ -16,10 +16,92 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Placeholder — first real model lands with the auth + user services.
-model Healthcheck {
-  id        String   @id @default(uuid()) @db.Uuid
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
+enum UserStatus {
+  pending_verification
+  active
+  locked
+  closed
+}
 
-  @@map("healthchecks")
+enum KycStatus {
+  not_started
+  in_progress
+  approved
+  manual_review
+  rejected
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  /// PII — searchable; deterministic-encrypted at rest in app layer
+  email        String?    @unique
+  /// PII — searchable; deterministic-encrypted at rest in app layer
+  phoneE164    String?    @unique @map("phone_e164")
+  /// SECRET — Argon2id; only present for service accounts. Consumer auth via Cognito.
+  passwordHash String?    @map("password_hash")
+  status       UserStatus @default(pending_verification)
+  kycStatus    KycStatus  @default(not_started) @map("kyc_status")
+  createdAt    DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  sessions Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid @map("user_id")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SECRET — SHA-256 hash of refresh token; raw token never stored
+  refreshTokenHash String    @map("refresh_token_hash")
+  deviceId         String?   @map("device_id")
+  ipAddress        String?   @map("ip_address")
+  userAgent        String?   @map("user_agent")
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  expiresAt        DateTime  @db.Timestamptz(6) @map("expires_at")
+  revokedAt        DateTime? @db.Timestamptz(6) @map("revoked_at")
+
+  @@index([userId, expiresAt])
+  @@index([refreshTokenHash])
+  @@map("sessions")
+}
+
+// Idempotency store backstop — Redis is the hot path; this is the
+// durable record so we don't double-charge on Redis flush.
+model IdempotencyRecord {
+  key          String   @id
+  userId       String?  @db.Uuid @map("user_id")
+  method       String
+  path         String
+  requestHash  String   @map("request_hash")
+  responseCode Int      @map("response_code")
+  responseBody Json     @map("response_body")
+  createdAt    DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  expiresAt    DateTime @db.Timestamptz(6) @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("idempotency_records")
+}
+
+// Outbox pattern for audit log: every regulated mutation writes a row here
+// in the same transaction; a worker drains to the audit service (DynamoDB
+// + S3 Object Lock, hash-chained — see docs/ARCHITECTURE.md §17).
+model AuditOutbox {
+  id          String    @id @default(uuid()) @db.Uuid
+  actorType   String    @map("actor_type") // 'user' | 'system' | 'admin' | 'service'
+  actorId     String?   @map("actor_id")
+  action      String
+  targetType  String    @map("target_type")
+  targetId    String    @map("target_id")
+  before      Json?
+  after       Json?
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  occurredAt  DateTime  @default(now()) @db.Timestamptz(6) @map("occurred_at")
+  publishedAt DateTime? @db.Timestamptz(6) @map("published_at")
+
+  @@index([publishedAt])
+  @@index([targetType, targetId])
+  @@map("audit_outbox")
 }

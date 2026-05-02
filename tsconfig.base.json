@@ -28,6 +28,7 @@
     "paths": {
       "@eazepay/shared-types": ["libs/shared-types/src/index.ts"],
       "@eazepay/shared-utils": ["libs/shared-utils/src/index.ts"],
+      "@eazepay/shared-utils/*": ["libs/shared-utils/src/*"],
       "@eazepay/api-client": ["libs/api-client/src/index.ts"],
       "@eazepay/ui": ["libs/ui/src/index.ts"],
       "@eazepay/feature-flags-sdk": ["libs/feature-flags-sdk/src/index.ts"],
