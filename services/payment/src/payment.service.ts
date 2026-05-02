@@ -1,13 +1,17 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { Conflict, NotFound } from '@eazepay/shared-utils';
-import type { LoanId, UserId } from '@eazepay/shared-types';
+import type { LoanId, PaymentMethodId, UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
 import {
   PAYMENT_PROVIDER,
   type PaymentProvider,
   type ProviderResult,
 } from './ports/payment-provider.port.js';
+import {
+  BANK_ACCOUNT_PROVIDER,
+  type BankAccountProvider,
+} from './ports/bank-account-provider.port.js';
 
 /**
  * Owns disbursement + repayment scheduling + collection lifecycle.
@@ -30,7 +34,154 @@ export class PaymentService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
+    @Inject(BANK_ACCOUNT_PROVIDER) private readonly bank: BankAccountProvider,
   ) {}
+
+  // ----- payment method CRUD -----
+
+  async addBankAccount(
+    userId: UserId,
+    input: { publicToken: string; setAsDefault?: boolean },
+  ): Promise<{ id: PaymentMethodId; last4: string; bankName: string | null }> {
+    const exchanged = await this.bank.exchange({ userId, publicToken: input.publicToken });
+    if (exchanged.signal === 'high') {
+      throw Conflict({
+        code: 'bank_account_high_risk',
+        detail: 'provider flagged this account as high NSF risk',
+      });
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // If this is the first verified method OR caller asked, make it default.
+      const existingDefault = await tx.paymentMethod.findFirst({
+        where: { userId, isDefault: true, status: 'verified' },
+        select: { id: true },
+      });
+      const shouldDefault = input.setAsDefault === true || !existingDefault;
+      if (shouldDefault) {
+        await tx.paymentMethod.updateMany({
+          where: { userId, isDefault: true },
+          data: { isDefault: false },
+        });
+      }
+      const m = await tx.paymentMethod.create({
+        data: {
+          userId,
+          type: 'bank_account',
+          provider: this.bank.name,
+          providerToken: exchanged.providerToken,
+          last4: exchanged.last4,
+          brand: exchanged.bankName,
+          isDefault: shouldDefault,
+          status: 'verified', // Plaid-shape exchange returns verified-on-success
+        },
+        select: { id: true, last4: true, brand: true },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'payment.method.added',
+          targetType: 'PaymentMethod',
+          targetId: m.id,
+          after: { type: 'bank_account', last4: m.last4, signal: exchanged.signal },
+        },
+      });
+      return {
+        id: m.id as PaymentMethodId,
+        last4: m.last4 ?? exchanged.last4,
+        bankName: m.brand,
+      };
+    });
+  }
+
+  async listPaymentMethods(userId: UserId): Promise<Array<{
+    id: string;
+    type: string;
+    last4: string | null;
+    brand: string | null;
+    isDefault: boolean;
+    status: string;
+    createdAt: string;
+  }>> {
+    const methods = await this.prisma.paymentMethod.findMany({
+      where: { userId, status: { not: 'removed' } },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    });
+    return methods.map((m) => ({
+      id: m.id,
+      type: m.type,
+      last4: m.last4,
+      brand: m.brand,
+      isDefault: m.isDefault,
+      status: m.status,
+      createdAt: m.createdAt.toISOString(),
+    }));
+  }
+
+  async setDefaultPaymentMethod(
+    userId: UserId,
+    methodId: PaymentMethodId,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const target = await tx.paymentMethod.findFirst({
+        where: { id: methodId, userId, status: 'verified' },
+      });
+      if (!target) throw NotFound({ code: 'payment_method_not_found' });
+      await tx.paymentMethod.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
+      await tx.paymentMethod.update({
+        where: { id: methodId },
+        data: { isDefault: true },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'payment.method.set_default',
+          targetType: 'PaymentMethod',
+          targetId: methodId,
+        },
+      });
+    });
+  }
+
+  async removePaymentMethod(userId: UserId, methodId: PaymentMethodId): Promise<void> {
+    const target = await this.prisma.paymentMethod.findFirst({
+      where: { id: methodId, userId, status: { not: 'removed' } },
+    });
+    if (!target) throw NotFound({ code: 'payment_method_not_found' });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.paymentMethod.update({
+        where: { id: methodId },
+        data: { status: 'removed', isDefault: false },
+      });
+      // If this was the default, promote the most-recent verified method.
+      if (target.isDefault) {
+        const next = await tx.paymentMethod.findFirst({
+          where: { userId, status: 'verified', id: { not: methodId } },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (next) {
+          await tx.paymentMethod.update({
+            where: { id: next.id },
+            data: { isDefault: true },
+          });
+        }
+      }
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'payment.method.removed',
+          targetType: 'PaymentMethod',
+          targetId: methodId,
+        },
+      });
+    });
+  }
 
   async disburseAndSchedule(loanId: string): Promise<void> {
     const loan = await this.prisma.loan.findUnique({

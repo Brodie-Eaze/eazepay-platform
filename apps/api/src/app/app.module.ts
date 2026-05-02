@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
 import { UserModule } from '@eazepay/service-user';
@@ -57,9 +58,12 @@ const env = loadEnv();
       isDevelopment: env.NODE_ENV === 'development',
     }),
     OrchestrationModule.forRoot({ prismaToken: PrismaService }),
+    ScheduleModule.forRoot(),
     PaymentModule.forRoot({
       prismaToken: PrismaService,
       provider: env.PAYMENT_PROVIDER,
+      bankAccountProvider: env.BANK_ACCOUNT_PROVIDER,
+      collectionCronEnabled: env.COLLECTION_CRON_ENABLED,
       isDevelopment: env.NODE_ENV === 'development',
     }),
     ApplicationModule.forRoot({

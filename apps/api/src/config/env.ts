@@ -25,6 +25,15 @@ const EnvSchema = z.object({
   PAYMENT_PROVIDER: z
     .enum(['mock', 'modern_treasury', 'stripe', 'partner_bank'])
     .default('mock'),
+  BANK_ACCOUNT_PROVIDER: z
+    .enum(['mock', 'plaid', 'mx', 'finicity'])
+    .default('mock'),
+  /** When true, this process runs the daily collection cron. In a
+   *  multi-replica deploy, only ONE replica should set this. */
+  COLLECTION_CRON_ENABLED: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .transform((v) => v === true || v === 'true' || v === '1')
+    .default(false),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   CORS_ORIGINS: z
