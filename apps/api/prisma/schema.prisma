@@ -73,6 +73,23 @@ enum OfferStatus {
   withdrawn
 }
 
+enum LenderTier {
+  internal // BuzzPay (TrueTopia)
+  prime
+  near_prime
+  bnpl
+  subprime
+}
+
+enum LenderRouteOutcome {
+  eligible
+  ineligible
+  approved
+  declined
+  error
+  timeout
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -212,9 +229,10 @@ model Offer {
   id              String      @id @default(uuid()) @db.Uuid
   applicationId   String      @db.Uuid @map("application_id")
   application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  lenderProductId String      @db.Uuid @map("lender_product_id")
+  lenderProductId String        @db.Uuid @map("lender_product_id")
+  lenderProduct   LenderProduct @relation("OfferLenderProduct", fields: [lenderProductId], references: [id])
   /// Lender of record (partner bank or licensed entity) — see ADR-0008
-  lenderOfRecord  String      @map("lender_of_record")
+  lenderOfRecord  String        @map("lender_of_record")
 
   /// Money — integer cents
   amountCents          BigInt @map("amount_cents")
@@ -237,6 +255,74 @@ model Offer {
   @@index([applicationId, rank])
   @@index([applicationId, status])
   @@map("offers")
+}
+
+model Lender {
+  id            String          @id @default(uuid()) @db.Uuid
+  /// Stable adapter id matching the LenderAdapter registered in code
+  adapterKey    String          @unique @map("adapter_key")
+  legalName     String          @map("legal_name")
+  /// Bank-partner / state-licensee that holds the loan paper.
+  /// See ADR-0008 — substance over form.
+  lenderOfRecord String         @map("lender_of_record")
+  tier          LenderTier
+  enabled       Boolean         @default(true)
+  priority      Int             @default(100)
+  /// Observed P95 latency in ms (rolling); written by orchestration metrics.
+  slaP95Ms      Int?            @map("sla_p95_ms")
+  createdAt     DateTime        @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  products LenderProduct[]
+  routes   LenderRoute[]
+
+  @@map("lenders")
+}
+
+model LenderProduct {
+  id        String  @id @default(uuid()) @db.Uuid
+  lenderId  String  @db.Uuid @map("lender_id")
+  lender    Lender  @relation(fields: [lenderId], references: [id], onDelete: Cascade)
+  /// Stable id matching the product configuration in code (e.g. "buzzpay_personal").
+  productKey String @unique @map("product_key")
+  name      String
+  /// Eligibility envelope. Money in BigInt cents; APR in bps.
+  category       LoanCategory
+  minAmountCents BigInt        @map("min_amount_cents")
+  maxAmountCents BigInt        @map("max_amount_cents")
+  minTermMonths  Int           @map("min_term_months")
+  maxTermMonths  Int           @map("max_term_months")
+  /// State-rules-matrix gating — empty = all permitted states; non-empty = allowlist.
+  permittedStates String[] @default([]) @map("permitted_states")
+  enabled         Boolean  @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  routes LenderRoute[]
+  offers Offer[]       @relation("OfferLenderProduct")
+
+  @@map("lender_products")
+}
+
+model LenderRoute {
+  id              String              @id @default(uuid()) @db.Uuid
+  applicationId   String              @db.Uuid @map("application_id")
+  application     Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  lenderId        String              @db.Uuid @map("lender_id")
+  lender          Lender              @relation(fields: [lenderId], references: [id])
+  lenderProductId String              @db.Uuid @map("lender_product_id")
+  lenderProduct   LenderProduct       @relation(fields: [lenderProductId], references: [id])
+  evaluationOrder Int                 @map("evaluation_order")
+  evaluatedAt     DateTime            @default(now()) @db.Timestamptz(6) @map("evaluated_at")
+  evaluationLatencyMs Int?            @map("evaluation_latency_ms")
+  outcome         LenderRouteOutcome
+  reasonCodes     String[] @default([]) @map("reason_codes")
+  rawResponseRef  String?             @map("raw_response_ref")
+
+  @@index([applicationId, evaluationOrder])
+  @@index([lenderId, evaluatedAt])
+  @@map("lender_routes")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

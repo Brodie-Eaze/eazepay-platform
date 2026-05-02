@@ -3,6 +3,7 @@ import { PrismaClient, type Prisma } from '@prisma/client';
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
+import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
 import { applyTransition } from './state-machine.js';
 import type {
   ApplicationEvent,
@@ -16,7 +17,10 @@ import type { UpdateApplicationDto } from './dto/update-application.dto.js';
 export class ApplicationService {
   private readonly logger = new Logger(ApplicationService.name);
 
-  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    @Inject(POST_SUBMIT_HOOK) private readonly postSubmit: PostSubmitHook,
+  ) {}
 
   async create(userId: UserId, dto: CreateApplicationDto): Promise<ApplicationSnapshot> {
     if (dto.channel !== 'consumer_direct' && !dto.merchantId) {
@@ -109,6 +113,50 @@ export class ApplicationService {
     return this.toSnapshot(app);
   }
 
+  async listOffers(
+    userId: UserId,
+    applicationId: ApplicationId,
+  ): Promise<
+    Array<{
+      id: string;
+      lenderProductId: string;
+      lenderOfRecord: string;
+      amountCents: bigint;
+      termMonths: number;
+      aprBps: number;
+      comparisonRateBps: number | null;
+      feesCents: bigint;
+      totalRepayableCents: bigint;
+      rank: number;
+      status: string;
+      expiresAt: string;
+    }>
+  > {
+    const app = await this.prisma.application.findFirst({
+      where: { id: applicationId, userId },
+      select: { id: true },
+    });
+    if (!app) throw NotFound({ code: 'application_not_found' });
+    const offers = await this.prisma.offer.findMany({
+      where: { applicationId },
+      orderBy: { rank: 'asc' },
+    });
+    return offers.map((o) => ({
+      id: o.id,
+      lenderProductId: o.lenderProductId,
+      lenderOfRecord: o.lenderOfRecord,
+      amountCents: o.amountCents,
+      termMonths: o.termMonths,
+      aprBps: o.aprBps,
+      comparisonRateBps: o.comparisonRateBps,
+      feesCents: o.feesCents,
+      totalRepayableCents: o.totalRepayableCents,
+      rank: o.rank,
+      status: o.status,
+      expiresAt: o.expiresAt.toISOString(),
+    }));
+  }
+
   async list(userId: UserId, opts: { cursor?: string; limit: number }): Promise<{
     items: ApplicationSnapshot[];
     nextCursor: string | null;
@@ -128,12 +176,23 @@ export class ApplicationService {
   }
 
   async submit(userId: UserId, applicationId: ApplicationId): Promise<ApplicationSnapshot> {
-    return this.transition(userId, applicationId, { type: 'SUBMIT' }, (tx, app) =>
+    const result = await this.transition(userId, applicationId, { type: 'SUBMIT' }, (tx, app) =>
       tx.application.update({
         where: { id: app.id },
         data: { status: 'submitted', submittedAt: new Date() },
       }),
     );
+
+    // Fire the side-effect hook AFTER the transaction commits. We don't
+    // await it: the consumer gets a fast response showing `submitted`
+    // and polls (or receives a webhook) for the resulting offers. Errors
+    // are logged but don't roll back the submission — orchestration is
+    // designed to be re-driven idempotently from `submitted` state.
+    void this.postSubmit
+      .onSubmitted(result.id)
+      .catch((err) => this.logger.error({ err, applicationId: result.id }, 'post-submit hook failed'));
+
+    return result;
   }
 
   async cancel(userId: UserId, applicationId: ApplicationId): Promise<ApplicationSnapshot> {

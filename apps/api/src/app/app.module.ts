@@ -4,6 +4,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
 import { UserModule } from '@eazepay/service-user';
 import { ApplicationModule } from '@eazepay/service-application';
+import { LenderModule } from '@eazepay/service-lender';
+import { OrchestrationModule } from '@eazepay/service-orchestration';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -12,6 +14,7 @@ import { RedisModule } from '../redis/redis.module.js';
 import { RedisService } from '../redis/redis.service.js';
 import { IdempotencyInterceptor } from '../common/interceptors/idempotency.interceptor.js';
 import { ProblemExceptionFilter } from '../common/filters/problem-exception.filter.js';
+import { OrchestrationPostSubmitAdapter } from './post-submit.adapter.js';
 
 const env = loadEnv();
 
@@ -39,7 +42,15 @@ const env = loadEnv();
       kycProvider: env.KYC_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
     }),
-    ApplicationModule.forRoot({ prismaToken: PrismaService }),
+    LenderModule.forRoot({
+      prismaToken: PrismaService,
+      adapters: ['buzzpay', 'mock_prime'],
+    }),
+    OrchestrationModule.forRoot({ prismaToken: PrismaService }),
+    ApplicationModule.forRoot({
+      prismaToken: PrismaService,
+      postSubmitHookToken: OrchestrationPostSubmitAdapter,
+    }),
     LoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
@@ -67,6 +78,7 @@ const env = loadEnv();
   ],
   controllers: [HealthController],
   providers: [
+    OrchestrationPostSubmitAdapter,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_FILTER, useClass: ProblemExceptionFilter },

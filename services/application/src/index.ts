@@ -5,3 +5,4 @@ export * from './application.types.js';
 export * from './state-machine.js';
 export * from './dto/create-application.dto.js';
 export * from './dto/update-application.dto.js';
+export * from './ports/post-submit.port.js';

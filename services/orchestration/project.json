@@ -1,0 +1,21 @@
+{
+  "name": "service-orchestration",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/orchestration/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:orchestration", "regulated:true"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/orchestration/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/orchestration/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/orchestration" }
+    }
+  }
+}

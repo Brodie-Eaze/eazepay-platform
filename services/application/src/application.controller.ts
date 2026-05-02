@@ -58,6 +58,15 @@ export class ApplicationController {
     return this.applications.getOne(userId, id as ApplicationId);
   }
 
+  @Get(':id/offers')
+  @ApiOperation({ summary: 'List offers ranked by lowest total cost to consumer' })
+  offers(
+    @CurrentUser() userId: UserId,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<unknown> {
+    return this.applications.listOffers(userId, id as ApplicationId);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Edit a draft application; rejected after submission' })
   update(
