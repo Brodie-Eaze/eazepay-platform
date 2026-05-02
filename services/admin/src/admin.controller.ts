@@ -170,6 +170,57 @@ export class AdminController {
   ): Promise<unknown> {
     return this.admin.resolveRiskFlag(adminUserId, id, dto);
   }
+
+  // -------------------- JIT PII unmask --------------------
+
+  @Post('pii-unmask-requests')
+  @Idempotent()
+  @ApiOperation({
+    summary:
+      'Request JIT unmask of specific PII fields. Status starts at pending_approval; second admin must approve.',
+  })
+  requestPiiUnmask(
+    @CurrentUser() adminUserId: UserId,
+    @Body() dto: RequestPiiUnmaskDto,
+  ): Promise<unknown> {
+    return this.admin.requestPiiUnmask(adminUserId, dto);
+  }
+
+  @Post('pii-unmask-requests/:id/approve')
+  @Idempotent()
+  @ApiOperation({
+    summary:
+      'Approve a PII unmask request. Approver MUST differ from requester. Sets a time-boxed expiry.',
+  })
+  approvePiiUnmask(
+    @CurrentUser() adminUserId: UserId,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ApprovePiiUnmaskDto,
+  ): Promise<unknown> {
+    return this.admin.approvePiiUnmask(adminUserId, id, dto);
+  }
+
+  @Post('pii-unmask-requests/:id/revoke')
+  @Idempotent()
+  @ApiOperation({ summary: 'Revoke an unmask request (irreversible)' })
+  revokePiiUnmask(
+    @CurrentUser() adminUserId: UserId,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<unknown> {
+    return this.admin.revokePiiUnmask(adminUserId, id);
+  }
+
+  @Get('pii-unmask-requests/:id/read')
+  @ApiOperation({
+    summary:
+      'Read decrypted PII fields authorised by this approved unmask request. Each read writes a separate audit row.',
+  })
+  readUnmaskedProfile(
+    @CurrentUser() adminUserId: UserId,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<unknown> {
+    return this.admin.readUnmaskedProfile(adminUserId, id);
+  }
 }
 
 // ---------- DTOs ----------
@@ -211,3 +262,39 @@ const ResolveRiskFlagSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 class ResolveRiskFlagDto extends createZodDto(ResolveRiskFlagSchema) {}
+
+const ALLOWED_UNMASK_FIELD_VALUES = [
+  'legalName.first',
+  'legalName.middle',
+  'legalName.last',
+  'dateOfBirth',
+  'ssnLast4',
+  'address.line1',
+  'address.line2',
+  'address.city',
+  'address.state',
+  'address.zip',
+] as const;
+
+const RequestPiiUnmaskSchema = z.object({
+  subjectType: z.enum(['User', 'BeneficialOwner']),
+  subjectId: z.string().uuid(),
+  fields: z.array(z.enum(ALLOWED_UNMASK_FIELD_VALUES)).min(1).max(ALLOWED_UNMASK_FIELD_VALUES.length),
+  reasonCode: z.enum([
+    'manual_underwriting_review',
+    'fraud_investigation',
+    'customer_service_request',
+    'compliance_review',
+    'legal_request',
+    'reportable_matter_filing',
+    'notice_re_render',
+  ]),
+  reasonNotes: z.string().min(10).max(2000),
+  ttlSeconds: z.number().int().min(60).max(3600).optional(),
+});
+class RequestPiiUnmaskDto extends createZodDto(RequestPiiUnmaskSchema) {}
+
+const ApprovePiiUnmaskSchema = z.object({
+  ttlSeconds: z.number().int().min(60).max(3600).optional(),
+});
+class ApprovePiiUnmaskDto extends createZodDto(ApprovePiiUnmaskSchema) {}

@@ -12,6 +12,7 @@
     "@eazepay/service-auth": "workspace:*",
     "@eazepay/service-compliance-doc": "workspace:*",
     "@eazepay/service-notification": "workspace:*",
+    "@eazepay/service-user": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
     "@nestjs/common": "^10.4.0",

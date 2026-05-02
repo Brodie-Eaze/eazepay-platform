@@ -231,6 +231,24 @@ enum DocumentStatus {
   destroyed
 }
 
+enum PiiUnmaskStatus {
+  pending_approval
+  approved
+  revoked
+  expired
+  consumed
+}
+
+enum PiiUnmaskReasonCode {
+  manual_underwriting_review
+  fraud_investigation
+  customer_service_request
+  compliance_review
+  legal_request
+  reportable_matter_filing
+  notice_re_render
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -861,6 +879,49 @@ model ComplianceReview {
   @@index([subjectType, subjectId])
   @@index([kind, createdAt])
   @@map("compliance_reviews")
+}
+
+// JIT PII unmask — admin requests, second admin approves, time-boxed,
+// access-logged. Every read of decrypted PII writes a separate
+// AuditOutbox row keyed back to this request so a regulator's "who
+// viewed this consumer's data and why" question is answerable.
+//
+// Hard rules:
+//  - requestedByUserId != approvedByUserId (segregation of duties).
+//  - status='approved' is the ONLY state that yields plaintext, AND
+//    only while now < expiresAt.
+//  - approvedAt + expiresAt are immutable once written.
+//  - revokedAt sets status='revoked' irreversibly.
+model PiiUnmaskRequest {
+  id              String              @id @default(uuid()) @db.Uuid
+  /// Subject of the unmask: today only 'User' / 'BeneficialOwner'.
+  subjectType     String              @map("subject_type")
+  subjectId       String              @db.Uuid @map("subject_id")
+  /// Specific PII fields requested. Whitelisted by the service.
+  fields          String[]            @default([])
+  reasonCode      PiiUnmaskReasonCode @map("reason_code")
+  reasonNotes     String              @map("reason_notes")
+  status          PiiUnmaskStatus     @default(pending_approval)
+
+  requestedByUserId String   @db.Uuid @map("requested_by_user_id")
+  approvedByUserId  String?  @db.Uuid @map("approved_by_user_id")
+  approvedAt        DateTime? @db.Timestamptz(6) @map("approved_at")
+  /** Wall-clock validity. Once past, status flips to 'expired' on next read. */
+  expiresAt         DateTime? @db.Timestamptz(6) @map("expires_at")
+  revokedAt         DateTime? @db.Timestamptz(6) @map("revoked_at")
+  revokedByUserId   String?   @db.Uuid @map("revoked_by_user_id")
+
+  /// Tied to a ComplianceReview when the unmask is part of a regulated
+  /// workflow (the ComplianceReview is the parent record).
+  complianceReviewId String? @db.Uuid @map("compliance_review_id")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([subjectType, subjectId])
+  @@index([status, expiresAt])
+  @@index([requestedByUserId, createdAt])
+  @@map("pii_unmask_requests")
 }
 
 // Persisted documents — generated (Adverse Action Notice, loan

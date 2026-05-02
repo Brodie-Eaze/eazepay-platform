@@ -1,11 +1,38 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { PrismaClient, type ApplicationStatus, type RiskFlagSeverity } from '@prisma/client';
-import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
+import {
+  PrismaClient,
+  type ApplicationStatus,
+  type PiiUnmaskReasonCode,
+  type RiskFlagSeverity,
+} from '@prisma/client';
+import { BadRequest, Conflict, Forbidden, NotFound } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { ComplianceDocService } from '@eazepay/service-compliance-doc';
+import { PiiVaultService, type PiiV1 } from '@eazepay/service-user';
 import { PRISMA } from './internal/tokens.js';
 import { isValidReasonCode } from './reason-codes.js';
+
+/** Whitelisted PII fields an unmask request may target. Everything not
+ *  in this list is rejected at request time — adding a field here is a
+ *  deliberate compliance decision, not a casual code change. */
+const ALLOWED_UNMASK_FIELDS = new Set<string>([
+  'legalName.first',
+  'legalName.middle',
+  'legalName.last',
+  'dateOfBirth',
+  'ssnLast4',
+  'address.line1',
+  'address.line2',
+  'address.city',
+  'address.state',
+  'address.zip',
+]);
+
+/** Default TTL for an approved unmask. Cap (1 hour) is enforced on the
+ *  request input so admins can't request indefinite access. */
+const UNMASK_DEFAULT_TTL_SECONDS = 30 * 60;
+const UNMASK_MAX_TTL_SECONDS = 60 * 60;
 
 /** Decline overrides for amounts above this threshold require dual
  *  control: a second admin must close the ComplianceReview before the
@@ -26,6 +53,7 @@ export class AdminService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
     @Optional() private readonly complianceDoc?: ComplianceDocService,
+    @Optional() private readonly vault?: PiiVaultService,
   ) {}
 
   // -------------- mutations --------------
@@ -548,4 +576,319 @@ export class AdminService {
       nextCursor: hasMore ? sliced[sliced.length - 1]!.id : null,
     };
   }
+
+  // ----------------- JIT PII unmask -----------------
+
+  /**
+   * Admin requests JIT unmask of specific PII fields on a User. Status
+   * starts at pending_approval; a different admin must approve before
+   * any plaintext is yielded. Field allowlist enforced.
+   *
+   * Pairs with a ComplianceReview row of kind=pii_unmask_request so
+   * the chain (request → approval → reads) is one regulator query.
+   */
+  async requestPiiUnmask(
+    requesterUserId: UserId,
+    input: {
+      subjectType: 'User' | 'BeneficialOwner';
+      subjectId: string;
+      fields: string[];
+      reasonCode: PiiUnmaskReasonCode;
+      reasonNotes: string;
+      ttlSeconds?: number;
+    },
+  ): Promise<{ id: string; status: 'pending_approval'; complianceReviewId: string }> {
+    if (!input.fields || input.fields.length === 0) {
+      throw BadRequest({ code: 'unmask_fields_required' });
+    }
+    const invalid = input.fields.filter((f) => !ALLOWED_UNMASK_FIELDS.has(f));
+    if (invalid.length > 0) {
+      throw BadRequest({
+        code: 'unmask_fields_not_allowed',
+        detail: `not in allowlist: ${invalid.join(', ')}`,
+      });
+    }
+    if (input.reasonNotes.trim().length < 10) {
+      throw BadRequest({
+        code: 'unmask_reason_notes_too_short',
+        detail: 'reasonNotes must be ≥ 10 chars to satisfy audit narrative',
+      });
+    }
+    const ttl = Math.min(
+      UNMASK_MAX_TTL_SECONDS,
+      Math.max(60, input.ttlSeconds ?? UNMASK_DEFAULT_TTL_SECONDS),
+    );
+
+    return this.prisma.$transaction(async (tx) => {
+      // Confirm the subject exists.
+      if (input.subjectType === 'User') {
+        const u = await tx.user.findUnique({ where: { id: input.subjectId }, select: { id: true } });
+        if (!u) throw NotFound({ code: 'subject_not_found' });
+      } else {
+        const bo = await tx.beneficialOwner.findUnique({
+          where: { id: input.subjectId },
+          select: { id: true },
+        });
+        if (!bo) throw NotFound({ code: 'subject_not_found' });
+      }
+
+      const review = await tx.complianceReview.create({
+        data: {
+          kind: 'pii_unmask_request',
+          subjectType: input.subjectType,
+          subjectId: input.subjectId,
+          reason: input.reasonNotes,
+          reasonCodes: [input.reasonCode],
+          status: 'pending_dual_control',
+          createdByUserId: requesterUserId,
+          dualControlRequired: true,
+          evidence: { fields: input.fields, ttlSeconds: ttl },
+        },
+        select: { id: true },
+      });
+      const req = await tx.piiUnmaskRequest.create({
+        data: {
+          subjectType: input.subjectType,
+          subjectId: input.subjectId,
+          fields: input.fields,
+          reasonCode: input.reasonCode,
+          reasonNotes: input.reasonNotes,
+          requestedByUserId: requesterUserId,
+          complianceReviewId: review.id,
+        },
+        select: { id: true },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'admin',
+          actorId: requesterUserId,
+          action: 'admin.pii.unmask.requested',
+          targetType: input.subjectType,
+          targetId: input.subjectId,
+          after: {
+            requestId: req.id,
+            fields: input.fields,
+            reasonCode: input.reasonCode,
+            ttlSeconds: ttl,
+            complianceReviewId: review.id,
+          },
+        },
+      });
+      return {
+        id: req.id,
+        status: 'pending_approval' as const,
+        complianceReviewId: review.id,
+      };
+    });
+  }
+
+  /**
+   * Second admin approves. Hard rule: approver != requester.
+   * Sets status=approved + approvedAt + expiresAt.
+   */
+  async approvePiiUnmask(
+    approverUserId: UserId,
+    requestId: string,
+    input: { ttlSeconds?: number },
+  ): Promise<{ id: string; status: 'approved'; expiresAt: string }> {
+    return this.prisma.$transaction(async (tx) => {
+      const req = await tx.piiUnmaskRequest.findUnique({ where: { id: requestId } });
+      if (!req) throw NotFound({ code: 'unmask_request_not_found' });
+      if (req.status !== 'pending_approval') {
+        throw Conflict({
+          code: 'unmask_request_not_pending',
+          detail: `status=${req.status}`,
+        });
+      }
+      if (req.requestedByUserId === approverUserId) {
+        throw Conflict({
+          code: 'dual_control_violation',
+          detail: 'unmask approver must differ from requester',
+        });
+      }
+      const ttl = Math.min(
+        UNMASK_MAX_TTL_SECONDS,
+        Math.max(60, input.ttlSeconds ?? UNMASK_DEFAULT_TTL_SECONDS),
+      );
+      const expiresAt = new Date(Date.now() + ttl * 1000);
+      const updated = await tx.piiUnmaskRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'approved',
+          approvedByUserId: approverUserId,
+          approvedAt: new Date(),
+          expiresAt,
+        },
+        select: { id: true, expiresAt: true },
+      });
+      // Move the parent ComplianceReview into a working state.
+      if (req.complianceReviewId) {
+        await tx.complianceReview.update({
+          where: { id: req.complianceReviewId },
+          data: { status: 'open', closedByUserId: approverUserId },
+        });
+      }
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'admin',
+          actorId: approverUserId,
+          action: 'admin.pii.unmask.approved',
+          targetType: req.subjectType,
+          targetId: req.subjectId,
+          after: { requestId: req.id, expiresAt: expiresAt.toISOString() },
+        },
+      });
+      return {
+        id: updated.id,
+        status: 'approved' as const,
+        expiresAt: updated.expiresAt!.toISOString(),
+      };
+    });
+  }
+
+  /** Voluntary or admin-driven revocation. Irreversible. */
+  async revokePiiUnmask(
+    actorUserId: UserId,
+    requestId: string,
+  ): Promise<{ id: string; status: 'revoked' }> {
+    return this.prisma.$transaction(async (tx) => {
+      const req = await tx.piiUnmaskRequest.findUnique({ where: { id: requestId } });
+      if (!req) throw NotFound({ code: 'unmask_request_not_found' });
+      if (req.status === 'revoked' || req.status === 'expired' || req.status === 'consumed') {
+        throw Conflict({ code: 'unmask_already_terminal' });
+      }
+      const updated = await tx.piiUnmaskRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'revoked',
+          revokedAt: new Date(),
+          revokedByUserId: actorUserId,
+        },
+        select: { id: true },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'admin',
+          actorId: actorUserId,
+          action: 'admin.pii.unmask.revoked',
+          targetType: req.subjectType,
+          targetId: req.subjectId,
+          after: { requestId: req.id },
+        },
+      });
+      return { id: updated.id, status: 'revoked' as const };
+    });
+  }
+
+  /**
+   * Read decrypted ConsumerProfile fields under an approved unmask
+   * request. Each call writes a separate AuditOutbox row with the
+   * specific fields returned. Out-of-window or wrong-subject calls
+   * raise (and DO NOT auto-flip status='expired' — a sweep job handles
+   * the bulk transition; we return the right error here either way).
+   */
+  async readUnmaskedProfile(
+    actorUserId: UserId,
+    requestId: string,
+  ): Promise<{
+    requestId: string;
+    subjectType: 'User' | 'BeneficialOwner';
+    subjectId: string;
+    fields: Record<string, unknown>;
+  }> {
+    if (!this.vault) {
+      throw Conflict({
+        code: 'vault_unavailable',
+        detail: 'PiiVaultService not wired — refusing to yield plaintext',
+      });
+    }
+
+    const req = await this.prisma.piiUnmaskRequest.findUnique({ where: { id: requestId } });
+    if (!req) throw NotFound({ code: 'unmask_request_not_found' });
+    if (req.status !== 'approved') {
+      throw Forbidden({ code: 'unmask_not_approved', detail: `status=${req.status}` });
+    }
+    if (!req.expiresAt || req.expiresAt.getTime() < Date.now()) {
+      throw Forbidden({ code: 'unmask_expired' });
+    }
+    if (req.requestedByUserId === actorUserId) {
+      // The requester themselves can read; the approval gate is dual.
+      // (No-op branch — kept explicit for the "who can read" contract.)
+    }
+
+    let fullPii: PiiV1;
+    let subjectKey: UserId;
+    if (req.subjectType === 'User') {
+      const profile = await this.prisma.consumerProfile.findUnique({
+        where: { userId: req.subjectId },
+      });
+      if (!profile) throw NotFound({ code: 'subject_profile_not_found' });
+      subjectKey = req.subjectId as UserId;
+      fullPii = await this.vault.open(subjectKey, {
+        ciphertext: profile.piiCiphertext,
+        nonce: profile.piiNonce,
+        dataKeyCiphertext: profile.dataKeyCiphertext,
+        kekId: profile.kekId,
+        schemaVersion: profile.piiSchemaVersion,
+      });
+    } else {
+      const bo = await this.prisma.beneficialOwner.findUnique({
+        where: { id: req.subjectId },
+      });
+      if (!bo) throw NotFound({ code: 'subject_profile_not_found' });
+      subjectKey = bo.merchantId as unknown as UserId;
+      fullPii = (await this.vault.open(subjectKey, {
+        ciphertext: bo.piiCiphertext,
+        nonce: bo.piiNonce,
+        dataKeyCiphertext: bo.dataKeyCiphertext,
+        kekId: bo.kekId,
+        schemaVersion: bo.piiSchemaVersion,
+      })) as unknown as PiiV1;
+    }
+
+    // Project only the fields the request authorised.
+    const projected = projectFields(fullPii, req.fields);
+
+    await this.prisma.auditOutbox.create({
+      data: {
+        actorType: 'admin',
+        actorId: actorUserId,
+        action: 'admin.pii.unmask.read',
+        targetType: req.subjectType,
+        targetId: req.subjectId,
+        after: { requestId: req.id, fields: req.fields },
+      },
+    });
+
+    return {
+      requestId: req.id,
+      subjectType: req.subjectType as 'User' | 'BeneficialOwner',
+      subjectId: req.subjectId,
+      fields: projected,
+    };
+  }
+}
+
+/** Project a dotted-path subset of a nested object. Unknown paths are
+ *  silently dropped. Returns a flat-key map for a simple JSON contract
+ *  (e.g. { 'legalName.first': 'Alex' }). */
+function projectFields(
+  source: Record<string, unknown>,
+  paths: string[],
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const p of paths) {
+    const parts = p.split('.');
+    let cur: unknown = source;
+    for (const part of parts) {
+      if (cur && typeof cur === 'object' && part in (cur as Record<string, unknown>)) {
+        cur = (cur as Record<string, unknown>)[part];
+      } else {
+        cur = undefined;
+        break;
+      }
+    }
+    if (cur !== undefined) out[p] = cur;
+  }
+  return out;
 }
