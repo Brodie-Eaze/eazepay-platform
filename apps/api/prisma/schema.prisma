@@ -193,6 +193,24 @@ enum RiskFlagSeverity {
   critical
 }
 
+enum ComplianceReviewStatus {
+  open
+  pending_dual_control
+  closed_approved
+  closed_declined
+  closed_no_action
+  escalated_reportable
+}
+
+enum ComplianceReviewKind {
+  application_decline
+  application_approve_override
+  risk_flag_resolution
+  pii_unmask_request
+  ofac_match
+  reportable_event
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -781,6 +799,48 @@ model RiskFlag {
   @@index([flagType, raisedAt])
   @@index([severity, resolvedAt])
   @@map("risk_flags")
+}
+
+// Regulated workflow record. Every admin override / mutation that has
+// regulatory implications (decline, approve override, PII unmask, OFAC
+// match, anything escalating to a reportable matter) writes one. This
+// is the table the CCO sees during exam — distinct from the generic
+// AuditOutbox which fires on every state change.
+model ComplianceReview {
+  id          String                 @id @default(uuid()) @db.Uuid
+  kind        ComplianceReviewKind
+  /// Subject of the review (Application, User, Merchant, RiskFlag, etc.).
+  subjectType String                 @map("subject_type")
+  subjectId   String                 @db.Uuid @map("subject_id")
+  /// Free-form reason text for the audit narrative; reasonCodes carry
+  /// the structured taxonomy.
+  reason      String
+  reasonCodes String[] @default([]) @map("reason_codes")
+  status      ComplianceReviewStatus @default(open)
+
+  /// Admin who created the review (UserId).
+  createdByUserId String                @db.Uuid @map("created_by_user_id")
+  /// Admin who closed it (dual-control: must differ from createdByUserId
+  /// when status is closed_* and dual_control_required was true).
+  closedByUserId  String?               @db.Uuid @map("closed_by_user_id")
+  /// True when the underlying action required two distinct admins.
+  dualControlRequired Boolean            @default(false) @map("dual_control_required")
+
+  /// External reference for reportable matters (FinCEN SAR id, state
+  /// AG complaint id, etc.) — populated on escalated_reportable.
+  reportableMatterRef String? @map("reportable_matter_ref")
+
+  /// Free-form context (links to evidence, snapshot of state at decision time).
+  evidence Json @default("{}")
+
+  createdAt DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  closedAt  DateTime? @db.Timestamptz(6) @map("closed_at")
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([subjectType, subjectId])
+  @@index([kind, createdAt])
+  @@map("compliance_reviews")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

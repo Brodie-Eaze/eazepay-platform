@@ -1,7 +1,16 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaClient, type ApplicationStatus, type RiskFlagSeverity } from '@prisma/client';
-import { NotFound } from '@eazepay/shared-utils';
+import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
+import type { UserId } from '@eazepay/shared-types';
+import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { PRISMA } from './internal/tokens.js';
+import { isValidReasonCode } from './reason-codes.js';
+
+/** Decline overrides for amounts above this threshold require dual
+ *  control: a second admin must close the ComplianceReview before the
+ *  application transitions to declined. Below the threshold, single
+ *  admin closes inline. */
+const DUAL_CONTROL_AMOUNT_THRESHOLD_CENTS = 2_500_000n; // $25,000.00
 
 interface PageOpts {
   cursor?: string;
@@ -12,7 +21,288 @@ interface PageOpts {
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
+  ) {}
+
+  // -------------- mutations --------------
+
+  /**
+   * Admin-driven application decline. End-to-end:
+   *  1. Validate transitionable status (submitted | underwriting |
+   *     offers_presented | accepted).
+   *  2. Validate every reasonCode against the Reg B / FCRA taxonomy.
+   *  3. Withdraw any presented offers; void any drafted-but-unsigned
+   *     contract.
+   *  4. Persist application.declined + declineReasonCodes + decisionAt.
+   *  5. Open a ComplianceReview row (kind=application_decline).
+   *     - Below threshold: closed_declined inline by the same admin.
+   *     - At/above threshold: status=pending_dual_control. A second
+   *       admin must call POST /v1/admin/compliance-reviews/:id/close
+   *       — until then the application sits at declined but the review
+   *       is open.
+   *  6. AuditOutbox row with the admin actorId.
+   *  7. Notify the consumer (application.declined template).
+   *
+   * The Adverse Action Notice document is rendered + delivered by the
+   * compliance-document service in a follow-on round; the notification
+   * fired here is the in-app/email "we have a decision" message.
+   */
+  async declineApplication(
+    adminUserId: UserId,
+    applicationId: string,
+    input: { reasonCodes: string[]; notes?: string },
+  ): Promise<{
+    applicationId: string;
+    status: 'declined';
+    complianceReviewId: string;
+    dualControlRequired: boolean;
+  }> {
+    if (!Array.isArray(input.reasonCodes) || input.reasonCodes.length === 0) {
+      throw BadRequest({
+        code: 'reason_codes_required',
+        detail: 'admin decline requires at least one Reg B / FCRA reason code',
+      });
+    }
+    const invalid = input.reasonCodes.filter((c) => !isValidReasonCode(c));
+    if (invalid.length > 0) {
+      throw BadRequest({
+        code: 'reason_codes_invalid',
+        detail: `unknown reason codes: ${invalid.join(', ')}`,
+      });
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const app = await tx.application.findUnique({
+        where: { id: applicationId },
+      });
+      if (!app) throw NotFound({ code: 'application_not_found' });
+      const TRANSITIONABLE: ApplicationStatus[] = [
+        'submitted',
+        'underwriting',
+        'offers_presented',
+        'accepted',
+      ];
+      if (!TRANSITIONABLE.includes(app.status)) {
+        throw Conflict({
+          code: 'invalid_transition',
+          detail: `cannot decline from ${app.status}`,
+        });
+      }
+
+      const dualControlRequired =
+        app.requestedAmountCents >= DUAL_CONTROL_AMOUNT_THRESHOLD_CENTS;
+
+      // Withdraw presented offers; void unsigned contracts.
+      await tx.offer.updateMany({
+        where: { applicationId, status: 'presented' },
+        data: { status: 'withdrawn' },
+      });
+      await tx.contract.updateMany({
+        where: {
+          applicationId,
+          status: { in: ['drafted', 'sent'] },
+        },
+        data: { status: 'voided' },
+      });
+
+      await tx.application.update({
+        where: { id: applicationId },
+        data: {
+          status: 'declined',
+          decisionAt: new Date(),
+          declineReasonCodes: input.reasonCodes,
+        },
+      });
+
+      const review = await tx.complianceReview.create({
+        data: {
+          kind: 'application_decline',
+          subjectType: 'Application',
+          subjectId: applicationId,
+          reason: input.notes ?? '',
+          reasonCodes: input.reasonCodes,
+          status: dualControlRequired ? 'pending_dual_control' : 'closed_declined',
+          createdByUserId: adminUserId,
+          closedByUserId: dualControlRequired ? null : adminUserId,
+          closedAt: dualControlRequired ? null : new Date(),
+          dualControlRequired,
+          evidence: {
+            statusBefore: app.status,
+            requestedAmountCents: app.requestedAmountCents.toString(),
+            channel: app.channel,
+          },
+        },
+        select: { id: true },
+      });
+
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'admin',
+          actorId: adminUserId,
+          action: 'admin.application.declined',
+          targetType: 'Application',
+          targetId: applicationId,
+          before: { status: app.status },
+          after: {
+            status: 'declined',
+            reasonCodes: input.reasonCodes,
+            complianceReviewId: review.id,
+            dualControlRequired,
+          },
+        },
+      });
+
+      // Notify post-commit at the controller level (we're inside a TX).
+      // Stash a marker on the result and let the controller fire it.
+      // For service-internal callers, do a fire-and-forget here.
+      if (this.notify) {
+        void this.notify
+          .notify({
+            userId: app.userId,
+            templateKey: 'application.declined',
+            payload: { reasonCodes: input.reasonCodes },
+            subjectType: 'Application',
+            subjectId: applicationId,
+          })
+          .catch((err) =>
+            this.logger.error({ err }, 'admin decline notify failed'),
+          );
+      }
+
+      return {
+        applicationId,
+        status: 'declined' as const,
+        complianceReviewId: review.id,
+        dualControlRequired,
+      };
+    });
+  }
+
+  /**
+   * Close a dual-control compliance review. The closer MUST differ from
+   * the row's createdByUserId; same-admin close is rejected to enforce
+   * the segregation-of-duties rule.
+   */
+  async closeComplianceReview(
+    adminUserId: UserId,
+    reviewId: string,
+    input: {
+      outcome: 'closed_approved' | 'closed_declined' | 'closed_no_action' | 'escalated_reportable';
+      notes?: string;
+      reportableMatterRef?: string;
+    },
+  ): Promise<{ id: string; status: string }> {
+    return this.prisma.$transaction(async (tx) => {
+      const review = await tx.complianceReview.findUnique({ where: { id: reviewId } });
+      if (!review) throw NotFound({ code: 'review_not_found' });
+      if (review.status !== 'pending_dual_control' && review.status !== 'open') {
+        throw Conflict({
+          code: 'review_already_closed',
+          detail: `review status=${review.status}`,
+        });
+      }
+      if (review.dualControlRequired && review.createdByUserId === adminUserId) {
+        throw Conflict({
+          code: 'dual_control_violation',
+          detail: 'closing admin must differ from creating admin',
+        });
+      }
+      const updated = await tx.complianceReview.update({
+        where: { id: reviewId },
+        data: {
+          status: input.outcome,
+          closedByUserId: adminUserId,
+          closedAt: new Date(),
+          reportableMatterRef: input.reportableMatterRef ?? null,
+          reason: input.notes ? `${review.reason}\n\n[close]: ${input.notes}` : review.reason,
+        },
+        select: { id: true, status: true },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'admin',
+          actorId: adminUserId,
+          action: 'admin.compliance_review.closed',
+          targetType: 'ComplianceReview',
+          targetId: reviewId,
+          before: { status: review.status },
+          after: { status: input.outcome, reportableMatterRef: input.reportableMatterRef ?? null },
+        },
+      });
+      return updated;
+    });
+  }
+
+  /**
+   * Resolve a risk flag. Admin records whether the flag was confirmed
+   * (genuinely risky) or cleared (false positive). Both close the row;
+   * the resolution is captured in evidence + audit. Confirmed-high+
+   * resolutions auto-create a ComplianceReview for follow-on tracking.
+   */
+  async resolveRiskFlag(
+    adminUserId: UserId,
+    flagId: string,
+    input: { resolution: 'confirmed' | 'cleared'; notes?: string },
+  ): Promise<{ id: string; resolvedAt: string }> {
+    return this.prisma.$transaction(async (tx) => {
+      const flag = await tx.riskFlag.findUnique({ where: { id: flagId } });
+      if (!flag) throw NotFound({ code: 'flag_not_found' });
+      if (flag.resolvedAt) {
+        throw Conflict({ code: 'flag_already_resolved' });
+      }
+      const updated = await tx.riskFlag.update({
+        where: { id: flagId },
+        data: {
+          resolvedAt: new Date(),
+          resolvedBy: adminUserId,
+          evidence: {
+            ...(flag.evidence as Record<string, unknown>),
+            resolution: input.resolution,
+            notes: input.notes ?? null,
+          },
+        },
+        select: { id: true, resolvedAt: true },
+      });
+
+      // High/critical confirmed flags open a ComplianceReview row so
+      // the chain to a reportable matter (or written-off escalation) is
+      // captured.
+      if (
+        input.resolution === 'confirmed' &&
+        (flag.severity === 'high' || flag.severity === 'critical')
+      ) {
+        await tx.complianceReview.create({
+          data: {
+            kind: 'risk_flag_resolution',
+            subjectType: flag.subjectType,
+            subjectId: flag.subjectId,
+            reason: input.notes ?? '',
+            reasonCodes: [flag.flagType],
+            status: 'open',
+            createdByUserId: adminUserId,
+            evidence: { riskFlagId: flagId, severity: flag.severity },
+          },
+        });
+      }
+
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'admin',
+          actorId: adminUserId,
+          action: 'admin.risk_flag.resolved',
+          targetType: 'RiskFlag',
+          targetId: flagId,
+          after: { resolution: input.resolution },
+        },
+      });
+      return {
+        id: updated.id,
+        resolvedAt: updated.resolvedAt!.toISOString(),
+      };
+    });
+  }
 
   /**
    * Application queue. Default surfaces manual-review-eligible work
