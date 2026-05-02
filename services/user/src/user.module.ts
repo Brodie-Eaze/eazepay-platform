@@ -57,6 +57,10 @@ export class UserModule {
 
     return {
       module: UserModule,
+      // Global so PiiVaultService can be injected by services/merchant
+      // (and any future regulated module) without each one re-importing
+      // the user module's full configuration.
+      global: true,
       controllers: [UserController],
       providers: [prisma, keyManager, kyc, PiiVaultService, UserService],
       exports: [UserService, PiiVaultService],

@@ -6,6 +6,7 @@ import { UserModule } from '@eazepay/service-user';
 import { ApplicationModule } from '@eazepay/service-application';
 import { LenderModule } from '@eazepay/service-lender';
 import { OrchestrationModule } from '@eazepay/service-orchestration';
+import { MerchantModule } from '@eazepay/service-merchant';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -45,6 +46,11 @@ const env = loadEnv();
     LenderModule.forRoot({
       prismaToken: PrismaService,
       adapters: ['buzzpay', 'mock_prime'],
+    }),
+    MerchantModule.forRoot({
+      prismaToken: PrismaService,
+      kybProvider: env.KYB_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
     }),
     OrchestrationModule.forRoot({ prismaToken: PrismaService }),
     ApplicationModule.forRoot({

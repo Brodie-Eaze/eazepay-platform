@@ -19,6 +19,7 @@
     "@eazepay/service-application": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
     "@eazepay/service-lender": "workspace:*",
+    "@eazepay/service-merchant": "workspace:*",
     "@eazepay/service-orchestration": "workspace:*",
     "@eazepay/service-user": "workspace:*",
     "@eazepay/shared-types": "workspace:*",

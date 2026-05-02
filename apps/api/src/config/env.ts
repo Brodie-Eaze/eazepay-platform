@@ -21,6 +21,7 @@ const EnvSchema = z.object({
     .optional(),
   KYC_PROVIDER: z.enum(['mock', 'alloy', 'persona']).default('mock'),
   ESIGN_PROVIDER: z.enum(['mock', 'docusign', 'dropbox_sign']).default('mock'),
+  KYB_PROVIDER: z.enum(['mock', 'middesk', 'alloy']).default('mock'),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   CORS_ORIGINS: z

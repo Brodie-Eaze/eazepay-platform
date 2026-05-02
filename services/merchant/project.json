@@ -1,0 +1,21 @@
+{
+  "name": "service-merchant",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/merchant/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:merchant", "regulated:true"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/merchant/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/merchant/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/merchant" }
+    }
+  }
+}
