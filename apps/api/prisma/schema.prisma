@@ -31,6 +31,12 @@ enum KycStatus {
   rejected
 }
 
+enum PepStatus {
+  unknown
+  cleared
+  match
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -44,9 +50,53 @@ model User {
   createdAt    DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt    DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
 
-  sessions Session[]
+  sessions        Session[]
+  consumerProfile ConsumerProfile?
 
   @@map("users")
+}
+
+// PII vault for consumer KYC data. Stored as a single AES-256-GCM
+// envelope-encrypted JSON blob: piiCiphertext is the AAD-bound payload,
+// dataKeyCiphertext is the per-record DEK encrypted by the KEK (KMS in
+// prod, local-dev KEK from env in development).
+//
+// Searchable fields like email/phone live on User (deterministic-encrypted
+// at the app layer, not here). Anything in this blob is opaque at rest.
+model ConsumerProfile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// PII — AES-256-GCM ciphertext of the full PII JSON blob
+  piiCiphertext     Bytes  @map("pii_ciphertext")
+  /// PII — 12-byte GCM nonce
+  piiNonce          Bytes  @map("pii_nonce")
+  /// PII — DEK encrypted with the KEK (KMS or local dev key)
+  dataKeyCiphertext Bytes  @map("data_key_ciphertext")
+  /// Identifier of the KEK used (KMS key ARN or 'local-dev'); enables key rotation
+  kekId             String @map("kek_id")
+  /// Schema version of the PII blob payload (allows safe field additions)
+  piiSchemaVersion  Int    @default(1) @map("pii_schema_version")
+
+  // Compliance lifecycle (queryable, not PII)
+  kycStatus           KycStatus @default(not_started) @map("kyc_status")
+  kycProviderRef      String?   @map("kyc_provider_ref")
+  kycLastCheckedAt    DateTime? @db.Timestamptz(6) @map("kyc_last_checked_at")
+  kycCompletedAt      DateTime? @db.Timestamptz(6) @map("kyc_completed_at")
+  pepStatus           PepStatus @default(unknown) @map("pep_status")
+  sanctionsCheckedAt  DateTime? @db.Timestamptz(6) @map("sanctions_checked_at")
+
+  // Residency — used for state-rules-matrix routing in orchestration. Not
+  // PII on its own; full street address lives encrypted in the blob.
+  residentState String? @db.VarChar(2) @map("resident_state")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([kycStatus])
+  @@index([residentState])
+  @@map("consumer_profiles")
 }
 
 model Session {

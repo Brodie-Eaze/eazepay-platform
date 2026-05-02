@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
-import { AuthModule } from '@eazepay/service-auth';
+import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
+import { UserModule } from '@eazepay/service-user';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -30,6 +31,13 @@ const env = loadEnv();
         refreshTokenTtlSeconds: env.REFRESH_TOKEN_TTL_SECONDS,
       },
     }),
+    UserModule.forRoot({
+      prismaToken: PrismaService,
+      keyManager: env.KEY_MANAGER,
+      localKekHex: env.LOCAL_KEK_HEX,
+      kycProvider: env.KYC_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
+    }),
     LoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
@@ -57,6 +65,7 @@ const env = loadEnv();
   ],
   controllers: [HealthController],
   providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_FILTER, useClass: ProblemExceptionFilter },
   ],

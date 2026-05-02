@@ -6,3 +6,7 @@ export * from './dto/register.dto.js';
 export * from './dto/login.dto.js';
 export * from './dto/verify-otp.dto.js';
 export * from './dto/refresh.dto.js';
+export * from './guards/jwt-auth.guard.js';
+export * from './guards/public.decorator.js';
+export * from './guards/current-user.decorator.js';
+export { TokenService } from './internal/token.service.js';

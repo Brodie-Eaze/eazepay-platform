@@ -1,6 +1,7 @@
 import { Body, Controller, Headers, HttpCode, Ip, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Idempotent } from '@eazepay/shared-utils';
+import { Public } from './guards/public.decorator.js';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -14,6 +15,7 @@ import type {
 } from './auth.types.js';
 
 @ApiTags('auth')
+@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}

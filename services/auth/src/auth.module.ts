@@ -11,6 +11,7 @@ import { SessionService } from './internal/session.service.js';
 import { PRISMA } from './internal/tokens.js';
 import { IDENTITY_PROVIDER } from './ports/identity-provider.port.js';
 import { NOTIFICATION_GATEWAY } from './ports/notification.port.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 export interface AuthModuleOptions {
   config: AuthConfig;
@@ -75,9 +76,10 @@ export class AuthModule {
         OtpService,
         TokenService,
         SessionService,
+        JwtAuthGuard,
         AuthService,
       ],
-      exports: [AuthService],
+      exports: [AuthService, TokenService, JwtAuthGuard],
     };
   }
 }

@@ -12,6 +12,14 @@ const EnvSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900), // 15min
   REFRESH_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(60 * 60 * 24 * 30), // 30d
+  KEY_MANAGER: z.enum(['local', 'kms']).default('local'),
+  /** 32-byte (64 hex chars) KEK for LocalKeyManager. Generate via:
+   *  openssl rand -hex 32. Required when KEY_MANAGER=local. */
+  LOCAL_KEK_HEX: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex chars (32 bytes)')
+    .optional(),
+  KYC_PROVIDER: z.enum(['mock', 'alloy', 'persona']).default('mock'),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   CORS_ORIGINS: z

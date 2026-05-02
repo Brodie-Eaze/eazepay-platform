@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@eazepay/service-auth": "workspace:*",
+    "@eazepay/service-user": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
     "ioredis": "^5.4.0",
