@@ -50,6 +50,8 @@ const env = loadEnv();
     ApplicationModule.forRoot({
       prismaToken: PrismaService,
       postSubmitHookToken: OrchestrationPostSubmitAdapter,
+      esignProvider: env.ESIGN_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
     }),
     LoggerModule.forRoot({
       pinoHttp: {

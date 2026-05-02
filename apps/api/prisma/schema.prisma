@@ -90,6 +90,23 @@ enum LenderRouteOutcome {
   timeout
 }
 
+enum LoanStatus {
+  funding_pending
+  active
+  paid_off
+  charged_off
+  cancelled
+}
+
+enum ContractStatus {
+  drafted
+  sent
+  signed
+  declined
+  expired
+  voided
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -217,7 +234,9 @@ model Application {
   createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt   DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
 
-  offers Offer[]
+  offers    Offer[]
+  contracts Contract[]
+  loans     Loan[]
 
   @@index([userId, createdAt])
   @@index([merchantId, createdAt])
@@ -252,9 +271,66 @@ model Offer {
   createdAt DateTime    @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt DateTime    @updatedAt @db.Timestamptz(6) @map("updated_at")
 
+  contract Contract?
+  loan     Loan?
+
   @@index([applicationId, rank])
   @@index([applicationId, status])
   @@map("offers")
+}
+
+// Loan agreement record. Created when an offer is accepted; bound to
+// the partner bank / licensed entity that holds the paper. Loan
+// disbursement + repayment lives in services/payment (next round).
+model Contract {
+  id                String         @id @default(uuid()) @db.Uuid
+  applicationId     String         @db.Uuid @map("application_id")
+  application       Application    @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  offerId           String         @unique @db.Uuid @map("offer_id")
+  offer             Offer          @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  signatureProvider String         @map("signature_provider") // 'mock' | 'docusign' | 'dropbox_sign'
+  envelopeId        String         @map("envelope_id")
+  /// Hash of the rendered contract document at signing time. Audit anchor.
+  documentSha256    String?        @map("document_sha256")
+  status            ContractStatus @default(drafted)
+  signedAt          DateTime?      @db.Timestamptz(6) @map("signed_at")
+  createdAt         DateTime       @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([envelopeId])
+  @@map("contracts")
+}
+
+model Loan {
+  id              String      @id @default(uuid()) @db.Uuid
+  applicationId   String      @db.Uuid @map("application_id")
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  offerId         String      @unique @db.Uuid @map("offer_id")
+  offer           Offer       @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  userId          String      @db.Uuid @map("user_id")
+
+  /// Lender of record (partner bank / licensed entity) snapshotted at
+  /// signing — never changes for the life of the loan.
+  lenderOfRecord  String      @map("lender_of_record")
+  lenderProductId String      @db.Uuid @map("lender_product_id")
+
+  /// Money — integer cents.
+  principalCents      BigInt   @map("principal_cents")
+  termMonths          Int      @map("term_months")
+  /// APR in basis points; matches the accepted offer.
+  aprBps              Int      @map("apr_bps")
+  /// Money — integer cents.
+  totalRepayableCents BigInt   @map("total_repayable_cents")
+
+  status        LoanStatus @default(funding_pending)
+  disbursedAt   DateTime?  @db.Timestamptz(6) @map("disbursed_at")
+  firstPaymentDate DateTime? @db.Date @map("first_payment_date")
+  createdAt     DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("loans")
 }
 
 model Lender {

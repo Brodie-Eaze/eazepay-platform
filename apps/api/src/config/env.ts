@@ -20,6 +20,7 @@ const EnvSchema = z.object({
     .regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex chars (32 bytes)')
     .optional(),
   KYC_PROVIDER: z.enum(['mock', 'alloy', 'persona']).default('mock'),
+  ESIGN_PROVIDER: z.enum(['mock', 'docusign', 'dropbox_sign']).default('mock'),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
   CORS_ORIGINS: z

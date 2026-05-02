@@ -2,8 +2,13 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
+import { sha256Hex } from '@eazepay/shared-utils';
 import { PRISMA } from './internal/tokens.js';
 import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
+import {
+  ESIGN_PROVIDER,
+  type ESignProvider,
+} from './ports/esign-provider.port.js';
 import { applyTransition } from './state-machine.js';
 import type {
   ApplicationEvent,
@@ -20,6 +25,7 @@ export class ApplicationService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(POST_SUBMIT_HOOK) private readonly postSubmit: PostSubmitHook,
+    @Inject(ESIGN_PROVIDER) private readonly esign: ESignProvider,
   ) {}
 
   async create(userId: UserId, dto: CreateApplicationDto): Promise<ApplicationSnapshot> {
@@ -193,6 +199,199 @@ export class ApplicationService {
       .catch((err) => this.logger.error({ err, applicationId: result.id }, 'post-submit hook failed'));
 
     return result;
+  }
+
+  /**
+   * Consumer accepts an offer. End-to-end:
+   *  1. Validate offer ownership + presented status + not expired.
+   *  2. Withdraw siblings (offers cannot be silently un-presented).
+   *  3. Transition application offers_presented → accepted with the
+   *     accepted offer flagged.
+   *  4. Render the contract (placeholder — real Reg Z disclosures land
+   *     in services/contract). Compute a stable SHA-256 hash of the
+   *     rendered document for the audit anchor.
+   *  5. Send envelope via ESignProvider. In dev, MockESign returns
+   *     `signed` synchronously; in prod, the provider returns `sent`
+   *     and the webhook handler completes the contracted transition
+   *     later. Both paths land at `contracted` + a Loan row when the
+   *     status is `signed`.
+   */
+  async acceptOffer(
+    userId: UserId,
+    applicationId: ApplicationId,
+    offerId: string,
+  ): Promise<ApplicationSnapshot> {
+    // Step 1-3 in one transaction.
+    const accepted = await this.prisma.$transaction(async (tx) => {
+      const app = await tx.application.findFirst({
+        where: { id: applicationId, userId },
+      });
+      if (!app) throw NotFound({ code: 'application_not_found' });
+
+      const offer = await tx.offer.findFirst({
+        where: { id: offerId, applicationId: app.id },
+      });
+      if (!offer) throw NotFound({ code: 'offer_not_found' });
+      if (offer.status !== 'presented') {
+        throw Conflict({ code: 'offer_not_acceptable', detail: `offer status=${offer.status}` });
+      }
+      if (offer.expiresAt.getTime() < Date.now()) {
+        throw Conflict({ code: 'offer_expired' });
+      }
+
+      const next = applyTransition(app.status, { type: 'ACCEPT_OFFER', offerId });
+      if (!next) {
+        throw Conflict({
+          code: 'invalid_transition',
+          detail: `cannot ACCEPT_OFFER from ${app.status}`,
+        });
+      }
+
+      // Withdraw siblings.
+      await tx.offer.updateMany({
+        where: { applicationId: app.id, id: { not: offerId }, status: 'presented' },
+        data: { status: 'withdrawn' },
+      });
+      await tx.offer.update({
+        where: { id: offerId },
+        data: { status: 'accepted' },
+      });
+      await tx.application.update({
+        where: { id: app.id },
+        data: { status: 'accepted' },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'application.offer_accepted',
+          targetType: 'Offer',
+          targetId: offerId,
+          before: { status: app.status },
+          after: { status: 'accepted', offerId },
+        },
+      });
+      return { app, offer };
+    });
+
+    // Step 4 — render + hash contract.
+    const docPayload = JSON.stringify({
+      applicationId: accepted.app.id,
+      offerId: accepted.offer.id,
+      lenderOfRecord: accepted.offer.lenderOfRecord,
+      principalCents: accepted.offer.amountCents.toString(),
+      aprBps: accepted.offer.aprBps,
+      termMonths: accepted.offer.termMonths,
+      feesCents: accepted.offer.feesCents.toString(),
+      totalRepayableCents: accepted.offer.totalRepayableCents.toString(),
+    });
+    const documentSha256 = sha256Hex(docPayload);
+
+    // Step 5 — send envelope.
+    const envelope = await this.esign.draftAndSend({
+      applicationId: accepted.app.id,
+      offerId: accepted.offer.id,
+      userId,
+      signerContact: userId, // placeholder; real flow looks up verified email/phone
+      documentSha256,
+      metadata: {
+        lenderOfRecord: accepted.offer.lenderOfRecord,
+      },
+    });
+
+    // Persist Contract.
+    await this.prisma.contract.create({
+      data: {
+        applicationId: accepted.app.id,
+        offerId: accepted.offer.id,
+        signatureProvider: envelope.provider,
+        envelopeId: envelope.envelopeId,
+        documentSha256,
+        status: envelope.status,
+        signedAt: envelope.status === 'signed' ? new Date() : null,
+      },
+    });
+
+    // If the provider auto-signed (mock dev path), complete to contracted
+    // + create the Loan record in one transaction. Webhook-driven prod
+    // path handles this in the inbound webhook handler.
+    if (envelope.status === 'signed') {
+      return this.completeContractSigned(userId, accepted.app.id);
+    }
+
+    // Otherwise return the application as-is (status=accepted) and let
+    // the webhook drive the transition later.
+    return this.toSnapshot(
+      await this.prisma.application.findUniqueOrThrow({ where: { id: accepted.app.id } }),
+    );
+  }
+
+  /**
+   * Called from the e-sign webhook handler (or directly from acceptOffer
+   * when the provider returns `signed` synchronously). Idempotent: safe
+   * to call repeatedly for the same applicationId.
+   */
+  async completeContractSigned(
+    userId: UserId,
+    applicationId: ApplicationId,
+  ): Promise<ApplicationSnapshot> {
+    return this.prisma.$transaction(async (tx) => {
+      const app = await tx.application.findFirst({
+        where: { id: applicationId, userId },
+        include: {
+          offers: { where: { status: 'accepted' }, take: 1 },
+          contracts: { where: { status: 'signed' }, take: 1 },
+        },
+      });
+      if (!app) throw NotFound({ code: 'application_not_found' });
+      if (app.status === 'contracted' || app.status === 'funding' || app.status === 'active') {
+        return this.toSnapshot(app);
+      }
+      if (app.status !== 'accepted') {
+        throw Conflict({
+          code: 'invalid_transition',
+          detail: `cannot CONTRACT_SIGNED from ${app.status}`,
+        });
+      }
+      const offer = app.offers[0];
+      if (!offer) throw Conflict({ code: 'no_accepted_offer' });
+
+      await tx.application.update({
+        where: { id: app.id },
+        data: { status: 'contracted' },
+      });
+
+      // Create the Loan. Lender-of-record is snapshotted now and
+      // immutable thereafter — that's the audit anchor for who issued.
+      await tx.loan.create({
+        data: {
+          applicationId: app.id,
+          offerId: offer.id,
+          userId,
+          lenderOfRecord: offer.lenderOfRecord,
+          lenderProductId: offer.lenderProductId,
+          principalCents: offer.amountCents,
+          termMonths: offer.termMonths,
+          aprBps: offer.aprBps,
+          totalRepayableCents: offer.totalRepayableCents,
+          status: 'funding_pending',
+        },
+      });
+
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'application.contracted',
+          targetType: 'Application',
+          targetId: app.id,
+          after: { offerId: offer.id, lenderOfRecord: offer.lenderOfRecord },
+        },
+      });
+
+      const refreshed = await tx.application.findUniqueOrThrow({ where: { id: app.id } });
+      return this.toSnapshot(refreshed);
+    });
   }
 
   async cancel(userId: UserId, applicationId: ApplicationId): Promise<ApplicationSnapshot> {

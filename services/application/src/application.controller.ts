@@ -96,4 +96,17 @@ export class ApplicationController {
   ): Promise<ApplicationSnapshot> {
     return this.applications.cancel(userId, id as ApplicationId);
   }
+
+  @Post(':id/offers/:offerId/accept')
+  @Idempotent()
+  @ApiOperation({
+    summary: 'Accept an offer; siblings withdrawn; e-sign envelope sent; Loan created on signed',
+  })
+  acceptOffer(
+    @CurrentUser() userId: UserId,
+    @Param('id', new ParseUUIDPipe()) applicationId: string,
+    @Param('offerId', new ParseUUIDPipe()) offerId: string,
+  ): Promise<ApplicationSnapshot> {
+    return this.applications.acceptOffer(userId, applicationId as ApplicationId, offerId);
+  }
 }
