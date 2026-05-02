@@ -6,6 +6,7 @@ import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
 import { UserModule } from '@eazepay/service-user';
 import { AdminModule } from '@eazepay/service-admin';
 import { ApplicationModule } from '@eazepay/service-application';
+import { ComplianceDocModule } from '@eazepay/service-compliance-doc';
 import { LenderModule } from '@eazepay/service-lender';
 import { OrchestrationModule } from '@eazepay/service-orchestration';
 import { MerchantModule } from '@eazepay/service-merchant';
@@ -24,6 +25,9 @@ import { OrchestrationPostSubmitAdapter } from './post-submit.adapter.js';
 import { PaymentContractedHookAdapter } from './contracted-hook.adapter.js';
 import { ApplicationLinkController } from './application-link.controller.js';
 import { ESignWebhookController } from './esign-webhook.controller.js';
+import { ObjectStorageModule } from './object-storage.module.js';
+import { DevStorageController } from './dev-storage.controller.js';
+import { ConsumerDocumentDownloadController } from './document-download.controller.js';
 
 const env = loadEnv();
 
@@ -61,6 +65,11 @@ const env = loadEnv();
       deviceProvider: env.DEVICE_RISK_PROVIDER,
       identityProvider: env.IDENTITY_RISK_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
+    }),
+    ObjectStorageModule,
+    ComplianceDocModule.forRoot({
+      prismaToken: PrismaService,
+      bucket: env.COMPLIANCE_DOC_BUCKET,
     }),
     AdminModule.forRoot({ prismaToken: PrismaService }),
     LenderModule.forRoot({
@@ -113,7 +122,13 @@ const env = loadEnv();
       },
     }),
   ],
-  controllers: [HealthController, ApplicationLinkController, ESignWebhookController],
+  controllers: [
+    HealthController,
+    ApplicationLinkController,
+    ESignWebhookController,
+    ConsumerDocumentDownloadController,
+    ...(env.OBJECT_STORAGE === 'local-fs' ? [DevStorageController] : []),
+  ],
   providers: [
     OrchestrationPostSubmitAdapter,
     PaymentContractedHookAdapter,

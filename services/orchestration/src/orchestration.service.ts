@@ -4,6 +4,7 @@ import { LenderRegistry } from '@eazepay/service-lender';
 import type { LenderEvaluationContext, LenderQuoteResult } from '@eazepay/service-lender';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { RiskService } from '@eazepay/service-risk';
+import { ComplianceDocService } from '@eazepay/service-compliance-doc';
 import { PRISMA } from './internal/tokens.js';
 import { DecisionService } from './decision/decision.service.js';
 import { POLICY_VERSION, REASON_CODES } from './decision/policy.js';
@@ -39,7 +40,17 @@ export class OrchestrationService {
     private readonly decision: DecisionService,
     @Optional() private readonly risk?: RiskService,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
+    @Optional() private readonly complianceDoc?: ComplianceDocService,
   ) {}
+
+  private async fireAdverseActionNotice(applicationId: string): Promise<void> {
+    if (!this.complianceDoc) return;
+    try {
+      await this.complianceDoc.generateAdverseActionNoticeForApplication(applicationId);
+    } catch (err) {
+      this.logger.error({ err, applicationId }, 'AAN generation failed');
+    }
+  }
 
   private async fireNotify(input: {
     userId: string;
@@ -48,6 +59,17 @@ export class OrchestrationService {
     subjectType?: string;
     subjectId?: string;
   }): Promise<void> {
+    // For decline templates, render + persist the formal Adverse Action
+    // Notice document FIRST so the in-app/email message can reference it
+    // when ComplianceDocService is wired. The notification fires either
+    // way; AAN is best-effort and never blocks the consumer notice.
+    if (
+      input.templateKey === 'application.declined' &&
+      input.subjectType === 'Application' &&
+      input.subjectId
+    ) {
+      await this.fireAdverseActionNotice(input.subjectId);
+    }
     if (!this.notify) return;
     try {
       await this.notify.notify(input);

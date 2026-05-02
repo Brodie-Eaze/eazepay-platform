@@ -211,6 +211,26 @@ enum ComplianceReviewKind {
   reportable_event
 }
 
+enum DocumentKind {
+  adverse_action_notice
+  loan_agreement
+  privacy_notice
+  amortization_schedule
+  payoff_quote
+  payment_assistance_letter
+  identity_verification_image
+  bank_statement
+  payslip
+  other
+}
+
+enum DocumentStatus {
+  active
+  superseded
+  retained
+  destroyed
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -841,6 +861,44 @@ model ComplianceReview {
   @@index([subjectType, subjectId])
   @@index([kind, createdAt])
   @@map("compliance_reviews")
+}
+
+// Persisted documents — generated (Adverse Action Notice, loan
+// agreement, payoff quote) or uploaded (ID image, bank statement,
+// payslip). Bytes live in object storage; this row carries the
+// metadata + content hash for audit / retention / retrieval.
+model Document {
+  id          String         @id @default(uuid()) @db.Uuid
+  /// Owning entity — User, Application, Loan, Merchant, BeneficialOwner, etc.
+  ownerType   String         @map("owner_type")
+  ownerId     String         @db.Uuid @map("owner_id")
+  kind        DocumentKind
+  /// Storage backend — 'local-fs' for dev, 's3' in prod.
+  storage     String
+  /// Object key in the configured backend (S3 key, fs path, etc.).
+  storageKey  String         @map("storage_key")
+  /// Original / display filename.
+  filename    String
+  mimeType    String         @map("mime_type")
+  /// Size in bytes; integer.
+  sizeBytes   Int            @map("size_bytes")
+  /// SHA-256 of the raw bytes; the audit anchor.
+  sha256      String
+  /// Retention policy expressed as ISO date — auto-purge after this date.
+  /// FCRA declined-app retention is 25 months; loan documents 7+ years
+  /// per partner-bank policy. Set per-kind by the renderer.
+  retainUntil DateTime?      @db.Timestamptz(6) @map("retain_until")
+  status      DocumentStatus @default(active)
+  /// Free-form metadata (renderer version, policy version, etc.).
+  metadata    Json           @default("{}")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([ownerType, ownerId, kind])
+  @@index([status, retainUntil])
+  @@index([sha256])
+  @@map("documents")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

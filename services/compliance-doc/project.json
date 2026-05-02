@@ -1,0 +1,21 @@
+{
+  "name": "service-compliance-doc",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/compliance-doc/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:compliance-doc", "regulated:true"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/compliance-doc/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/compliance-doc/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/compliance-doc" }
+    }
+  }
+}

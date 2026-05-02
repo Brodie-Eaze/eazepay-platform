@@ -3,6 +3,7 @@ import { PrismaClient, type ApplicationStatus, type RiskFlagSeverity } from '@pr
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
+import { ComplianceDocService } from '@eazepay/service-compliance-doc';
 import { PRISMA } from './internal/tokens.js';
 import { isValidReasonCode } from './reason-codes.js';
 
@@ -24,6 +25,7 @@ export class AdminService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
+    @Optional() private readonly complianceDoc?: ComplianceDocService,
   ) {}
 
   // -------------- mutations --------------
@@ -154,9 +156,22 @@ export class AdminService {
         },
       });
 
-      // Notify post-commit at the controller level (we're inside a TX).
-      // Stash a marker on the result and let the controller fire it.
-      // For service-internal callers, do a fire-and-forget here.
+      // Render + persist the formal Adverse Action Notice document
+      // (FCRA + ECOA-shaped PDF). Best-effort — failures here log but
+      // never block the decline transaction since the application
+      // status has already been recorded.
+      if (this.complianceDoc) {
+        void this.complianceDoc
+          .generateAdverseActionNoticeForApplication(applicationId)
+          .catch((err) =>
+            this.logger.error({ err, applicationId }, 'admin decline AAN generation failed'),
+          );
+      }
+
+      // Notify post-commit. ComplianceDocService also fires a
+      // notification when it generates the AAN (with documentId on the
+      // payload); that one is sent the moment the PDF is ready, so this
+      // call is the immediate "we received your decision" message.
       if (this.notify) {
         void this.notify
           .notify({

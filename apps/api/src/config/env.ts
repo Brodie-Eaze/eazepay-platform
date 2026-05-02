@@ -34,6 +34,20 @@ const EnvSchema = z.object({
   IDENTITY_RISK_PROVIDER: z
     .enum(['mock', 'emailage', 'telesign', 'ekata'])
     .default('mock'),
+  /** Object storage backend. local-fs is dev only. */
+  OBJECT_STORAGE: z.enum(['local-fs', 's3']).default('local-fs'),
+  /** Bucket id for compliance documents. */
+  COMPLIANCE_DOC_BUCKET: z.string().default('eazepay-compliance-docs-dev'),
+  /** Root dir when OBJECT_STORAGE=local-fs. */
+  LOCAL_FS_STORAGE_ROOT: z.string().default('./tmp/object-storage'),
+  /** HMAC secret for LocalFs presigned URLs (dev only). */
+  LOCAL_FS_STORAGE_SIGNING_SECRET: z.string().default('dev-only-replace-me'),
+  /** Public base URL for LocalFs presigned downloads (must match the
+   *  /v1/dev-storage route mounted by apps/api). */
+  LOCAL_FS_STORAGE_PUBLIC_URL: z
+    .string()
+    .url()
+    .default('http://localhost:3000/v1/dev-storage'),
   /** When true, this process runs the daily collection cron. In a
    *  multi-replica deploy, only ONE replica should set this. */
   COLLECTION_CRON_ENABLED: z

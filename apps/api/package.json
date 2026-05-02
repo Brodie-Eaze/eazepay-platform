@@ -19,6 +19,7 @@
     "@eazepay/service-admin": "workspace:*",
     "@eazepay/service-application": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
+    "@eazepay/service-compliance-doc": "workspace:*",
     "@eazepay/service-lender": "workspace:*",
     "@eazepay/service-merchant": "workspace:*",
     "@eazepay/service-notification": "workspace:*",

@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@eazepay/service-compliance-doc": "workspace:*",
     "@eazepay/service-lender": "workspace:*",
     "@eazepay/service-notification": "workspace:*",
     "@eazepay/service-risk": "workspace:*",
