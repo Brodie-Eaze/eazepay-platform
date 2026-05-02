@@ -5,6 +5,7 @@ import type { LenderEvaluationContext, LenderQuoteResult } from '@eazepay/servic
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { RiskService } from '@eazepay/service-risk';
 import { ComplianceDocService } from '@eazepay/service-compliance-doc';
+import { WEBHOOK_PUBLISHER, type WebhookPublisher } from '@eazepay/service-webhook';
 import { PRISMA } from './internal/tokens.js';
 import { DecisionService } from './decision/decision.service.js';
 import { POLICY_VERSION, REASON_CODES } from './decision/policy.js';
@@ -41,7 +42,24 @@ export class OrchestrationService {
     @Optional() private readonly risk?: RiskService,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
     @Optional() private readonly complianceDoc?: ComplianceDocService,
+    @Optional() @Inject(WEBHOOK_PUBLISHER) private readonly webhooks?: WebhookPublisher,
   ) {}
+
+  private async fireWebhook(input: {
+    eventType: string;
+    eventId: string;
+    subjectType: string;
+    subjectId: string;
+    merchantId: string | null;
+    payload: Record<string, unknown>;
+  }): Promise<void> {
+    if (!this.webhooks || !input.merchantId) return;
+    try {
+      await this.webhooks.publish(input);
+    } catch (err) {
+      this.logger.error({ err, eventType: input.eventType }, 'webhook publish failed');
+    }
+  }
 
   private async fireAdverseActionNotice(applicationId: string): Promise<void> {
     if (!this.complianceDoc) return;
@@ -58,11 +76,10 @@ export class OrchestrationService {
     payload?: Record<string, unknown>;
     subjectType?: string;
     subjectId?: string;
+    /** Optional merchant scope; when present, an outbound webhook with
+     *  the same event name is fanned out to subscribed endpoints. */
+    merchantId?: string | null;
   }): Promise<void> {
-    // For decline templates, render + persist the formal Adverse Action
-    // Notice document FIRST so the in-app/email message can reference it
-    // when ComplianceDocService is wired. The notification fires either
-    // way; AAN is best-effort and never blocks the consumer notice.
     if (
       input.templateKey === 'application.declined' &&
       input.subjectType === 'Application' &&
@@ -70,6 +87,19 @@ export class OrchestrationService {
     ) {
       await this.fireAdverseActionNotice(input.subjectId);
     }
+
+    // Outbound merchant webhook (mirrors the consumer notification).
+    if (input.subjectType === 'Application' && input.subjectId) {
+      await this.fireWebhook({
+        eventType: input.templateKey,
+        eventId: `${input.templateKey}:${input.subjectId}`,
+        subjectType: input.subjectType,
+        subjectId: input.subjectId,
+        merchantId: input.merchantId ?? null,
+        payload: input.payload ?? {},
+      });
+    }
+
     if (!this.notify) return;
     try {
       await this.notify.notify(input);
@@ -118,6 +148,7 @@ export class OrchestrationService {
         payload: { reasonCodes: decision.reasonCodes },
         subjectType: 'Application',
         subjectId: app.id,
+        merchantId: app.merchantId,
       });
       return;
     }
@@ -150,6 +181,7 @@ export class OrchestrationService {
             payload: { reasonCodes: assessment.reasonCodes },
             subjectType: 'Application',
             subjectId: app.id,
+            merchantId: app.merchantId,
           });
           return;
         }
@@ -173,6 +205,7 @@ export class OrchestrationService {
         payload: { reasonCodes: [REASON_CODES.noEligibleLender] },
         subjectType: 'Application',
         subjectId: app.id,
+        merchantId: app.merchantId,
       });
       return;
     }
@@ -226,6 +259,7 @@ export class OrchestrationService {
         payload: { offerCount: decision.offerCount },
         subjectType: 'Application',
         subjectId: app.id,
+        merchantId: app.merchantId,
       });
     } else {
       await this.fireNotify({
@@ -234,6 +268,7 @@ export class OrchestrationService {
         payload: { reasonCodes: decision.reasonCodes },
         subjectType: 'Application',
         subjectId: app.id,
+        merchantId: app.merchantId,
       });
     }
   }

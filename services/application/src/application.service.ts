@@ -4,6 +4,7 @@ import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
 import { sha256Hex } from '@eazepay/shared-utils';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
+import { WEBHOOK_PUBLISHER, type WebhookPublisher } from '@eazepay/service-webhook';
 import { PRISMA } from './internal/tokens.js';
 import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
 import {
@@ -33,6 +34,7 @@ export class ApplicationService {
     @Inject(ESIGN_PROVIDER) private readonly esign: ESignProvider,
     @Inject(CONTRACTED_HOOK) private readonly contractedHook: ContractedHook,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
+    @Optional() @Inject(WEBHOOK_PUBLISHER) private readonly webhooks?: WebhookPublisher,
   ) {}
 
   async create(userId: UserId, dto: CreateApplicationDto): Promise<ApplicationSnapshot> {
@@ -461,6 +463,18 @@ export class ApplicationService {
             subjectId: app.id,
           })
           .catch((err) => this.logger.error({ err }, 'contracted notify failed'));
+      }
+      if (this.webhooks && app.merchantId) {
+        void this.webhooks
+          .publish({
+            eventType: 'application.contracted',
+            eventId: `application.contracted:${app.id}`,
+            subjectType: 'Application',
+            subjectId: app.id,
+            merchantId: app.merchantId,
+            payload: { offerId: offer.id, lenderOfRecord: offer.lenderOfRecord },
+          })
+          .catch((err) => this.logger.error({ err }, 'contracted webhook failed'));
       }
       return this.toSnapshot(refreshed);
     });

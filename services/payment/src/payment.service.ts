@@ -3,6 +3,7 @@ import { PrismaClient, type Prisma } from '@prisma/client';
 import { Conflict, NotFound } from '@eazepay/shared-utils';
 import type { LoanId, PaymentMethodId, UserId } from '@eazepay/shared-types';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
+import { WEBHOOK_PUBLISHER, type WebhookPublisher } from '@eazepay/service-webhook';
 import { PRISMA } from './internal/tokens.js';
 import {
   PAYMENT_PROVIDER,
@@ -37,7 +38,24 @@ export class PaymentService {
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
     @Inject(BANK_ACCOUNT_PROVIDER) private readonly bank: BankAccountProvider,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
+    @Optional() @Inject(WEBHOOK_PUBLISHER) private readonly webhooks?: WebhookPublisher,
   ) {}
+
+  private async fireWebhook(input: {
+    eventType: string;
+    eventId: string;
+    subjectType: string;
+    subjectId: string;
+    merchantId: string | null;
+    payload: Record<string, unknown>;
+  }): Promise<void> {
+    if (!this.webhooks || !input.merchantId) return;
+    try {
+      await this.webhooks.publish(input);
+    } catch (err) {
+      this.logger.error({ err, eventType: input.eventType }, 'webhook publish failed');
+    }
+  }
 
   private async fireNotify(input: {
     userId: string;
@@ -260,7 +278,7 @@ export class PaymentService {
   async collectRepayment(repaymentId: string): Promise<ProviderResult> {
     const r = await this.prisma.repayment.findUnique({
       where: { id: repaymentId },
-      include: { loan: true },
+      include: { loan: { include: { application: { select: { merchantId: true } } } } },
     });
     if (!r) throw NotFound({ code: 'repayment_not_found' });
     if (r.status === 'paid') {
@@ -331,6 +349,7 @@ export class PaymentService {
     // Notify the consumer. Reason code surfaces to the user on failure
     // (with neutral language); reg E error-resolution UX deep-links from
     // the message body.
+    const merchantId = r.loan.application?.merchantId ?? null;
     if (result.status === 'succeeded') {
       const remaining = await this.prisma.repayment.count({
         where: { loanId: r.loanId, status: { not: 'paid' } },
@@ -345,6 +364,18 @@ export class PaymentService {
         subjectType: 'Repayment',
         subjectId: r.id,
       });
+      await this.fireWebhook({
+        eventType: 'loan.repayment.collected',
+        eventId: `loan.repayment.collected:${r.id}`,
+        subjectType: 'Repayment',
+        subjectId: r.id,
+        merchantId,
+        payload: {
+          loanId: r.loanId,
+          repaymentId: r.id,
+          amountCents: remainingDue.toString(),
+        },
+      });
     } else if (result.status === 'failed') {
       await this.fireNotify({
         userId: r.loan.userId,
@@ -355,6 +386,19 @@ export class PaymentService {
         },
         subjectType: 'Repayment',
         subjectId: r.id,
+      });
+      await this.fireWebhook({
+        eventType: 'loan.repayment.failed',
+        eventId: `loan.repayment.failed:${r.id}:${result.providerRef}`,
+        subjectType: 'Repayment',
+        subjectId: r.id,
+        merchantId,
+        payload: {
+          loanId: r.loanId,
+          repaymentId: r.id,
+          amountCents: remainingDue.toString(),
+          reasonCode: result.reasonCode,
+        },
       });
     }
 
@@ -503,6 +547,11 @@ export class PaymentService {
     });
 
     // Notify post-commit. Failure here doesn't roll back disbursement.
+    const appForMerchant = await this.prisma.application.findUnique({
+      where: { id: loan.applicationId },
+      select: { merchantId: true },
+    });
+    const merchantId = appForMerchant?.merchantId ?? null;
     if (result.status === 'succeeded') {
       await this.fireNotify({
         userId: loan.userId,
@@ -514,6 +563,18 @@ export class PaymentService {
         subjectType: 'Loan',
         subjectId: loan.id,
       });
+      await this.fireWebhook({
+        eventType: 'application.funded',
+        eventId: `application.funded:${loan.applicationId}`,
+        subjectType: 'Application',
+        subjectId: loan.applicationId,
+        merchantId,
+        payload: {
+          loanId: loan.id,
+          principalCents: loan.principalCents.toString(),
+          firstPaymentDate: firstPaymentDateIso,
+        },
+      });
     } else if (result.status === 'failed') {
       await this.fireNotify({
         userId: loan.userId,
@@ -521,6 +582,14 @@ export class PaymentService {
         payload: { reasonCode: result.reasonCode },
         subjectType: 'Loan',
         subjectId: loan.id,
+      });
+      await this.fireWebhook({
+        eventType: 'application.funding_failed',
+        eventId: `application.funding_failed:${loan.applicationId}:${result.providerRef}`,
+        subjectType: 'Application',
+        subjectId: loan.applicationId,
+        merchantId,
+        payload: { reasonCode: result.reasonCode, loanId: loan.id },
       });
     }
   }

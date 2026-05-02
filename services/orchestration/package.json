@@ -13,6 +13,7 @@
     "@eazepay/service-lender": "workspace:*",
     "@eazepay/service-notification": "workspace:*",
     "@eazepay/service-risk": "workspace:*",
+    "@eazepay/service-webhook": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
     "@nestjs/common": "^10.4.0",
