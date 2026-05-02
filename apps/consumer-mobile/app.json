@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "EazePay",
+    "slug": "eazepay",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "eazepay",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.eazepay.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.eazepay.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1F4FE0"
+      }
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}

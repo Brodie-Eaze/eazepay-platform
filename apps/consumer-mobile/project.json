@@ -1,0 +1,11 @@
+{
+  "name": "consumer-mobile",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/consumer-mobile/src",
+  "projectType": "application",
+  "tags": ["scope:app", "platform:mobile"],
+  "targets": {
+    "typecheck": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/consumer-mobile typecheck" } },
+    "lint": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/consumer-mobile lint" } }
+  }
+}
