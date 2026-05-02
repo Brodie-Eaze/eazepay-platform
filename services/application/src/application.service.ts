@@ -1,8 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
 import { sha256Hex } from '@eazepay/shared-utils';
+import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { PRISMA } from './internal/tokens.js';
 import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
 import {
@@ -31,6 +32,7 @@ export class ApplicationService {
     @Inject(POST_SUBMIT_HOOK) private readonly postSubmit: PostSubmitHook,
     @Inject(ESIGN_PROVIDER) private readonly esign: ESignProvider,
     @Inject(CONTRACTED_HOOK) private readonly contractedHook: ContractedHook,
+    @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
   ) {}
 
   async create(userId: UserId, dto: CreateApplicationDto): Promise<ApplicationSnapshot> {
@@ -442,6 +444,20 @@ export class ApplicationService {
       void this.contractedHook
         .onContracted(hookArgs)
         .catch((err) => this.logger.error({ err, ...hookArgs }, 'contracted hook failed'));
+
+      // Notify the consumer that the agreement is signed. Funding-
+      // success notification fires later from PaymentService.
+      if (this.notify) {
+        void this.notify
+          .notify({
+            userId: app.userId,
+            templateKey: 'application.contracted',
+            payload: { lenderOfRecord: offer.lenderOfRecord },
+            subjectType: 'Application',
+            subjectId: app.id,
+          })
+          .catch((err) => this.logger.error({ err }, 'contracted notify failed'));
+      }
       return this.toSnapshot(refreshed);
     });
   }

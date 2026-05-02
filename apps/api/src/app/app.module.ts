@@ -8,6 +8,7 @@ import { ApplicationModule } from '@eazepay/service-application';
 import { LenderModule } from '@eazepay/service-lender';
 import { OrchestrationModule } from '@eazepay/service-orchestration';
 import { MerchantModule } from '@eazepay/service-merchant';
+import { NotificationModule } from '@eazepay/service-notification';
 import { PaymentModule } from '@eazepay/service-payment';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
@@ -47,6 +48,11 @@ const env = loadEnv();
       localKekHex: env.LOCAL_KEK_HEX,
       kycProvider: env.KYC_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
+    }),
+    NotificationModule.forRoot({
+      prismaToken: PrismaService,
+      isDevelopment: env.NODE_ENV === 'development',
+      channels: { email: 'console', sms: 'console', push: 'console' },
     }),
     LenderModule.forRoot({
       prismaToken: PrismaService,

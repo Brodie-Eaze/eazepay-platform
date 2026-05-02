@@ -1,7 +1,8 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { Conflict, NotFound } from '@eazepay/shared-utils';
 import type { LoanId, PaymentMethodId, UserId } from '@eazepay/shared-types';
+import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { PRISMA } from './internal/tokens.js';
 import {
   PAYMENT_PROVIDER,
@@ -35,7 +36,23 @@ export class PaymentService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
     @Inject(BANK_ACCOUNT_PROVIDER) private readonly bank: BankAccountProvider,
+    @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
   ) {}
+
+  private async fireNotify(input: {
+    userId: string;
+    templateKey: string;
+    payload?: Record<string, unknown>;
+    subjectType?: string;
+    subjectId?: string;
+  }): Promise<void> {
+    if (!this.notify) return;
+    try {
+      await this.notify.notify(input);
+    } catch (err) {
+      this.logger.error({ err, templateKey: input.templateKey }, 'notify failed');
+    }
+  }
 
   // ----- payment method CRUD -----
 
@@ -311,6 +328,36 @@ export class PaymentService {
       });
     });
 
+    // Notify the consumer. Reason code surfaces to the user on failure
+    // (with neutral language); reg E error-resolution UX deep-links from
+    // the message body.
+    if (result.status === 'succeeded') {
+      const remaining = await this.prisma.repayment.count({
+        where: { loanId: r.loanId, status: { not: 'paid' } },
+      });
+      await this.fireNotify({
+        userId: r.loan.userId,
+        templateKey: 'payment.repayment.collected',
+        payload: {
+          amountCents: remainingDue.toString(),
+          remainingPayments: remaining,
+        },
+        subjectType: 'Repayment',
+        subjectId: r.id,
+      });
+    } else if (result.status === 'failed') {
+      await this.fireNotify({
+        userId: r.loan.userId,
+        templateKey: 'payment.repayment.failed',
+        payload: {
+          amountCents: remainingDue.toString(),
+          reasonCode: result.reasonCode,
+        },
+        subjectType: 'Repayment',
+        subjectId: r.id,
+      });
+    }
+
     return result;
   }
 
@@ -378,9 +425,17 @@ export class PaymentService {
   }
 
   private async recordDisbursement(
-    loan: { id: string; applicationId: string; principalCents: bigint; totalRepayableCents: bigint; termMonths: number },
+    loan: {
+      id: string;
+      applicationId: string;
+      userId: string;
+      principalCents: bigint;
+      totalRepayableCents: bigint;
+      termMonths: number;
+    },
     result: ProviderResult,
   ): Promise<void> {
+    let firstPaymentDateIso: string | null = null;
     await this.prisma.$transaction(async (tx) => {
       await tx.transaction.create({
         data: {
@@ -396,6 +451,7 @@ export class PaymentService {
 
       if (result.status === 'succeeded') {
         const firstPaymentDate = this.firstPaymentDateFromNow();
+        firstPaymentDateIso = firstPaymentDate.toISOString().slice(0, 10);
         await tx.loan.update({
           where: { id: loan.id },
           data: {
@@ -445,6 +501,28 @@ export class PaymentService {
         });
       }
     });
+
+    // Notify post-commit. Failure here doesn't roll back disbursement.
+    if (result.status === 'succeeded') {
+      await this.fireNotify({
+        userId: loan.userId,
+        templateKey: 'application.funded',
+        payload: {
+          principalCents: loan.principalCents.toString(),
+          firstPaymentDate: firstPaymentDateIso,
+        },
+        subjectType: 'Loan',
+        subjectId: loan.id,
+      });
+    } else if (result.status === 'failed') {
+      await this.fireNotify({
+        userId: loan.userId,
+        templateKey: 'application.funding_failed',
+        payload: { reasonCode: result.reasonCode },
+        subjectType: 'Loan',
+        subjectId: loan.id,
+      });
+    }
   }
 
   /**

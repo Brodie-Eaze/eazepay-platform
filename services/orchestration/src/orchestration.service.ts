@@ -1,7 +1,8 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { LenderRegistry } from '@eazepay/service-lender';
 import type { LenderEvaluationContext, LenderQuoteResult } from '@eazepay/service-lender';
+import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { PRISMA } from './internal/tokens.js';
 import { DecisionService } from './decision/decision.service.js';
 import { POLICY_VERSION, REASON_CODES } from './decision/policy.js';
@@ -35,7 +36,23 @@ export class OrchestrationService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly registry: LenderRegistry,
     private readonly decision: DecisionService,
+    @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
   ) {}
+
+  private async fireNotify(input: {
+    userId: string;
+    templateKey: string;
+    payload?: Record<string, unknown>;
+    subjectType?: string;
+    subjectId?: string;
+  }): Promise<void> {
+    if (!this.notify) return;
+    try {
+      await this.notify.notify(input);
+    } catch (err) {
+      this.logger.error({ err, templateKey: input.templateKey }, 'notify failed');
+    }
+  }
 
   async evaluate(applicationId: string): Promise<void> {
     const app = await this.prisma.application.findUnique({
@@ -68,6 +85,13 @@ export class OrchestrationService {
 
     if (!decision.passes) {
       await this.completeAsDeclined(app.id, app.userId, decision.reasonCodes);
+      await this.fireNotify({
+        userId: app.userId,
+        templateKey: 'application.declined',
+        payload: { reasonCodes: decision.reasonCodes },
+        subjectType: 'Application',
+        subjectId: app.id,
+      });
       return;
     }
 
@@ -78,6 +102,13 @@ export class OrchestrationService {
 
     if (candidates.length === 0) {
       await this.completeAsDeclined(app.id, app.userId, [REASON_CODES.noEligibleLender]);
+      await this.fireNotify({
+        userId: app.userId,
+        templateKey: 'application.declined',
+        payload: { reasonCodes: [REASON_CODES.noEligibleLender] },
+        subjectType: 'Application',
+        subjectId: app.id,
+      });
       return;
     }
 
@@ -120,7 +151,26 @@ export class OrchestrationService {
       }),
     );
 
-    await this.persistResults(app.id, app.userId, results);
+    const decision = await this.persistResults(app.id, app.userId, results);
+
+    // Fire notifications post-commit; failures are logged but not raised.
+    if (decision.outcome === 'offers_presented') {
+      await this.fireNotify({
+        userId: app.userId,
+        templateKey: 'application.offers_presented',
+        payload: { offerCount: decision.offerCount },
+        subjectType: 'Application',
+        subjectId: app.id,
+      });
+    } else {
+      await this.fireNotify({
+        userId: app.userId,
+        templateKey: 'application.declined',
+        payload: { reasonCodes: decision.reasonCodes },
+        subjectType: 'Application',
+        subjectId: app.id,
+      });
+    }
   }
 
   private async callWithTimeout(
@@ -147,7 +197,7 @@ export class OrchestrationService {
 
   private async persistResults(
     applicationId: string,
-    userId: string,
+    _userId: string,
     results: Array<{
       candidate: {
         adapter: { adapterKey: string };
@@ -159,7 +209,10 @@ export class OrchestrationService {
       latencyMs: number;
       order: number;
     }>,
-  ): Promise<void> {
+  ): Promise<
+    | { outcome: 'offers_presented'; offerCount: number }
+    | { outcome: 'declined'; reasonCodes: string[] }
+  > {
     const approvals = results
       .filter(
         (r): r is typeof r & { result: Extract<LenderQuoteResult, { outcome: 'approved' }> } =>
@@ -171,7 +224,7 @@ export class OrchestrationService {
       )
       .slice(0, MAX_OFFERS);
 
-    await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       // LenderRoute rows: every evaluation outcome is recorded for audit.
       for (const r of results) {
         const outcome = mapOutcome(r.result.outcome);
@@ -222,7 +275,10 @@ export class OrchestrationService {
             after: { reasonCodes: aggregate, policyVersion: POLICY_VERSION },
           },
         });
-        return;
+        return {
+          outcome: 'declined' as const,
+          reasonCodes: aggregate.length > 0 ? aggregate : [REASON_CODES.noEligibleLender],
+        };
       }
 
       // Persist offers, ranked by lowest total repayable to the consumer.
@@ -262,6 +318,7 @@ export class OrchestrationService {
           after: { offerCount: approvals.length, policyVersion: POLICY_VERSION },
         },
       });
+      return { outcome: 'offers_presented' as const, offerCount: approvals.length };
     });
   }
 

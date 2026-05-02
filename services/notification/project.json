@@ -1,0 +1,21 @@
+{
+  "name": "service-notification",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/notification/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:notification"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/notification/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/notification/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/notification" }
+    }
+  }
+}

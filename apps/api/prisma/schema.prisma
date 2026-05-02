@@ -165,6 +165,21 @@ enum RepaymentStatus {
   waived
 }
 
+enum NotificationChannel {
+  push
+  email
+  sms
+  in_app
+}
+
+enum NotificationStatus {
+  queued
+  sent
+  delivered
+  failed
+  suppressed
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -672,6 +687,41 @@ model Repayment {
   @@index([loanId, dueDate])
   @@index([status, dueDate])
   @@map("repayments")
+}
+
+// Transactional + lifecycle notifications. Always written to the DB
+// first (queued); a separate dispatcher pushes them to the channel.
+// `payload` carries already-rendered values for the template — the
+// template registry lives in code, not DB, so a stale row can always
+// be re-rendered if the dispatcher restarts mid-batch.
+model Notification {
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @db.Uuid @map("user_id")
+  channel      NotificationChannel
+  /// Stable string key matched to a template in the notification service.
+  templateKey  String              @map("template_key")
+  /// Free-form template variables. Sensitive fields are NOT stored here —
+  /// notifications referencing money or PII reference an entity id and
+  /// the dispatcher composes at delivery time.
+  payload      Json                @default("{}")
+  /// Pointer back to the entity that triggered this notification (for
+  /// dedupe + audit: e.g. ('Application', applicationId)).
+  subjectType  String?             @map("subject_type")
+  subjectId    String?             @map("subject_id")
+  status       NotificationStatus  @default(queued)
+  /// Provider-side reference (Twilio MessageSid, SES MessageId, etc.).
+  providerRef  String?             @map("provider_ref")
+  failureReason String?            @map("failure_reason")
+  sentAt       DateTime?           @db.Timestamptz(6) @map("sent_at")
+  readAt       DateTime?           @db.Timestamptz(6) @map("read_at")
+  createdAt    DateTime            @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt    DateTime            @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([userId, channel, readAt])
+  @@index([status, createdAt])
+  @@index([subjectType, subjectId])
+  @@map("notifications")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here
