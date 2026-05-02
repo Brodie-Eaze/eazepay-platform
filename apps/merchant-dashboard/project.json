@@ -1,0 +1,13 @@
+{
+  "name": "merchant-dashboard",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/merchant-dashboard/app",
+  "projectType": "application",
+  "tags": ["scope:app", "platform:web", "audience:merchant"],
+  "targets": {
+    "build": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/merchant-dashboard build" } },
+    "dev":   { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/merchant-dashboard dev" } },
+    "typecheck": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/merchant-dashboard typecheck" } },
+    "lint": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/merchant-dashboard lint" } }
+  }
+}

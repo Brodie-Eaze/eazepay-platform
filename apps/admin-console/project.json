@@ -1,0 +1,13 @@
+{
+  "name": "admin-console",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/admin-console/app",
+  "projectType": "application",
+  "tags": ["scope:app", "platform:web", "audience:admin", "regulated:true"],
+  "targets": {
+    "build": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/admin-console build" } },
+    "dev":   { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/admin-console dev" } },
+    "typecheck": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/admin-console typecheck" } },
+    "lint": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/admin-console lint" } }
+  }
+}
