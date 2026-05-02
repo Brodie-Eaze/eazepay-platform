@@ -329,15 +329,53 @@ export class ApplicationService {
   /**
    * Called from the e-sign webhook handler (or directly from acceptOffer
    * when the provider returns `signed` synchronously). Idempotent: safe
-   * to call repeatedly for the same applicationId.
+   * to call repeatedly for the same applicationId. User-scoped — passes
+   * the userId in the where clause to defend against cross-user calls.
    */
   async completeContractSigned(
     userId: UserId,
     applicationId: ApplicationId,
   ): Promise<ApplicationSnapshot> {
+    return this.completeContractSignedInternal({ applicationId, userId, actorType: 'user' });
+  }
+
+  /**
+   * Webhook-driven completion. Resolves the Application via Contract by
+   * envelopeId — provider has been signature-verified by the caller. The
+   * actor is recorded as 'service' in the audit row, NOT a user.
+   */
+  async completeContractSignedByEnvelope(envelopeId: string): Promise<ApplicationSnapshot> {
+    const contract = await this.prisma.contract.findFirst({
+      where: { envelopeId },
+      select: { applicationId: true, status: true },
+    });
+    if (!contract) throw NotFound({ code: 'contract_not_found' });
+    if (contract.status !== 'signed') {
+      // Mark contract signed first; webhook may have arrived ahead of
+      // our local Contract.status update for prod (non-mock) flows.
+      await this.prisma.contract.update({
+        where: { envelopeId },
+        data: { status: 'signed', signedAt: new Date() },
+      });
+    }
+    return this.completeContractSignedInternal({
+      applicationId: contract.applicationId as ApplicationId,
+      userId: null,
+      actorType: 'service',
+    });
+  }
+
+  private async completeContractSignedInternal(args: {
+    applicationId: ApplicationId;
+    userId: UserId | null;
+    actorType: 'user' | 'service';
+  }): Promise<ApplicationSnapshot> {
     return this.prisma.$transaction(async (tx) => {
+      const where = args.userId
+        ? { id: args.applicationId, userId: args.userId }
+        : { id: args.applicationId };
       const app = await tx.application.findFirst({
-        where: { id: applicationId, userId },
+        where,
         include: {
           offers: { where: { status: 'accepted' }, take: 1 },
           contracts: { where: { status: 'signed' }, take: 1 },
@@ -367,7 +405,7 @@ export class ApplicationService {
         data: {
           applicationId: app.id,
           offerId: offer.id,
-          userId,
+          userId: app.userId,
           lenderOfRecord: offer.lenderOfRecord,
           lenderProductId: offer.lenderProductId,
           principalCents: offer.amountCents,
@@ -380,8 +418,8 @@ export class ApplicationService {
 
       await tx.auditOutbox.create({
         data: {
-          actorType: 'user',
-          actorId: userId,
+          actorType: args.actorType,
+          actorId: args.userId,
           action: 'application.contracted',
           targetType: 'Application',
           targetId: app.id,

@@ -299,6 +299,110 @@ export class MerchantService {
     };
   }
 
+  /**
+   * Public endpoint use case: fetch the merchant + link context so the
+   * apply page can render branding, pre-fills, and validate the token
+   * before prompting the consumer to register/login.
+   * Throws on missing/expired/used/revoked link.
+   */
+  async getLinkContext(slug: string, tokenRaw: string): Promise<{
+    merchantId: MerchantId;
+    merchantSlug: string;
+    merchantLegalName: string;
+    merchantDba: string | null;
+    linkId: string;
+    category: string | null;
+    amountHintCents: bigint | null;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    expiresAt: string;
+  }> {
+    const tokenHash = sha256Hex(tokenRaw);
+    const link = await this.prisma.applicationLink.findUnique({
+      where: { tokenHash },
+      include: { merchant: true },
+    });
+    if (!link) throw NotFound({ code: 'link_not_found' });
+    if (link.merchant.slug !== slug) throw NotFound({ code: 'link_not_found' });
+    if (link.revokedAt) throw Conflict({ code: 'link_revoked' });
+    if (link.usedAt) throw Conflict({ code: 'link_already_used' });
+    if (link.expiresAt.getTime() < Date.now()) {
+      throw Conflict({ code: 'link_expired' });
+    }
+    return {
+      merchantId: link.merchantId as MerchantId,
+      merchantSlug: link.merchant.slug,
+      merchantLegalName: link.merchant.legalName,
+      merchantDba: link.merchant.dba,
+      linkId: link.id,
+      category: link.category,
+      amountHintCents: link.amountHintCents,
+      customerEmail: link.customerEmail,
+      customerPhone: link.customerPhone,
+      expiresAt: link.expiresAt.toISOString(),
+    };
+  }
+
+  /**
+   * Atomically mark a link consumed against a freshly-created Application.
+   * Returns true on success; throws if the link is no longer valid (race
+   * with another consumer using the same token simultaneously).
+   */
+  async markLinkUsed(linkId: string, applicationId: string): Promise<void> {
+    const result = await this.prisma.applicationLink.updateMany({
+      where: { id: linkId, usedAt: null, revokedAt: null },
+      data: { usedAt: new Date(), usedByApplicationId: applicationId },
+    });
+    if (result.count === 0) {
+      throw Conflict({ code: 'link_already_consumed' });
+    }
+  }
+
+  /**
+   * List applications referred via this merchant (any channel where
+   * application.merchantId == merchantId). Member-scoped read.
+   */
+  async listApplications(
+    userId: UserId,
+    merchantId: MerchantId,
+    opts: { cursor?: string; limit: number },
+  ): Promise<{
+    items: Array<{
+      id: string;
+      status: string;
+      category: string;
+      requestedAmountCents: bigint;
+      termMonths: number;
+      submittedAt: string | null;
+      decisionAt: string | null;
+      createdAt: string;
+    }>;
+    nextCursor: string | null;
+  }> {
+    await this.assertMember(userId, merchantId);
+    const apps = await this.prisma.application.findMany({
+      where: { merchantId },
+      orderBy: { createdAt: 'desc' },
+      take: opts.limit + 1,
+      ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
+    });
+    const hasMore = apps.length > opts.limit;
+    const sliced = hasMore ? apps.slice(0, opts.limit) : apps;
+    return {
+      items: sliced.map((a) => ({
+        id: a.id,
+        status: a.status,
+        category: a.category,
+        requestedAmountCents: a.requestedAmountCents,
+        termMonths: a.termMonths,
+        submittedAt: a.submittedAt?.toISOString() ?? null,
+        decisionAt: a.decisionAt?.toISOString() ?? null,
+        createdAt: a.createdAt.toISOString(),
+      })),
+      nextCursor: hasMore ? sliced[sliced.length - 1]!.id : null,
+    };
+  }
+
   // -------------- helpers --------------
 
   private async assertMember(userId: UserId, merchantId: MerchantId): Promise<void> {

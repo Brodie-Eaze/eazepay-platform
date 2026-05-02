@@ -16,6 +16,8 @@ import { RedisService } from '../redis/redis.service.js';
 import { IdempotencyInterceptor } from '../common/interceptors/idempotency.interceptor.js';
 import { ProblemExceptionFilter } from '../common/filters/problem-exception.filter.js';
 import { OrchestrationPostSubmitAdapter } from './post-submit.adapter.js';
+import { ApplicationLinkController } from './application-link.controller.js';
+import { ESignWebhookController } from './esign-webhook.controller.js';
 
 const env = loadEnv();
 
@@ -84,7 +86,7 @@ const env = loadEnv();
       },
     }),
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, ApplicationLinkController, ESignWebhookController],
   providers: [
     OrchestrationPostSubmitAdapter,
     { provide: APP_GUARD, useClass: JwtAuthGuard },

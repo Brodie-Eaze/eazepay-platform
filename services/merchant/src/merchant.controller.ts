@@ -6,7 +6,9 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
+import { z } from 'zod';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@eazepay/service-auth';
 import { Idempotent } from '@eazepay/shared-utils';
@@ -63,6 +65,22 @@ export class MerchantController {
     @Param('id', new ParseUUIDPipe()) merchantId: string,
   ): Promise<unknown> {
     return this.merchants.startKyb(userId, merchantId as MerchantId);
+  }
+
+  @Get(':id/applications')
+  @ApiOperation({ summary: 'List applications referred via this merchant (member-scoped)' })
+  applications(
+    @CurrentUser() userId: UserId,
+    @Param('id', new ParseUUIDPipe()) merchantId: string,
+    @Query() query: Record<string, string>,
+  ): Promise<unknown> {
+    const parsed = z
+      .object({
+        cursor: z.string().uuid().optional(),
+        limit: z.coerce.number().int().min(1).max(100).default(50),
+      })
+      .parse(query);
+    return this.merchants.listApplications(userId, merchantId as MerchantId, parsed);
   }
 
   @Post(':id/application-links')

@@ -27,7 +27,9 @@ const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ trustProxy: true, bodyLimit: 1024 * 1024 }),
-    { bufferLogs: true },
+    // rawBody: true gives webhook handlers access to req.rawBody for
+    // HMAC signature verification (e-sign, lender, payment providers).
+    { bufferLogs: true, rawBody: true },
   );
 
   app.useLogger(app.get(PinoLogger));
