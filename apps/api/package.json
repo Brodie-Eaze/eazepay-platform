@@ -23,6 +23,7 @@
     "@eazepay/service-notification": "workspace:*",
     "@eazepay/service-orchestration": "workspace:*",
     "@eazepay/service-payment": "workspace:*",
+    "@eazepay/service-risk": "workspace:*",
     "@eazepay/service-user": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",

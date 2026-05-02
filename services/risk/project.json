@@ -1,0 +1,21 @@
+{
+  "name": "service-risk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/risk/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:risk", "regulated:true"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/risk/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/risk/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/risk" }
+    }
+  }
+}

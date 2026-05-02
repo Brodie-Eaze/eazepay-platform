@@ -180,6 +180,19 @@ enum NotificationStatus {
   suppressed
 }
 
+enum RiskRecommendation {
+  accept
+  manual_review
+  decline
+}
+
+enum RiskFlagSeverity {
+  low
+  medium
+  high
+  critical
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -722,6 +735,48 @@ model Notification {
   @@index([status, createdAt])
   @@index([subjectType, subjectId])
   @@map("notifications")
+}
+
+// Risk assessment per application — composite of device, identity,
+// velocity, and prior-flag signals. The recommendation is consultative,
+// not deterministic: orchestration uses it as a knockout for `decline`,
+// a routing hint for `manual_review`, and informational otherwise.
+model RiskAssessment {
+  id            String              @id @default(uuid()) @db.Uuid
+  applicationId String              @unique @db.Uuid @map("application_id")
+  /// 0–100 composite score. Higher = riskier.
+  score         Int
+  recommendation RiskRecommendation
+  /// Reason codes that contributed; mapped to a stable taxonomy.
+  reasonCodes   String[]            @default([]) @map("reason_codes")
+  /// Provider-side raw responses kept for audit + model-monitoring.
+  signals       Json                @default("{}")
+  /// SR 11-7 — same input + this version reproduces the assessment.
+  policyVersion String              @map("policy_version")
+  createdAt     DateTime            @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  @@index([recommendation, createdAt])
+  @@map("risk_assessments")
+}
+
+// Generic risk flag — any subject (user, application, merchant, device,
+// IP) can carry one or more. Surfaces in admin queues + can re-trigger
+// step-up auth or block flows when severity >= high.
+model RiskFlag {
+  id          String           @id @default(uuid()) @db.Uuid
+  subjectType String           @map("subject_type")
+  subjectId   String           @db.Uuid @map("subject_id")
+  flagType    String           @map("flag_type") // velocity_user_24h, ip_geo_mismatch, etc
+  severity    RiskFlagSeverity
+  evidence    Json             @default("{}")
+  raisedAt    DateTime         @default(now()) @db.Timestamptz(6) @map("raised_at")
+  resolvedAt  DateTime?        @db.Timestamptz(6) @map("resolved_at")
+  resolvedBy  String?          @map("resolved_by")
+
+  @@index([subjectType, subjectId, raisedAt])
+  @@index([flagType, raisedAt])
+  @@index([severity, resolvedAt])
+  @@map("risk_flags")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

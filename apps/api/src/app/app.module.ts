@@ -10,6 +10,7 @@ import { OrchestrationModule } from '@eazepay/service-orchestration';
 import { MerchantModule } from '@eazepay/service-merchant';
 import { NotificationModule } from '@eazepay/service-notification';
 import { PaymentModule } from '@eazepay/service-payment';
+import { RiskModule } from '@eazepay/service-risk';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -53,6 +54,12 @@ const env = loadEnv();
       prismaToken: PrismaService,
       isDevelopment: env.NODE_ENV === 'development',
       channels: { email: 'console', sms: 'console', push: 'console' },
+    }),
+    RiskModule.forRoot({
+      prismaToken: PrismaService,
+      deviceProvider: env.DEVICE_RISK_PROVIDER,
+      identityProvider: env.IDENTITY_RISK_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
     }),
     LenderModule.forRoot({
       prismaToken: PrismaService,

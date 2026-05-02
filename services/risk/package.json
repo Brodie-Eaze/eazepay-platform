@@ -1,5 +1,5 @@
 {
-  "name": "@eazepay/service-orchestration",
+  "name": "@eazepay/service-risk",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@eazepay/service-lender": "workspace:*",
-    "@eazepay/service-notification": "workspace:*",
-    "@eazepay/service-risk": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
     "@nestjs/common": "^10.4.0",

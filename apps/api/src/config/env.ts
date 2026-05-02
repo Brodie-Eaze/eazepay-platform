@@ -28,6 +28,12 @@ const EnvSchema = z.object({
   BANK_ACCOUNT_PROVIDER: z
     .enum(['mock', 'plaid', 'mx', 'finicity'])
     .default('mock'),
+  DEVICE_RISK_PROVIDER: z
+    .enum(['mock', 'sift', 'castle', 'seon', 'plaid_signal'])
+    .default('mock'),
+  IDENTITY_RISK_PROVIDER: z
+    .enum(['mock', 'emailage', 'telesign', 'ekata'])
+    .default('mock'),
   /** When true, this process runs the daily collection cron. In a
    *  multi-replica deploy, only ONE replica should set this. */
   COLLECTION_CRON_ENABLED: z

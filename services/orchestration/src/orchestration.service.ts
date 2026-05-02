@@ -3,6 +3,7 @@ import { PrismaClient, type Prisma } from '@prisma/client';
 import { LenderRegistry } from '@eazepay/service-lender';
 import type { LenderEvaluationContext, LenderQuoteResult } from '@eazepay/service-lender';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
+import { RiskService } from '@eazepay/service-risk';
 import { PRISMA } from './internal/tokens.js';
 import { DecisionService } from './decision/decision.service.js';
 import { POLICY_VERSION, REASON_CODES } from './decision/policy.js';
@@ -36,6 +37,7 @@ export class OrchestrationService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly registry: LenderRegistry,
     private readonly decision: DecisionService,
+    @Optional() private readonly risk?: RiskService,
     @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
   ) {}
 
@@ -93,6 +95,46 @@ export class OrchestrationService {
         subjectId: app.id,
       });
       return;
+    }
+
+    // Risk gate. Consultative: a `decline` recommendation short-circuits
+    // here BEFORE any external lender call (saves bureau cost + lender
+    // SLA budget on obvious-bad apps). `manual_review` and `accept`
+    // proceed normally; the assessment is persisted either way and
+    // surfaces in the admin queue.
+    if (this.risk) {
+      try {
+        const assessment = await this.risk.assess({
+          applicationId: app.id,
+          userId: app.userId,
+          email: app.user.email,
+          phone: app.user.phoneE164,
+          // ipAddress + userAgent + deviceFingerprint are populated when
+          // the application is created via authenticated flow; the
+          // create endpoint stamps them on the AuditOutbox row. For this
+          // round we pass undefined and the device adapter degrades
+          // to no-signal — wired through the request layer next round.
+        });
+        if (assessment.recommendation === 'decline') {
+          this.logger.warn(
+            { applicationId: app.id, score: assessment.score, reasonCodes: assessment.reasonCodes },
+            'risk gate declined application pre-lender',
+          );
+          await this.completeAsDeclined(app.id, app.userId, assessment.reasonCodes);
+          await this.fireNotify({
+            userId: app.userId,
+            templateKey: 'application.declined',
+            payload: { reasonCodes: assessment.reasonCodes },
+            subjectType: 'Application',
+            subjectId: app.id,
+          });
+          return;
+        }
+      } catch (err) {
+        // Risk degraded — log and proceed. Better to over-route to lenders
+        // than to fail-closed when our own signal layer is down.
+        this.logger.error({ err, applicationId: app.id }, 'risk.assess failed; proceeding');
+      }
     }
 
     const candidates = await this.registry.listEnabled(
