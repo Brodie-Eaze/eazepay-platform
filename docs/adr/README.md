@@ -22,3 +22,6 @@ This directory holds the architectural decisions for the EazePay platform. Each 
 | 0007 | Hybrid lender orchestration (parallel within tier, waterfall across)   | Accepted |
 | 0008 | Lending model — bank-partner first, with state-licensed fallback       | Proposed |
 | 0009 | ACH origination via Modern Treasury (or partner-bank direct)           | Proposed |
+| 0010 | Modular monolith with explicit extraction paths                        | Accepted |
+| 0011 | Audit via transactional outbox + hash-chained sink                     | Accepted |
+| 0012 | Money is integer cents (BigInt), serialised as string-of-integer       | Accepted |
