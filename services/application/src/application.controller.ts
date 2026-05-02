@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
+  Ip,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -83,8 +85,15 @@ export class ApplicationController {
   submit(
     @CurrentUser() userId: UserId,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+    @Headers('x-device-fingerprint') deviceFingerprint?: string,
   ): Promise<ApplicationSnapshot> {
-    return this.applications.submit(userId, id as ApplicationId);
+    return this.applications.submit(userId, id as ApplicationId, {
+      ipAddress: ip,
+      userAgent,
+      deviceFingerprint,
+    });
   }
 
   @Post(':id/cancel')

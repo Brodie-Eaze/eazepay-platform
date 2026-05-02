@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
 import { UserModule } from '@eazepay/service-user';
+import { AdminModule } from '@eazepay/service-admin';
 import { ApplicationModule } from '@eazepay/service-application';
 import { LenderModule } from '@eazepay/service-lender';
 import { OrchestrationModule } from '@eazepay/service-orchestration';
@@ -61,6 +62,7 @@ const env = loadEnv();
       identityProvider: env.IDENTITY_RISK_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
     }),
+    AdminModule.forRoot({ prismaToken: PrismaService }),
     LenderModule.forRoot({
       prismaToken: PrismaService,
       adapters: ['buzzpay', 'mock_prime'],

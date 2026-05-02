@@ -56,7 +56,10 @@ export class OrchestrationService {
     }
   }
 
-  async evaluate(applicationId: string): Promise<void> {
+  async evaluate(
+    applicationId: string,
+    submitCtx: { ipAddress?: string; userAgent?: string; deviceFingerprint?: string } = {},
+  ): Promise<void> {
     const app = await this.prisma.application.findUnique({
       where: { id: applicationId },
       include: { user: { include: { consumerProfile: true } } },
@@ -109,11 +112,9 @@ export class OrchestrationService {
           userId: app.userId,
           email: app.user.email,
           phone: app.user.phoneE164,
-          // ipAddress + userAgent + deviceFingerprint are populated when
-          // the application is created via authenticated flow; the
-          // create endpoint stamps them on the AuditOutbox row. For this
-          // round we pass undefined and the device adapter degrades
-          // to no-signal — wired through the request layer next round.
+          ipAddress: submitCtx.ipAddress,
+          userAgent: submitCtx.userAgent,
+          deviceFingerprint: submitCtx.deviceFingerprint,
         });
         if (assessment.recommendation === 'decline') {
           this.logger.warn(

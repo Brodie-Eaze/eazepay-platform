@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { PostSubmitHook } from '@eazepay/service-application';
+import type { PostSubmitContext, PostSubmitHook } from '@eazepay/service-application';
 import { OrchestrationService } from '@eazepay/service-orchestration';
 
 /**
@@ -11,7 +11,7 @@ import { OrchestrationService } from '@eazepay/service-orchestration';
 export class OrchestrationPostSubmitAdapter implements PostSubmitHook {
   constructor(private readonly orchestration: OrchestrationService) {}
 
-  async onSubmitted(applicationId: string): Promise<void> {
-    await this.orchestration.evaluate(applicationId);
+  async onSubmitted(applicationId: string, ctx: PostSubmitContext): Promise<void> {
+    await this.orchestration.evaluate(applicationId, ctx);
   }
 }

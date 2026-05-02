@@ -21,7 +21,7 @@ export interface ApplicationModuleOptions {
 
 class NoopPostSubmitHook implements PostSubmitHook {
   async onSubmitted(): Promise<void> {
-    /* default: do nothing — service is independently runnable in tests */
+    /* default: do nothing — accepts any args */
   }
 }
 

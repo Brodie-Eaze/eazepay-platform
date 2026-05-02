@@ -203,6 +203,10 @@ model User {
   passwordHash String?    @map("password_hash")
   status       UserStatus @default(pending_verification)
   kycStatus    KycStatus  @default(not_started) @map("kyc_status")
+  /// MVP-shape admin flag. Production swaps to Cognito groups + JIT
+  /// elevation; documented in docs/ARCHITECTURE.md §16. Set manually
+  /// (or via seed) for ops engineers; never user-settable.
+  isAdmin      Boolean    @default(false) @map("is_admin")
   createdAt    DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt    DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
 

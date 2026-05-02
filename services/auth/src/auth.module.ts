@@ -12,6 +12,7 @@ import { PRISMA } from './internal/tokens.js';
 import { IDENTITY_PROVIDER } from './ports/identity-provider.port.js';
 import { NOTIFICATION_GATEWAY } from './ports/notification.port.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { AdminGuard } from './guards/admin.guard.js';
 
 export interface AuthModuleOptions {
   config: AuthConfig;
@@ -77,9 +78,10 @@ export class AuthModule {
         TokenService,
         SessionService,
         JwtAuthGuard,
+        AdminGuard,
         AuthService,
       ],
-      exports: [AuthService, TokenService, JwtAuthGuard],
+      exports: [AuthService, TokenService, JwtAuthGuard, AdminGuard],
     };
   }
 }

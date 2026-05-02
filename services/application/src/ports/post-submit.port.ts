@@ -11,8 +11,17 @@
  * has already committed (the application is in `submitted` status when
  * the hook fires). Long-running work should be deferred to a queue.
  */
+export interface PostSubmitContext {
+  /** Submit-time IP, captured by the controller. */
+  ipAddress?: string;
+  /** Submit-time User-Agent. */
+  userAgent?: string;
+  /** Submit-time device fingerprint, from X-Device-Fingerprint header. */
+  deviceFingerprint?: string;
+}
+
 export interface PostSubmitHook {
-  onSubmitted(applicationId: string): Promise<void>;
+  onSubmitted(applicationId: string, ctx: PostSubmitContext): Promise<void>;
 }
 
 export const POST_SUBMIT_HOOK = Symbol('POST_SUBMIT_HOOK');

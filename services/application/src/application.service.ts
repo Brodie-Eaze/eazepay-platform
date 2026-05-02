@@ -188,7 +188,11 @@ export class ApplicationService {
     };
   }
 
-  async submit(userId: UserId, applicationId: ApplicationId): Promise<ApplicationSnapshot> {
+  async submit(
+    userId: UserId,
+    applicationId: ApplicationId,
+    ctx: { ipAddress?: string; userAgent?: string; deviceFingerprint?: string } = {},
+  ): Promise<ApplicationSnapshot> {
     const result = await this.transition(userId, applicationId, { type: 'SUBMIT' }, (tx, app) =>
       tx.application.update({
         where: { id: app.id },
@@ -202,7 +206,7 @@ export class ApplicationService {
     // are logged but don't roll back the submission — orchestration is
     // designed to be re-driven idempotently from `submitted` state.
     void this.postSubmit
-      .onSubmitted(result.id)
+      .onSubmitted(result.id, ctx)
       .catch((err) => this.logger.error({ err, applicationId: result.id }, 'post-submit hook failed'));
 
     return result;
