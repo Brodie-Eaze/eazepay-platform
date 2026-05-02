@@ -5,7 +5,9 @@ import { AuthModule } from '@eazepay/service-auth';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisModule } from '../redis/redis.module.js';
+import { RedisService } from '../redis/redis.service.js';
 import { IdempotencyInterceptor } from '../common/interceptors/idempotency.interceptor.js';
 import { ProblemExceptionFilter } from '../common/filters/problem-exception.filter.js';
 
@@ -15,7 +17,19 @@ const env = loadEnv();
   imports: [
     PrismaModule,
     RedisModule,
-    AuthModule,
+    AuthModule.forRoot({
+      provider: env.AUTH_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
+      prismaToken: PrismaService,
+      redisToken: RedisService,
+      config: {
+        jwtIssuer: env.JWT_ISSUER,
+        jwtAudience: env.JWT_AUDIENCE,
+        jwtAccessSecret: env.JWT_ACCESS_SECRET,
+        accessTokenTtlSeconds: env.ACCESS_TOKEN_TTL_SECONDS,
+        refreshTokenTtlSeconds: env.REFRESH_TOKEN_TTL_SECONDS,
+      },
+    }),
     LoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
