@@ -4,6 +4,7 @@ import { ApplicationController } from './application.controller.js';
 import { ApplicationService } from './application.service.js';
 import { PRISMA } from './internal/tokens.js';
 import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
+import { CONTRACTED_HOOK, type ContractedHook } from './ports/contracted-hook.port.js';
 import { ESIGN_PROVIDER } from './ports/esign-provider.port.js';
 import { MockESignAdapter } from './adapters/mock-esign.adapter.js';
 
@@ -11,6 +12,8 @@ export interface ApplicationModuleOptions {
   prismaToken: symbol | string | (abstract new (...args: never[]) => PrismaClient);
   /** Token resolving to a PostSubmitHook implementation. Default: no-op. */
   postSubmitHookToken?: symbol | string | (abstract new (...args: never[]) => PostSubmitHook);
+  /** Token resolving to a ContractedHook implementation. Default: no-op. */
+  contractedHookToken?: symbol | string | (abstract new (...args: never[]) => ContractedHook);
   /** E-sign provider. 'mock' is dev only; real adapters land later. */
   esignProvider: 'mock' | 'docusign' | 'dropbox_sign';
   isDevelopment: boolean;
@@ -22,6 +25,12 @@ class NoopPostSubmitHook implements PostSubmitHook {
   }
 }
 
+class NoopContractedHook implements ContractedHook {
+  async onContracted(): Promise<void> {
+    /* default: do nothing */
+  }
+}
+
 @Module({})
 export class ApplicationModule {
   static forRoot(options: ApplicationModuleOptions): DynamicModule {
@@ -29,9 +38,12 @@ export class ApplicationModule {
       provide: PRISMA,
       useExisting: options.prismaToken as never,
     };
-    const hook: Provider = options.postSubmitHookToken
+    const postSubmit: Provider = options.postSubmitHookToken
       ? { provide: POST_SUBMIT_HOOK, useExisting: options.postSubmitHookToken as never }
       : { provide: POST_SUBMIT_HOOK, useClass: NoopPostSubmitHook };
+    const contracted: Provider = options.contractedHookToken
+      ? { provide: CONTRACTED_HOOK, useExisting: options.contractedHookToken as never }
+      : { provide: CONTRACTED_HOOK, useClass: NoopContractedHook };
 
     const esign: Provider = {
       provide: ESIGN_PROVIDER,
@@ -51,7 +63,7 @@ export class ApplicationModule {
     return {
       module: ApplicationModule,
       controllers: [ApplicationController],
-      providers: [prisma, hook, esign, ApplicationService],
+      providers: [prisma, postSubmit, contracted, esign, ApplicationService],
       exports: [ApplicationService],
     };
   }

@@ -131,6 +131,40 @@ enum MerchantUserRole {
   read_only
 }
 
+enum PaymentMethodType {
+  debit_card
+  bank_account
+}
+
+enum PaymentMethodStatus {
+  pending_verification
+  verified
+  failed
+  removed
+}
+
+enum TransactionDirection {
+  debit  // money out (consumer paying us, repayment)
+  credit // money in (we are paying out, disbursement)
+}
+
+enum TransactionStatus {
+  pending
+  succeeded
+  failed
+  reversed
+}
+
+enum RepaymentStatus {
+  scheduled
+  due
+  paid
+  partial
+  late
+  charged_off
+  waived
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -352,6 +386,9 @@ model Loan {
   createdAt     DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt     DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
 
+  repayments   Repayment[]
+  transactions Transaction[]
+
   @@index([userId, createdAt])
   @@index([status])
   @@map("loans")
@@ -540,6 +577,101 @@ model ApplicationLink {
 
   @@index([merchantId, createdAt])
   @@map("application_links")
+}
+
+// Tokenised payment method. PAN never touches our infra (PCI SAQ A);
+// `providerToken` is the PSP-issued token (Stripe payment_method_id,
+// Modern Treasury counterparty id, etc.). Bank account routing/account
+// numbers are NEVER stored in plaintext; only last4 + ACH-validated
+// status flag.
+model PaymentMethod {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @db.Uuid @map("user_id")
+  type          PaymentMethodType
+  /// Provider name ('stripe' | 'modern_treasury' | 'mock').
+  provider      String
+  /// SECRET — opaque token from the provider, never the raw instrument.
+  providerToken String              @map("provider_token")
+  /// Last four of the instrument — display only, NOT a credential.
+  last4         String?
+  /// Card brand (visa/mc) or bank name.
+  brand         String?
+  /// True for the user's default repayment method.
+  isDefault     Boolean             @default(false) @map("is_default")
+  status        PaymentMethodStatus @default(pending_verification)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  transactions Transaction[]
+
+  @@index([userId, status])
+  @@map("payment_methods")
+}
+
+// Every money movement. Disbursements (credit out to consumer/merchant)
+// AND collections (debit in from consumer's payment method) live here.
+// Settlement to merchants is modelled as a separate Settlement entity
+// in a later round.
+model Transaction {
+  id              String                 @id @default(uuid()) @db.Uuid
+  loanId          String?                @db.Uuid @map("loan_id")
+  loan            Loan?                  @relation(fields: [loanId], references: [id])
+  paymentMethodId String?                @db.Uuid @map("payment_method_id")
+  paymentMethod   PaymentMethod?         @relation(fields: [paymentMethodId], references: [id])
+  /// Optional FK back to the Repayment this transaction satisfies.
+  repaymentId     String?                @unique @db.Uuid @map("repayment_id")
+  repayment       Repayment?             @relation(fields: [repaymentId], references: [id])
+
+  direction TransactionDirection
+  /// Money — integer cents. Always positive; direction encodes the sign.
+  amountCents BigInt              @map("amount_cents")
+  currency   String               @default("USD") @db.VarChar(3)
+  status     TransactionStatus    @default(pending)
+  /// Stable provider identifier (Stripe PaymentIntent id, Modern
+  /// Treasury payment_order id, mock-{uuid}). Idempotency anchor.
+  providerRef String              @unique @map("provider_ref")
+  /// Failure or reversal reason. Reg E error-resolution surfaces from here.
+  failureReason String?           @map("failure_reason")
+
+  occurredAt DateTime @default(now()) @db.Timestamptz(6) @map("occurred_at")
+  settledAt  DateTime? @db.Timestamptz(6) @map("settled_at")
+  createdAt  DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([loanId, occurredAt])
+  @@index([status])
+  @@map("transactions")
+}
+
+// Scheduled installment. Generated up-front from the loan terms and
+// updated as transactions settle. Synthetic split for MVP: equal
+// installments of totalRepayable/term, last absorbs remainder. Real
+// amortization (P/I split per month) lands when services/contract
+// renders the Reg Z disclosure schedule.
+model Repayment {
+  id        String          @id @default(uuid()) @db.Uuid
+  loanId    String          @db.Uuid @map("loan_id")
+  loan      Loan            @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  /// Position in the schedule, 1-indexed.
+  sequence  Int
+  dueDate   DateTime        @db.Date @map("due_date")
+  /// Money — integer cents.
+  amountDueCents  BigInt    @map("amount_due_cents")
+  /// Money — integer cents. Updated as collections settle.
+  amountPaidCents BigInt    @default(0) @map("amount_paid_cents")
+  status    RepaymentStatus @default(scheduled)
+  paidAt    DateTime?       @db.Timestamptz(6) @map("paid_at")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  transaction Transaction?
+
+  @@unique([loanId, sequence])
+  @@index([loanId, dueDate])
+  @@index([status, dueDate])
+  @@map("repayments")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

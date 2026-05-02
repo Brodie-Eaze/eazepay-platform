@@ -6,6 +6,10 @@ import { sha256Hex } from '@eazepay/shared-utils';
 import { PRISMA } from './internal/tokens.js';
 import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
 import {
+  CONTRACTED_HOOK,
+  type ContractedHook,
+} from './ports/contracted-hook.port.js';
+import {
   ESIGN_PROVIDER,
   type ESignProvider,
 } from './ports/esign-provider.port.js';
@@ -26,6 +30,7 @@ export class ApplicationService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(POST_SUBMIT_HOOK) private readonly postSubmit: PostSubmitHook,
     @Inject(ESIGN_PROVIDER) private readonly esign: ESignProvider,
+    @Inject(CONTRACTED_HOOK) private readonly contractedHook: ContractedHook,
   ) {}
 
   async create(userId: UserId, dto: CreateApplicationDto): Promise<ApplicationSnapshot> {
@@ -401,7 +406,7 @@ export class ApplicationService {
 
       // Create the Loan. Lender-of-record is snapshotted now and
       // immutable thereafter — that's the audit anchor for who issued.
-      await tx.loan.create({
+      const loan = await tx.loan.create({
         data: {
           applicationId: app.id,
           offerId: offer.id,
@@ -414,6 +419,7 @@ export class ApplicationService {
           totalRepayableCents: offer.totalRepayableCents,
           status: 'funding_pending',
         },
+        select: { id: true },
       });
 
       await tx.auditOutbox.create({
@@ -423,11 +429,19 @@ export class ApplicationService {
           action: 'application.contracted',
           targetType: 'Application',
           targetId: app.id,
-          after: { offerId: offer.id, lenderOfRecord: offer.lenderOfRecord },
+          after: { offerId: offer.id, loanId: loan.id, lenderOfRecord: offer.lenderOfRecord },
         },
       });
 
       const refreshed = await tx.application.findUniqueOrThrow({ where: { id: app.id } });
+      // Fire ContractedHook AFTER the transaction commits. Disbursement
+      // is intentionally separated from the contract-signing transaction
+      // so a payment-rail outage doesn't roll back a signed agreement.
+      // Hook may run for many seconds (ACH origination); we don't await.
+      const hookArgs = { applicationId: app.id, loanId: loan.id };
+      void this.contractedHook
+        .onContracted(hookArgs)
+        .catch((err) => this.logger.error({ err, ...hookArgs }, 'contracted hook failed'));
       return this.toSnapshot(refreshed);
     });
   }

@@ -7,6 +7,7 @@ import { ApplicationModule } from '@eazepay/service-application';
 import { LenderModule } from '@eazepay/service-lender';
 import { OrchestrationModule } from '@eazepay/service-orchestration';
 import { MerchantModule } from '@eazepay/service-merchant';
+import { PaymentModule } from '@eazepay/service-payment';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -16,6 +17,7 @@ import { RedisService } from '../redis/redis.service.js';
 import { IdempotencyInterceptor } from '../common/interceptors/idempotency.interceptor.js';
 import { ProblemExceptionFilter } from '../common/filters/problem-exception.filter.js';
 import { OrchestrationPostSubmitAdapter } from './post-submit.adapter.js';
+import { PaymentContractedHookAdapter } from './contracted-hook.adapter.js';
 import { ApplicationLinkController } from './application-link.controller.js';
 import { ESignWebhookController } from './esign-webhook.controller.js';
 
@@ -55,9 +57,15 @@ const env = loadEnv();
       isDevelopment: env.NODE_ENV === 'development',
     }),
     OrchestrationModule.forRoot({ prismaToken: PrismaService }),
+    PaymentModule.forRoot({
+      prismaToken: PrismaService,
+      provider: env.PAYMENT_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
+    }),
     ApplicationModule.forRoot({
       prismaToken: PrismaService,
       postSubmitHookToken: OrchestrationPostSubmitAdapter,
+      contractedHookToken: PaymentContractedHookAdapter,
       esignProvider: env.ESIGN_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
     }),
@@ -89,6 +97,7 @@ const env = loadEnv();
   controllers: [HealthController, ApplicationLinkController, ESignWebhookController],
   providers: [
     OrchestrationPostSubmitAdapter,
+    PaymentContractedHookAdapter,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     { provide: APP_FILTER, useClass: ProblemExceptionFilter },

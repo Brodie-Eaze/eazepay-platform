@@ -1,0 +1,21 @@
+{
+  "name": "service-payment",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "services/payment/src",
+  "projectType": "library",
+  "tags": ["scope:service", "domain:payment", "regulated:true", "money:true"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -p services/payment/tsconfig.json --noEmit" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "eslint services/payment/src --max-warnings=0" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run --root services/payment" }
+    }
+  }
+}

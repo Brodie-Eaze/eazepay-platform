@@ -6,5 +6,6 @@ export * from './state-machine.js';
 export * from './dto/create-application.dto.js';
 export * from './dto/update-application.dto.js';
 export * from './ports/post-submit.port.js';
+export * from './ports/contracted-hook.port.js';
 export * from './ports/esign-provider.port.js';
 export * from './adapters/mock-esign.adapter.js';
