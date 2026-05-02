@@ -37,6 +37,42 @@ enum PepStatus {
   match
 }
 
+enum LoanCategory {
+  auto
+  home_improvement
+  medical
+  retail
+  personal
+  consolidation
+}
+
+enum OriginationChannel {
+  consumer_direct
+  merchant_link
+  merchant_widget
+}
+
+enum ApplicationStatus {
+  draft
+  submitted
+  underwriting
+  offers_presented
+  accepted
+  contracted
+  funding
+  active
+  declined
+  cancelled
+  expired
+}
+
+enum OfferStatus {
+  presented
+  accepted
+  expired
+  withdrawn
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   /// PII — searchable; deterministic-encrypted at rest in app layer
@@ -52,6 +88,7 @@ model User {
 
   sessions        Session[]
   consumerProfile ConsumerProfile?
+  applications    Application[]
 
   @@map("users")
 }
@@ -132,6 +169,74 @@ model IdempotencyRecord {
 
   @@index([expiresAt])
   @@map("idempotency_records")
+}
+
+// Lending application lifecycle. State transitions are validated by the
+// XState machine in services/application; persistence is in this table.
+// Money columns are BigInt cents — never floats.
+model Application {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @db.Uuid @map("user_id")
+  user          User                @relation(fields: [userId], references: [id])
+  merchantId    String?             @db.Uuid @map("merchant_id")
+  channel       OriginationChannel  @default(consumer_direct)
+  category      LoanCategory
+  /// Money — integer cents (BigInt). Float math is banned by `Cents` brand.
+  requestedAmountCents BigInt        @map("requested_amount_cents")
+  termMonths    Int                 @map("term_months")
+  purposeDetail String?             @map("purpose_detail")
+  status        ApplicationStatus   @default(draft)
+
+  // Decision artefacts. Filled in over the application lifecycle by
+  // decisioning + orchestration. Snapshot fields, not the full record.
+  riskScore           Int?    @map("risk_score")
+  affordabilityPasses Boolean? @map("affordability_passes")
+  declineReasonCodes  String[] @default([]) @map("decline_reason_codes")
+  policyVersion       String? @map("policy_version")
+
+  submittedAt DateTime? @db.Timestamptz(6) @map("submitted_at")
+  decisionAt  DateTime? @db.Timestamptz(6) @map("decision_at")
+  expiresAt   DateTime? @db.Timestamptz(6) @map("expires_at")
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  offers Offer[]
+
+  @@index([userId, createdAt])
+  @@index([merchantId, createdAt])
+  @@index([status])
+  @@map("applications")
+}
+
+model Offer {
+  id              String      @id @default(uuid()) @db.Uuid
+  applicationId   String      @db.Uuid @map("application_id")
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  lenderProductId String      @db.Uuid @map("lender_product_id")
+  /// Lender of record (partner bank or licensed entity) — see ADR-0008
+  lenderOfRecord  String      @map("lender_of_record")
+
+  /// Money — integer cents
+  amountCents          BigInt @map("amount_cents")
+  termMonths           Int    @map("term_months")
+  /// APR in basis points (e.g. 1799 = 17.99% APR)
+  aprBps               Int    @map("apr_bps")
+  /// Reg Z comparison rate in bps; null if not yet computed
+  comparisonRateBps    Int?   @map("comparison_rate_bps")
+  /// Money — integer cents
+  feesCents            BigInt @map("fees_cents")
+  /// Money — integer cents
+  totalRepayableCents  BigInt @map("total_repayable_cents")
+
+  rank      Int
+  status    OfferStatus @default(presented)
+  expiresAt DateTime    @db.Timestamptz(6) @map("expires_at")
+  createdAt DateTime    @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime    @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([applicationId, rank])
+  @@index([applicationId, status])
+  @@map("offers")
 }
 
 // Outbox pattern for audit log: every regulated mutation writes a row here

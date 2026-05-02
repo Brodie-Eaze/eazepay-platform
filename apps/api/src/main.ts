@@ -2,6 +2,14 @@ import 'reflect-metadata';
 import { loadEnv } from './config/env.js';
 import { startTracing, stopTracing } from './observability/tracing.js';
 
+// Fastify's default JSON serializer cannot encode BigInt. We encode as
+// strings so callers always receive money columns as strings — matching
+// the OpenAPI contract and avoiding precision loss across language
+// boundaries that don't have BigInt.
+(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
+  return this.toString();
+};
+
 // Tracing must start before NestFactory so auto-instrumentation patches modules at import time.
 const env = loadEnv();
 startTracing(env.OTEL_SERVICE_NAME, env.OTEL_EXPORTER_OTLP_ENDPOINT);

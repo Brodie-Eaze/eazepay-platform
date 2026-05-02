@@ -16,6 +16,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
+    "@eazepay/service-application": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
     "@eazepay/service-user": "workspace:*",
     "@eazepay/shared-types": "workspace:*",

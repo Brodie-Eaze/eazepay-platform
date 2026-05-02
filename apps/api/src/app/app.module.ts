@@ -3,6 +3,7 @@ import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
 import { UserModule } from '@eazepay/service-user';
+import { ApplicationModule } from '@eazepay/service-application';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -38,6 +39,7 @@ const env = loadEnv();
       kycProvider: env.KYC_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
     }),
+    ApplicationModule.forRoot({ prismaToken: PrismaService }),
     LoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
