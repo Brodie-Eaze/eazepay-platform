@@ -1,0 +1,69 @@
+import 'reflect-metadata';
+import { loadEnv } from './config/env.js';
+import { startTracing, stopTracing } from './observability/tracing.js';
+
+// Tracing must start before NestFactory so auto-instrumentation patches modules at import time.
+const env = loadEnv();
+startTracing(env.OTEL_SERVICE_NAME, env.OTEL_EXPORTER_OTLP_ENDPOINT);
+
+const { NestFactory } = await import('@nestjs/core');
+const { FastifyAdapter, type NestFastifyApplication } = await import(
+  '@nestjs/platform-fastify'
+);
+const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
+const { ValidationPipe, Logger } = await import('@nestjs/common');
+const { Logger: PinoLogger } = await import('nestjs-pino');
+const { AppModule } = await import('./app/app.module.js');
+
+const bootstrap = async (): Promise<void> => {
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({ trustProxy: true, bodyLimit: 1024 * 1024 }),
+    { bufferLogs: true },
+  );
+
+  app.useLogger(app.get(PinoLogger));
+  app.setGlobalPrefix('v1');
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.enableCors({
+    origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : false,
+    credentials: true,
+  });
+
+  if (env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('EazePay API')
+      .setDescription('Public + internal API surface for the EazePay platform')
+      .setVersion('0.0.0')
+      .addBearerAuth()
+      .addApiKey({ type: 'apiKey', name: 'X-Api-Key', in: 'header' }, 'apiKey')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
+
+  await app.listen(env.PORT, '0.0.0.0');
+  Logger.log(`EazePay API listening on :${env.PORT} (${env.NODE_ENV})`, 'Bootstrap');
+};
+
+const shutdown = async (signal: string): Promise<void> => {
+  Logger.log(`Received ${signal}, shutting down`, 'Bootstrap');
+  await stopTracing();
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
+
+bootstrap().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error('Bootstrap failed', err);
+  process.exit(1);
+});
