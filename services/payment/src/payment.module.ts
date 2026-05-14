@@ -69,6 +69,7 @@ export class PaymentModule {
 
     return {
       module: PaymentModule,
+      global: true,
       controllers: [LoanController, PaymentMethodController],
       providers,
       exports: [PaymentService],

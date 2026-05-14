@@ -31,13 +31,13 @@ import type { ObjectStorage } from '@eazepay/shared-utils';
 export class DevStorageController {
   constructor(@Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage) {}
 
-  @Get(':bucket/:key(*)')
+  @Get(':bucket/*')
   @ApiOperation({
     summary: 'DEV ONLY: serve a previously presigned read URL after HMAC check',
   })
   async read(
     @Param('bucket') bucket: string,
-    @Param('key') key: string,
+    @Param('*') key: string,
     @Query('sig') sig: string,
     @Query('exp') exp: string,
     @Query('fn') filename: string | undefined,

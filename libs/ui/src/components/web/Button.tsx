@@ -1,5 +1,5 @@
 import { type ButtonHTMLAttributes, type FC } from 'react';
-import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index.js';
+import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index';
 
 type Variant = 'primary' | 'secondary' | 'tertiary' | 'destructive' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';

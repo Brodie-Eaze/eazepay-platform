@@ -1,1 +1,1 @@
-export const PRISMA = Symbol('PRISMA');
+export const PRISMA = Symbol.for('eazepay.prisma');

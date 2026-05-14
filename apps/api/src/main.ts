@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import { config as loadDotenv } from 'dotenv';
+loadDotenv();
 import { loadEnv } from './config/env.js';
 import { startTracing, stopTracing } from './observability/tracing.js';
 
@@ -14,10 +16,9 @@ import { startTracing, stopTracing } from './observability/tracing.js';
 const env = loadEnv();
 startTracing(env.OTEL_SERVICE_NAME, env.OTEL_EXPORTER_OTLP_ENDPOINT);
 
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 const { NestFactory } = await import('@nestjs/core');
-const { FastifyAdapter, type NestFastifyApplication } = await import(
-  '@nestjs/platform-fastify'
-);
+const { FastifyAdapter } = await import('@nestjs/platform-fastify');
 const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
 const { ValidationPipe, Logger } = await import('@nestjs/common');
 const { Logger: PinoLogger } = await import('nestjs-pino');
@@ -42,8 +43,29 @@ const bootstrap = async (): Promise<void> => {
     }),
   );
 
+  // CORS allowlist = exact origins (CORS_ORIGINS) ∪ regex patterns
+  // (CORS_ORIGIN_PATTERNS). The patterns let us approve every Lovable
+  // preview without enumerating each commit hash. Same-origin and
+  // missing-Origin requests fall through to allow (callback(null, true))
+  // because Fastify's cors plugin already handles those defensively.
+  const exact = new Set(env.CORS_ORIGINS);
+  const patterns = env.CORS_ORIGIN_PATTERNS;
   app.enableCors({
-    origin: env.CORS_ORIGINS.length > 0 ? env.CORS_ORIGINS : false,
+    origin: (origin, cb): void => {
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      if (exact.has(origin)) {
+        cb(null, true);
+        return;
+      }
+      if (patterns.some((p) => p.test(origin))) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error('cors_origin_not_allowed'), false);
+    },
     credentials: true,
   });
 

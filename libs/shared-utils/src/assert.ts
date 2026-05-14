@@ -1,4 +1,4 @@
-import { InternalError } from './problem.js';
+import { InternalError } from './problem';
 
 export function assert(condition: unknown, message = 'Invariant violated'): asserts condition {
   if (!condition) {

@@ -1,21 +1,15 @@
 import type { ReactNode } from 'react';
-import { lightColors } from '@eazepay/ui/tokens';
+import '@eazepay/ui/styles/globals.css';
 
-export const metadata = { title: 'EazePay' };
+export const metadata = {
+  title: 'EazePay — Finance your purchase',
+  description: 'Apply for embedded finance in minutes. Real offers, real lenders, no impact to your credit score until you accept.',
+};
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function ConsumerLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          backgroundColor: lightColors.bgDefault,
-          color: lightColors.textPrimary,
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-        }}
-      >
-        {children}
-      </body>
+    <html lang="en" data-theme="light">
+      <body>{children}</body>
     </html>
   );
 }

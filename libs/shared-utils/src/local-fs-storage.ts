@@ -5,8 +5,8 @@ import type {
   ObjectStorage,
   ObjectStoragePutInput,
   ObjectStoragePutResult,
-} from './object-storage.js';
-import { NotFound } from './problem.js';
+} from './object-storage';
+import { NotFound } from './problem';
 
 /**
  * DEV ONLY filesystem-backed ObjectStorage. Stores objects under a root

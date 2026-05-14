@@ -1,5 +1,5 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { loadEnv } from '../config/env.js';
 
 @Injectable()

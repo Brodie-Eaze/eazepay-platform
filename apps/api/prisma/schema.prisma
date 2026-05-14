@@ -23,6 +23,21 @@ enum UserStatus {
   closed
 }
 
+/// Internal-staff RBAC. Non-null on a User means this account is an
+/// EazePay staff member, not a consumer. The `AdminGuard.isAdmin`
+/// boolean is a coarser legacy flag that still gates the existing
+/// admin surface; new endpoints should check `platformRole` for the
+/// finer-grained Master Command Centre RBAC the partner portal
+/// expects.
+enum PlatformRole {
+  master_admin   // EazePay ops; cross-tenant; can manage other staff
+  admin          // Tenant admin within a brand
+  underwriter    // Read application detail + decision; cannot manage users
+  compliance     // Read/close ComplianceReviews + risk flags
+  support        // Read-only customer + application access, ticketing
+  read_only      // Reporting / observer
+}
+
 enum KycStatus {
   not_started
   in_progress
@@ -79,6 +94,82 @@ enum LenderTier {
   near_prime
   bnpl
   subprime
+}
+
+/// Credit-tier classification returned by the soft-pull provider
+/// (Highsale today; pluggable). Determines which lender pool the
+/// orchestration engine evaluates and which offer screen the consumer
+/// sees.
+enum CreditTier {
+  prime_plus
+  prime
+  near_prime
+  sub_prime
+  no_match
+}
+
+/// A wholesale lender marketplace that exposes many lenders behind one
+/// integration (e.g. engine.tech). Different from a direct adapter
+/// because the marketplace can add / remove lenders without our
+/// engineering team touching code.
+enum MarketplaceProvider {
+  engine_tech
+  in_house
+  affiliate_network
+  manual
+}
+
+enum MarketplaceStatus {
+  active
+  paused
+  disconnected
+}
+
+/// Branded sub-products of the EazePay platform. Each brand is a
+/// distinct consumer-facing surface (logo + landing + apply variant)
+/// that routes to the same orchestration engine but with a tier mix
+/// optimised for that vertical. A LenderProduct carries one brand;
+/// a Merchant signs up under one brand at onboarding.
+enum ProductBrand {
+  medpay    // medical, dental, vet, vision, fertility
+  tradepay  // home improvement, solar, roof, HVAC, contractor
+  coachpay  // coaching, certifications, professional services
+  direct    // EazePay direct consumer (any purpose)
+}
+
+enum LenderConnectionStatus {
+  draft           // created in admin, no credentials yet
+  awaiting_creds  // creds requested, waiting on partner
+  testing         // creds present, running sandbox handshake
+  sandbox_active  // sandbox traffic only
+  live            // routing live applications
+  paused          // ops-suspended; credentials retained
+  revoked         // credentials wiped; cannot re-enable without re-issue
+}
+
+enum LenderConnectionEnv {
+  sandbox
+  live
+}
+
+enum LenderHealthcheckOutcome {
+  ok
+  timeout
+  auth_failure
+  schema_mismatch
+  http_error
+  network_error
+}
+
+/// Lifecycle of a Highsale soft-pull snapshot. Promoted from
+/// stringly-typed to an enum because orchestration branches on it
+/// (`scored` gates offer surfacing, `expired` triggers re-pull,
+/// `failed` triggers the manual-review fallback).
+enum HighsaleSnapshotStatus {
+  pending
+  scored
+  expired
+  failed
 }
 
 enum LenderRouteOutcome {
@@ -266,9 +357,14 @@ enum WebhookDeliveryStatus {
 
 model User {
   id           String     @id @default(uuid()) @db.Uuid
-  /// PII — searchable; deterministic-encrypted at rest in app layer
+  /// PII — searchable. Stored plaintext at rest today (MVP).
+  /// Tracked in `docs/soc2/remediation.md`:
+  /// migrate to deterministic AES-SIV with a per-tenant pepper +
+  /// HMAC blind index before SOC 2 Type II. Until then, treat the
+  /// `users` table as restricted-class data and minimise direct
+  /// reads outside the auth/profile services.
   email        String?    @unique
-  /// PII — searchable; deterministic-encrypted at rest in app layer
+  /// PII — searchable; same MVP-vs-target as `email` above.
   phoneE164    String?    @unique @map("phone_e164")
   /// SECRET — Argon2id; only present for service accounts. Consumer auth via Cognito.
   passwordHash String?    @map("password_hash")
@@ -278,6 +374,19 @@ model User {
   /// elevation; documented in docs/ARCHITECTURE.md §16. Set manually
   /// (or via seed) for ops engineers; never user-settable.
   isAdmin      Boolean    @default(false) @map("is_admin")
+  /// Non-null marks this account as EazePay platform staff. Drives the
+  /// Master Command Centre / partner-portal Team page. Consumers have
+  /// `platformRole = null`. Setting to non-null does NOT auto-flip
+  /// `isAdmin`; the legacy boolean gates the existing admin guard
+  /// while we migrate routes over to role-aware checks.
+  platformRole PlatformRole? @map("platform_role")
+  /// Display name shown in the team UI. Optional — falls back to
+  /// email when null.
+  displayName  String?       @map("display_name")
+  /// Audit breadcrumbs for the team management UI.
+  invitedAt    DateTime?     @db.Timestamptz(6) @map("invited_at")
+  invitedById  String?       @db.Uuid @map("invited_by_id")
+  lastSeenAt   DateTime?     @db.Timestamptz(6) @map("last_seen_at")
   createdAt    DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt    DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
 
@@ -285,6 +394,7 @@ model User {
   consumerProfile ConsumerProfile?
   applications    Application[]
 
+  @@index([platformRole])
   @@map("users")
 }
 
@@ -293,8 +403,10 @@ model User {
 // dataKeyCiphertext is the per-record DEK encrypted by the KEK (KMS in
 // prod, local-dev KEK from env in development).
 //
-// Searchable fields like email/phone live on User (deterministic-encrypted
-// at the app layer, not here). Anything in this blob is opaque at rest.
+// Searchable fields like email/phone live on User. Today those are
+// stored plaintext at rest (MVP); the target state is deterministic
+// AES-SIV with a per-tenant pepper + HMAC blind index (tracked in
+// docs/soc2/remediation.md). Anything in this blob is opaque at rest.
 model ConsumerProfile {
   id     String @id @default(uuid()) @db.Uuid
   userId String @unique @db.Uuid @map("user_id")
@@ -388,6 +500,9 @@ model Application {
   affordabilityPasses Boolean? @map("affordability_passes")
   declineReasonCodes  String[] @default([]) @map("decline_reason_codes")
   policyVersion       String? @map("policy_version")
+  /// Denormalised from HighsaleSnapshot.creditTier for fast filtering
+  /// on dashboards. Authoritative value lives on the snapshot row.
+  creditTier          CreditTier? @map("credit_tier")
 
   submittedAt DateTime? @db.Timestamptz(6) @map("submitted_at")
   decisionAt  DateTime? @db.Timestamptz(6) @map("decision_at")
@@ -395,9 +510,11 @@ model Application {
   createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt   DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
 
-  offers    Offer[]
-  contracts Contract[]
-  loans     Loan[]
+  offers           Offer[]
+  contracts        Contract[]
+  loans            Loan[]
+  lenderRoutes     LenderRoute[]
+  highsaleSnapshot HighsaleSnapshot?
 
   @@index([userId, createdAt])
   @@index([merchantId, createdAt])
@@ -450,7 +567,7 @@ model Contract {
   offerId           String         @unique @db.Uuid @map("offer_id")
   offer             Offer          @relation(fields: [offerId], references: [id], onDelete: Restrict)
   signatureProvider String         @map("signature_provider") // 'mock' | 'docusign' | 'dropbox_sign'
-  envelopeId        String         @map("envelope_id")
+  envelopeId        String         @unique @map("envelope_id")
   /// Hash of the rendered contract document at signing time. Audit anchor.
   documentSha256    String?        @map("document_sha256")
   status            ContractStatus @default(drafted)
@@ -513,10 +630,91 @@ model Lender {
   createdAt     DateTime        @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt     DateTime        @updatedAt @db.Timestamptz(6) @map("updated_at")
 
-  products LenderProduct[]
-  routes   LenderRoute[]
+  products    LenderProduct[]
+  routes      LenderRoute[]
+  connections LenderConnection[]
 
   @@map("lenders")
+}
+
+/// A live integration with an external lender — credentials, URLs,
+/// webhook secret, scopes, and operational metrics. One Lender may
+/// have multiple connections (sandbox + live, or per region).
+///
+/// All secrets are stored encrypted via the same envelope scheme as
+/// PII (KMS-wrapped data keys + per-row AAD). Plaintext only ever
+/// lives in process memory for the duration of an outbound call.
+///
+/// "Plug in API keys" — this is the row admin ops creates when a new
+/// lender partner gives us their sandbox credentials. The connect
+/// wizard in the admin console writes here.
+model LenderConnection {
+  id           String              @id @default(uuid()) @db.Uuid
+  lenderId     String              @db.Uuid @map("lender_id")
+  lender       Lender              @relation(fields: [lenderId], references: [id], onDelete: Cascade)
+
+  /// Display label for ops, e.g. "Evergreen Prime — sandbox", "Acme — prod us-east"
+  label        String
+  env          LenderConnectionEnv
+  status       LenderConnectionStatus @default(draft)
+  brand        ProductBrand           @default(direct)
+
+  /// HTTPS base URL of the partner's adapter API
+  baseUrl      String              @map("base_url")
+  /// Webhook URL EazePay calls (callback URL the partner gave us)
+  inboundWebhookUrl  String?       @map("inbound_webhook_url")
+  /// Path on EazePay's side that receives the partner's webhooks
+  /// (full URL = our base + /v1/webhooks/lenders/{id})
+  outboundWebhookPath String       @default("") @map("outbound_webhook_path")
+
+  /// Scopes (capability flags) granted by the partner's API key
+  scopes              String[]     @default([])
+
+  /// Encrypted credentials — base64-encoded envelope (data-key + ciphertext + tag)
+  apiKeyCiphertext    String?      @map("api_key_ciphertext")
+  apiKeyFingerprint   String?      @map("api_key_fingerprint")
+  apiSecretCiphertext String?      @map("api_secret_ciphertext")
+  webhookSecretCiphertext String?  @map("webhook_secret_ciphertext")
+
+  /// Last sandbox handshake / production health check
+  lastHealthcheckAt      DateTime?                @db.Timestamptz(6) @map("last_healthcheck_at")
+  lastHealthcheckOutcome LenderHealthcheckOutcome? @map("last_healthcheck_outcome")
+  lastHealthcheckLatencyMs Int?                   @map("last_healthcheck_latency_ms")
+
+  /// Rolling 1h failure count; orchestration uses this to short-circuit
+  /// open the breaker.
+  failureCount1h Int @default(0) @map("failure_count_1h")
+
+  /// Whoever activated this connection in the admin console.
+  activatedById  String?  @db.Uuid @map("activated_by_id")
+  activatedAt    DateTime? @db.Timestamptz(6) @map("activated_at")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  healthchecks LenderHealthcheck[]
+
+  @@index([status])
+  @@index([brand, status])
+  @@map("lender_connections")
+}
+
+/// Append-only log of every connectivity probe we ran against a
+/// LenderConnection. Surfaces in the admin console so ops can show a
+/// partner exactly why their integration was failing.
+model LenderHealthcheck {
+  id           String                    @id @default(uuid()) @db.Uuid
+  connectionId String                    @db.Uuid @map("connection_id")
+  connection   LenderConnection          @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  at           DateTime                  @default(now()) @db.Timestamptz(6)
+  outcome      LenderHealthcheckOutcome
+  latencyMs    Int?                      @map("latency_ms")
+  httpStatus   Int?                      @map("http_status")
+  detail       String?
+  initiatedBy  String?                   @map("initiated_by") // "system" | user id
+
+  @@index([connectionId, at])
+  @@map("lender_healthchecks")
 }
 
 model LenderProduct {
@@ -526,6 +724,11 @@ model LenderProduct {
   /// Stable id matching the product configuration in code (e.g. "buzzpay_personal").
   productKey String @unique @map("product_key")
   name      String
+  /// Which branded surface this product appears under. The same
+  /// LenderProduct may also be exposed via a second product row under
+  /// a different brand; orchestration treats them as separate
+  /// candidates so per-brand routing is clean.
+  brand          ProductBrand   @default(direct)
   /// Eligibility envelope. Money in BigInt cents; APR in bps.
   category       LoanCategory
   minAmountCents BigInt        @map("min_amount_cents")
@@ -535,6 +738,13 @@ model LenderProduct {
   /// State-rules-matrix gating — empty = all permitted states; non-empty = allowlist.
   permittedStates String[] @default([]) @map("permitted_states")
   enabled         Boolean  @default(true)
+
+  /// If this product was sourced from a marketplace (engine.tech etc.),
+  /// the originating MarketplaceLender row. Null = direct integration.
+  /// Lets every Offer + LenderRoute trace back to the override row that
+  /// gated it — closes the audit gap flagged in ADR-0018.
+  marketplaceLenderId String?            @db.Uuid @map("marketplace_lender_id")
+  marketplaceLender   MarketplaceLender? @relation(fields: [marketplaceLenderId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
@@ -577,7 +787,10 @@ model Merchant {
   slug          String         @unique
   legalName     String         @map("legal_name")
   dba           String?        @map("dba")
-  /// PII — searchable; deterministic-encrypted at rest in app layer
+  /// PII — searchable. Stored plaintext at rest today (MVP). Target
+  /// state: deterministic AES-SIV + per-tenant pepper + HMAC blind
+  /// index; tracked in docs/soc2/remediation.md. Treat
+  /// `merchants.ein` as restricted-class data in the interim.
   ein           String?        @unique
   formationState String?       @db.VarChar(2) @map("formation_state")
   /// 6-digit NAICS code; used for risk tiering + MCC mapping
@@ -586,6 +799,11 @@ model Merchant {
   mcc           String?        @map("mcc")
   industry      String?
   website       String?
+
+  /// Which branded surface this merchant signed up under. Defaults to
+  /// direct (any-purpose EazePay) and is set at onboarding based on
+  /// MCC / industry. Drives the apply-flow branding the customer sees.
+  brand     ProductBrand   @default(direct)
 
   status    MerchantStatus @default(pending)
   kybStatus KybStatus      @default(not_started) @map("kyb_status")
@@ -606,6 +824,7 @@ model Merchant {
   users            MerchantUser[]
   beneficialOwners BeneficialOwner[]
   applicationLinks ApplicationLink[]
+  lenderAccess     PartnerLenderAccess[]
 
   @@index([status])
   @@map("merchants")
@@ -921,7 +1140,7 @@ model PiiUnmaskRequest {
   requestedByUserId String   @db.Uuid @map("requested_by_user_id")
   approvedByUserId  String?  @db.Uuid @map("approved_by_user_id")
   approvedAt        DateTime? @db.Timestamptz(6) @map("approved_at")
-  /** Wall-clock validity. Once past, status flips to 'expired' on next read. */
+  /// Wall-clock validity. Once past, status flips to 'expired' on next read.
   expiresAt         DateTime? @db.Timestamptz(6) @map("expires_at")
   revokedAt         DateTime? @db.Timestamptz(6) @map("revoked_at")
   revokedByUserId   String?   @db.Uuid @map("revoked_by_user_id")
@@ -1070,4 +1289,138 @@ model AuditOutbox {
   @@index([publishedAt])
   @@index([targetType, targetId])
   @@map("audit_outbox")
+}
+
+/// A wholesale lender marketplace — a single integration exposing
+/// many lenders. Adding a lender available through an active
+/// marketplace requires no code change.
+///
+/// Examples: engine.tech, an in-house lender pool, an affiliate
+/// network. Each `MarketplaceLender` is the toggleable row a Master
+/// admin operates against in the Command Centre.
+model Marketplace {
+  id           String              @id @default(uuid()) @db.Uuid
+  slug         String              @unique
+  legalName    String              @map("legal_name")
+  displayName  String              @map("display_name")
+  provider     MarketplaceProvider
+  status       MarketplaceStatus   @default(active)
+  apiBaseUrl   String?             @map("api_base_url")
+  /// Webhook secret used to verify inbound updates. Envelope-encrypted
+  /// via the same scheme as LenderConnection credentials.
+  webhookSecretCiphertext String?  @map("webhook_secret_ciphertext")
+  /// Last-known lender count, refreshed by a daily sync job.
+  lenderCount  Int                 @default(0) @map("lender_count")
+  lastSyncAt   DateTime?           @db.Timestamptz(6) @map("last_sync_at")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  lenders MarketplaceLender[]
+
+  @@index([status])
+  @@map("marketplaces")
+}
+
+/// A specific lender exposed through a Marketplace. The row a Master
+/// admin can toggle globally; the row a PartnerLenderAccess override
+/// can deny per partner.
+///
+/// Credit-tier + brand filters here are the routing fences:
+/// orchestration only evaluates a MarketplaceLender if the applicant's
+/// `CreditTier` is in `servesTiers` AND the partner's brand is in
+/// `brands` (or `brands` is empty, meaning "all brands").
+model MarketplaceLender {
+  id               String         @id @default(uuid()) @db.Uuid
+  marketplaceId    String         @db.Uuid @map("marketplace_id")
+  marketplace      Marketplace    @relation(fields: [marketplaceId], references: [id], onDelete: Cascade)
+  externalLenderId String         @map("external_lender_id")
+  legalName        String         @map("legal_name")
+  displayName      String         @map("display_name")
+  /// Tiers this lender serves. Applicants are filtered by tier.
+  servesTiers      CreditTier[]   @default([]) @map("serves_tiers")
+  /// Brand allowlist. Empty = available to every brand. Non-empty =
+  /// only Merchants on these brands see this lender.
+  brands           ProductBrand[] @default([]) @map("brands")
+  /// Loan envelope (cents) and minimum bureau score.
+  minAmountCents   BigInt         @map("min_amount_cents")
+  maxAmountCents   BigInt         @map("max_amount_cents")
+  minScore         Int?           @map("min_score")
+  permittedStates  String[]       @default([]) @map("permitted_states")
+  /// Global kill switch. When false, no partner can route to this lender.
+  globallyEnabled  Boolean        @default(true) @map("globally_enabled")
+  syncedAt         DateTime       @default(now()) @db.Timestamptz(6) @map("synced_at")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  accessOverrides PartnerLenderAccess[]
+  products        LenderProduct[]
+
+  @@unique([marketplaceId, externalLenderId])
+  @@index([marketplaceId, globallyEnabled])
+  @@map("marketplace_lenders")
+}
+
+/// Per-partner override of a marketplace lender's availability. The
+/// inheritance rule is:
+///   - No row     → inherit `MarketplaceLender.globallyEnabled`
+///   - Row exists → use `enabled` (deny or force-allow regardless of global)
+///
+/// Lets Master admins disable a lender for one partner only (e.g. while
+/// a compliance review is open) without affecting the rest of the
+/// platform.
+model PartnerLenderAccess {
+  id                  String            @id @default(uuid()) @db.Uuid
+  merchantId          String            @db.Uuid @map("merchant_id")
+  merchant            Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  marketplaceLenderId String            @db.Uuid @map("marketplace_lender_id")
+  /// Restrict (not Cascade): a MarketplaceLender being de-synced from
+  /// its upstream provider must not silently wipe the per-partner
+  /// override history. The audit chain needs those rows. To remove a
+  /// lender, soft-delete via `globallyEnabled=false` first, then clean
+  /// up access rows on a documented schedule.
+  marketplaceLender   MarketplaceLender @relation(fields: [marketplaceLenderId], references: [id], onDelete: Restrict)
+  enabled             Boolean
+  reason              String?
+  /// User id of the admin who flipped this row.
+  changedById         String?           @db.Uuid @map("changed_by_id")
+  changedAt           DateTime          @default(now()) @db.Timestamptz(6) @map("changed_at")
+
+  @@unique([merchantId, marketplaceLenderId])
+  @@index([merchantId])
+  @@map("partner_lender_access")
+}
+
+/// Soft-pull snapshot from Highsale (third-party credit + financial-
+/// data aggregator). One per application; expires per Highsale policy
+/// (typically 14 days).
+///
+/// Sensitive payload is envelope-encrypted via `PiiVaultService`. We
+/// store the assigned credit tier denormalised so dashboards can
+/// filter without decrypting.
+model HighsaleSnapshot {
+  id                 String      @id @default(uuid()) @db.Uuid
+  applicationId      String      @unique @db.Uuid @map("application_id")
+  application        Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  /// Highsale's stable reference id for this pull.
+  highsaleRef        String      @unique @map("highsale_ref")
+  creditTier         CreditTier  @map("credit_tier")
+  ficoBand           String?     @map("fico_band")
+  /// Encrypted financial summary (account count, income ranges,
+  /// tradeline counts, etc.). Read via PiiVaultService.
+  payloadCiphertext  String      @map("payload_ciphertext")
+  payloadFingerprint String      @map("payload_fingerprint")
+  /// SHA-256 of the inputs sent to Highsale. Lets the audit chain
+  /// prove the snapshot belongs to this application's inputs.
+  inputsHash         String      @map("inputs_hash")
+  inquiryAt          DateTime               @db.Timestamptz(6) @map("inquiry_at")
+  expiresAt          DateTime               @db.Timestamptz(6) @map("expires_at")
+  status             HighsaleSnapshotStatus @default(pending)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  @@index([creditTier, status])
+  @@map("highsale_snapshots")
 }

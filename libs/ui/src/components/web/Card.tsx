@@ -1,5 +1,5 @@
 import { type FC, type HTMLAttributes } from 'react';
-import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index.js';
+import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index';
 
 export const Card: FC<
   HTMLAttributes<HTMLDivElement> & { theme?: ThemeMode; padded?: boolean }

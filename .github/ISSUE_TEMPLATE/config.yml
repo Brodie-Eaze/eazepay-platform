@@ -1,0 +1,19 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/eazepay/eazepay/security/advisories/new
+    about: |
+      Report a security vulnerability privately. Do NOT file a public
+      issue. See SECURITY.md for the policy + response SLAs.
+  - name: Production incident
+    url: https://eazepay.pagerduty.com
+    about: |
+      Page the on-call rotation via PagerDuty. Anything affecting live
+      consumers, money movement, or audit integrity belongs here, not
+      on GitHub.
+  - name: Compliance / regulator request
+    url: mailto:compliance@eazepay.com
+    about: |
+      State AG inquiries, CFPB complaints, partner-bank audit requests,
+      or any other regulator-touching item. Goes through compliance,
+      not engineering.

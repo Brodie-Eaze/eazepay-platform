@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { sha256Hex, BadRequest, TooManyRequests, Unauthorized } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 

@@ -1,0 +1,33 @@
+# Railway service configuration for the EazePay partner-portal +
+# public landing pages + lender developer hub + /apply consumer flow.
+#
+# Single Next.js service runs every route in the demo:
+#   /landing/medpay        public landing for prospective merchants
+#   /landing/tradepay      public landing for prospective merchants
+#   /landing/coachpay      public landing for prospective merchants
+#   /apply/<brand>         consumer apply flow (3 brand variants)
+#   /lenders               public lender developer hub
+#   /docs                  public API reference
+#   /sign-in               operator + brand-portal login
+#   /v/<brand>/...         per-brand merchant portal
+#   /marketplaces, /onboarding-pipeline, /lender-marketplace, etc.
+#                          internal command-centre surfaces
+#
+# Deploy command (after `railway link`):
+#   railway up
+#
+# The Dockerfile builds the Next.js standalone bundle; Railway sets
+# $PORT at runtime and the container binds 0.0.0.0:$PORT.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Run `node apps/partner-portal/server.js` (set as the Dockerfile CMD).
+startCommand = "node apps/partner-portal/server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+# Railway will inject $PORT; the container binds to it automatically.
+healthcheckPath = "/sign-in"
+healthcheckTimeout = 30

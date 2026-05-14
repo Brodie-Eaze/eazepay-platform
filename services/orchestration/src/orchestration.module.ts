@@ -14,6 +14,7 @@ export class OrchestrationModule {
     const prisma: Provider = { provide: PRISMA, useExisting: options.prismaToken as never };
     return {
       module: OrchestrationModule,
+      global: true,
       providers: [prisma, DecisionService, OrchestrationService],
       exports: [OrchestrationService],
     };

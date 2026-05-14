@@ -14,11 +14,15 @@ document this code implements.
 apps/
 ├── api                  Public + BFF (NestJS + Fastify, port 3000)
 ├── workers              Standalone crons (collection / webhooks / audit drain)
-├── webhooks             Standalone inbound webhook receiver (blast-radius isolation)
-├── consumer-mobile      React Native (Expo) — iOS + Android
+├── webhooks             Standalone inbound webhook receiver (port 3010, blast-radius isolation)
 ├── consumer-web         Next.js — hosted apply page, fallback web flow (3001)
+├── consumer-mobile      React Native (Expo) — iOS + Android
 ├── merchant-dashboard   Next.js — merchant operator UI (3002)
-└── admin-console        Next.js — internal ops + compliance (3003)
+├── admin-console        Next.js — internal ops + compliance (3003)
+├── partner-portal       Next.js — landing pages + operator portal +
+│                        brand-scoped merchant views (3004) — deployed
+│                        to Railway, see RAILWAY_DEPLOY.md
+└── developer-portal     Next.js — lender developer hub (3005)
 
 services/                @eazepay/service-* packages, modular monolith
 ├── auth                 Cognito + custom session/device layer
@@ -33,14 +37,23 @@ services/                @eazepay/service-* packages, modular monolith
 ├── risk                 Composite risk scoring + RiskFlag taxonomy
 ├── audit                AuditOutbox drain → hash-chained immutable sink
 ├── webhook              Outbound merchant webhooks + dispatcher cron
-└── admin                Admin queue + decline override + JIT PII unmask
+├── admin                Admin queue + decline override + JIT PII unmask
+├── analytics            Aggregations + reporting reads (placeholder)
+├── compliance           FCRA/ECOA/TILA enforcement + audit (placeholder)
+├── decision             Standalone decisioning engine (placeholder)
+├── document             Generic document store / KYC artifacts (placeholder)
+├── featureflag          Feature flag evaluation (placeholder)
+└── integration          External system integration layer (placeholder)
 
 libs/
 ├── shared-types         Money (BigInt cents), branded ids, Zod primitives
 ├── shared-utils         Problem (RFC 7807), AES-GCM + envelope encryption,
 │                        ObjectStorage port + LocalFs adapter, hash helpers
 ├── ui                   Design tokens (light + dark) + web component lib
-└── api-client           Framework-free fetch client for every frontend
+├── api-client           Framework-free fetch client for every frontend
+├── feature-flags-sdk    Client-side flag hook (server in services/featureflag)
+├── observability        Pino + OpenTelemetry setup helpers
+└── testing              Shared test utilities + fixtures
 
 infra/terraform/
 ├── modules              network / aurora / ecs-service / kms / s3-bucket /
@@ -49,9 +62,46 @@ infra/terraform/
 
 docs/
 ├── ARCHITECTURE.md      The CTO blueprint (US, ~1500 lines)
-├── adr/                 12 architecture decision records
+├── adr/                 Architecture decision records
 └── runbooks/            local-development, incident-response, terraform-bootstrap
 ```
+
+## Quick start for engineers
+
+```bash
+# 1. Install everything (pnpm workspaces).
+pnpm install
+
+# 2. Browse the deployed surface without any backend running.
+pnpm --filter @eazepay/partner-portal dev
+# → http://localhost:3004/landing/medpay
+# → http://localhost:3004/landing/tradepay
+# → http://localhost:3004/landing/coachpay
+# → http://localhost:3004/sign-in
+# → http://localhost:3004/   (master operator command centre)
+
+# 3. Bring up the backend stack (Postgres + Redis via docker-compose).
+docker compose up -d
+pnpm --filter @eazepay/api prisma:migrate:dev
+pnpm --filter @eazepay/api dev
+# → http://localhost:3000        REST API
+# → http://localhost:3000/docs   Swagger
+
+# 4. Run the worker process if you want crons to fire locally.
+pnpm --filter @eazepay/workers dev
+```
+
+Full local setup details + troubleshooting in
+[`docs/runbooks/local-development.md`](docs/runbooks/local-development.md).
+
+## Deployed environments
+
+| Surface | Environment | URL |
+|---|---|---|
+| `partner-portal` | Railway production | https://eazepay-platform-production.up.railway.app |
+
+See [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md) for the deploy recipe,
+env vars, and route-by-audience reference.
 
 ## What works
 
@@ -78,10 +128,6 @@ End-to-end in dev with mock providers wired:
   composed; bootstrap docs at `infra/runbooks/terraform-bootstrap.md`).
 - App store submissions / NMLS licenses / SOC 2 audit.
 - Production-grade UI design + copy.
-
-## Quick start
-
-See [`docs/runbooks/local-development.md`](docs/runbooks/local-development.md).
 
 ## Contributing
 

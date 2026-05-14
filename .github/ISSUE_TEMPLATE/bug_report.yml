@@ -1,0 +1,96 @@
+name: Bug report
+description: A defect in code, infrastructure, or behavior. Not for security or production-down.
+title: "[bug] <one-line summary>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for code defects only. For security issues see
+        SECURITY.md. For production-down, page the on-call via PagerDuty.
+
+        **Never** include customer NPI in a bug report — not in the
+        title, body, logs, screenshots, or attachments. Use the masked
+        ID from the audit log (e.g. `app_4nq...`) instead.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph. What's broken, and why does it matter?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Numbered list. Be specific enough that someone else can hit this.
+      placeholder: |
+        1. Open the partner portal at /v/tradepay
+        2. Click "New Trade Pay application"
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error messages verbatim (with NPI redacted) and timestamps if known.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: |
+        SEV1 = prod-down or money/PII at risk. Page on-call, do not file here.
+        SEV2 = degraded for many customers
+        SEV3 = degraded for one customer / corner case
+        SEV4 = cosmetic / quality-of-life
+      options:
+        - SEV2
+        - SEV3
+        - SEV4
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: prod / staging / dev / local
+    validations:
+      required: true
+
+  - type: input
+    id: request_id
+    attributes:
+      label: Request ID / correlation ID
+      description: From the response header `X-EazePay-Request-Id` or a server log line.
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Which packages/services seem involved?
+      placeholder: services/orchestration, apps/api, ...
+
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Pre-submit
+      options:
+        - label: I confirm no customer NPI appears in this report.
+          required: true
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true

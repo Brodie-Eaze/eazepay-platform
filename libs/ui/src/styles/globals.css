@@ -1,0 +1,360 @@
+/**
+ * EazePay global stylesheet — tokens aligned to the EAZE Partner
+ * Portal reference (cool-blue palette, dark navy sidebar, 12px radius,
+ * Inter + JetBrains Mono).
+ *
+ * Variables exposed in two parallel naming conventions:
+ *   - shadcn-style HSL tokens (--background, --card, --sidebar-*, …)
+ *   - EazePay RGB tokens (--bg, --fg, --accent, …) preserved for the
+ *     existing component library
+ * Tailwind preset reads the EazePay tokens; new shadcn-compatible
+ * components can read the HSL tokens directly with `hsl(var(--…))`.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root,
+[data-theme='light'] {
+  /* shadcn-style HSL tokens — mirror the reference's --background / --card / --sidebar-* etc. */
+  --background: 228 25% 96.5%;
+  --foreground: 228 45% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 228 45% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 228 45% 13%;
+  --primary: 228 45% 18%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 228 18% 93%;
+  --secondary-foreground: 228 45% 13%;
+  --muted: 228 18% 93%;
+  --muted-foreground: 228 12% 50%;
+  --accent-hsl: 228 18% 93%;
+  --accent-hsl-foreground: 228 45% 13%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border-hsl: 228 18% 89%;
+  --input: 228 18% 89%;
+  --ring: 228 45% 18%;
+
+  --sidebar-background: 228 45% 13%;
+  --sidebar-foreground: 228 15% 75%;
+  --sidebar-primary: 0 0% 100%;
+  --sidebar-primary-foreground: 228 45% 13%;
+  --sidebar-accent: 228 35% 19%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 228 30% 19%;
+  --sidebar-ring: 0 0% 100%;
+
+  --status-submitted: 230 76% 56%;
+  --status-review: 24 90% 53%;
+  --status-approved: 152 55% 42%;
+  --status-declined: 0 70% 55%;
+  --status-funded: 258 60% 55%;
+
+  /* EazePay RGB tokens — Tailwind preset reads these via
+     `rgb(var(--bg) / <alpha-value>)`. Content is pure white; the only
+     dark surface in the layout is the sidebar. Cards stay white and
+     get visual separation from hairline borders + subtle shadow. */
+
+  /* Surfaces — RGB conversions of Lovable's exact HSL tokens.
+     Captured live from eaze-partner-portal.lovable.app via DevTools:
+       --background        HSL 228 25% 96.5%  → rgb(244 245 248)
+       --card              HSL 0   0%  100%   → rgb(255 255 255)
+       --sidebar-background HSL 228 45% 13%   → rgb(18 24 47)
+   */
+  --bg:           244 245 248;
+  --bg-elevated:  255 255 255;
+  --bg-muted:     232 234 240;  /* HSL 228 18% 93% — secondary / muted */
+  --bg-inverse:   18 24 47;     /* HSL 228 45% 13% — sidebar */
+  --surface-overlay: 255 255 255;
+
+  /* Text — RGB conversions of Lovable's HSL tokens.
+       --foreground        HSL 228 45% 13%  → rgb(18 24 47)
+       --muted-foreground  HSL 228 12% 50%  → rgb(112 119 142) */
+  --fg:           18 24 47;
+  --fg-secondary: 50 60 100;
+  --fg-muted:     112 119 142;
+  --fg-on-accent: 255 255 255;
+  --fg-inverse:   244 245 248;
+  --fg-link:      18 24 47;     /* navy link on light surface */
+
+  /* Borders.
+       --border            HSL 228 18% 89%  → rgb(222 225 232) */
+  --border:        222 225 232;
+  --border-strong: 198 205 215;
+  --border-focus:  18 24 47;    /* foreground / primary navy */
+
+  /* Brand accent — Lovable's --primary is HSL 228 45% 18% → navy
+     (NOT indigo — re-verified live). Hover bumps a touch darker. */
+  --accent:        25 33 66;
+  --accent-strong: 18 24 47;
+  --accent-soft:   232 234 240;
+  --accent-fg:     255 255 255;
+
+  /* intent — neutralised to navy + grey only (no decorative colour
+     inside the partner portal; the public /apply pages keep their
+     per-industry theme because they inline `rgb(${theme.accent})`
+     from `brandTheme()` and never read these tokens). */
+  --success:    18 24 47;       /* navy — used for "on / active / paid" */
+  --success-bg: 232 234 240;    /* light grey wash */
+  --warning:    112 119 142;    /* mid grey — used for "needs attention" */
+  --warning-bg: 232 234 240;
+  --danger:     18 24 47;       /* dark navy — used for genuinely destructive copy */
+  --danger-bg:  232 234 240;
+  --info:       50 60 100;      /* secondary navy — used for neutral info */
+  --info-bg:    232 234 240;
+
+  /* status palette — navy + grey shades only. Visual depth (dark navy
+     vs mid grey vs light grey) replaces hue to convey state. */
+  --status-submitted-rgb: 50 60 100;   /* navy-secondary */
+  --status-review-rgb:    112 119 142; /* mid grey */
+  --status-approved-rgb:  18 24 47;    /* full navy */
+  --status-declined-rgb:  112 119 142; /* mid grey */
+  --status-funded-rgb:    18 24 47;    /* full navy */
+
+  /* Sidebar — RGB conversions of Lovable's exact HSL tokens.
+       --sidebar-background    HSL 228 45% 13%  → rgb(18 24 47)
+       --sidebar-foreground    HSL 228 15% 75%  → rgb(184 188 198)
+       --sidebar-accent        HSL 228 35% 19%  → rgb(31 41 65)
+       --sidebar-accent-fg     HSL 0   0%  98%  → rgb(250 250 250)
+       --sidebar-border        HSL 228 30% 19%  → rgb(34 41 63) */
+  --sidebar-bg:         18 24 47;
+  --sidebar-fg:         184 188 198;
+  --sidebar-accent-bg:  31 41 65;
+  --sidebar-accent-fg:  250 250 250;
+  --sidebar-section-fg: 130 137 156;  /* slightly muted vs fg for labels */
+  --sidebar-border-rgb: 34 41 63;
+
+  /* charts — sequential 8-step navy + grey scale. Visual depth alone
+     conveys the dimension; no decorative colour inside the portal. */
+  --chart-1: 18 24 47;       /* navy (darkest) */
+  --chart-2: 50 60 100;
+  --chart-3: 80 90 130;
+  --chart-4: 112 119 142;
+  --chart-5: 138 145 170;
+  --chart-6: 168 175 192;
+  --chart-7: 198 205 215;
+  --chart-8: 222 225 232;    /* light grey (lightest) */
+
+  --radius:    12px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-sm: 0 1px 2px rgb(18 24 48 / 0.05);
+  --shadow-md: 0 4px 12px rgb(18 24 48 / 0.07), 0 1px 3px rgb(18 24 48 / 0.05);
+  --shadow-lg: 0 12px 32px rgb(18 24 48 / 0.10), 0 2px 6px rgb(18 24 48 / 0.06);
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', monospace;
+}
+
+.dark,
+[data-theme='dark'] {
+  --background: 228 40% 6%;
+  --foreground: 228 10% 93%;
+  --card: 228 35% 9%;
+  --card-foreground: 228 10% 93%;
+  --popover: 228 35% 9%;
+  --popover-foreground: 228 10% 93%;
+  --primary: 228 25% 82%;
+  --primary-foreground: 228 45% 8%;
+  --secondary: 228 25% 13%;
+  --secondary-foreground: 228 10% 93%;
+  --muted: 228 25% 13%;
+  --muted-foreground: 228 10% 48%;
+  --accent-hsl: 228 25% 15%;
+  --accent-hsl-foreground: 228 10% 93%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 100%;
+  --border-hsl: 228 22% 14%;
+  --input: 228 22% 14%;
+  --ring: 228 25% 82%;
+
+  --sidebar-background: 228 40% 4%;
+  --sidebar-foreground: 228 10% 70%;
+  --sidebar-primary: 0 0% 100%;
+  --sidebar-primary-foreground: 228 45% 8%;
+  --sidebar-accent: 228 30% 11%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 228 22% 11%;
+  --sidebar-ring: 0 0% 100%;
+
+  --status-submitted: 230 76% 62%;
+  --status-review: 24 90% 58%;
+  --status-approved: 152 55% 48%;
+  --status-declined: 0 70% 58%;
+  --status-funded: 258 60% 62%;
+
+  --bg:           9 12 21;       /* 228 40% 6% */
+  --bg-elevated:  15 18 31;      /* 228 35% 9% — card */
+  --bg-muted:     19 23 39;      /* 228 25% 13% — muted */
+  --bg-inverse:   244 245 248;
+  --surface-overlay: 15 18 31;
+
+  --fg:           235 236 239;   /* 228 10% 93% */
+  --fg-secondary: 168 178 195;
+  --fg-muted:     112 118 143;
+  --fg-on-accent: 18 24 48;
+  --fg-inverse:   18 24 48;
+  --fg-link:      114 133 240;
+
+  --border:        29 33 48;     /* 228 22% 14% */
+  --border-strong: 60 70 88;
+  --border-focus:  208 213 230;
+
+  --accent:        208 213 230;
+  --accent-strong: 230 234 246;
+  --accent-soft:   24 28 45;
+  --accent-fg:     18 24 48;
+
+  --success:    66 187 122;
+  --success-bg: 14 60 41;
+  --warning:    241 168 47;
+  --warning-bg: 57 39 12;
+  --danger:     220 80 80;
+  --danger-bg:  60 18 18;
+  --info:       80 117 240;
+  --info-bg:    26 35 71;
+
+  --status-submitted-rgb: 80 117 240;
+  --status-review-rgb:    246 138 42;
+  --status-approved-rgb:  66 187 122;
+  --status-declined-rgb:  235 84 84;
+  --status-funded-rgb:    138 102 224;
+
+  --sidebar-bg:        7 10 19;
+  --sidebar-fg:        158 167 188;
+  --sidebar-accent-bg: 21 26 44;
+  --sidebar-accent-fg: 250 250 252;
+  --sidebar-border-rgb: 22 26 42;
+
+  --chart-1: 80 117 240;
+  --chart-2: 66 187 122;
+  --chart-3: 246 138 42;
+  --chart-4: 235 84 84;
+  --chart-5: 138 102 224;
+  --chart-6: 45 212 191;
+  --chart-7: 251 146 60;
+  --chart-8: 17 94 89;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.40), 0 1px 3px rgb(0 0 0 / 0.30);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.50), 0 2px 6px rgb(0 0 0 / 0.40);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: rgb(var(--border));
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: rgb(var(--bg));
+  /* Lovable body color: rgb(18, 24, 48) — same as foreground (h1
+     color is identical to body color, contrast comes from weight
+     + size rather than colour). Captured live via getComputedStyle. */
+  color: rgb(var(--fg));
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lovable h1: 24px / 36px line-height / 700 weight / -0.84px letter-
+   spacing (-0.035em on 24px). Apply globally so PageHeader picks it
+   up automatically. */
+h1 {
+  font-size: 24px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.25);
+}
+
+a {
+  color: rgb(var(--fg-link));
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* Scrollbars (webkit) — subtle, theme-aware */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-strong) / 0.5);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--border-strong) / 0.85);
+  background-clip: padding-box;
+}
+
+.font-mono { font-family: var(--font-mono); }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+:focus-visible {
+  outline: 2px solid rgb(var(--border-focus));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgb(var(--border) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--border) / 0.5) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.bg-accent-gradient {
+  background:
+    radial-gradient(circle at 30% 20%, rgb(var(--accent) / 0.18), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgb(var(--chart-5) / 0.15), transparent 50%);
+}
+
+@keyframes shimmer {
+  0% { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--bg-muted)) 0%,
+    rgb(var(--border)) 50%,
+    rgb(var(--bg-muted)) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}

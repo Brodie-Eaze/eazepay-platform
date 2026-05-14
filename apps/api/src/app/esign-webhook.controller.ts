@@ -6,9 +6,9 @@ import {
   Logger,
   Param,
   Post,
-  RawBodyRequest,
   Req,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Public } from '@eazepay/service-auth';

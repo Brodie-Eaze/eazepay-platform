@@ -49,7 +49,7 @@ export class TokenService {
     const accessExp = now + this.config.accessTokenTtlSeconds;
     const refreshExp = now + this.config.refreshTokenTtlSeconds;
 
-    const accessToken = await new SignJWT({ sid: sessionId } as AccessTokenClaims)
+    const accessToken = await new SignJWT({ sid: sessionId } as Record<string, unknown>)
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setSubject(userId)
       .setIssuer(this.config.jwtIssuer)

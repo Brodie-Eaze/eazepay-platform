@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PRISMA } from '../internal/tokens.js';
-import { hash, verify, Algorithm } from '@node-rs/argon2';
+import { hash, verify } from '@node-rs/argon2';
+// Algorithm.Argon2id is an ambient const enum; we use the numeric value
+// directly to avoid the isolatedModules const-enum restriction.
+const ARGON2_ID = 2;
 import { Conflict, Unauthorized } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import type {
@@ -12,7 +15,7 @@ import type {
 } from '../ports/identity-provider.port.js';
 
 const ARGON2_OPTS = {
-  algorithm: Algorithm.Argon2id,
+  algorithm: ARGON2_ID,
   memoryCost: 19_456, // ~19 MiB — OWASP 2024 recommendation
   timeCost: 2,
   parallelism: 1,

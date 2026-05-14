@@ -69,10 +69,48 @@ const EnvSchema = z.object({
     .default(false),
   OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
+  /**
+   * Comma-separated list of explicit CORS origins. In dev we default
+   * to the partner-portal + Lovable preview hosts so the BFF round-trip
+   * works out of the box.
+   */
   CORS_ORIGINS: z
     .string()
-    .default('')
+    .default(
+      [
+        'http://localhost:3001', // partner-portal
+        'http://localhost:3002', // merchant-dashboard
+        'http://localhost:3003', // consumer-web
+        'http://localhost:3004', // admin-console
+      ].join(','),
+    )
     .transform((s) => s.split(',').map((o) => o.trim()).filter(Boolean)),
+  /**
+   * Regex patterns (one per line / comma-separated) for dynamic CORS
+   * origins. Used to whitelist Lovable preview URLs without enumerating
+   * each commit hash. Example: `^https://.*\.lovable\.app$,^https://.*\.lovableproject\.com$`.
+   */
+  CORS_ORIGIN_PATTERNS: z
+    .string()
+    .default(
+      [
+        '^https://.*\\.lovable\\.app$',
+        '^https://.*\\.lovableproject\\.com$',
+      ].join(','),
+    )
+    .transform((s) =>
+      s
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .map((p) => new RegExp(p)),
+    ),
+  /**
+   * HMAC-SHA256 shared secret for the Highsale webhook receiver.
+   * Required in non-development environments; the receiver refuses to
+   * serve requests when unset.
+   */
+  HIGHSALE_WEBHOOK_SECRET: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

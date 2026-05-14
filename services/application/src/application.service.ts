@@ -329,7 +329,7 @@ export class ApplicationService {
     // + create the Loan record in one transaction. Webhook-driven prod
     // path handles this in the inbound webhook handler.
     if (envelope.status === 'signed') {
-      return this.completeContractSigned(userId, accepted.app.id);
+      return this.completeContractSigned(userId, accepted.app.id as ApplicationId);
     }
 
     // Otherwise return the application as-is (status=accepted) and let
@@ -587,7 +587,7 @@ export class ApplicationService {
     status: ApplicationStatus;
     channel: ApplicationSnapshot['channel'];
     merchantId: string | null;
-  }): Record<string, unknown> {
+  }): object {
     return {
       category: a.category,
       requestedAmountCents: a.requestedAmountCents.toString(),

@@ -1,5 +1,5 @@
 import { type FC, type ReactNode } from 'react';
-import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index.js';
+import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index';
 
 type Intent = 'info' | 'success' | 'warning' | 'danger';
 

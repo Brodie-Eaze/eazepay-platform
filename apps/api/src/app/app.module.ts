@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD, Reflector } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
@@ -27,6 +27,7 @@ import { OrchestrationPostSubmitAdapter } from './post-submit.adapter.js';
 import { PaymentContractedHookAdapter } from './contracted-hook.adapter.js';
 import { ApplicationLinkController } from './application-link.controller.js';
 import { ESignWebhookController } from './esign-webhook.controller.js';
+import { HighsaleWebhookController } from './highsale-webhook.controller.js';
 import { ObjectStorageModule } from './object-storage.module.js';
 import { DevStorageController } from './dev-storage.controller.js';
 import { ConsumerDocumentDownloadController } from './document-download.controller.js';
@@ -139,10 +140,12 @@ const env = loadEnv();
     HealthController,
     ApplicationLinkController,
     ESignWebhookController,
+    HighsaleWebhookController,
     ConsumerDocumentDownloadController,
     ...(env.OBJECT_STORAGE === 'local-fs' ? [DevStorageController] : []),
   ],
   providers: [
+    Reflector,
     OrchestrationPostSubmitAdapter,
     PaymentContractedHookAdapter,
     { provide: APP_GUARD, useClass: JwtAuthGuard },

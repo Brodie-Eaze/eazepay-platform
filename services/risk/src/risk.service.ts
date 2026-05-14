@@ -158,14 +158,14 @@ export class RiskService {
           score,
           recommendation,
           reasonCodes: reasonCodeArray,
-          signals,
+          signals: signals as object,
           policyVersion: RISK_POLICY_VERSION,
         },
         update: {
           score,
           recommendation,
           reasonCodes: reasonCodeArray,
-          signals,
+          signals: signals as object,
           policyVersion: RISK_POLICY_VERSION,
         },
       });

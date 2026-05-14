@@ -1,6 +1,7 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { PrismaClient } from '@prisma/client';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { LocalIdentityAdapter } from './adapters/local-identity.adapter.js';
@@ -77,6 +78,7 @@ export class AuthModule {
         OtpService,
         TokenService,
         SessionService,
+        Reflector,
         JwtAuthGuard,
         AdminGuard,
         AuthService,

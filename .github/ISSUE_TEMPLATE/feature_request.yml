@@ -1,0 +1,86 @@
+name: Feature request
+description: Propose new functionality, a UX improvement, or a platform capability.
+title: "[feat] <one-line summary>"
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests that touch money movement, decisioning, PII,
+        or audit must also include a short ADR draft. Use
+        `docs/adr/0000-template.md`.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user / operator / partner pain are we solving? Be concrete.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: One paragraph. What you'd ship. Trade-offs the reviewer should weigh.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Two or more options you rejected and why.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Primary surface
+      options:
+        - Partner Portal (Master)
+        - Partner Portal (Vertical)
+        - Admin / Ops console
+        - Merchant dashboard
+        - Consumer web / mobile
+        - Developer portal
+        - API / orchestration
+        - Infra / platform
+        - Compliance / audit
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact gates
+      description: Tick every category this change touches.
+      options:
+        - label: Money movement (disbursement, repayment, refund)
+        - label: Decisioning (orchestration, eligibility, pricing)
+        - label: PII (collection, storage, surfacing, unmask)
+        - label: Audit (creates, mutates, or relies on the immutable chain)
+        - label: Regulator-facing (TILA, ECOA/Reg B, FCRA, GLBA, MLA, SCRA, UDAAP, state)
+        - label: Bank-partner contract surface
+        - label: Vendor / supply-chain (new third-party with data access)
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: Rollout
+      description: Feature-flagged? Shadow first? Per-tenant? What's the kill switch?
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Success metric
+      description: One leading + one lagging metric we'll watch post-launch.
+
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Pre-submit
+      options:
+        - label: I've read CONTRIBUTING.md and this PR will fit inside a ≤ 400 LOC scope.
+          required: true
+        - label: An ADR is attached or noted in the description if architecture moves.
+          required: true

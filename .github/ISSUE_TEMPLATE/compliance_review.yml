@@ -1,0 +1,87 @@
+name: Compliance review
+description: A controls, regulator, or audit-evidence item the engineering team needs to act on.
+title: "[compliance] <one-line summary>"
+labels: ["compliance", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Used by Compliance, Risk, or the BSA Officer to track items that
+        require engineering action — audit findings, regulator queries,
+        bank-partner asks, control changes.
+
+        **Do not include consumer NPI in this issue.** Use masked IDs.
+
+  - type: dropdown
+    id: trigger
+    attributes:
+      label: Trigger
+      options:
+        - Internal audit finding
+        - External audit finding (SOC 2 / partner bank / state regulator)
+        - Regulator inquiry (CFPB / state AG / FinCEN)
+        - Bank-partner ask
+        - Internal compliance review outcome
+        - New regulation taking effect
+        - Vendor change requiring re-review
+    validations:
+      required: true
+
+  - type: input
+    id: control
+    attributes:
+      label: Control / regulation
+      placeholder: "SOC 2 CC6.1, GLBA Safeguards § 314.4(c), Reg B § 1002.9, ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What needs to change
+      description: One paragraph. What the control / regulator / partner expects, and where we are now.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence_now
+    attributes:
+      label: Current evidence
+      description: Link to runbook, code, or audit-log query that demonstrates the current state.
+
+  - type: textarea
+    id: evidence_target
+    attributes:
+      label: Target evidence
+      description: What evidence we'll produce to close this item.
+
+  - type: input
+    id: deadline
+    attributes:
+      label: Statutory / contractual deadline
+      placeholder: "YYYY-MM-DD (or 'none')"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical — non-compliant in production now
+        - High — non-compliant within the next 30 days if unfixed
+        - Medium — improvement / hardening
+        - Low — documentation gap
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Pre-submit
+      options:
+        - label: I've redacted any NPI / consumer identifiers.
+          required: true
+        - label: I've cc'd the BSA Officer / CCO if this is a regulator-touching item.
+          required: true

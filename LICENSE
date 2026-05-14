@@ -1,0 +1,43 @@
+PROPRIETARY AND CONFIDENTIAL
+
+Copyright (c) 2026 EazePay, Inc. All rights reserved.
+
+This source code, including all files, scripts, documentation, and
+related materials within this repository (the "Software"), is the
+proprietary and confidential information of EazePay, Inc. ("EazePay")
+and its licensors. The Software is licensed, not sold.
+
+NO LICENSE IS GRANTED to any person or entity to use, copy, modify,
+merge, publish, distribute, sublicense, prepare derivative works of,
+or sell the Software, in whole or in part, without the prior written
+permission of an authorized officer of EazePay. Possession of, or
+access to, the Software does not confer any rights in it.
+
+Authorized employees and contractors of EazePay may use the Software
+solely as required to perform services for EazePay, subject to the
+terms of their employment, contractor, or services agreement, and to
+EazePay's information security and acceptable-use policies.
+
+The Software contains trade secrets and other proprietary information.
+You agree not to disclose, reverse engineer, decompile, or otherwise
+attempt to derive the source code, structure, or any underlying ideas,
+algorithms, or know-how embodied in the Software, except to the extent
+expressly permitted by applicable law that cannot be lawfully waived.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+IN NO EVENT SHALL EAZEPAY OR ITS AUTHORS, CONTRIBUTORS, OR LICENSORS BE
+LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Third-party components included or referenced by the Software are
+governed by their own licenses, which are listed in the accompanying
+software bill of materials (SBOM). Nothing in this notice grants any
+rights in those third-party components beyond what their respective
+licenses permit.
+
+Notices of infringement, vulnerability reports, or other legal inquiries
+should be sent to legal@eazepay.com or security@eazepay.com, as
+applicable.

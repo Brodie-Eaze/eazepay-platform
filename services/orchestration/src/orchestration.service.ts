@@ -249,14 +249,14 @@ export class OrchestrationService {
       }),
     );
 
-    const decision = await this.persistResults(app.id, app.userId, results);
+    const persistOutcome = await this.persistResults(app.id, app.userId, results);
 
     // Fire notifications post-commit; failures are logged but not raised.
-    if (decision.outcome === 'offers_presented') {
+    if (persistOutcome.outcome === 'offers_presented') {
       await this.fireNotify({
         userId: app.userId,
         templateKey: 'application.offers_presented',
-        payload: { offerCount: decision.offerCount },
+        payload: { offerCount: persistOutcome.offerCount },
         subjectType: 'Application',
         subjectId: app.id,
         merchantId: app.merchantId,
@@ -265,7 +265,7 @@ export class OrchestrationService {
       await this.fireNotify({
         userId: app.userId,
         templateKey: 'application.declined',
-        payload: { reasonCodes: decision.reasonCodes },
+        payload: { reasonCodes: persistOutcome.reasonCodes },
         subjectType: 'Application',
         subjectId: app.id,
         merchantId: app.merchantId,

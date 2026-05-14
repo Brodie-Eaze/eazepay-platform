@@ -1,7 +1,12 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { PrismaClient } from '@prisma/client';
 import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
+import { TeamController } from './team.controller.js';
+import { TeamService } from './team.service.js';
+import { MarketplaceController } from './marketplace.controller.js';
+import { MarketplaceService } from './marketplace.service.js';
 import { PRISMA } from './internal/tokens.js';
 
 export interface AdminModuleOptions {
@@ -14,9 +19,15 @@ export class AdminModule {
     const prisma: Provider = { provide: PRISMA, useExisting: options.prismaToken as never };
     return {
       module: AdminModule,
-      controllers: [AdminController],
-      providers: [prisma, AdminService],
-      exports: [AdminService],
+      controllers: [AdminController, TeamController, MarketplaceController],
+      providers: [
+        prisma,
+        Reflector,
+        AdminService,
+        TeamService,
+        MarketplaceService,
+      ],
+      exports: [AdminService, TeamService, MarketplaceService],
     };
   }
 }

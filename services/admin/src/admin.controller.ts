@@ -66,6 +66,94 @@ const FlagQuerySchema = z.object({
  * the next round once dual-control + reason-code taxonomy enforcement
  * are in place.
  */
+
+// ---------- DTOs (declared before the controller so decorator metadata
+//             can resolve the runtime class references) ----------
+
+const DeclineApplicationSchema = z.object({
+  reasonCodes: z
+    .array(
+      z
+        .string()
+        .refine(
+          (s) => s in ADVERSE_ACTION_REASON_CODES,
+          'must be a code from ADVERSE_ACTION_REASON_CODES',
+        ),
+    )
+    .min(1)
+    .max(8),
+  notes: z.string().max(2000).optional(),
+});
+class DeclineApplicationDto extends createZodDto(DeclineApplicationSchema) {}
+
+const CloseComplianceReviewSchema = z
+  .object({
+    outcome: z.enum([
+      'closed_approved',
+      'closed_declined',
+      'closed_no_action',
+      'escalated_reportable',
+    ]),
+    notes: z.string().max(2000).optional(),
+    /** Required when outcome is 'escalated_reportable' (FinCEN SAR id, etc.). */
+    reportableMatterRef: z.string().max(200).optional(),
+  })
+  .refine((v) => v.outcome !== 'escalated_reportable' || !!v.reportableMatterRef, {
+    message: 'reportableMatterRef is required for escalated_reportable',
+    path: ['reportableMatterRef'],
+  });
+class CloseComplianceReviewDto extends createZodDto(CloseComplianceReviewSchema) {}
+
+const ResolveRiskFlagSchema = z.object({
+  resolution: z.enum(['confirmed', 'cleared']),
+  notes: z.string().max(2000).optional(),
+});
+class ResolveRiskFlagDto extends createZodDto(ResolveRiskFlagSchema) {}
+
+const ALLOWED_UNMASK_FIELD_VALUES = [
+  'legalName.first',
+  'legalName.middle',
+  'legalName.last',
+  'dateOfBirth',
+  'ssnLast4',
+  'address.line1',
+  'address.line2',
+  'address.city',
+  'address.state',
+  'address.zip',
+] as const;
+
+const RequestPiiUnmaskSchema = z.object({
+  subjectType: z.enum(['User', 'BeneficialOwner']),
+  subjectId: z.string().uuid(),
+  fields: z
+    .array(z.enum(ALLOWED_UNMASK_FIELD_VALUES))
+    .min(1)
+    .max(ALLOWED_UNMASK_FIELD_VALUES.length),
+  reasonCode: z.enum([
+    'manual_underwriting_review',
+    'fraud_investigation',
+    'customer_service_request',
+    'compliance_review',
+    'legal_request',
+    'reportable_matter_filing',
+    'notice_re_render',
+  ]),
+  reasonNotes: z.string().min(10).max(2000),
+  ttlSeconds: z.number().int().min(60).max(3600).optional(),
+});
+class RequestPiiUnmaskDto extends createZodDto(RequestPiiUnmaskSchema) {}
+
+const ApprovePiiUnmaskSchema = z.object({
+  ttlSeconds: z.number().int().min(60).max(3600).optional(),
+});
+class ApprovePiiUnmaskDto extends createZodDto(ApprovePiiUnmaskSchema) {}
+
+const RegenerateAanSchema = z.object({
+  unmaskRequestId: z.string().uuid(),
+});
+class RegenerateAanDto extends createZodDto(RegenerateAanSchema) {}
+
 @ApiTags('admin')
 @ApiBearerAuth()
 @AdminOnly()
@@ -240,84 +328,3 @@ export class AdminController {
     );
   }
 }
-
-// ---------- DTOs ----------
-
-const DeclineApplicationSchema = z.object({
-  reasonCodes: z
-    .array(
-      z
-        .string()
-        .refine(
-          (s) => s in ADVERSE_ACTION_REASON_CODES,
-          'must be a code from ADVERSE_ACTION_REASON_CODES',
-        ),
-    )
-    .min(1)
-    .max(8),
-  notes: z.string().max(2000).optional(),
-});
-class DeclineApplicationDto extends createZodDto(DeclineApplicationSchema) {}
-
-const CloseComplianceReviewSchema = z.object({
-  outcome: z.enum([
-    'closed_approved',
-    'closed_declined',
-    'closed_no_action',
-    'escalated_reportable',
-  ]),
-  notes: z.string().max(2000).optional(),
-  /** Required when outcome is 'escalated_reportable' (FinCEN SAR id, etc.). */
-  reportableMatterRef: z.string().max(200).optional(),
-}).refine(
-  (v) => v.outcome !== 'escalated_reportable' || !!v.reportableMatterRef,
-  { message: 'reportableMatterRef is required for escalated_reportable', path: ['reportableMatterRef'] },
-);
-class CloseComplianceReviewDto extends createZodDto(CloseComplianceReviewSchema) {}
-
-const ResolveRiskFlagSchema = z.object({
-  resolution: z.enum(['confirmed', 'cleared']),
-  notes: z.string().max(2000).optional(),
-});
-class ResolveRiskFlagDto extends createZodDto(ResolveRiskFlagSchema) {}
-
-const ALLOWED_UNMASK_FIELD_VALUES = [
-  'legalName.first',
-  'legalName.middle',
-  'legalName.last',
-  'dateOfBirth',
-  'ssnLast4',
-  'address.line1',
-  'address.line2',
-  'address.city',
-  'address.state',
-  'address.zip',
-] as const;
-
-const RequestPiiUnmaskSchema = z.object({
-  subjectType: z.enum(['User', 'BeneficialOwner']),
-  subjectId: z.string().uuid(),
-  fields: z.array(z.enum(ALLOWED_UNMASK_FIELD_VALUES)).min(1).max(ALLOWED_UNMASK_FIELD_VALUES.length),
-  reasonCode: z.enum([
-    'manual_underwriting_review',
-    'fraud_investigation',
-    'customer_service_request',
-    'compliance_review',
-    'legal_request',
-    'reportable_matter_filing',
-    'notice_re_render',
-  ]),
-  reasonNotes: z.string().min(10).max(2000),
-  ttlSeconds: z.number().int().min(60).max(3600).optional(),
-});
-class RequestPiiUnmaskDto extends createZodDto(RequestPiiUnmaskSchema) {}
-
-const ApprovePiiUnmaskSchema = z.object({
-  ttlSeconds: z.number().int().min(60).max(3600).optional(),
-});
-class ApprovePiiUnmaskDto extends createZodDto(ApprovePiiUnmaskSchema) {}
-
-const RegenerateAanSchema = z.object({
-  unmaskRequestId: z.string().uuid(),
-});
-class RegenerateAanDto extends createZodDto(RegenerateAanSchema) {}

@@ -82,7 +82,7 @@ export class ApplicationLinkController {
     const app = await this.applications.create(userId, {
       channel: 'merchant_link',
       merchantId: ctx.merchantId,
-      category: (dto.category as ReturnType<typeof RedeemDto.prototype>['category']) ?? 'personal',
+      category: dto.category ?? 'personal',
       requestedAmountCents: dto.requestedAmountCents,
       termMonths: dto.termMonths,
       purposeDetail: dto.purposeDetail,

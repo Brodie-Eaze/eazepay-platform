@@ -34,6 +34,7 @@ export class LenderModule {
 
     return {
       module: LenderModule,
+      global: true,
       providers: [prisma, ...adapterClasses, adapterArrayProvider, LenderRegistry],
       exports: [LenderRegistry],
     };

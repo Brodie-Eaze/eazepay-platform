@@ -1,5 +1,5 @@
 import { forwardRef, type InputHTMLAttributes } from 'react';
-import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index.js';
+import { colorsForTheme, radius, spacing, type ThemeMode } from '../../tokens/index';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

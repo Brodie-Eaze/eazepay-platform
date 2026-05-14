@@ -39,10 +39,10 @@ export class ApplicationModule {
       useExisting: options.prismaToken as never,
     };
     const postSubmit: Provider = options.postSubmitHookToken
-      ? { provide: POST_SUBMIT_HOOK, useExisting: options.postSubmitHookToken as never }
+      ? { provide: POST_SUBMIT_HOOK, useClass: options.postSubmitHookToken as never }
       : { provide: POST_SUBMIT_HOOK, useClass: NoopPostSubmitHook };
     const contracted: Provider = options.contractedHookToken
-      ? { provide: CONTRACTED_HOOK, useExisting: options.contractedHookToken as never }
+      ? { provide: CONTRACTED_HOOK, useClass: options.contractedHookToken as never }
       : { provide: CONTRACTED_HOOK, useClass: NoopContractedHook };
 
     const esign: Provider = {
