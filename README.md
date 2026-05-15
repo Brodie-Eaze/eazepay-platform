@@ -35,7 +35,7 @@ Three brand verticals — **MedPay, TradePay, CoachPay** — run on top of the s
 
 What makes the platform defensible is the **agentic decisioning layer** wrapped around the marketplace — seven named software agents that handle intake, enrichment, scoring, routing, lender selection, funding, and attribution. They are explicit, observable, and instrumented in the operator console (`/insights`, `/v/<brand>/insights`). The pattern is modelled on AUREAN AI's named-agent architecture: each agent is a black-box service with a clear contract, a measurable outcome, and a published last-action stream the operator can audit in real time. That makes the whole platform legible to a compliance officer, a CTO, and a merchant in the same view.
 
-**Jurisdiction & regulation.** US only. Federal regime: BSA/USA PATRIOT (FinCEN), OFAC sanctions, TILA/Reg Z, ECOA/Reg B, FCRA, GLBA + Safeguards Rule, EFTA/Reg E, UDAAP (CFPB), MLA, SCRA, E-SIGN/UETA. State regime: bank-partner model (Cross River / WebBank / Celtic / FinWise / Lead Bank) with True Lender doctrine + Madden risk addressed structurally on every approved offer. Privacy: GLBA federal floor + CCPA/CPRA + the broader state privacy patchwork. Architecture is portable to other regions; every concrete provider, rail, and disclosure in this repo is US-spec.
+> US jurisdiction, bank-partner originated. Full regulatory + privacy posture (TILA / Reg Z, ECOA / Reg B, FCRA, GLBA, EFTA / Reg E, UDAAP, MLA, SCRA, BSA/USA PATRIOT, CCPA/CPRA + state patchwork) lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
