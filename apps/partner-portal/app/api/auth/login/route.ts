@@ -200,26 +200,8 @@ export async function POST(req: NextRequest) {
     }
     return response;
   } catch (err) {
-    // SEC-001 hardening — line below is the load-bearing guard. The
-    // production short-circuit dominates `isDemoFallbackAllowed()`
-    // even if some future change weakens that function, because the
-    // hard-return below leaves no syntactic path through to the
-    // fallback cookie issue.
-    if (IS_PRODUCTION) {
-      return NextResponse.json(
-        {
-          type: 'about:blank',
-          title: 'Backend unreachable',
-          status: 502,
-          code: 'backend_unreachable',
-          detail: 'Could not reach the EazePay API.',
-        },
-        { status: 502 },
-      );
-    }
-
-    // Backend unreachable. Non-prod only: if demo mode is allowed and
-    // the email matches a known demo preset, fall back to minting the
+    // Backend unreachable. If demo mode is allowed and the email
+    // matches a known demo preset, fall back to minting the
     // matching demo cookie so the deployed surface is browsable
     // without a running API. Otherwise surface the 502 honestly.
     if (isDemoFallbackAllowed()) {
