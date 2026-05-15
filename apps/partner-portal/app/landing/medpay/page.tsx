@@ -32,10 +32,13 @@ const HERO_CHIPS: Array<{
   right?: string;
   delay: string;
 }> = [
-  { k: 'FCRA', v: 'soft pull · 0 impact', top: '-12%', left: '2%', delay: '0s' },
-  { k: 'Decision', v: 'instant · multi-offer', top: '-12%', right: '2%', delay: '0.6s' },
-  { k: 'Payout', v: 'merchant-direct · 48-72hr', bottom: '-12%', left: '2%', delay: '1.2s' },
-  { k: 'Promo', v: '0% interest plans · T&Cs', bottom: '-12%', right: '2%', delay: '1.8s' },
+  // Floating accent chips around the offer card. Offsets are small +/-
+  // percentages so the chips visually anchor to the corners of the
+  // offer card rather than drifting outside the hero container.
+  { k: 'FCRA', v: 'soft pull · 0 impact', top: '-4%', left: '-2%', delay: '0s' },
+  { k: 'Decision', v: 'instant · multi-offer', top: '-4%', right: '-2%', delay: '0.6s' },
+  { k: 'Payout', v: 'merchant-direct · 48-72hr', bottom: '-4%', left: '-2%', delay: '1.2s' },
+  { k: 'Promo', v: '0% interest plans · T&Cs', bottom: '-4%', right: '-2%', delay: '1.8s' },
 ];
 
 const TICKER: Array<{ value: string; label: string; delta: string }> = [
@@ -85,7 +88,7 @@ const STAGES: Array<{ n: string; stage: string; title: string; body: string; met
     n: '04',
     stage: 'Offer',
     title: 'Best offer wins',
-    body: 'Offers ranked consumer-best (lowest total cost). Patient sees one screen with the AI-recommended offer + 2 alternates. Tap → e-sign → done.',
+    body: 'Offers ranked consumer-best (lowest total cost). Patient sees one screen with the AI-recommended offer + 2 alternates. Tap to accept the approval and the lender disburses to your business account.',
     metric: 'Best offer wins',
   },
   {
@@ -113,7 +116,7 @@ const OFFERS: Array<{
     apr: '6.9%',
     total: '$12,000',
     recommended: true,
-    note: 'Soft pull only · lender confirmed at e-sign',
+    note: 'Soft pull only · lender confirmed at approval',
   },
   {
     label: 'Personal · 36 mo',
@@ -322,7 +325,7 @@ const INTEGRATIONS: string[] = [
 const OBJECTIONS: Array<{ q: string; a: string }> = [
   {
     q: 'Will offering finance turn my practice into a CareCredit-style operation?',
-    a: 'No. MedPay is a high-touch, premium patient experience. The patient sees an instant decision, three best-fit offers ranked by total cost, and a clean accept-and-go flow. The lender name only appears at e-sign per FCRA disclosure rules. CareCredit feels like a credit-card pitch; MedPay feels like a feature of your practice.',
+    a: 'No. MedPay is a high-touch, premium patient experience. The patient sees an instant decision, three best-fit offers ranked by total cost, and a clean accept-and-go flow. The lender name only appears at approval per FCRA disclosure rules. CareCredit feels like a credit-card pitch; MedPay feels like a feature of your practice.',
   },
   {
     q: 'What happens if the patient defaults? Do I get clawed back?',
@@ -798,16 +801,16 @@ export default function MedPayLandingPage(): JSX.Element {
                       <div className="mp-offer-bar-fill" />
                     </div>
                     <div className="mp-offer-bar-stages">
-                      <span className="on">Pre-qual</span>
-                      <span className="on">Marketplace</span>
+                      <span className="on">Prequal</span>
+                      <span className="on">Quote</span>
                       <span className="on">Offer</span>
-                      <span className="on">E-sign</span>
-                      <span className="cur">Disburse</span>
+                      <span className="on">Accept</span>
+                      <span className="cur">Payout</span>
                     </div>
                   </div>
 
                   <button className="mp-offer-cta" type="button">
-                    Accept offer · e-sign
+                    Accept approval
                     <Icon.Arrow />
                   </button>
 
@@ -1320,7 +1323,7 @@ export default function MedPayLandingPage(): JSX.Element {
 
                     <div className="mock-cta-row">
                       <button className="mock-cta-primary" type="button">
-                        Accept · e-sign now
+                        Accept approval now
                       </button>
                       <button className="mock-cta-ghost" type="button">
                         See all 39 offers
@@ -1329,7 +1332,7 @@ export default function MedPayLandingPage(): JSX.Element {
 
                     <div className="mock-foot">
                       Soft credit pull only · 0 impact to score · final terms and lender confirmed
-                      at e-sign.
+                      at approval.
                     </div>
                   </div>
                 </div>
@@ -2233,10 +2236,20 @@ const CSS = `
 .mp-offer-bar-stages {
   margin-top: 10px;
   display: flex; justify-content: space-between;
-  font-size: 10px; letter-spacing: 0.10em; font-weight: 600;
+  /* gap keeps the stage labels from kissing each other on narrow
+     widths; the parent flex still distributes them across the bar. */
+  gap: 8px;
+  font-size: 9px; letter-spacing: 0.08em; font-weight: 600;
   text-transform: uppercase;
 }
-.mp-offer-bar-stages span { color: var(--mp-mute); }
+.mp-offer-bar-stages span {
+  color: var(--mp-mute);
+  /* Each stage stays on one line. Width is bounded by the flex parent
+     so they shrink proportionally rather than wrapping mid-word. */
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
+}
 .mp-offer-bar-stages span.on { color: var(--mp-teal); }
 .mp-offer-bar-stages span.cur {
   color: var(--mp-teal);

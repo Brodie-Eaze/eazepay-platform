@@ -35,9 +35,30 @@ type CaseStudy = {
 type Objection = { q: string; a: string };
 
 const HERO_OFFER: RankedOffer[] = [
-  { lender: 'CoreCredit', amount: '$24,000', apr: '8.49%', monthly: '$480 / mo', term: '60 mo', status: 'primary' },
-  { lender: 'FinWise', amount: '$24,000', apr: '9.99%', monthly: '$510 / mo', term: '60 mo', status: 'backup' },
-  { lender: 'BuildBank', amount: '$22,000', apr: '6.99%', monthly: '$436 / mo', term: '60 mo', status: 'counter' },
+  {
+    lender: 'CoreCredit',
+    amount: '$24,000',
+    apr: '8.49%',
+    monthly: '$480 / mo',
+    term: '60 mo',
+    status: 'primary',
+  },
+  {
+    lender: 'FinWise',
+    amount: '$24,000',
+    apr: '9.99%',
+    monthly: '$510 / mo',
+    term: '60 mo',
+    status: 'backup',
+  },
+  {
+    lender: 'BuildBank',
+    amount: '$22,000',
+    apr: '6.99%',
+    monthly: '$436 / mo',
+    term: '60 mo',
+    status: 'counter',
+  },
 ];
 
 const TICKER = [
@@ -148,7 +169,7 @@ const AGENTS: Agent[] = [
     status: 'ONLINE',
     iconKey: 'prism',
     description:
-      "PRISM watches every apply-form session in real time. It reshapes question order based on partial answers, kills friction for high-intent homeowners, and adds verification steps when it detects junk. It learns which question sequences convert per traffic source.",
+      'PRISM watches every apply-form session in real time. It reshapes question order based on partial answers, kills friction for high-intent homeowners, and adds verification steps when it detects junk. It learns which question sequences convert per traffic source.',
     stats: [
       { k: 'Sessions / hr', v: '6,140' },
       { k: 'Field skips', v: '38%' },
@@ -170,8 +191,7 @@ const AGENTS: Agent[] = [
       { k: 'Avg cost / lead', v: '$0.41' },
       { k: 'Identity match', v: '94%' },
     ],
-    lastAction:
-      'fell back to provider_03 after timeout on provider_01 · saved $0.18 · 2s ago',
+    lastAction: 'fell back to provider_03 after timeout on provider_01 · saved $0.18 · 2s ago',
   },
   {
     n: '03',
@@ -186,8 +206,7 @@ const AGENTS: Agent[] = [
       { k: 'Model AUC', v: '0.89' },
       { k: 'Last retrain', v: '4h ago' },
     ],
-    lastAction:
-      'flagged feature drift on project_value. Recalibrated thresholds · 4h ago',
+    lastAction: 'flagged feature drift on project_value. Recalibrated thresholds · 4h ago',
   },
   {
     n: '04',
@@ -203,8 +222,7 @@ const AGENTS: Agent[] = [
       { k: 'Rep match lift', v: '+31%' },
       { k: 'SLA breach', v: '0.4%' },
     ],
-    lastAction:
-      'rerouted T1 homeowner away from rep_M.Chen (capacity 98%) → rep_S.Patel · 1s ago',
+    lastAction: 'rerouted T1 homeowner away from rep_M.Chen (capacity 98%) → rep_S.Patel · 1s ago',
   },
   {
     n: '05',
@@ -231,13 +249,12 @@ const AGENTS: Agent[] = [
     status: 'ONLINE',
     iconKey: 'flux',
     description:
-      'FLUX shepherds every approved deal from sign to fund. It chases stip documents, nudges the homeowner through e-sign, watches the lender funding queue, and reconciles every funded job back to the originating ad campaign.',
+      'FLUX shepherds every approved deal from sign to fund. It chases stip documents, walks the homeowner through approval acceptance, watches the lender funding queue, and reconciles every funded job back to the originating ad campaign.',
     stats: [
       { k: 'Funded in 48 to 72hr', v: '94.1%' },
       { k: 'Stip recovery', v: '+22%' },
     ],
-    lastAction:
-      'auto-collected outstanding stip docs on job_8412 · cleared funding · 8s ago',
+    lastAction: 'auto-collected outstanding stip docs on job_8412 · cleared funding · 8s ago',
   },
   {
     n: '07',
@@ -249,17 +266,36 @@ const AGENTS: Agent[] = [
     description:
       'ECHO closes the loop. It holds pixel events until a homeowner clears qualification, then fires weighted conversions back to Meta and Google via server-side CAPI. It uploads closed-won jobs as offline conversions. The cleanest training signal your ad account will ever see.',
     stats: [],
-    lastAction:
-      'uploaded 47 closed-won jobs to Meta CAPI, weighted by job_value · 6m ago',
+    lastAction: 'uploaded 47 closed-won jobs to Meta CAPI, weighted by job_value · 6m ago',
     stream: {
       title: 'ECHO · live event stream',
       rate: 'events/min · 142',
       events: [
-        { source: 'homeowner_qualified · T1', destination: '→ Meta CAPI · weight 1.00', highlight: true },
-        { source: 'homeowner_qualified · T2', destination: '→ Google Offline · weight 0.65', highlight: true },
-        { source: 'job_closed · $14,200', destination: '→ Meta CAPI · weight 2.20', highlight: true },
-        { source: 'homeowner_disqualified · T4', destination: '→ suppressed · audience exclude', highlight: false },
-        { source: 'job_closed · $8,900', destination: '→ Google Offline · weight 1.40', highlight: true },
+        {
+          source: 'homeowner_qualified · T1',
+          destination: '→ Meta CAPI · weight 1.00',
+          highlight: true,
+        },
+        {
+          source: 'homeowner_qualified · T2',
+          destination: '→ Google Offline · weight 0.65',
+          highlight: true,
+        },
+        {
+          source: 'job_closed · $14,200',
+          destination: '→ Meta CAPI · weight 2.20',
+          highlight: true,
+        },
+        {
+          source: 'homeowner_disqualified · T4',
+          destination: '→ suppressed · audience exclude',
+          highlight: false,
+        },
+        {
+          source: 'job_closed · $8,900',
+          destination: '→ Google Offline · weight 1.40',
+          highlight: true,
+        },
       ],
     },
   },
@@ -268,7 +304,7 @@ const AGENTS: Agent[] = [
 const CASE_STUDIES: CaseStudy[] = [
   {
     quote:
-      "Home Depot installers were beating us on the deferred-interest pitch every week. Plugged in TradePay and our close rate on $10k+ HVAC swaps jumped. Same crew, same prices. We recovered a lot of jobs in year one.",
+      'Home Depot installers were beating us on the deferred-interest pitch every week. Plugged in TradePay and our close rate on $10k+ HVAC swaps jumped. Same crew, same prices. We recovered a lot of jobs in year one.',
     name: 'Devin Cho',
     role: 'Owner · Iron Horse HVAC · Las Vegas, NV',
     outcomes: [
@@ -278,7 +314,7 @@ const CASE_STUDIES: CaseStudy[] = [
   },
   {
     quote:
-      "The agentic layer pre-qualifies every inbound application on the financial data (soft-pull credit, propensity, lender routing) before it ever hits a human. PRISM reshapes the apply flow in real time, ORACLE scores against our actual closed-won data, and HELIX routes the qualified homeowner to the right estimator in under a second. Our estimators only drive to jobs where the homeowner can actually afford the work.",
+      'The agentic layer pre-qualifies every inbound application on the financial data (soft-pull credit, propensity, lender routing) before it ever hits a human. PRISM reshapes the apply flow in real time, ORACLE scores against our actual closed-won data, and HELIX routes the qualified homeowner to the right estimator in under a second. Our estimators only drive to jobs where the homeowner can actually afford the work.',
     name: 'Marisol Tran',
     role: 'GM · Pacific Solar Co. · San Francisco, CA',
     outcomes: [
@@ -288,7 +324,7 @@ const CASE_STUDIES: CaseStudy[] = [
   },
   {
     quote:
-      "Instant doorstep approvals are the whole game. Homeowner sees the monthly payment before we leave the driveway, signs at the kitchen table, and we book the job. Doorstep close rate went up. Same crew, same prices.",
+      'Instant doorstep approvals are the whole game. Homeowner sees the monthly payment before we leave the driveway, signs at the kitchen table, and we book the job. Doorstep close rate went up. Same crew, same prices.',
     name: 'Mike Henderson',
     role: 'Owner · TradeForce Pro · Sacramento, CA',
     outcomes: [
@@ -314,31 +350,31 @@ const INTEGRATIONS = [
 const OBJECTIONS: Objection[] = [
   {
     q: 'How are you different from PowerPay, Service Finance, EnerBank, or GoodLeap?',
-    a: "Those are single-lender or two-lender programs. TradePay is a parallel marketplace of 52 lenders. Every quote fires at the same instant, ranked by consumer-best monthly payment. You can keep your incumbent program AND run TradePay; most contractors stack us. One portal, one apply flow, one agentic layer behind it.",
+    a: 'Those are single-lender or two-lender programs. TradePay is a parallel marketplace of 52 lenders. Every quote fires at the same instant, ranked by consumer-best monthly payment. You can keep your incumbent program AND run TradePay; most contractors stack us. One portal, one apply flow, one agentic layer behind it.',
   },
   {
     q: 'What are the lending terms?',
-    a: "Loans run from $3,000 to $100,000, APR from 5.9% for qualifying clients, and terms up to 72 months for lower monthly repayments. 0% interest plans are available for qualifying programs (T&Cs apply). Every homeowner sees multiple lender offers personalized to their situation, ranked by consumer-best monthly payment.",
+    a: 'Loans run from $3,000 to $100,000, APR from 5.9% for qualifying clients, and terms up to 72 months for lower monthly repayments. 0% interest plans are available for qualifying programs (T&Cs apply). Every homeowner sees multiple lender offers personalized to their situation, ranked by consumer-best monthly payment.',
   },
   {
     q: 'When and how do I get paid?',
-    a: "Merchant-direct. The lender disburses straight to your business account, no intermediary holding funds, no payment-rail switch. Funds generally land within 48 to 72 hours of the loan settling. The lender carries the credit risk and there is no clawback on routine defaults.",
+    a: 'Merchant-direct. The lender disburses straight to your business account, no intermediary holding funds, no payment-rail switch. Funds generally land within 48 to 72 hours of the loan settling. The lender carries the credit risk and there is no clawback on routine defaults.',
   },
   {
     q: 'Will my margins drop? I hear horror stories about dealer fees.',
-    a: "Dealer fees are transparent, configurable per product type, and set by the lender. On a $14k HVAC swap with a 6% dealer fee, you net $13.16k, and you close more deals because the homeowner sees a yes-able monthly payment on the doorstep. The math heavily favours running the financing. You can also pass the fee through on standard-rate plans.",
+    a: 'Dealer fees are transparent, configurable per product type, and set by the lender. On a $14k HVAC swap with a 6% dealer fee, you net $13.16k, and you close more deals because the homeowner sees a yes-able monthly payment on the doorstep. The math heavily favours running the financing. You can also pass the fee through on standard-rate plans.',
   },
   {
-    q: "What about clawbacks if the homeowner defaults?",
-    a: "Lender carries the credit risk after the funds release. There are no contractor clawbacks on routine defaults on standard-rate plans. On promo 0% APR plans, clawback is limited to the promo discount (not the principal) and only if the homeowner fails to convert within the promo window. T&Cs apply per lender program.",
+    q: 'What about clawbacks if the homeowner defaults?',
+    a: 'Lender carries the credit risk after the funds release. There are no contractor clawbacks on routine defaults on standard-rate plans. On promo 0% APR plans, clawback is limited to the promo discount (not the principal) and only if the homeowner fails to convert within the promo window. T&Cs apply per lender program.',
   },
   {
     q: 'How do the AUREAN agents work? Do they call my customers?',
-    a: "No. The seven agents (PRISM, VEGA, ORACLE, HELIX, NEXUS, FLUX, ECHO) are pre-qualification agents that work on the financial data in software: soft-pull credit, identity enrichment, propensity scoring, lender routing, and pixel attribution. They never make outbound calls, never voice-dial, never text-blast. They qualify silently in the background and surface the financially-qualified homeowners to your human sales, estimator, and dispatcher team.",
+    a: 'No. The seven agents (PRISM, VEGA, ORACLE, HELIX, NEXUS, FLUX, ECHO) are pre-qualification agents that work on the financial data in software: soft-pull credit, identity enrichment, propensity scoring, lender routing, and pixel attribution. They never make outbound calls, never voice-dial, never text-blast. They qualify silently in the background and surface the financially-qualified homeowners to your human sales, estimator, and dispatcher team.',
   },
   {
     q: 'How fast do you onboard a contractor?',
-    a: "Self-serve signup in 5 minutes. KYB clears in 60 seconds in most cases. From there, you can start running soft-pull pre-quals at the door as soon as your first crew is configured.",
+    a: 'Self-serve signup in 5 minutes. KYB clears in 60 seconds in most cases. From there, you can start running soft-pull pre-quals at the door as soon as your first crew is configured.',
   },
 ];
 
@@ -400,8 +436,7 @@ function LogoMark({ size = 30 }: { size?: number }) {
         width: size,
         height: size,
         background: 'linear-gradient(135deg, #0F172A 0%, #334155 100%)',
-        boxShadow:
-          'inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 12px -4px rgba(15,23,42,0.6)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 12px -4px rgba(15,23,42,0.6)',
       }}
     >
       <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
@@ -502,9 +537,7 @@ function TopNav({ condensed }: { condensed: boolean }) {
         <div className="tp-nav">
           <a href="#top" className="flex items-center gap-2.5">
             <LogoMark />
-            <span className="font-semibold tracking-tight text-slate-900">
-              TradePay
-            </span>
+            <span className="font-semibold tracking-tight text-slate-900">TradePay</span>
             <span className="hidden sm:inline tp-nav-tag">
               Financing for the trades that build America
             </span>
@@ -558,9 +591,7 @@ function Hero() {
             </div>
 
             <h1 className="mt-7 tp-h1">
-              <span className="tp-grad-text">
-                Every customer gets
-              </span>
+              <span className="tp-grad-text">Every customer gets</span>
               <br />
               <span className="tp-grad-text">an instant decision.</span>
               <br />
@@ -568,12 +599,11 @@ function Hero() {
             </h1>
 
             <p className="mt-7 text-lg text-slate-600 max-w-2xl leading-relaxed">
-              52 lenders quote in parallel on a single soft pull. The homeowner sees
-              one screen with the best monthly payment, signs at the kitchen table,
-              and you book the job before your rep is back to the truck.{' '}
+              52 lenders quote in parallel on a single soft pull. The homeowner sees one screen with
+              the best monthly payment, signs at the kitchen table, and you book the job before your
+              rep is back to the truck.{' '}
               <span className="text-slate-900 font-medium">
-                The lender carries the credit risk. You book the job the moment
-                the homeowner signs.
+                The lender carries the credit risk. You book the job the moment the homeowner signs.
               </span>
             </p>
 
@@ -582,10 +612,7 @@ function Hero() {
                 Start TradePay signup
                 <IconArrowRight className="ml-1.5" />
               </a>
-              <a
-                href="/apply/tradepay"
-                className="tp-btn-ghost text-sm px-6 py-3.5"
-              >
+              <a href="/apply/tradepay" className="tp-btn-ghost text-sm px-6 py-3.5">
                 See the contractor flow
               </a>
             </div>
@@ -593,15 +620,21 @@ function Hero() {
             {/* Inline trust strip */}
             <div className="mt-10 tp-trust-strip">
               <div className="tp-trust-cell">
-                <div className="tp-trust-num">52<span className="tp-trust-pct"></span></div>
+                <div className="tp-trust-num">
+                  52<span className="tp-trust-pct"></span>
+                </div>
                 <div className="tp-trust-lbl">Lenders in parallel</div>
               </div>
               <div className="tp-trust-cell">
-                <div className="tp-trust-num">Soft<span className="tp-trust-pct"></span></div>
+                <div className="tp-trust-num">
+                  Soft<span className="tp-trust-pct"></span>
+                </div>
                 <div className="tp-trust-lbl">Pull · zero impact</div>
               </div>
               <div className="tp-trust-cell">
-                <div className="tp-trust-num">14<span className="tp-trust-pct">s</span></div>
+                <div className="tp-trust-num">
+                  14<span className="tp-trust-pct">s</span>
+                </div>
                 <div className="tp-trust-lbl">Decision at the door</div>
               </div>
             </div>
@@ -615,7 +648,10 @@ function Hero() {
 
             {/* Floating chips · each anchored to a corner outside the card body
                 with a consistent offset so they never overlap card content. */}
-            <div className="tp-chip tp-chip-orange tp-chip-pulse" style={{ top: '-56px', left: '-8px' }}>
+            <div
+              className="tp-chip tp-chip-orange tp-chip-pulse"
+              style={{ top: '-56px', left: '-8px' }}
+            >
               <span className="tp-chip-dot tp-chip-dot-orange" />
               <span className="tp-chip-k">LIVE</span>
               <span className="tp-chip-v">12 deals/hr</span>
@@ -665,17 +701,11 @@ function HeroOfferCard() {
           <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
             Roof replacement · Henderson residence
           </div>
-          <div className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
-            $24,000
-          </div>
+          <div className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">$24,000</div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
-            Match time
-          </div>
-          <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">
-            14s
-          </div>
+          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Match time</div>
+          <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">14s</div>
         </div>
       </div>
 
@@ -692,9 +722,7 @@ function HeroOfferCard() {
           <div
             key={o.lender}
             className={`grid grid-cols-12 items-center py-2.5 text-[12.5px] ${
-              o.status === 'primary'
-                ? 'tp-offer-row-primary'
-                : 'text-slate-600'
+              o.status === 'primary' ? 'tp-offer-row-primary' : 'text-slate-600'
             }`}
           >
             <div className="col-span-4 flex items-center gap-2">
@@ -705,9 +733,7 @@ function HeroOfferCard() {
               )}
               <span
                 className={
-                  o.status === 'primary'
-                    ? 'font-semibold text-slate-900'
-                    : 'text-slate-700'
+                  o.status === 'primary' ? 'font-semibold text-slate-900' : 'text-slate-700'
                 }
               >
                 {o.lender}
@@ -805,15 +831,14 @@ function ProblemSection() {
         <div className="max-w-3xl reveal">
           <div className="tp-eyebrow-dark">01 · THE COST OF DOING NOTHING</div>
           <h2 className="mt-3 tp-h2 tp-grad-text-on-dark">
-            Every homeowner who says "I need to think about it" walks out with
-            $18,000 of unfunded work.
+            Every homeowner who says "I need to think about it" walks out with $18,000 of unfunded
+            work.
           </h2>
           <p className="mt-5 text-lg text-slate-300 leading-relaxed">
-            Home Depot installers, Sunrun, every big-box contractor runs financing
-            on the truck. They turn an $18k roof into "$310/month for 60 months"
-            before the homeowner can finish saying "let me get another quote." When
-            you don't run financing, you don't lose the price war. You lose the
-            close.
+            Home Depot installers, Sunrun, every big-box contractor runs financing on the truck.
+            They turn an $18k roof into "$310/month for 60 months" before the homeowner can finish
+            saying "let me get another quote." When you don't run financing, you don't lose the
+            price war. You lose the close.
           </p>
         </div>
 
@@ -825,20 +850,24 @@ function ProblemSection() {
               <div className="text-[10.5px] uppercase tracking-[0.22em] text-slate-400 font-semibold">
                 Status quo · stitched stack
               </div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                Today
-              </div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Today</div>
             </div>
             <div className="space-y-4">
               <StatusQuoRow value="41%" label="Close rate on $10k+ system swaps" />
               <StatusQuoRow value="$220k" label="Annual jobs lost per crew to 'another quote'" />
-              <StatusQuoRow value="68%" label="Inbound applications never pre-qualified before driveway" />
-              <StatusQuoRow value="3 days" label="Wait time before homeowner hears back on financing" />
+              <StatusQuoRow
+                value="68%"
+                label="Inbound applications never pre-qualified before driveway"
+              />
+              <StatusQuoRow
+                value="3 days"
+                label="Wait time before homeowner hears back on financing"
+              />
             </div>
             <div className="mt-7 pt-5 border-t border-slate-700/70 text-[12.5px] text-slate-400 leading-relaxed">
-              Three logins. Three apply flows. Three rounds of lender phone-tag.
-              Every estimator slot burned on a homeowner who can&apos;t afford the
-              work is an $18k job walking down the street.
+              Three logins. Three apply flows. Three rounds of lender phone-tag. Every estimator
+              slot burned on a homeowner who can&apos;t afford the work is an $18k job walking down
+              the street.
             </div>
           </div>
 
@@ -856,15 +885,15 @@ function ProblemSection() {
             <div className="space-y-4">
               <ResultRow value="One" label="Apply flow on the rep iPad · branded as you" />
               <ResultRow value="52" label="Lenders quoting in parallel on a single soft pull" />
-              <ResultRow value="320ms" label="HELIX routes every qualified homeowner to the right rep" />
+              <ResultRow
+                value="320ms"
+                label="HELIX routes every qualified homeowner to the right rep"
+              />
               <ResultRow value="14s" label="Decision at the door · 52 lenders quote in parallel" />
             </div>
             <div className="mt-7 pt-5 border-t border-slate-600/70 text-[12.5px] text-slate-200 leading-relaxed">
-              One apply flow. One ranked-offer screen. The homeowner signs at the
-              kitchen table.{' '}
-              <span className="text-white font-semibold">
-                Lender carries the credit risk.
-              </span>
+              One apply flow. One ranked-offer screen. The homeowner signs at the kitchen table.{' '}
+              <span className="text-white font-semibold">Lender carries the credit risk.</span>
             </div>
           </div>
         </div>
@@ -911,10 +940,9 @@ function WaterfallSection() {
             One platform. Five stages. From doorstep quote to signed job.
           </h2>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-            Every TradePay deal moves through the same deterministic pipeline.
-            Soft-pull pre-qual at the door. The agentic layer pre-qualifies on
-            the financial data. 52 lenders quote in parallel. Best offer wins.
-            Lender disburses merchant-direct within 48 to 72 hours. Every
+            Every TradePay deal moves through the same deterministic pipeline. Soft-pull pre-qual at
+            the door. The agentic layer pre-qualifies on the financial data. 52 lenders quote in
+            parallel. Best offer wins. Lender disburses merchant-direct within 48 to 72 hours. Every
             stage is logged, replayable, and instrumented.
           </p>
         </div>
@@ -981,7 +1009,13 @@ function WaterfallSchematic() {
           </linearGradient>
           <filter id="schemNodeLift" x="-30%" y="-30%" width="160%" height="160%">
             <feDropShadow dx="0" dy="6" stdDeviation="5" floodColor="#0F172A" floodOpacity="0.22" />
-            <feDropShadow dx="0" dy="2" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.18" />
+            <feDropShadow
+              dx="0"
+              dy="2"
+              stdDeviation="1.5"
+              floodColor="#0F172A"
+              floodOpacity="0.18"
+            />
           </filter>
           <marker
             id="schemArr"
@@ -1044,7 +1078,15 @@ function WaterfallSchematic() {
         </g>
         <g>
           <line x1="1060" y1="60" x2="1240" y2="60" stroke="#94A3B8" strokeWidth="1" />
-          <text x="1240" y="74" textAnchor="end" fontFamily="inherit" fontSize="9" fill="#64748B" letterSpacing="2">
+          <text
+            x="1240"
+            y="74"
+            textAnchor="end"
+            fontFamily="inherit"
+            fontSize="9"
+            fill="#64748B"
+            letterSpacing="2"
+          >
             DETERMINISTIC · 5 STAGES
           </text>
         </g>
@@ -1138,12 +1180,7 @@ function WaterfallSchematic() {
               </text>
 
               {/* Below-node label · foreignObject allows wrapping */}
-              <foreignObject
-                x={cx - 110}
-                y={cy + 76}
-                width="220"
-                height="44"
-              >
+              <foreignObject x={cx - 110} y={cy + 76} width="220" height="44">
                 <div
                   style={{
                     fontFamily: 'inherit',
@@ -1197,11 +1234,10 @@ function PillarFinancing() {
               Beat Home Depot to the financing pitch on every single doorstep.
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              TradePay fans every application across 52 lenders in parallel. No
-              sequential waterfall, no manual rerouting. The homeowner sees one
-              ranked-offer screen with the best monthly payment first. Soft pull
-              only. Lender carries the credit risk and disburses direct on the
-              signed install.
+              TradePay fans every application across 52 lenders in parallel. No sequential
+              waterfall, no manual rerouting. The homeowner sees one ranked-offer screen with the
+              best monthly payment first. Soft pull only. Lender carries the credit risk and
+              disburses direct on the signed install.
             </p>
 
             <ul className="mt-8 space-y-3.5 text-sm">
@@ -1250,20 +1286,16 @@ function PillarFinancing() {
             <div className="tp-synergy-body">
               <p>
                 <strong>
-                  The agentic layer is your financial filter. The lending
-                  waterfall is your closer.
+                  The agentic layer is your financial filter. The lending waterfall is your closer.
                 </strong>
               </p>
               <p>
-                Software agents work silently on every inbound application
-                (soft-pull credit, identity enrichment, propensity scoring,
-                lender routing) and surface only the financially-qualified
-                homeowners to your sales floor. Your estimators only drive to
-                jobs where the homeowner can actually afford the work. The
-                lending waterfall returns an instant multi-offer decision at
-                the kitchen table. Combined, your team converts on the same
-                visit instead of chasing financing across three lenders for a
-                week.
+                Software agents work silently on every inbound application (soft-pull credit,
+                identity enrichment, propensity scoring, lender routing) and surface only the
+                financially-qualified homeowners to your sales floor. Your estimators only drive to
+                jobs where the homeowner can actually afford the work. The lending waterfall returns
+                an instant multi-offer decision at the kitchen table. Combined, your team converts
+                on the same visit instead of chasing financing across three lenders for a week.
               </p>
             </div>
           </div>
@@ -1285,12 +1317,10 @@ function QuoteTheBuyersSection() {
     <div className="mt-20 reveal" id="quote-buyers">
       <div className="max-w-3xl">
         <div className="tp-eyebrow">03A · QUOTE ECONOMICS</div>
-        <h3 className="mt-3 tp-h2 tp-grad-text">
-          Quote the buyers. Not the fillers.
-        </h3>
+        <h3 className="mt-3 tp-h2 tp-grad-text">Quote the buyers. Not the fillers.</h3>
         <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-          Smart forms + smart routing + pre-qualification on the financial data
-          = every estimate slot fills with a homeowner who can actually pay.
+          Smart forms + smart routing + pre-qualification on the financial data = every estimate
+          slot fills with a homeowner who can actually pay.
         </p>
       </div>
 
@@ -1306,13 +1336,12 @@ function QuoteTheBuyersSection() {
             Every estimate slot is finite. Every truck-roll is real money.
           </h4>
           <p className="tp-quote-card-body">
-            A contractor&apos;s estimator slot is expensive: 90 minutes on site
-            plus 30 minutes driving each way is 2.5 hours per estimate. An
-            estimator running 4 jobs/day burns ~10 hours. Every estimate quoted
-            to a homeowner who can&apos;t afford the work is a real $ cost:
-            estimator hourly + truck-roll fuel + the opportunity cost of a job
-            that could close. Pre-qualification at the inquiry stage means the
-            estimator only drives to homes where financing is already lined up.
+            A contractor&apos;s estimator slot is expensive: 90 minutes on site plus 30 minutes
+            driving each way is 2.5 hours per estimate. An estimator running 4 jobs/day burns ~10
+            hours. Every estimate quoted to a homeowner who can&apos;t afford the work is a real $
+            cost: estimator hourly + truck-roll fuel + the opportunity cost of a job that could
+            close. Pre-qualification at the inquiry stage means the estimator only drives to homes
+            where financing is already lined up.
           </p>
 
           {/* Calendar grid · 3D control-panel tilt */}
@@ -1359,8 +1388,7 @@ function QuoteTheBuyersSection() {
             <div className="tp-quote-recovered-k">Estimator hours recovered / week</div>
             <div className="tp-quote-recovered-v">~12.5 hrs</div>
             <div className="tp-quote-recovered-sub">
-              5 filler slots &times; 2.5 hours each, redirected to funded buyers.
-              Illustrative.
+              5 filler slots &times; 2.5 hours each, redirected to funded buyers. Illustrative.
             </div>
           </div>
         </div>
@@ -1371,17 +1399,13 @@ function QuoteTheBuyersSection() {
             <span className="tp-quote-card-dot" />
             CARD B · PIXEL FEEDBACK LOOP (ECHO)
           </div>
-          <h4 className="tp-quote-card-h">
-            Train your pixel on funded jobs, not form fills.
-          </h4>
+          <h4 className="tp-quote-card-h">Train your pixel on funded jobs, not form fills.</h4>
           <p className="tp-quote-card-body">
-            ECHO (the Attribution Agent) holds pixel events until a homeowner
-            clears financial qualification, then fires weighted conversions back
-            to Meta and Google via server-side CAPI. The ad platforms&apos;
-            algorithms retrain on what a <em>funded job</em> looks like. Ad
-            spend gets more efficient month over month: same budget, more
-            buyers. You get a real feedback loop on Page View &rarr; Lead &rarr;
-            Pre-qualified &rarr; Funded.
+            ECHO (the Attribution Agent) holds pixel events until a homeowner clears financial
+            qualification, then fires weighted conversions back to Meta and Google via server-side
+            CAPI. The ad platforms&apos; algorithms retrain on what a <em>funded job</em> looks
+            like. Ad spend gets more efficient month over month: same budget, more buyers. You get a
+            real feedback loop on Page View &rarr; Lead &rarr; Pre-qualified &rarr; Funded.
           </p>
 
           {/* Pixel feedback loop · 5 steps + animated traveling pulse */}
@@ -1404,7 +1428,13 @@ function QuoteTheBuyersSection() {
                   <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
                 </radialGradient>
                 <filter id="pxNodeGlow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#0F172A" floodOpacity="0.18" />
+                  <feDropShadow
+                    dx="0"
+                    dy="2"
+                    stdDeviation="2.5"
+                    floodColor="#0F172A"
+                    floodOpacity="0.18"
+                  />
                 </filter>
               </defs>
 
@@ -1420,11 +1450,7 @@ function QuoteTheBuyersSection() {
 
               {/* Animated pulse traveling along the path */}
               <circle r="8" fill="url(#pxPulse)">
-                <animateMotion
-                  dur="6.5s"
-                  repeatCount="indefinite"
-                  rotate="auto"
-                >
+                <animateMotion dur="6.5s" repeatCount="indefinite" rotate="auto">
                   <mpath href="#tpPixelPath" />
                 </animateMotion>
               </circle>
@@ -1497,30 +1523,28 @@ function QuoteTheBuyersSection() {
             Smart forms. Smart routing. For contractors running funnels.
           </h4>
           <p className="tp-quote-card-body">
-            For contractors running funnels, two pre-qualification agents
-            reshape the experience without ever touching a phone:
+            For contractors running funnels, two pre-qualification agents reshape the experience
+            without ever touching a phone:
           </p>
           <ul className="tp-quote-routing-list">
             <li>
               <span className="tp-quote-routing-chip">PRISM</span>
               <span>
-                Smart forms reshape question order based on partial answers.
-                High-intent leads skip qualifying questions and go
-                straight to the calendar slot.
+                Smart forms reshape question order based on partial answers. High-intent leads skip
+                qualifying questions and go straight to the calendar slot.
               </span>
             </li>
             <li>
               <span className="tp-quote-routing-chip">HELIX</span>
               <span>
-                Smart routing assigns the qualified homeowner to the right
-                estimator based on geography, capacity, and ticket-size match.
+                Smart routing assigns the qualified homeowner to the right estimator based on
+                geography, capacity, and ticket-size match.
               </span>
             </li>
             <li>
               <span className="tp-quote-routing-chip">RESULT</span>
               <span>
-                Less dispatcher time. Less estimator overload. Fewer abandoned
-                applications.
+                Less dispatcher time. Less estimator overload. Fewer abandoned applications.
               </span>
             </li>
           </ul>
@@ -1530,8 +1554,21 @@ function QuoteTheBuyersSection() {
             <div className="tp-route-map-stage">
               <svg viewBox="0 0 320 220" className="tp-route-map-svg" aria-hidden>
                 <defs>
-                  <pattern id="rmGrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#94A3B8" strokeWidth="0.4" opacity="0.4" />
+                  <pattern
+                    id="rmGrid"
+                    x="0"
+                    y="0"
+                    width="20"
+                    height="20"
+                    patternUnits="userSpaceOnUse"
+                  >
+                    <path
+                      d="M 20 0 L 0 0 0 20"
+                      fill="none"
+                      stroke="#94A3B8"
+                      strokeWidth="0.4"
+                      opacity="0.4"
+                    />
                   </pattern>
                   <radialGradient id="rmQualGlow" cx="0.5" cy="0.5" r="0.5">
                     <stop offset="0%" stopColor="#F97316" stopOpacity="0.6" />
@@ -1634,7 +1671,9 @@ function QuoteTheBuyersSection() {
                           r="18"
                           fill="url(#rmQualGlow)"
                           className="tp-route-map-pulse"
-                          style={{ animationDelay: `${parseInt(n.id.replace('n', ''), 10) * 0.4}s` }}
+                          style={{
+                            animationDelay: `${parseInt(n.id.replace('n', ''), 10) * 0.4}s`,
+                          }}
                         />
                       )}
                       <circle
@@ -1722,9 +1761,7 @@ function FinanceMockup() {
         <span className="tp-mock-dot" />
         <span className="tp-mock-dot" />
         <span className="tp-mock-dot" />
-        <span className="tp-mock-url">
-          tradepay.app / offer / henderson-roof-24k
-        </span>
+        <span className="tp-mock-url">tradepay.app / offer / henderson-roof-24k</span>
         <span className="tp-mock-badge">WHITE-LABEL READY</span>
       </div>
 
@@ -1750,12 +1787,8 @@ function FinanceMockup() {
               Henderson residence · Sacramento, CA
             </div>
             <div className="mt-1 flex items-baseline gap-2">
-              <div className="text-3xl font-bold text-slate-900 tabular-nums">
-                $24,000
-              </div>
-              <div className="text-sm text-slate-500">
-                Roof replacement · GAF Timberline HDZ
-              </div>
+              <div className="text-3xl font-bold text-slate-900 tabular-nums">$24,000</div>
+              <div className="text-sm text-slate-500">Roof replacement · GAF Timberline HDZ</div>
             </div>
           </div>
           <div className="col-span-5 grid grid-cols-3 gap-3 text-right">
@@ -1763,25 +1796,15 @@ function FinanceMockup() {
               <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">
                 Vantage 4
               </div>
-              <div className="text-base font-semibold text-slate-900 tabular-nums mt-0.5">
-                742
-              </div>
+              <div className="text-base font-semibold text-slate-900 tabular-nums mt-0.5">742</div>
             </div>
             <div>
-              <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">
-                DTI
-              </div>
-              <div className="text-base font-semibold text-slate-900 tabular-nums mt-0.5">
-                0.31
-              </div>
+              <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">DTI</div>
+              <div className="text-base font-semibold text-slate-900 tabular-nums mt-0.5">0.31</div>
             </div>
             <div>
-              <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">
-                Match
-              </div>
-              <div className="text-base font-semibold text-slate-900 tabular-nums mt-0.5">
-                14s
-              </div>
+              <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">Match</div>
+              <div className="text-base font-semibold text-slate-900 tabular-nums mt-0.5">14s</div>
             </div>
           </div>
         </div>
@@ -1821,9 +1844,7 @@ function FinanceMockup() {
                   <span className="tp-star">★</span>
                 ) : (
                   <span
-                    className={`tp-row-dot ${
-                      o.status === 'declined' ? 'tp-row-dot-muted' : ''
-                    }`}
+                    className={`tp-row-dot ${o.status === 'declined' ? 'tp-row-dot-muted' : ''}`}
                   />
                 )}
                 <span
@@ -1831,26 +1852,22 @@ function FinanceMockup() {
                     o.status === 'primary'
                       ? 'font-semibold text-slate-900'
                       : o.status === 'declined'
-                      ? 'text-slate-400'
-                      : 'text-slate-700'
+                        ? 'text-slate-400'
+                        : 'text-slate-700'
                   }
                 >
                   {o.lender}
                 </span>
-                {o.status === 'primary' && (
-                  <span className="tp-row-recommend">RECOMMENDED</span>
-                )}
-                {o.status === 'counter' && (
-                  <span className="tp-row-counter">COUNTER</span>
-                )}
+                {o.status === 'primary' && <span className="tp-row-recommend">RECOMMENDED</span>}
+                {o.status === 'counter' && <span className="tp-row-counter">COUNTER</span>}
               </div>
               <div
                 className={`col-span-3 text-right tabular-nums ${
                   o.status === 'primary'
                     ? 'font-bold text-slate-900'
                     : o.status === 'declined'
-                    ? 'text-slate-400'
-                    : 'text-slate-700'
+                      ? 'text-slate-400'
+                      : 'text-slate-700'
                 }`}
               >
                 {o.monthly}
@@ -1871,17 +1888,13 @@ function FinanceMockup() {
               </div>
               <div className="col-span-1 text-right">
                 {o.status === 'primary' ? (
-                  <span className="tp-pill-status tp-pill-status-approved">
-                    APPR
-                  </span>
+                  <span className="tp-pill-status tp-pill-status-approved">APPR</span>
                 ) : o.status === 'backup' ? (
                   <span className="tp-pill-status tp-pill-status-backup">APPR</span>
                 ) : o.status === 'counter' ? (
                   <span className="tp-pill-status tp-pill-status-counter">CNTR</span>
                 ) : (
-                  <span className="tp-pill-status tp-pill-status-declined">
-                    DECL
-                  </span>
+                  <span className="tp-pill-status tp-pill-status-declined">DECL</span>
                 )}
               </div>
             </div>
@@ -1891,8 +1904,8 @@ function FinanceMockup() {
         {/* Decision footer */}
         <div className="px-6 py-4 border-t border-slate-200/70 bg-slate-50/60 flex items-center justify-between">
           <div className="text-sm text-slate-700">
-            <span className="font-semibold text-slate-900">3 of 52 routed primary.</span>{' '}
-            Homeowner selects monthly payment, signs in-app.
+            <span className="font-semibold text-slate-900">3 of 52 routed primary.</span> Homeowner
+            selects monthly payment, signs in-app.
           </div>
           <div className="flex items-center gap-3">
             <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-500 text-right">
@@ -1912,33 +1925,21 @@ function FinanceMockup() {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <div className="tp-mini-stat">
-            <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">
-              Monthly
-            </div>
-            <div className="text-lg font-bold text-slate-900 tabular-nums mt-1">
-              $480
-            </div>
+            <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">Monthly</div>
+            <div className="text-lg font-bold text-slate-900 tabular-nums mt-1">$480</div>
           </div>
           <div className="tp-mini-stat">
-            <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">
-              Term
-            </div>
-            <div className="text-lg font-bold text-slate-900 tabular-nums mt-1">
-              60 mo
-            </div>
+            <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">Term</div>
+            <div className="text-lg font-bold text-slate-900 tabular-nums mt-1">60 mo</div>
           </div>
           <div className="tp-mini-stat">
-            <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">
-              APR
-            </div>
-            <div className="text-lg font-bold text-slate-900 tabular-nums mt-1">
-              8.49%
-            </div>
+            <div className="text-[9.5px] uppercase tracking-[0.18em] text-slate-500">APR</div>
+            <div className="text-lg font-bold text-slate-900 tabular-nums mt-1">8.49%</div>
           </div>
         </div>
         <div className="mt-3 flex items-center justify-between text-[11.5px] text-slate-500">
           <span>Soft pull · no impact on credit</span>
-          <span className="text-slate-700 font-medium">e-sign · in-app</span>
+          <span className="text-slate-700 font-medium">accept approval · in-app</span>
         </div>
       </div>
     </div>
@@ -2041,14 +2042,7 @@ function AgentIcon({ iconKey }: { iconKey: AgentIconKey }) {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="2" fill="#F8FAFC" />
           <circle cx="12" cy="12" r="6" stroke="#F8FAFC" strokeWidth="1.2" />
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="#F8FAFC"
-            strokeWidth="0.8"
-            strokeDasharray="2 3"
-          />
+          <circle cx="12" cy="12" r="10" stroke="#F8FAFC" strokeWidth="0.8" strokeDasharray="2 3" />
         </svg>
       );
     default:
@@ -2078,7 +2072,9 @@ function AgentHeader({ agent }: { agent: Agent }) {
         </div>
       </div>
       <div className={`tp-agent-status ${isLearning ? 'tp-agent-status-learning' : ''}`}>
-        <span className={`tp-agent-status-dot ${isLearning ? 'tp-agent-status-dot-learning' : ''}`} />
+        <span
+          className={`tp-agent-status-dot ${isLearning ? 'tp-agent-status-dot-learning' : ''}`}
+        />
         {agent.status}
       </div>
     </div>
@@ -2164,15 +2160,13 @@ function PillarAgents() {
             Seven pre-qualification agents running your contractor revenue stack · 24/7.
           </h2>
           <p className="mt-5 text-lg text-slate-300 leading-relaxed">
-            Every layer of TradePay is operated by a dedicated pre-qualification
-            agent, from form intake all the way through lender matching, funding
-            orchestration, and ad attribution. They work on the{' '}
-            <span className="text-white font-semibold">financial data</span>{' '}
-            in software (soft-pull credit, identity enrichment, propensity
-            scoring, lender routing), not on the phone. They never make
-            outbound calls, never voice-dial, never text-blast. They qualify
-            silently in the background and surface the financially-qualified
-            homeowners to your human sales, estimator, and dispatcher team.
+            Every layer of TradePay is operated by a dedicated pre-qualification agent, from form
+            intake all the way through lender matching, funding orchestration, and ad attribution.
+            They work on the <span className="text-white font-semibold">financial data</span> in
+            software (soft-pull credit, identity enrichment, propensity scoring, lender routing),
+            not on the phone. They never make outbound calls, never voice-dial, never text-blast.
+            They qualify silently in the background and surface the financially-qualified homeowners
+            to your human sales, estimator, and dispatcher team.
           </p>
         </div>
 
@@ -2199,8 +2193,8 @@ function PillarAgents() {
             <div className="min-w-0">
               <div className="tp-agents-coordination-eyebrow">Coordination layer</div>
               <div className="tp-agents-coordination-body">
-                All seven agents share a common event bus, a shared memory store,
-                and a unified observability plane.
+                All seven agents share a common event bus, a shared memory store, and a unified
+                observability plane.
               </div>
             </div>
           </div>
@@ -2222,9 +2216,8 @@ function PillarAgents() {
         <div className="mt-6 tp-agents-footer reveal">
           <span className="tp-agents-footer-dot" />
           <span>
-            Agents work on the financial data, not on the phone. Every agent
-            action is FCRA permissible-purpose-aware and logged to an immutable
-            audit trail.
+            Agents work on the financial data, not on the phone. Every agent action is FCRA
+            permissible-purpose-aware and logged to an immutable audit trail.
           </span>
         </div>
       </div>
@@ -2245,23 +2238,14 @@ function RoiSection() {
   const [ticket, setTicket] = useState(24000);
 
   // Funnel math
-  const preQualified = useMemo(
-    () => Math.round((leads * preQualPct) / 100),
-    [leads, preQualPct],
-  );
+  const preQualified = useMemo(() => Math.round((leads * preQualPct) / 100), [leads, preQualPct]);
   const shows = useMemo(
     () => Math.round((preQualified * showRate) / 100),
     [preQualified, showRate],
   );
-  const fundedPerMonth = useMemo(
-    () => Math.round((shows * closeRate) / 100),
-    [shows, closeRate],
-  );
+  const fundedPerMonth = useMemo(() => Math.round((shows * closeRate) / 100), [shows, closeRate]);
   const fundedPerYear = useMemo(() => fundedPerMonth * 12, [fundedPerMonth]);
-  const annualRevenue = useMemo(
-    () => fundedPerYear * ticket,
-    [fundedPerYear, ticket],
-  );
+  const annualRevenue = useMemo(() => fundedPerYear * ticket, [fundedPerYear, ticket]);
   // Skipped wasted estimates · 2.5 hrs each (90min onsite + 30min each way)
   const estimatorHoursSavedPerMonth = useMemo(() => {
     const skippedFillers = Math.round(leads * (1 - preQualPct / 100));
@@ -2279,11 +2263,10 @@ function RoiSection() {
             Model your funnel. End-to-end. Inbound to funded.
           </h2>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-            Plug in your real numbers across the four-stage funnel: inbound
-            leads &rarr; pre-qualified &rarr; estimate shows &rarr; closed
-            contracts. We model financing-driven revenue from the homeowners who
-            actually fund. Illustrative only; outcomes vary by crew, ticket,
-            vertical, season, and lender mix.
+            Plug in your real numbers across the four-stage funnel: inbound leads &rarr;
+            pre-qualified &rarr; estimate shows &rarr; closed contracts. We model financing-driven
+            revenue from the homeowners who actually fund. Illustrative only; outcomes vary by crew,
+            ticket, vertical, season, and lender mix.
           </p>
         </div>
 
@@ -2350,9 +2333,9 @@ function RoiSection() {
             <div className="mt-7 pt-5 border-t border-slate-200/70 tp-roi-assump">
               <span className="tp-roi-assump-k">Funnel math</span>
               <span>
-                Funded jobs/mo = inbound &times; pre-qual% &times; show% &times;
-                close%. Ticket size sits inside the TradePay loan range ($3k to
-                $100k). Adjust each stage to match your real conversion.
+                Funded jobs/mo = inbound &times; pre-qual% &times; show% &times; close%. Ticket size
+                sits inside the TradePay loan range ($3k to $100k). Adjust each stage to match your
+                real conversion.
               </span>
             </div>
           </div>
@@ -2366,9 +2349,7 @@ function RoiSection() {
               Illustrative &middot; based on your funnel inputs
             </div>
 
-            <div className="mt-6 tp-roi-num tp-roi-num-3d tabular-nums">
-              {fmt(annualRevenue)}
-            </div>
+            <div className="mt-6 tp-roi-num tp-roi-num-3d tabular-nums">{fmt(annualRevenue)}</div>
 
             {/* Funnel narrative · animated traversal dots */}
             <div className="mt-4 tp-roi-funnel">
@@ -2432,9 +2413,8 @@ function RoiSection() {
               <IconArrowRight className="ml-1.5" />
             </a>
             <div className="mt-3 text-[10px] uppercase tracking-[0.18em] text-slate-500 text-center leading-relaxed">
-              Outputs are illustrative based on your inputs. Actual outcomes
-              vary by region, season, and product mix. Not a guarantee of
-              returns.
+              Outputs are illustrative based on your inputs. Actual outcomes vary by region, season,
+              and product mix. Not a guarantee of returns.
             </div>
           </div>
         </div>
@@ -2467,9 +2447,7 @@ function RoiSlider({
         <label className="text-[11.5px] uppercase tracking-[0.18em] text-slate-500 font-semibold">
           {label}
         </label>
-        <span className="text-base font-semibold text-slate-900 tabular-nums">
-          {format(value)}
-        </span>
+        <span className="text-base font-semibold text-slate-900 tabular-nums">{format(value)}</span>
       </div>
       <div className="tp-slider-track">
         <div className="tp-slider-fill" style={{ width: `${pct}%` }} />
@@ -2497,12 +2475,10 @@ function CaseStudiesSection() {
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="max-w-3xl reveal">
           <div className="tp-eyebrow">07 · CONTRACTORS RUNNING TRADEPAY</div>
-          <h2 className="mt-3 tp-h2 tp-grad-text">
-            Financing turned every quote into a close.
-          </h2>
+          <h2 className="mt-3 tp-h2 tp-grad-text">Financing turned every quote into a close.</h2>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-            Three contractors, three verticals. Same outcome: financing closes the
-            jobs that were walking out the door.
+            Three contractors, three verticals. Same outcome: financing closes the jobs that were
+            walking out the door.
           </p>
         </div>
 
@@ -2520,9 +2496,7 @@ function CaseStudiesSection() {
               </div>
 
               <div className="tp-quote-mark">"</div>
-              <p className="mt-2 text-[14.5px] text-slate-700 leading-relaxed">
-                {c.quote}
-              </p>
+              <p className="mt-2 text-[14.5px] text-slate-700 leading-relaxed">{c.quote}</p>
 
               <div className="mt-6 pt-5 border-t border-slate-200/70">
                 <div className="text-sm font-semibold text-slate-900">{c.name}</div>
@@ -2576,9 +2550,7 @@ function ObjectionsSection() {
       <div className="relative mx-auto max-w-5xl px-6">
         <div className="reveal">
           <div className="tp-eyebrow">09 · OBJECTIONS ANSWERED</div>
-          <h2 className="mt-3 tp-h2 tp-grad-text">
-            What contractors ask before they sign up.
-          </h2>
+          <h2 className="mt-3 tp-h2 tp-grad-text">What contractors ask before they sign up.</h2>
         </div>
 
         <div className="mt-12 tp-faq reveal">
@@ -2633,8 +2605,8 @@ function FinalCta() {
         </h2>
 
         <p className="mt-7 text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          Sign up in 5 minutes. KYB clears in 60 seconds. Start running soft-pull
-          pre-quals at the door as soon as your first crew is configured.
+          Sign up in 5 minutes. KYB clears in 60 seconds. Start running soft-pull pre-quals at the
+          door as soon as your first crew is configured.
         </p>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -2642,10 +2614,7 @@ function FinalCta() {
             Start TradePay signup
             <IconArrowRight className="ml-2" />
           </a>
-          <a
-            href="/apply/tradepay"
-            className="tp-btn-ghost-dark text-base px-7 py-4"
-          >
+          <a href="/apply/tradepay" className="tp-btn-ghost-dark text-base px-7 py-4">
             See the contractor flow
           </a>
         </div>
@@ -2668,12 +2637,8 @@ function Footer() {
       <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row items-center justify-between gap-5">
         <div className="flex items-center gap-2.5">
           <LogoMark size={24} />
-          <span className="font-semibold tracking-tight text-sm text-slate-900">
-            TradePay
-          </span>
-          <span className="text-slate-500 text-xs ml-3">
-            © 2026 EazePay · TradePay
-          </span>
+          <span className="font-semibold tracking-tight text-sm text-slate-900">TradePay</span>
+          <span className="text-slate-500 text-xs ml-3">© 2026 EazePay · TradePay</span>
         </div>
         <div className="flex items-center gap-7 text-xs text-slate-500">
           <a href="#" className="hover:text-slate-900">
