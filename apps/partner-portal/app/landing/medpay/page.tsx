@@ -23,11 +23,19 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
 // Chips float clear of the offer-card body. Stage container is the parent;
 // positions are above the card top (top: -X%) and below the card bottom
 // (bottom: -X%) so they never overlap the card's visible text.
-const HERO_CHIPS: Array<{ k: string; v: string; top?: string; bottom?: string; left?: string; right?: string; delay: string }> = [
-  { k: 'FCRA',        v: 'soft pull · 0 impact',         top: '-12%',    left:  '2%',  delay: '0s'   },
-  { k: 'Decision',    v: 'instant · multi-offer',        top: '-12%',    right: '2%',  delay: '0.6s' },
-  { k: 'Payout',      v: 'merchant-direct · 48-72hr',    bottom: '-12%', left:  '2%',  delay: '1.2s' },
-  { k: 'Promo',       v: '0% interest plans · T&Cs',     bottom: '-12%', right: '2%',  delay: '1.8s' },
+const HERO_CHIPS: Array<{
+  k: string;
+  v: string;
+  top?: string;
+  bottom?: string;
+  left?: string;
+  right?: string;
+  delay: string;
+}> = [
+  { k: 'FCRA', v: 'soft pull · 0 impact', top: '-12%', left: '2%', delay: '0s' },
+  { k: 'Decision', v: 'instant · multi-offer', top: '-12%', right: '2%', delay: '0.6s' },
+  { k: 'Payout', v: 'merchant-direct · 48-72hr', bottom: '-12%', left: '2%', delay: '1.2s' },
+  { k: 'Promo', v: '0% interest plans · T&Cs', bottom: '-12%', right: '2%', delay: '1.8s' },
 ];
 
 const TICKER: Array<{ value: string; label: string; delta: string }> = [
@@ -89,7 +97,15 @@ const STAGES: Array<{ n: string; stage: string; title: string; body: string; met
   },
 ];
 
-const OFFERS: Array<{ label: string; term: string; monthly: string; apr: string; total: string; recommended?: boolean; note?: string }> = [
+const OFFERS: Array<{
+  label: string;
+  term: string;
+  monthly: string;
+  apr: string;
+  total: string;
+  recommended?: boolean;
+  note?: string;
+}> = [
   {
     label: 'Best · lowest total cost',
     term: '48 mo',
@@ -99,8 +115,22 @@ const OFFERS: Array<{ label: string; term: string; monthly: string; apr: string;
     recommended: true,
     note: 'Soft pull only · lender confirmed at e-sign',
   },
-  { label: 'Personal · 36 mo', term: '36 mo', monthly: '$338', apr: '8.9%', total: '$12,168', note: 'Soft pull only' },
-  { label: '0% Promo · 12 mo', term: '12 mo', monthly: '$1,000', apr: '0% promo', total: '$12,000', note: 'Deferred interest · pay-in-full · T&Cs apply' },
+  {
+    label: 'Personal · 36 mo',
+    term: '36 mo',
+    monthly: '$338',
+    apr: '8.9%',
+    total: '$12,168',
+    note: 'Soft pull only',
+  },
+  {
+    label: '0% Promo · 12 mo',
+    term: '12 mo',
+    monthly: '$1,000',
+    apr: '0% promo',
+    total: '$12,000',
+    note: 'Deferred interest · pay-in-full · T&Cs apply',
+  },
 ];
 
 type AgentStatus = 'ONLINE' | 'LEARNING';
@@ -147,8 +177,7 @@ const AGENTS: Array<{
       { k: 'Avg cost/lead', v: '$0.41' },
       { k: 'Identity match', v: '94%' },
     ],
-    lastAction:
-      'fell back to provider_03 after timeout on provider_01 · saved $0.18 · 2s ago',
+    lastAction: 'fell back to provider_03 after timeout on provider_01 · saved $0.18 · 2s ago',
     iconKey: 'vega',
   },
   {
@@ -163,8 +192,7 @@ const AGENTS: Array<{
       { k: 'Model AUC', v: '0.89' },
       { k: 'Last retrain', v: '4h ago' },
     ],
-    lastAction:
-      'flagged feature drift on procedure_value. Recalibrated thresholds · 4h ago',
+    lastAction: 'flagged feature drift on procedure_value. Recalibrated thresholds · 4h ago',
     iconKey: 'oracle',
   },
   {
@@ -180,8 +208,7 @@ const AGENTS: Array<{
       { k: 'Rep match lift', v: '+31%' },
       { k: 'SLA breach', v: '0.4%' },
     ],
-    lastAction:
-      'rerouted T1 patient away from rep_M.Chen (capacity 98%) → rep_S.Patel · 1s ago',
+    lastAction: 'rerouted T1 patient away from rep_M.Chen (capacity 98%) → rep_S.Patel · 1s ago',
     iconKey: 'helix',
   },
   {
@@ -213,8 +240,7 @@ const AGENTS: Array<{
       { k: 'Auth success', v: '96.3%' },
       { k: 'Recovery', v: '+18%' },
     ],
-    lastAction:
-      'retried failed ACH on case_8412 via card_on_file · captured $4,200 · 8s ago',
+    lastAction: 'retried failed ACH on case_8412 via card_on_file · captured $4,200 · 8s ago',
     iconKey: 'flux',
   },
   {
@@ -226,8 +252,7 @@ const AGENTS: Array<{
     description:
       'ECHO closes the loop. It holds pixel events until a patient clears qualification, then fires weighted conversions back to Meta and Google via server-side CAPI. It uploads closed-won deals as offline conversions. The cleanest training signal your ad account will ever see.',
     stats: [],
-    lastAction:
-      'uploaded 47 closed-won cases to Meta CAPI, weighted by case_value · 6m ago',
+    lastAction: 'uploaded 47 closed-won cases to Meta CAPI, weighted by case_value · 6m ago',
     iconKey: 'echo',
   },
 ];
@@ -322,27 +347,52 @@ const OBJECTIONS: Array<{ q: string; a: string }> = [
 const Icon = {
   Logo: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" stroke="#fff" strokeWidth="2.4" />
+      <path
+        d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"
+        stroke="#fff"
+        strokeWidth="2.4"
+      />
     </svg>
   ),
   Arrow: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 12h14M13 6l6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   Check: () => (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-      <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 12.5l4.5 4.5L19 7"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   Spark: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path
+        d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   Phone: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M5 4h4l2 5-3 2a14 14 0 006 6l2-3 5 2v4a2 2 0 01-2 2A18 18 0 013 6a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M5 4h4l2 5-3 2a14 14 0 006 6l2-3 5 2v4a2 2 0 01-2 2A18 18 0 013 6a2 2 0 012-2z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
     </svg>
   ),
   Card: () => (
@@ -353,17 +403,31 @@ const Icon = {
   ),
   Bolt: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path
+        d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   Shield: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6l8-3z" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6l8-3z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
     </svg>
   ),
   Stack: () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-      <path d="M12 3L2 8l10 5 10-5-10-5zM2 14l10 5 10-5M2 18l10 5 10-5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path
+        d="M12 3L2 8l10 5 10-5-10-5zM2 14l10 5 10-5M2 18l10 5 10-5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   Plus: () => (
@@ -383,7 +447,12 @@ const Icon = {
   ),
   Hub: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path
+        d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   // ============ AGENT ICONS (AUREAN 7) ============
@@ -401,12 +470,23 @@ const Icon = {
   ),
   AgentOracle: () => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M4 17l5-9 4 6 3-4 4 7" stroke="#0E7C66" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M4 17l5-9 4 6 3-4 4 7"
+        stroke="#0E7C66"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
   AgentHelix: () => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M6 4c4 4 4 12 0 16M18 4c-4 4-4 12 0 16M6 8h12M6 16h12" stroke="#0E7C66" strokeWidth="1.4" strokeLinecap="round" />
+      <path
+        d="M6 4c4 4 4 12 0 16M18 4c-4 4-4 12 0 16M6 8h12M6 16h12"
+        stroke="#0E7C66"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
     </svg>
   ),
   AgentNexus: () => (
@@ -421,9 +501,26 @@ const Icon = {
   ),
   AgentFlux: () => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M3 12c3-3 6-3 9 0s6 3 9 0" stroke="#0E7C66" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M3 7c3-3 6-3 9 0s6 3 9 0" stroke="#0E7C66" strokeWidth="1" strokeLinecap="round" strokeOpacity="0.5" />
-      <path d="M3 17c3-3 6-3 9 0s6 3 9 0" stroke="#0E7C66" strokeWidth="1" strokeLinecap="round" strokeOpacity="0.5" />
+      <path
+        d="M3 12c3-3 6-3 9 0s6 3 9 0"
+        stroke="#0E7C66"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M3 7c3-3 6-3 9 0s6 3 9 0"
+        stroke="#0E7C66"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeOpacity="0.5"
+      />
+      <path
+        d="M3 17c3-3 6-3 9 0s6 3 9 0"
+        stroke="#0E7C66"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeOpacity="0.5"
+      />
     </svg>
   ),
   AgentEcho: () => (
@@ -460,7 +557,7 @@ function useReveal(): void {
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
@@ -479,7 +576,11 @@ function useScrolled(): boolean {
 }
 
 function fmtUsd(n: number): string {
-  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  return n.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
 }
 
 /* ----------------------------- main component ---------------------------- */
@@ -489,15 +590,15 @@ export default function MedPayLandingPage(): JSX.Element {
   const scrolled = useScrolled();
 
   // ROI calculator state — 5-input funnel
-  const [leads, setLeads] = useState<number>(180);          // inbound leads / month
+  const [leads, setLeads] = useState<number>(180); // inbound leads / month
   const [qualifiedRate, setQualifiedRate] = useState<number>(50); // % of inbound that qualify
-  const [closeRate, setCloseRate] = useState<number>(45);   // % of qualifieds → yes-to-treatment
+  const [closeRate, setCloseRate] = useState<number>(45); // % of qualifieds → yes-to-treatment
   const [fundedRate, setFundedRate] = useState<number>(70); // % of closes that fund via MedPay
-  const [ticket, setTicket] = useState<number>(8000);       // avg ticket $
+  const [ticket, setTicket] = useState<number>(8000); // avg ticket $
 
   // WITH MedPay: leads × qualified% × close% × funded%
   const withFundedPerMonth = Math.round(
-    leads * (qualifiedRate / 100) * (closeRate / 100) * (fundedRate / 100)
+    leads * (qualifiedRate / 100) * (closeRate / 100) * (fundedRate / 100),
   );
   const withFundedPerYear = withFundedPerMonth * 12;
   const withRevenueAnnual = withFundedPerYear * ticket;
@@ -506,7 +607,7 @@ export default function MedPayLandingPage(): JSX.Element {
   // No financing step — the close rate IS the funnel since there's no "fund" gate.
   const WITHOUT_CLOSE_RATE = 18; // %
   const withoutFundedPerMonth = Math.round(
-    leads * (qualifiedRate / 100) * (WITHOUT_CLOSE_RATE / 100)
+    leads * (qualifiedRate / 100) * (WITHOUT_CLOSE_RATE / 100),
   );
   const withoutFundedPerYear = withoutFundedPerMonth * 12;
   const withoutRevenueAnnual = withoutFundedPerYear * ticket;
@@ -589,13 +690,15 @@ export default function MedPayLandingPage(): JSX.Element {
               </h1>
 
               <p className="mp-hero-sub">
-                Pre-qualification agents and the lending waterfall run <strong>in synchrony</strong>.
-                Software agents qualify every inbound application silently on the <strong>financial data</strong>
-                {' '}— soft-pull credit, identity, propensity — so your team&apos;s calendar fills with patients
-                who can <strong>actually afford treatment</strong>. The marketplace then returns an{' '}
-                <strong>instant multi-offer decision</strong> at the chair, the close happens on the same visit,
-                and funds settle <strong>merchant-direct, generally within 48 to 72 hours</strong> of the
-                loan settling. All under one signup.
+                Pre-qualification agents and the lending waterfall run <strong>in synchrony</strong>
+                . Software agents qualify every inbound application silently on the{' '}
+                <strong>financial data</strong> — soft-pull credit, identity, propensity — so your
+                team&apos;s calendar fills with patients who can{' '}
+                <strong>actually afford treatment</strong>. The marketplace then returns an{' '}
+                <strong>instant multi-offer decision</strong> at the chair, the close happens on the
+                same visit, and funds settle{' '}
+                <strong>merchant-direct, generally within 48 to 72 hours</strong> of the loan
+                settling. All under one signup.
               </p>
 
               <div className="mp-hero-ctas">
@@ -651,7 +754,10 @@ export default function MedPayLandingPage(): JSX.Element {
                 {/* pixel grid behind card */}
                 <div className="mp-pixel-grid" aria-hidden>
                   {Array.from({ length: 192 }).map((_, i) => (
-                    <span key={i} className={`px ${[7, 18, 33, 47, 62, 81, 102, 119, 138, 155, 171].includes(i) ? 'fired' : ''}`} />
+                    <span
+                      key={i}
+                      className={`px ${[7, 18, 33, 47, 62, 81, 102, 119, 138, 155, 171].includes(i) ? 'fired' : ''}`}
+                    />
                   ))}
                 </div>
 
@@ -673,7 +779,9 @@ export default function MedPayLandingPage(): JSX.Element {
                   <div className="mp-offer-row">
                     <div>
                       <div className="mp-offer-row-k">Est. monthly</div>
-                      <div className="mp-offer-row-v">$250<span className="dim"> · 48 mo</span></div>
+                      <div className="mp-offer-row-v">
+                        $250<span className="dim"> · 48 mo</span>
+                      </div>
                     </div>
                     <div>
                       <div className="mp-offer-row-k">APR</div>
@@ -785,13 +893,14 @@ export default function MedPayLandingPage(): JSX.Element {
           <div className="mp-section-head reveal" style={{ maxWidth: '780px' }}>
             <div className="mp-section-tag dark">01 · THE COST OF DOING NOTHING</div>
             <h2 className="mp-h2 light">
-              Every patient who says <em>&ldquo;let me think about it&rdquo;</em> walks out with $4,200 in your treatment plan{' '}
-              <span className="grad-text-warning">unfunded.</span>
+              Every patient who says <em>&ldquo;let me think about it&rdquo;</em> walks out with
+              $4,200 in your treatment plan <span className="grad-text-warning">unfunded.</span>
             </h2>
             <p className="mp-section-body light">
-              A 3-chair practice averages <strong>$1.4M/yr</strong> in case acceptance lost to financing friction. The
-              objection isn&apos;t price. It&apos;s cash-flow. Patients don&apos;t carry $12k. Without a yes-able monthly number on
-              the spot, the implant case becomes &ldquo;I&apos;ll call you back.&rdquo;
+              A 3-chair practice averages <strong>$1.4M/yr</strong> in case acceptance lost to
+              financing friction. The objection isn&apos;t price. It&apos;s cash-flow. Patients
+              don&apos;t carry $12k. Without a yes-able monthly number on the spot, the implant case
+              becomes &ldquo;I&apos;ll call you back.&rdquo;
             </p>
           </div>
 
@@ -840,10 +949,11 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">From cold lead to settled deal.</span>
             </h2>
             <p className="mp-section-body">
-              The financing waterfall runs end-to-end inside MedPay. Soft-pull pre-qual, the agentic layer
-              pre-qualifying every application on the financial data, a marketplace decision engine that fires
-              52 lenders in parallel, the best offer winning, and the lender disbursing direct to your business
-              account on approval — generally within 48 to 72 hours of settlement.
+              The financing waterfall runs end-to-end inside MedPay. Soft-pull pre-qual, the agentic
+              layer pre-qualifying every application on the financial data, a marketplace decision
+              engine that fires 52 lenders in parallel, the best offer winning, and the lender
+              disbursing direct to your business account on approval — generally within 48 to 72
+              hours of settlement.
             </p>
           </div>
 
@@ -868,7 +978,13 @@ export default function MedPayLandingPage(): JSX.Element {
                   <stop offset="100%" stopColor="#ECFFFE" />
                 </linearGradient>
                 <filter id="nodeshadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor="#0E7C66" floodOpacity="0.18" />
+                  <feDropShadow
+                    dx="0"
+                    dy="6"
+                    stdDeviation="10"
+                    floodColor="#0E7C66"
+                    floodOpacity="0.18"
+                  />
                 </filter>
               </defs>
 
@@ -930,11 +1046,11 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">patient intake to attribution · 24/7.</span>
             </h2>
             <p className="mp-section-body">
-              Each agent has a defined role, a defined scope, and a measurable output. They work on the
-              financial data &mdash; not on the phone. They don&apos;t replace your team; they replace the
-              manual intake reviews, the enrichment vendor sprawl, the lender-routing back-and-forth, the
-              failed-ACH chase, and the broken pixel feedback loop your ad account is starving on. Every
-              action is logged, explainable, and FCRA-aware.
+              Each agent has a defined role, a defined scope, and a measurable output. They work on
+              the financial data &mdash; not on the phone. They don&apos;t replace your team; they
+              replace the manual intake reviews, the enrichment vendor sprawl, the lender-routing
+              back-and-forth, the failed-ACH chase, and the broken pixel feedback loop your ad
+              account is starving on. Every action is logged, explainable, and FCRA-aware.
             </p>
           </div>
 
@@ -978,7 +1094,9 @@ export default function MedPayLandingPage(): JSX.Element {
                       <div className="mp-agent-echo-right">
                         <div className="mp-agents-stream glass-teal-hi">
                           <div className="mp-agents-stream-head">
-                            <span className="mp-agents-stream-eyebrow">ECHO · live event stream</span>
+                            <span className="mp-agents-stream-eyebrow">
+                              ECHO · live event stream
+                            </span>
                             <span className="mp-agents-stream-meta">events/min · 142</span>
                           </div>
                           <div className="mp-agents-stream-list">
@@ -1053,7 +1171,8 @@ export default function MedPayLandingPage(): JSX.Element {
               <div>
                 <div className="mp-agents-coord-eyebrow">Coordination layer</div>
                 <div className="mp-agents-coord-title">
-                  All seven agents share a common event bus, a shared memory store, and a unified observability plane.
+                  All seven agents share a common event bus, a shared memory store, and a unified
+                  observability plane.
                 </div>
               </div>
             </div>
@@ -1066,7 +1185,8 @@ export default function MedPayLandingPage(): JSX.Element {
           <div className="mp-agent-foot reveal">
             <Icon.Shield />
             <span>
-              Every agent action is FCRA permissible-purpose-aware and logged to an immutable audit trail.
+              Every agent action is FCRA permissible-purpose-aware and logged to an immutable audit
+              trail.
             </span>
           </div>
         </div>
@@ -1083,9 +1203,10 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">The agentic layer comes standard.</span>
             </h2>
             <p className="mp-section-body">
-              MedPay is built around the financing marketplace. That&apos;s the revenue unlock. The agentic layer is
-              bundled in the same signup, so you don&apos;t need to stitch a separate answering service, lead-qualifying
-              tool, or attribution stack onto your finance funnel.
+              MedPay is built around the financing marketplace. That&apos;s the revenue unlock. The
+              agentic layer is bundled in the same signup, so you don&apos;t need to stitch a
+              separate answering service, lead-qualifying tool, or attribution stack onto your
+              finance funnel.
             </p>
           </div>
 
@@ -1100,13 +1221,14 @@ export default function MedPayLandingPage(): JSX.Element {
                   <span className="mp-pillar-tag primary">THE ENGINE</span>
                 </div>
                 <h3 className="mp-pillar-title">
-                  Instant decisions on <span className="num-tone">$3k to $50k</span> tickets. A real marketplace, not a
-                  single lender.
+                  Instant decisions on <span className="num-tone">$3k to $50k</span> tickets. A real
+                  marketplace, not a single lender.
                 </h3>
                 <p className="mp-pillar-body">
-                  MedPay plugs into multiple lender marketplaces (engine.tech, HSP Medical, EazePay Direct) and runs a
-                  parallel waterfall on every application. Patient gets an instant decision with multiple offers ranked
-                  to their personal situation. You&apos;re paid in full when the lender disburses, merchant-direct, no
+                  MedPay plugs into multiple lender marketplaces (engine.tech, HSP Medical, EazePay
+                  Direct) and runs a parallel waterfall on every application. Patient gets an
+                  instant decision with multiple offers ranked to their personal situation.
+                  You&apos;re paid in full when the lender disburses, merchant-direct, no
                   intermediary holding funds. No clawback for routine defaults.
                 </p>
                 <ul className="mp-pillar-bullets">
@@ -1161,7 +1283,9 @@ export default function MedPayLandingPage(): JSX.Element {
                         <span className="seg seg-approved">39 approved</span>
                         <span className="seg seg-best">3 surfaced</span>
                       </div>
-                      <div className="mock-waterfall-meta">52 lenders · 4.8s round-trip · soft pull only</div>
+                      <div className="mock-waterfall-meta">
+                        52 lenders · 4.8s round-trip · soft pull only
+                      </div>
                     </div>
 
                     {/* offer rows */}
@@ -1177,11 +1301,18 @@ export default function MedPayLandingPage(): JSX.Element {
                               )}
                               <span className="mock-offer-label">{o.label}</span>
                             </div>
-                            <div className="mock-offer-note">{o.note ?? `${o.term} · ${o.apr}`}</div>
+                            <div className="mock-offer-note">
+                              {o.note ?? `${o.term} · ${o.apr}`}
+                            </div>
                           </div>
                           <div className="mock-offer-right">
-                            <div className="mock-offer-monthly">{o.monthly}<span className="dim">/mo</span></div>
-                            <div className="mock-offer-meta">{o.term} · {o.apr}</div>
+                            <div className="mock-offer-monthly">
+                              {o.monthly}
+                              <span className="dim">/mo</span>
+                            </div>
+                            <div className="mock-offer-meta">
+                              {o.term} · {o.apr}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -1197,7 +1328,8 @@ export default function MedPayLandingPage(): JSX.Element {
                     </div>
 
                     <div className="mock-foot">
-                      Soft credit pull only · 0 impact to score · final terms and lender confirmed at e-sign.
+                      Soft credit pull only · 0 impact to score · final terms and lender confirmed
+                      at e-sign.
                     </div>
                   </div>
                 </div>
@@ -1231,11 +1363,12 @@ export default function MedPayLandingPage(): JSX.Element {
               </div>
               <div className="mp-synergy-body">
                 <p>
-                  Software agents work silently on every inbound application &mdash; soft-pull credit, identity
-                  enrichment, propensity scoring &mdash; and surface only the financially-qualified prospects
-                  to your front desk. Your consult slots fill up with patients who can actually afford treatment.
-                  The lending waterfall then returns an instant multi-offer decision at the chair. Your team
-                  converts on the same visit instead of chasing payment plans over two weeks.
+                  Software agents work silently on every inbound application &mdash; soft-pull
+                  credit, identity enrichment, propensity scoring &mdash; and surface only the
+                  financially-qualified prospects to your front desk. Your consult slots fill up
+                  with patients who can actually afford treatment. The lending waterfall then
+                  returns an instant multi-offer decision at the chair. Your team converts on the
+                  same visit instead of chasing payment plans over two weeks.
                 </p>
               </div>
             </div>
@@ -1244,14 +1377,14 @@ export default function MedPayLandingPage(): JSX.Element {
           {/* ============== CALENDAR QUALITY + PIXEL FEEDBACK LOOP ============== */}
           <div className="mp-calendar reveal" id="calendar-quality">
             <div className="mp-calendar-head">
-              <div className="mp-section-tag" style={{ marginBottom: 14 }}>04A &middot; CALENDAR QUALITY</div>
+              <div className="mp-section-tag" style={{ marginBottom: 14 }}>
+                04A &middot; CALENDAR QUALITY
+              </div>
               <h3 className="mp-calendar-h">
                 <span className="grad-teal">Fill your calendar with buyers.</span>{' '}
                 <span className="grad-teal-deep">Not fillers.</span>
               </h3>
-              <p className="mp-calendar-sub">
-                Your pixel learns what a funded patient looks like.
-              </p>
+              <p className="mp-calendar-sub">Your pixel learns what a funded patient looks like.</p>
             </div>
 
             <div className="mp-calendar-grid">
@@ -1261,17 +1394,23 @@ export default function MedPayLandingPage(): JSX.Element {
                   <Icon.Bolt />
                   CONSULT SLOT ECONOMICS
                 </div>
-                <h4 className="mp-calendar-card-h">Every 30-minute slot is finite and expensive.</h4>
+                <h4 className="mp-calendar-card-h">
+                  Every 30-minute slot is finite and expensive.
+                </h4>
                 <p className="mp-calendar-card-body">
-                  A consult with a prospect who can&apos;t afford the treatment is 30 minutes not spent with a
-                  patient who can. Pre-qualifying on the financial data &mdash; before the slot is even
-                  booked &mdash; means your team only sees prospects who can fund.
+                  A consult with a prospect who can&apos;t afford the treatment is 30 minutes not
+                  spent with a patient who can. Pre-qualifying on the financial data &mdash; before
+                  the slot is even booked &mdash; means your team only sees prospects who can fund.
                 </p>
 
                 {/* mini calendar visualization */}
                 <div className="mp-calendar-cal">
                   <div className="mp-calendar-cal-head">
-                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+                    <span>Mon</span>
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
                   </div>
                   <div className="mp-calendar-cal-body">
                     {Array.from({ length: 25 }).map((_, i) => {
@@ -1290,8 +1429,12 @@ export default function MedPayLandingPage(): JSX.Element {
                     })}
                   </div>
                   <div className="mp-calendar-cal-legend">
-                    <span className="lg-buyer"><span className="lg-dot" /> Funded buyer</span>
-                    <span className="lg-filler"><span className="lg-dot" /> Filler &mdash; can&apos;t fund</span>
+                    <span className="lg-buyer">
+                      <span className="lg-dot" /> Funded buyer
+                    </span>
+                    <span className="lg-filler">
+                      <span className="lg-dot" /> Filler &mdash; can&apos;t fund
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1302,13 +1445,16 @@ export default function MedPayLandingPage(): JSX.Element {
                   <Icon.Spark />
                   PIXEL FEEDBACK LOOP &middot; ECHO
                 </div>
-                <h4 className="mp-calendar-card-h">Train your pixel on funded patients, not form fills.</h4>
+                <h4 className="mp-calendar-card-h">
+                  Train your pixel on funded patients, not form fills.
+                </h4>
                 <p className="mp-calendar-card-body">
-                  ECHO holds pixel events until a lead actually clears the financial qualification, then fires
-                  weighted conversions back to Meta and Google via server-side CAPI. Over time, the ad
-                  platforms learn what a <em>funded patient</em> looks like and the algorithms get smarter at
-                  finding more of them. Your ad spend gets more efficient month over month &mdash; not because
-                  you upped budgets, but because you trained your pixel on real buyers.
+                  ECHO holds pixel events until a lead actually clears the financial qualification,
+                  then fires weighted conversions back to Meta and Google via server-side CAPI. Over
+                  time, the ad platforms learn what a <em>funded patient</em> looks like and the
+                  algorithms get smarter at finding more of them. Your ad spend gets more efficient
+                  month over month &mdash; not because you upped budgets, but because you trained
+                  your pixel on real buyers.
                 </p>
 
                 {/* loop visualization */}
@@ -1319,25 +1465,32 @@ export default function MedPayLandingPage(): JSX.Element {
                   </div>
                   <div className="mp-pixel-loop-row">
                     <span className="mp-pixel-step n2">02</span>
-                    <span className="mp-pixel-step-label">Agents pre-qualify on financial data</span>
+                    <span className="mp-pixel-step-label">
+                      Agents pre-qualify on financial data
+                    </span>
                   </div>
                   <div className="mp-pixel-loop-row">
                     <span className="mp-pixel-step n3">03</span>
-                    <span className="mp-pixel-step-label">Funded? &rarr; weighted CAPI event fires</span>
+                    <span className="mp-pixel-step-label">
+                      Funded? &rarr; weighted CAPI event fires
+                    </span>
                   </div>
                   <div className="mp-pixel-loop-row">
                     <span className="mp-pixel-step n4">04</span>
-                    <span className="mp-pixel-step-label">Meta &amp; Google retrain on real buyers</span>
+                    <span className="mp-pixel-step-label">
+                      Meta &amp; Google retrain on real buyers
+                    </span>
                   </div>
                   <div className="mp-pixel-loop-row last">
                     <span className="mp-pixel-step n5">05</span>
-                    <span className="mp-pixel-step-label">CPA falls &mdash; same budget, more funded patients</span>
+                    <span className="mp-pixel-step-label">
+                      CPA falls &mdash; same budget, more funded patients
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -1351,8 +1504,8 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">for your practice.</span>
             </h2>
             <p className="mp-section-body">
-              Drop in your funnel. We model what you&apos;d recover with MedPay vs. without. Illustrative
-              based on your inputs &mdash; not a guarantee of returns.
+              Drop in your funnel. We model what you&apos;d recover with MedPay vs. without.
+              Illustrative based on your inputs &mdash; not a guarantee of returns.
             </p>
           </div>
 
@@ -1487,7 +1640,9 @@ export default function MedPayLandingPage(): JSX.Element {
                       <div className="mp-roi-compare-lab">recovered revenue / yr</div>
                     </div>
                     <div className="mp-roi-compare-block">
-                      <div className="mp-roi-compare-num sm">{withoutFundedPerYear.toLocaleString('en-US')}</div>
+                      <div className="mp-roi-compare-num sm">
+                        {withoutFundedPerYear.toLocaleString('en-US')}
+                      </div>
                       <div className="mp-roi-compare-lab">funded patients / yr</div>
                     </div>
                   </div>
@@ -1500,7 +1655,9 @@ export default function MedPayLandingPage(): JSX.Element {
                       <div className="mp-roi-compare-lab">recovered revenue / yr</div>
                     </div>
                     <div className="mp-roi-compare-block">
-                      <div className="mp-roi-compare-num sm accent">{withFundedPerYear.toLocaleString('en-US')}</div>
+                      <div className="mp-roi-compare-num sm accent">
+                        {withFundedPerYear.toLocaleString('en-US')}
+                      </div>
                       <div className="mp-roi-compare-lab">funded patients / yr</div>
                     </div>
                   </div>
@@ -1511,7 +1668,9 @@ export default function MedPayLandingPage(): JSX.Element {
                     <span className="mp-roi-delta-tag">DELTA</span>
                     <span className="mp-roi-delta-val">+ {fmtUsd(deltaRevenue)} / year</span>
                   </div>
-                  <div className="mp-roi-delta-sub">+ {deltaPatients.toLocaleString('en-US')} funded patients / year</div>
+                  <div className="mp-roi-delta-sub">
+                    + {deltaPatients.toLocaleString('en-US')} funded patients / year
+                  </div>
                 </div>
 
                 <a href="/welcome" className="btn-primary-teal mp-roi-cta">
@@ -1522,9 +1681,9 @@ export default function MedPayLandingPage(): JSX.Element {
             </div>
 
             <div className="mp-roi-foot">
-              Illustrative based on your inputs. Actual outcomes vary by practice, geography, and patient mix.
-              Not a guarantee of returns. Loans $3,000&ndash;$50,000; APR from 5.9%; terms up to 60 months; 0%
-              interest plans available (T&amp;Cs apply).
+              Illustrative based on your inputs. Actual outcomes vary by practice, geography, and
+              patient mix. Not a guarantee of returns. Loans $3,000&ndash;$50,000; APR from 5.9%;
+              terms up to 60 months; 0% interest plans available (T&amp;Cs apply).
             </div>
           </div>
         </div>
@@ -1556,7 +1715,13 @@ export default function MedPayLandingPage(): JSX.Element {
                   ))}
                 </div>
                 <div className="mp-story-attrib">
-                  <div className="mp-story-avatar">{c.name.split(' ').map((s) => s[0]).join('').slice(0, 2)}</div>
+                  <div className="mp-story-avatar">
+                    {c.name
+                      .split(' ')
+                      .map((s) => s[0])
+                      .join('')
+                      .slice(0, 2)}
+                  </div>
                   <div>
                     <div className="mp-story-name">{c.name}</div>
                     <div className="mp-story-role">{c.role}</div>
@@ -1604,8 +1769,8 @@ export default function MedPayLandingPage(): JSX.Element {
                 <span className="grad-teal-deep">every practice asks first.</span>
               </h2>
               <p className="mp-section-body" style={{ marginTop: '20px' }}>
-                Financing is the lead. Everything else is built so it works at the chair. Here are the questions clinic
-                owners ask before they sign. Answered straight.
+                Financing is the lead. Everything else is built so it works at the chair. Here are
+                the questions clinic owners ask before they sign. Answered straight.
               </p>
               <a href="/welcome" className="btn-primary-teal" style={{ marginTop: '28px' }}>
                 Start your signup
@@ -1653,8 +1818,9 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">Instantly.</span>
             </h2>
             <p className="mp-final-body">
-              Sign up in 5 minutes. KYB clears in 60 seconds. Instant decisions at the chair, payouts
-              merchant-direct, generally <strong>within 48 to 72 hours</strong> of the loan settling.
+              Sign up in 5 minutes. KYB clears in 60 seconds. Instant decisions at the chair,
+              payouts merchant-direct, generally <strong>within 48 to 72 hours</strong> of the loan
+              settling.
             </p>
             <div className="mp-final-ctas">
               <a href="/welcome" className="btn-primary-teal xl">
@@ -1666,7 +1832,8 @@ export default function MedPayLandingPage(): JSX.Element {
               </a>
             </div>
             <div className="mp-final-foot">
-              No credit card · 5-minute setup · hands-on migration if you have a current finance partner.
+              No credit card · 5-minute setup · hands-on migration if you have a current finance
+              partner.
             </div>
           </div>
         </div>
@@ -2247,6 +2414,11 @@ const CSS = `
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   display: flex; flex-direction: column;
+  /* min-width:0 lets the card shrink inside the parent 1fr grid track.
+     Without this, long label content forces the card wider than its
+     track and the right edge clips inside the section container. */
+  min-width: 0;
+  overflow: hidden;
 }
 .mp-compare-card.mp-compare-medpay {
   background: linear-gradient(180deg, rgba(34,184,160,0.18) 0%, rgba(14,124,102,0.10) 100%);
@@ -2266,12 +2438,13 @@ const CSS = `
 }
 .mp-compare-list li {
   display: grid;
-  grid-template-columns: 110px 1fr;
+  grid-template-columns: 110px minmax(0, 1fr);
   gap: 14px;
   align-items: baseline;
   padding: 10px 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
+.mp-compare-list li > * { min-width: 0; }
 .mp-compare-list li:last-child { border-bottom: none; padding-bottom: 4px; }
 .mp-compare-stat {
   font-size: 26px; font-weight: 700; letter-spacing: -0.022em;
@@ -2284,6 +2457,10 @@ const CSS = `
 .mp-compare-label {
   font-size: 12px; line-height: 1.45;
   color: rgba(255,255,255,0.68);
+  /* Prevent long single tokens (URLs, "48-72hr" hyphenated stats) from
+     pushing the card width past its grid track. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .mp-compare-label.light { color: #C4ECDF; }
 .mp-compare-foot {
@@ -3739,5 +3916,17 @@ const CSS = `
   /* Hide the bottom-row chips on phones: only 2 top chips remain */
   .mp-chip:nth-child(3),
   .mp-chip:nth-child(4) { display: none; }
+  /* Stack stat above label in the WITHOUT/WITH MEDPAY comparison so
+     the label gets the full card width to wrap onto. The 110px /
+     90px side-by-side layout was forcing the label to wrap in a tiny
+     column on phones, with the right edge sometimes clipping. */
+  .mp-compare-list li {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding: 12px 0;
+  }
+  .mp-compare-stat { font-size: 20px; }
+  .mp-compare-card { padding: 20px; }
+  .mp-compare-eyebrow { font-size: 9px; }
 }
 `;
