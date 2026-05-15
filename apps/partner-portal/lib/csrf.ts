@@ -1,5 +1,10 @@
-import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { NextRequest, NextResponse } from 'next/server';
+
+// This module is imported by middleware.ts which runs in Next.js Edge
+// Runtime — no Node-only APIs (no `node:crypto`). Web Crypto's
+// `crypto.getRandomValues` is globally available, and we hand-roll the
+// constant-time compare in pure JS (same pattern used in
+// lib/api-v1/shared.ts SEC-028).
 
 /**
  * SEC — CSRF defence-in-depth for the partner-portal BFF.
@@ -54,7 +59,14 @@ const CSRF_TTL_SECONDS = 60 * 60 * 8; // 8h — matches the typical session wind
  * because the token is meant to be readable by client JS already.
  */
 export function mintCsrfToken(): string {
-  return randomBytes(CSRF_TOKEN_BYTES).toString('hex');
+  const bytes = new Uint8Array(CSRF_TOKEN_BYTES);
+  // Web Crypto: edge-runtime-safe, cryptographically secure.
+  crypto.getRandomValues(bytes);
+  let hex = '';
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i]!.toString(16).padStart(2, '0');
+  }
+  return hex;
 }
 
 /**
@@ -66,24 +78,35 @@ export function mintCsrfToken(): string {
  * shorter buffer; without the length check a 0-length buffer would
  * compare equal to itself trivially.
  */
+function hexToBytes(hex: string): Uint8Array | null {
+  if (hex.length === 0 || hex.length % 2 !== 0) return null;
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    const byte = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (Number.isNaN(byte)) return null;
+    out[i] = byte;
+  }
+  return out;
+}
+
 export function verifyCsrfToken(
   headerVal: string | null | undefined,
   cookieVal: string | null | undefined,
 ): boolean {
   if (!headerVal || !cookieVal) return false;
   if (headerVal.length !== cookieVal.length) return false;
-  let headerBuf: Buffer;
-  let cookieBuf: Buffer;
-  try {
-    headerBuf = Buffer.from(headerVal, 'hex');
-    cookieBuf = Buffer.from(cookieVal, 'hex');
-  } catch {
-    return false;
+  const headerBuf = hexToBytes(headerVal);
+  const cookieBuf = hexToBytes(cookieVal);
+  if (!headerBuf || !cookieBuf) return false;
+  if (headerBuf.length === 0 || headerBuf.length !== cookieBuf.length) return false;
+  // Constant-time XOR-accumulator compare. Identical to the SEC-028
+  // pattern in lib/api-v1/shared.ts. Total work is constant in input
+  // length so a remote attacker cannot byte-by-byte deduce the token.
+  let diff = 0;
+  for (let i = 0; i < headerBuf.length; i++) {
+    diff |= headerBuf[i]! ^ cookieBuf[i]!;
   }
-  if (headerBuf.length === 0 || headerBuf.length !== cookieBuf.length) {
-    return false;
-  }
-  return timingSafeEqual(headerBuf, cookieBuf);
+  return diff === 0;
 }
 
 /**
