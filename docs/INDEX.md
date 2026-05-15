@@ -43,17 +43,6 @@ A map of everything in this directory. Read top-to-bottom for orientation; skip 
 
 See the full ADR index + write-up policy in [`adr/README.md`](adr/README.md).
 
-## Architecture diagrams
-
-Four Mermaid views of the consumer application flow. Send these to a new dev BEFORE pointing them at the code.
-
-| File                                                                             | What it shows                                                                                     |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| [`diagrams/consumer-application-flow.md`](diagrams/consumer-application-flow.md) | End-to-end sequence — intake → Highsale → decision engine → offers → e-sign → disbursement.       |
-| [`diagrams/system-topology.md`](diagrams/system-topology.md)                     | Static component map. Trust boundaries. Network surfaces. Deployment targets.                     |
-| [`diagrams/application-state-machine.md`](diagrams/application-state-machine.md) | XState lifecycle rendered as Mermaid. Every state, every transition, every terminal failure mode. |
-| [`diagrams/pii-dataflow.md`](diagrams/pii-dataflow.md)                           | Where PII enters, where it's encrypted, who can read it, retention. SOC 2 evidence.               |
-
 ## Runbooks
 
 Operational playbooks. Read these on the way into an incident or a fresh-checkout setup.
