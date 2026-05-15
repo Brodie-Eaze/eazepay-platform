@@ -11,8 +11,12 @@ import {
   DocIcon,
   ShieldIcon,
   AlertIcon,
-  type IconProps,
 } from '@eazepay/ui/web';
+
+// IconProps is not exported from @eazepay/ui/web; the only usage below is
+// a brand-icon prop typed as ReactNode anyway, so a structural shim is
+// sufficient and avoids re-exporting an internal type from the UI lib.
+type IconProps = { size?: number; className?: string };
 
 /**
  * BrandOnboardingWizard — direct port of the Lovable
@@ -867,6 +871,6 @@ function friendlyOperatorLabel(email: string): string {
   const domain = email.slice(at + 1);
   const firstName = local.split(/[._-]/)[0] ?? local;
   const orgSlug = domain.split('.')[0] ?? domain;
-  const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+  const cap = (s: string) => (s && s[0] ? s[0].toUpperCase() + s.slice(1) : s);
   return `${cap(firstName)} at ${cap(orgSlug)}`;
 }

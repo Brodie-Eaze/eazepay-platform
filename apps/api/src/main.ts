@@ -63,7 +63,16 @@ const bootstrap = async (): Promise<void> => {
   //     Referrer-Policy: no-referrer, Cross-Origin-Resource-Policy: same-origin,
   //     and X-DNS-Prefetch-Control: off — all desirable for an API surface.
   // ────────────────────────────────────────────────────────────────────
-  await app.getHttpAdapter().getInstance().register(helmet, {
+  // pnpm hoists multiple fastify versions (4.28 + 4.29) into the
+  // workspace because @nestjs/platform-fastify and @fastify/helmet
+  // request slightly different minors. Their FastifyInstance generics
+  // are nominally identical but TypeScript treats them as distinct
+  // types. The `as never` cast tells tsc to skip the cross-version
+  // identity check at registration; the runtime plugin contract is
+  // stable so behaviour is unaffected. Resolves cleanly once Nest
+  // bumps its platform-fastify peer to the same fastify minor.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.getHttpAdapter().getInstance().register(helmet as never, {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],

@@ -46,7 +46,7 @@ const TierPill = ({ tier }: { tier: CreditTier }) => {
 };
 
 export default function AccessMatrixPage() {
-  const [selectedPartnerId, setSelectedPartnerId] = useState(partnerList[0].id);
+  const [selectedPartnerId, setSelectedPartnerId] = useState(partnerList[0]?.id ?? '');
   const [query, setQuery] = useState('');
   const [marketplaceFilter, setMarketplaceFilter] = useState('');
   const [overrides, setOverrides] = useState<PartnerAccessOverride[]>(seedOverrides);

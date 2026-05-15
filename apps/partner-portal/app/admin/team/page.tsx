@@ -133,7 +133,7 @@ export default function TeamPage() {
   const addMember = useCallback(async (input: { displayName: string; email: string; role: MemberRole }) => {
     const optimistic: TeamMember = {
       id: `u_${Date.now().toString(36)}`,
-      displayName: input.displayName || input.email.split('@')[0],
+      displayName: input.displayName || input.email.split('@')[0] || input.email,
       email: input.email,
       role: input.role,
       status: 'invited',

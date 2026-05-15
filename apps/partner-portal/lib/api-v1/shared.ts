@@ -240,7 +240,33 @@ export const SAMPLE_OFFER = {
   },
 } as const;
 
-export const SAMPLE_LENDERS = [
+/**
+ * Brand + tier enums used by the public API surface. Defined here so the
+ * `SAMPLE_LENDERS` array can declare its `brands` / `serves_tiers` fields
+ * with a widened (but still typed) signature — otherwise `as const`
+ * collapses every per-lender tuple into a different literal type and
+ * `(typeof lender.brands)[number]` resolves to `never` at the call site,
+ * which would make `l.brands.includes(brand)` un-typecheck.
+ */
+export type Brand = 'tradepay' | 'medpay' | 'coachpay' | 'direct';
+export type LenderTier = 'prime_plus' | 'prime' | 'near_prime' | 'sub_prime';
+
+interface SampleLenderDef {
+  readonly id: string;
+  readonly display_name: string;
+  readonly legal_name: string;
+  readonly integration_type: string;
+  readonly brands: readonly Brand[];
+  readonly serves_tiers: readonly LenderTier[];
+  readonly min_amount_cents: number;
+  readonly max_amount_cents: number;
+  readonly apr_band_bps: { readonly min: number; readonly max: number };
+  readonly sla_p95_ms: number;
+  readonly webhook_url: string;
+  readonly status: string;
+}
+
+export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
   {
     id: 'lp_buzzpay_prime',
     display_name: 'BuzzPay',

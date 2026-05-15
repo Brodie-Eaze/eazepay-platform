@@ -58,11 +58,13 @@ export default function OnboardingPage() {
   const idx = STEPS.findIndex((s) => s.key === step);
 
   const next = () => {
-    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1].key);
+    const nextStep = STEPS[idx + 1];
+    if (idx < STEPS.length - 1 && nextStep) setStep(nextStep.key);
     else setStep('done');
   };
   const back = () => {
-    if (idx > 0) setStep(STEPS[idx - 1].key);
+    const prevStep = STEPS[idx - 1];
+    if (idx > 0 && prevStep) setStep(prevStep.key);
   };
 
   // Resolve the destination after Finish: a single-brand merchant lands

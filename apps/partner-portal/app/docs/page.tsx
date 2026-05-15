@@ -273,7 +273,7 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
                   ['BSA/AML program', 'PDF · v2026.04', '/legal/compliance'],
                   ['Adverse Action notice templates', 'EN + ES', '/legal/disclosures'],
                 ].map(([k, v, href]) => (
-                  <Link key={k} href={href} className="flex items-start gap-2 hover:bg-bg-muted/40 -mx-1 px-1 py-1 rounded">
+                  <Link key={k} href={href ?? '#'} className="flex items-start gap-2 hover:bg-bg-muted/40 -mx-1 px-1 py-1 rounded">
                     <ShieldIcon size={14} className="text-fg-muted mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <div className="font-medium">{k}</div>
