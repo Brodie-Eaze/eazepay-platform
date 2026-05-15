@@ -31,7 +31,7 @@ Outbound merchant webhooks + dispatcher cron.
 
 ## Notes
 
-- Run `dispatcherEnabled: true` only in `@eazepay/workers`
+- Run `dispatcherEnabled: true` only on the scheduler-owning instance
 - Each delivery carries an `X-EazePay-Signature` header + a replay
   nonce; merchants verify with the endpoint secret
 - The dead-letter queue is the source of truth for "this endpoint is

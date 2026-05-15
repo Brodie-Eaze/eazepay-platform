@@ -13,7 +13,7 @@ A framework-free HTTP client for the EazePay BFF + public API. Every frontend (m
 ## Used by
 
 - `apps/consumer-mobile` (React Native)
-- `apps/consumer-web`, `apps/partner-portal`, `apps/merchant-dashboard`, `apps/admin-console`, `apps/developer-portal` (Next.js)
+- `apps/consumer-web`, `apps/partner-portal`, `apps/merchant-dashboard`, `apps/admin-console` (Next.js)
 
 ## Notes
 

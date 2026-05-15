@@ -25,7 +25,7 @@ Audit outbox drain → hash-chained immutable sink.
 
 ## Notes
 
-- The drain should run in `@eazepay/workers`, not in `apps/api`
+- The drain must run on exactly one instance (`AUDIT_DRAIN_ENABLED=true`)
 - Hash chain: each batch's `tipHash = sha256(prevTipHash || sorted-row-hashes)`
   — tampering is detectable on full re-scan
 - The sink is append-only; the local-fs adapter writes day-partitioned

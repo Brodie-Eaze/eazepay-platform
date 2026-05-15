@@ -3,7 +3,7 @@
 > Multi-vertical embedded financing marketplace. Three consumer-facing brand verticals (MedPay, TradePay, CoachPay) routed through a 52-lender parallel waterfall with a 7-agent decisioning layer. Bank-partner originated, FCRA / ECOA / TILA / Reg B + E compliant. US jurisdiction.
 
 **Production:** https://eazepay-platform-production.up.railway.app
-**Status:** Built. `partner-portal` is live on Railway. Backend services (13 active, 6 reserved) are implemented as a modular monolith. Mobile and ancillary web apps are scaffolded and run locally.
+**Status:** Built. `partner-portal` is live on Railway. Backend is 13 modular-monolith services composed into `apps/api`. Mobile + secondary web apps are scaffolded and run locally.
 
 **Stack:** TypeScript (ESM) · Node 20 · NestJS (BFF/API) · Next.js 14 App Router (web) · React Native + Expo (mobile) · Prisma + Postgres · Redis · BullMQ · Tailwind + `@eazepay/ui` · Nx + pnpm workspaces · Railway (today) · ECS Fargate + Vercel (target) · Terraform.
 
@@ -82,9 +82,9 @@ The agent layer is visible in three places:
 
 ```
 EazePay App/
-├── apps/                  9 boundary processes (5 Next.js + 1 Expo + 3 Node)
-├── services/              19 modular-monolith service packages (13 active, 6 reserved)
-├── libs/                  7 shared packages (4 with code, 3 reserved)
+├── apps/                  7 boundary processes (5 Next.js + 1 Expo + 1 Node)
+├── services/              13 modular-monolith service packages
+├── libs/                  4 shared packages
 ├── docs/                  ARCHITECTURE.md + 17 ADRs + runbooks + BFF contract
 ├── infra/                 Terraform modules + per-env composition + runbooks
 ├── tools/                 Nx generators + repo scripts
@@ -97,7 +97,7 @@ EazePay App/
 └── README / HANDOFF / CONTRIBUTING / CHANGELOG / LICENSE / SECURITY / RAILWAY_DEPLOY
 ```
 
-### `apps/` — 9 boundary processes
+### `apps/` — 7 boundary processes
 
 | App | Framework | Port | What it does |
 |---|---|---|---|
@@ -106,9 +106,7 @@ EazePay App/
 | **`consumer-web`** | Next.js | 3001 | Standalone consumer apply experience. Functional sibling to `/apply/<brand>` inside partner-portal — less prominent today. |
 | **`merchant-dashboard`** | Next.js | 3002 | Standalone merchant surface. Functional sibling to `/v/<brand>/...` inside partner-portal. |
 | **`admin-console`** | Next.js | 3003 | Internal ops + compliance console. Underwriting queue, JIT PII unmask, Adverse Action review, compliance evidence. |
-| **`developer-portal`** | Next.js | 3005 | Lender developer hub — public API reference, sandbox keys, integration guides. Today the live equivalent lives at `/lenders` + `/docs` inside partner-portal; this app is reserved for a future split. |
 | **`consumer-mobile`** | React Native (Expo) | — | iOS + Android consumer app. EAS Build target; not yet submitted to stores. |
-| **`workers`** | Node + BullMQ | — | Standalone background processes (collection cron, audit drain, webhook dispatcher retry, scheduled lender re-screen). |
 | **`webhooks`** | NestJS | 3010 | Inbound webhook receiver — kept as its own process for blast-radius isolation from the main API. |
 
 ### `partner-portal` URL taxonomy
@@ -164,11 +162,9 @@ PUBLIC API (Next.js route handlers)
   /api/v1/*                             Marketplace, lender, integration endpoints
 ```
 
-### `services/` — 19 packages, modular monolith
+### `services/` — 13 packages, modular monolith
 
 Each service is a `@eazepay/service-*` NestJS module composed into `apps/api`. The boundary is enforced by Nx project graph, not by network calls — extraction to its own service is a deploy-time decision, not a code-time one ([ADR-0010](docs/adr/0010-modular-monolith-with-extraction-paths.md)).
-
-**Active (13)** — implementation present in `src/`:
 
 | Service | What it owns |
 |---|---|
@@ -186,20 +182,7 @@ Each service is a `@eazepay/service-*` NestJS module composed into `apps/api`. T
 | `webhook` | Outbound merchant webhooks + dispatcher cron + HMAC signing |
 | `admin` | Admin queue + decline override (Reg B / FCRA reason codes) + JIT PII unmask |
 
-**Reserved (6)** — folder + README only, no `src/` yet. Reserved for extraction or future workstreams:
-
-| Service | Reason it exists today |
-|---|---|
-| `analytics` | Materialized-view aggregations on a read replica (cohort / funnel / cohort-revenue) |
-| `compliance` | Standalone FCRA/ECOA/TILA enforcement service (today these checks live inline in `application` + `orchestration`) |
-| `decision` | Standalone decisioning engine (today rules + scoring live inside `orchestration` + `risk`) |
-| `document` | Generic document store / KYC artifacts (today inline in `compliance-doc`) |
-| `featureflag` | Server-side flag evaluation (sibling to the `feature-flags-sdk` lib) |
-| `integration` | External system integration registry (currently inline per service) |
-
-### `libs/` — 7 shared packages
-
-**With code (4):**
+### `libs/` — 4 shared packages
 
 | Lib | What it ships |
 |---|---|
@@ -207,14 +190,6 @@ Each service is a `@eazepay/service-*` NestJS module composed into `apps/api`. T
 | `shared-utils` | RFC 7807 `Problem` details ([ADR-0014](docs/adr/0014-rfc-7807-problem-details.md)), AES-GCM + envelope encryption ([ADR-0016](docs/adr/0016-pii-vault-envelope-encryption.md)), `ObjectStorage` port + `LocalFs` adapter, hash helpers, ULID, idempotency decorator. |
 | `api-client` | Framework-free `fetch` client + typed `EazePayApiClient` + `TokenStore` interface. Consumed by every frontend (mobile, web, partner-portal). |
 | `ui` | Design tokens (light + dark) + Tailwind preset + web component library (`@eazepay/ui/web`) + RN bindings stubbed (`@eazepay/ui/native`). |
-
-**Reserved (3)** — directory + workspace entry only:
-
-| Lib | Reserved for |
-|---|---|
-| `feature-flags-sdk` | Client-side flag hook (server side will live in `services/featureflag`) |
-| `observability` | Pino + OpenTelemetry setup helpers shared across `apps/*` |
-| `testing` | Shared fixtures + test utilities |
 
 ### `docs/`
 
@@ -269,10 +244,7 @@ cp apps/api/.env.example apps/api/.env        # configure env
 pnpm --filter @eazepay/api prisma:migrate:dev
 pnpm --filter @eazepay/api dev                # http://localhost:3000, /docs Swagger
 
-# 4. Run the worker process if you want crons to fire locally.
-pnpm --filter @eazepay/workers dev
-
-# 5. Inbound webhooks (optional, separate process for blast-radius isolation).
+# 4. Inbound webhooks (optional, separate process for blast-radius isolation).
 pnpm --filter @eazepay/webhooks dev           # http://localhost:3010
 ```
 
@@ -289,11 +261,9 @@ Full local setup details + troubleshooting in [`docs/runbooks/local-development.
 | `partner-portal` | 3004 | **Live** at https://eazepay-platform-production.up.railway.app (Railway) |
 | `api` | 3000 | Not deployed (target: ECS Fargate) |
 | `webhooks` | 3010 | Not deployed (target: ECS Fargate, separate task) |
-| `workers` | — | Not deployed (target: ECS Fargate, scheduled tasks) |
 | `consumer-web` | 3001 | Not deployed (target: Vercel) |
 | `merchant-dashboard` | 3002 | Not deployed (target: Vercel) |
 | `admin-console` | 3003 | Not deployed (target: Vercel, separate auth domain) |
-| `developer-portal` | 3005 | Not deployed (Mintlify or Vercel; equivalent lives at `/lenders` + `/docs` in partner-portal today) |
 | `consumer-mobile` | — | Not submitted (target: App Store / Play Store via EAS Build) |
 
 Today the **single deployed surface is `partner-portal`** — it hosts every public-facing route (landings, apply flows, lender hub, docs) **and** the authenticated portals (master operator, brand-scoped merchant views) on one Railway service.
@@ -321,8 +291,8 @@ Full recipe in [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md).
 
 ### Target: AWS via Terraform
 
-- **`api`, `workers`, `webhooks`** → ECS Fargate (private subnets, ALB-fronted, behind WAF)
-- **`consumer-web`, `merchant-dashboard`, `admin-console`, `developer-portal`** → Vercel
+- **`api`, `webhooks`** → ECS Fargate (private subnets, ALB-fronted, behind WAF)
+- **`consumer-web`, `merchant-dashboard`, `admin-console`** → Vercel
 - **`consumer-mobile`** → EAS Build → App Store + Play Store
 - **Data plane** → Aurora PostgreSQL (multi-AZ, encrypted, KMS-wrapped data keys), ElastiCache Redis (private), S3 (private + VPC endpoint), KMS, Secrets Manager
 - **Edge** → CloudFront + WAF (AWS Managed + custom rules)

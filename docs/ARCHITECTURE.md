@@ -1,6 +1,6 @@
 # EazePay CTO Architecture & Execution Blueprint
 
-**Status:** Built and deployed. `partner-portal` is in production at https://eazepay-platform-production.up.railway.app. Backend services (13 active in `services/`, 6 reserved) are implemented as a modular monolith composed in `apps/api`. Mobile and ancillary web apps are scaffolded, run locally, and target a future deploy. **This foundation document remains the single source of architectural truth; deltas from it must be documented per ADR in [`adr/`](adr/).**
+**Status:** Built and deployed. `partner-portal` is in production at https://eazepay-platform-production.up.railway.app. Backend is 13 services implemented as a modular monolith composed in `apps/api`. Mobile and secondary web apps are scaffolded, run locally, and target a future deploy. **This foundation document remains the single source of architectural truth; deltas from it must be documented per ADR in [`adr/`](adr/).**
 **Author role:** Acting CTO / Principal Architect
 **Date:** 2026-05-02 (foundation) · last status refresh 2026-05-15
 **Primary jurisdiction:** United States only. Federal regime: BSA/USA PATRIOT Act (FinCEN), OFAC sanctions, TILA/Reg Z, ECOA/Reg B, FCRA, GLBA + Safeguards Rule, EFTA/Reg E, UDAAP (CFPB), MLA, SCRA, E-SIGN/UETA. State regime: state-by-state consumer lending licensing OR bank-partner model (Cross River / WebBank / Celtic Bank / FinWise) with True Lender doctrine + Madden risk addressed. Privacy: GLBA federal floor + CCPA/CPRA (CA), CDPA (VA), CPA (CO), CTDPA (CT), UCPA (UT), and the broader state privacy patchwork. Architecture is portable to other regions, but every concrete provider, rail, and disclosure in this document is US-spec.
@@ -22,14 +22,11 @@ A delta layer on top of the original foundation document. Everything below this 
 
 ### Implemented (in repo, not deployed)
 - **`apps/api`** — NestJS BFF + public API, composes every `@eazepay/service-*` module. Runs locally on `:3000`, Swagger at `/docs`.
-- **`apps/workers`** — BullMQ background processes (collection, audit drain, webhook retry).
 - **`apps/webhooks`** — inbound webhook receiver (`:3010`), kept separate for blast-radius isolation.
-- **`apps/consumer-web`** (`:3001`), **`apps/merchant-dashboard`** (`:3002`), **`apps/admin-console`** (`:3003`), **`apps/developer-portal`** (`:3005`) — Next.js sibling surfaces, run locally.
+- **`apps/consumer-web`** (`:3001`), **`apps/merchant-dashboard`** (`:3002`), **`apps/admin-console`** (`:3003`) — Next.js sibling surfaces, run locally.
 - **`apps/consumer-mobile`** — React Native (Expo). EAS Build target.
-- **13 active services**: `auth`, `user`, `merchant`, `application`, `orchestration`, `lender`, `payment`, `notification`, `compliance-doc`, `risk`, `audit`, `webhook`, `admin`. Each is a NestJS module with its own README.
-- **6 reserved services**: `analytics`, `compliance`, `decision`, `document`, `featureflag`, `integration` — folders + READMEs only, reserved for extraction.
-- **4 active libs**: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS` registry), `shared-utils` (Problem details, AES-GCM + envelope encryption, ObjectStorage port + LocalFs adapter, idempotency decorator), `api-client` (framework-free fetch client), `ui` (tokens + web component library).
-- **3 reserved libs**: `feature-flags-sdk`, `observability`, `testing` — directories with workspace entries only.
+- **13 services**: `auth`, `user`, `merchant`, `application`, `orchestration`, `lender`, `payment`, `notification`, `compliance-doc`, `risk`, `audit`, `webhook`, `admin`. Each is a NestJS module with its own README.
+- **4 libs**: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS` registry), `shared-utils` (Problem details, AES-GCM + envelope encryption, ObjectStorage port + LocalFs adapter, idempotency decorator), `api-client` (framework-free fetch client), `ui` (tokens + web component library).
 - **Infra**: Terraform modules + per-env composition in `infra/terraform/` — composed, not applied. Railway is today's deploy target.
 - **Docs**: this blueprint, 17 ADRs, runbooks (local-development, incident-response), BFF contract, INDEX.
 
@@ -495,9 +492,7 @@ State: React Query + Zustand. Navigation: React Navigation. Forms: React Hook Fo
 
 ### 10.4 Service decomposition (modular monolith → services)
 
-Single deployable NestJS app (`apps/api`) with internal module boundaries enforced by Nx project graph. As of 2026-05-15, 13 of 19 service slots are implemented; 6 remain reserved for extraction.
-
-**Active (13)** — implementation in `src/`, composed into `apps/api`:
+Single deployable NestJS app (`apps/api`) with internal module boundaries enforced by Nx project graph. 13 services composed in.
 
 ```
 auth            — registration, login, OTP, sessions, MFA, device binding
@@ -513,17 +508,6 @@ risk            — fraud signals, velocity, device, composite scoring (feeds OR
 audit           — AuditOutbox drain → hash-chained immutable sink
 webhook         — outbound merchant webhooks + dispatcher cron
 admin           — admin queue + decline override + JIT PII unmask + ops console BFF
-```
-
-**Reserved (6)** — folder + README only, reserved for extraction:
-
-```
-analytics       — reporting aggregations on a read replica (cohort / funnel / cohort-revenue)
-compliance      — standalone FCRA/ECOA/TILA enforcement (today inline in application + orchestration)
-decision        — standalone rules engine + affordability (today inside orchestration + risk)
-document        — generic document store / KYC artifacts (today inside compliance-doc)
-featureflag     — server-side flag evaluation (sibling to feature-flags-sdk lib)
-integration     — external system integration registry (currently inline per service)
 ```
 
 Each module exposes a typed in-process interface today; each can be extracted to its own service tomorrow without contract change. Boundaries enforced by ESLint rules + Nx module dependency graph ([ADR-0010](adr/0010-modular-monolith-with-extraction-paths.md)).
@@ -571,7 +555,7 @@ VPC: 3 AZ in `us-east-1`, mirror in `us-west-2` for DR (warm-standby Aurora Glob
 This is the executed topology — see the root [`README.md`](../README.md) for the full URL taxonomy of `partner-portal`, port assignments, and per-app responsibilities.
 
 ```
-apps/                              # 9 boundary processes
+apps/                              # 7 boundary processes
   api/                             # NestJS BFF + public API (:3000)
   partner-portal/                  # Next.js — main deployed app (:3004, Railway)
                                    #   hosts landings, apply flows, lender hub,
@@ -579,12 +563,9 @@ apps/                              # 9 boundary processes
   consumer-web/                    # Next.js consumer apply (:3001)
   merchant-dashboard/              # Next.js merchant portal (:3002)
   admin-console/                   # Next.js internal ops + compliance (:3003)
-  developer-portal/                # Next.js lender dev hub (:3005, reserved)
   consumer-mobile/                 # React Native (Expo), iOS + Android
-  workers/                         # BullMQ background jobs (Redis-backed)
   webhooks/                        # Inbound webhook receiver (:3010)
-services/                          # 19 NestJS module packages, modular monolith
-  # Active (13) — implementation in src/
+services/                          # 13 NestJS module packages, modular monolith
   auth/                            # Cognito + custom session/device layer
   user/                            # ConsumerProfile + PII vault (envelope encryption)
   merchant/                        # KYB + beneficial owners + application links
@@ -598,25 +579,13 @@ services/                          # 19 NestJS module packages, modular monolith
   audit/                           # AuditOutbox drain → hash-chained immutable sink
   webhook/                         # Outbound merchant webhooks + dispatcher cron
   admin/                           # Admin queue + decline override + JIT PII unmask
-  # Reserved (6) — folder + README, no src/ yet
-  analytics/                       # Reporting aggregations on read replica
-  compliance/                      # Standalone FCRA/ECOA/TILA enforcement (today inline)
-  decision/                        # Standalone decisioning engine (today inside orchestration)
-  document/                        # Generic document store / KYC artifacts
-  featureflag/                     # Server-side flag evaluation
-  integration/                     # External system integration registry
-libs/                              # 7 shared packages
-  # With code (4)
+libs/                              # 4 shared packages
   shared-types/                    # Money (BigInt cents), branded IDs, Zod primitives, BRANDS
   shared-utils/                    # RFC 7807 Problem, AES-GCM + envelope encryption,
                                    #   ObjectStorage port, ULID, idempotency decorator
   api-client/                      # Framework-free fetch client + TokenStore
   ui/                              # Tokens + Tailwind preset + web component lib
                                    #   (@eazepay/ui/web; native bindings stubbed)
-  # Reserved (3)
-  feature-flags-sdk/               # Client-side flag hook
-  observability/                   # Pino + OTel setup helpers
-  testing/                         # Shared fixtures + test utilities
 tools/
   generators/                      # Nx generators (reserved)
   scripts/                         # Repo scripts (reserved)

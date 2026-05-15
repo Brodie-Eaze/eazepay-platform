@@ -20,7 +20,7 @@ The platform's design system: tokens, Tailwind preset, and a web component libra
 ## Used by
 
 - `apps/partner-portal` (primary consumer — uses the full web surface)
-- `apps/consumer-web`, `apps/merchant-dashboard`, `apps/admin-console`, `apps/developer-portal`
+- `apps/consumer-web`, `apps/merchant-dashboard`, `apps/admin-console`
 - Bundled via Next.js `outputFileTracingRoot` (see `apps/partner-portal/next.config.mjs`)
 
 ## Notes

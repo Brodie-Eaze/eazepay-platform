@@ -238,8 +238,8 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       ],
     },
     {
-      // API keys are master/developer-portal concerns — not exposed in the
-      // merchant-scoped portal. Master operators access keys at /api-keys.
+      // API keys are master-operator concerns — not exposed in the merchant-scoped
+      // portal. Master operators access keys at /api-keys.
       label: 'Account',
       items: [
         { href: `${base}/team`, label: 'Team & Roles', icon: <UsersIcon /> },

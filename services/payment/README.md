@@ -33,7 +33,7 @@ Disbursement + repayment scheduling + daily collection cron.
 ## Notes
 
 - All money in BigInt cents — never floats
-- Collection cron should run in `@eazepay/workers` in production
-  (`collectionCronEnabled: true` here; `false` in `@eazepay/api`)
+- Collection cron must run on exactly one instance in production
+  (`collectionCronEnabled: true` on that instance only)
 - ACH return codes drive a deterministic retry ladder; manual review
   required before any second-time debit on hard returns

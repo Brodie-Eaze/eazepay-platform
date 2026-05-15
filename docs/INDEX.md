@@ -70,8 +70,8 @@ Every `apps/*` and `services/*` package has its own `README.md`. Find the one yo
 
 | Layer | Where |
 |---|---|
-| Apps | [`../apps/*/README.md`](../apps/) — 9 entries (api, partner-portal, consumer-web, merchant-dashboard, admin-console, developer-portal, consumer-mobile, workers, webhooks) |
-| Services | [`../services/*/README.md`](../services/) — 19 entries (13 active, 6 reserved) |
-| Libs | [`../libs/*/README.md`](../libs/) — 7 entries (4 active, 3 reserved) |
+| Apps | [`../apps/*/README.md`](../apps/) — 7 entries (api, partner-portal, consumer-web, merchant-dashboard, admin-console, consumer-mobile, webhooks) |
+| Services | [`../services/*/README.md`](../services/) — 13 entries |
+| Libs | [`../libs/*/README.md`](../libs/) — 4 entries |
 | Infra | [`../infra/README.md`](../infra/README.md), [`../infra/runbooks/`](../infra/runbooks/) |
 | Tools | [`../tools/README.md`](../tools/README.md) |

@@ -103,5 +103,5 @@ Health check endpoint: `/sign-in` (200 once Next.js is ready).
   (functional sibling to `/apply/<brand>` here)
 - `apps/merchant-dashboard` — the standalone merchant portal
   (functional sibling to `/v/<brand>/...` here)
-- `apps/developer-portal` — the standalone lender developer hub
-  (functional sibling to `/lenders` + `/docs` here)
+- The lender developer hub at `/lenders` + `/docs` is hosted inside
+  this app today (no separate developer-portal app).

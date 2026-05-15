@@ -33,10 +33,7 @@
       "@eazepay/ui": ["libs/ui/src/index.ts"],
       "@eazepay/ui/tokens": ["libs/ui/src/tokens/index.ts"],
       "@eazepay/ui/web": ["libs/ui/src/components/web/index.ts"],
-      "@eazepay/ui/native": ["libs/ui/src/components/native/index.ts"],
-      "@eazepay/feature-flags-sdk": ["libs/feature-flags-sdk/src/index.ts"],
-      "@eazepay/observability": ["libs/observability/src/index.ts"],
-      "@eazepay/testing": ["libs/testing/src/index.ts"]
+      "@eazepay/ui/native": ["libs/ui/src/components/native/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

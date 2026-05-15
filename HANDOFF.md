@@ -23,19 +23,19 @@ Today's status: **`apps/partner-portal` is live on Railway** at
 https://eazepay-platform-production.up.railway.app — it hosts every
 public-facing surface (landings, apply flows, lender hub, docs)
 **and** the authenticated portals (master operator, brand-scoped
-merchant views) on one Next.js service. The backend (13 active
-service modules in `services/`, 6 reserved) is implemented and runs
-locally; ECS-Fargate / Vercel / EAS deploy is the target for the
-rest. Bank-partner contract + state-license footprint remain the
-critical commercial path, not a code problem.
+merchant views) on one Next.js service. The backend (13 service
+modules in `services/`) is implemented and runs locally; ECS-Fargate
+/ Vercel / EAS deploy is the target for the rest. Bank-partner
+contract + state-license footprint remain the critical commercial
+path, not a code problem.
 
 ## Repo layout
 
 | Top-level | What lives there |
 |---|---|
-| `apps/` | 9 boundary processes — `api` (NestJS BFF, :3000), `partner-portal` (Next.js, :3004, deployed to Railway), `consumer-web` (:3001), `merchant-dashboard` (:3002), `admin-console` (:3003), `developer-portal` (:3005), `consumer-mobile` (Expo), `workers` (BullMQ), `webhooks` (NestJS, :3010). Each has its own `README.md`. |
-| `services/` | 19 `@eazepay/service-*` packages — modular-monolith business logic. **13 active**: auth, user, merchant, application, orchestration, lender, payment, notification, compliance-doc, risk, audit, webhook, admin. **6 reserved** (folder + README, no `src/`): analytics, compliance, decision, document, featureflag, integration. |
-| `libs/` | 7 shared packages — **4 with code**: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS`), `shared-utils` (Problem details, envelope encryption, idempotency), `api-client` (framework-free fetch + typed client), `ui` (tokens + Tailwind preset + web component lib). **3 reserved**: `feature-flags-sdk`, `observability`, `testing`. |
+| `apps/` | 7 boundary processes — `api` (NestJS BFF, :3000), `partner-portal` (Next.js, :3004, deployed to Railway), `consumer-web` (:3001), `merchant-dashboard` (:3002), `admin-console` (:3003), `consumer-mobile` (Expo), `webhooks` (NestJS, :3010). Each has its own `README.md`. |
+| `services/` | 13 `@eazepay/service-*` packages — modular-monolith business logic: auth, user, merchant, application, orchestration, lender, payment, notification, compliance-doc, risk, audit, webhook, admin. |
+| `libs/` | 4 shared packages: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS`), `shared-utils` (Problem details, envelope encryption, idempotency), `api-client` (framework-free fetch + typed client), `ui` (tokens + Tailwind preset + web component lib). |
 | `docs/` | `ARCHITECTURE.md` (CTO blueprint, ~1300 lines), `INDEX.md` (docs navigation), `bff-contract.md`, 17 ADRs + template, runbooks (local-development, incident-response). |
 | `infra/` | Terraform modules + per-env compositions for dev / staging / prod (composed, not applied — Railway is today's deploy target). |
 | `tools/` | Nx generators + repo scripts (reserved). |
@@ -58,8 +58,8 @@ docker compose up -d                                   # Postgres + Redis
 pnpm --filter @eazepay/api prisma:migrate:dev
 pnpm --filter @eazepay/api dev                         # http://localhost:3000
 
-# 4. Run cron workers locally.
-pnpm --filter @eazepay/workers dev
+# 4. Inbound webhooks (optional, separate process for blast-radius isolation).
+pnpm --filter @eazepay/webhooks dev                    # http://localhost:3010
 ```
 
 Each frontend has an `.env.example` — copy to `.env.local` and point
@@ -78,11 +78,10 @@ railway domain            # provision public URL
 Live at https://eazepay-platform-production.up.railway.app.
 Full recipe in [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md).
 
-Production target for the rest: ECS Fargate (api, workers, webhooks)
-+ Vercel (consumer-web, merchant-dashboard, admin-console,
-developer-portal) + EAS Build (consumer-mobile). Terraform modules
-in `infra/terraform/modules/` are ready; envs in
-`infra/terraform/envs/` are composed but not applied.
+Production target for the rest: ECS Fargate (api, webhooks) +
+Vercel (consumer-web, merchant-dashboard, admin-console) + EAS
+Build (consumer-mobile). Terraform modules in `infra/terraform/modules/`
+are ready; envs in `infra/terraform/envs/` are composed but not applied.
 
 ## Where to find what — top 10 paths
 

@@ -11,7 +11,7 @@ Repo-level tooling. Two reserved sub-directories today; both are workspace membe
 
 ## When to use what
 
-- **Adding a new `@eazepay/service-*` module** — a generator in `tools/generators/` would scaffold the folder, package.json, project.json, tsconfig, README, and module class. Until that exists, copy an existing reserved service (e.g. `services/analytics/`) and rename.
+- **Adding a new `@eazepay/service-*` module** — a generator in `tools/generators/` would scaffold the folder, package.json, project.json, tsconfig, README, and module class. Until that exists, copy an existing service (e.g. `services/notification/`) and rename.
 - **Adding a new ADR** — number it `NNNN-kebab-title.md`, copy `docs/adr/0000-template.md`, and link it from the relevant code. A generator here could automate that.
 - **Repo-wide rename / codemod** — write a TypeScript script in `tools/scripts/` and run it via `pnpm tsx tools/scripts/<name>.ts`. Don't commit one-off edits without leaving the script behind.
 - **CI helpers** — anything CI-specific that doesn't naturally belong to an `apps/*` or `services/*` build should live here so it can be invoked by `.github/workflows/`.

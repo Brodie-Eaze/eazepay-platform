@@ -33,9 +33,6 @@ optionally the iOS / Android sim**. In separate terminals:
 # Backend API (port 3000)
 pnpm --filter @eazepay/api dev
 
-# Workers (cron drains for collection / webhook dispatch / audit)
-pnpm --filter @eazepay/workers dev
-
 # Inbound webhook receiver (port 3010)
 pnpm --filter @eazepay/webhooks-app dev
 

@@ -60,8 +60,9 @@ vars validated by `src/config/env.ts` (Zod):
 - `CORS_ORIGINS` — comma-separated allowlist of exact origins
 - `CORS_ORIGIN_PATTERNS` — regex allowlist (used for Lovable previews)
 - `COLLECTION_CRON_ENABLED` / `WEBHOOK_DISPATCHER_ENABLED` /
-  `AUDIT_DRAIN_ENABLED` — per-process cron flags (production: keep
-  these `false` here, run them in `@eazepay/workers` instead)
+  `AUDIT_DRAIN_ENABLED` — per-process cron flags (set `true` only on
+  exactly one instance; multi-instance setups need a dedicated
+  scheduler tier — see ADR-0010)
 - `HIGHSALE_WEBHOOK_SECRET` — HMAC shared secret (required outside dev)
 - `OTEL_EXPORTER_OTLP_ENDPOINT` — OTLP traces sink
 
@@ -75,15 +76,15 @@ pnpm --filter @eazepay/api test
 
 ## Deploy
 
-Production: ECS Fargate service behind an ALB. In production the cron
-flags above are set `false` here; the `@eazepay/workers` process owns
-all schedulers. Health check: `/v1/health`. Prisma migrations are
-applied via `prisma migrate deploy` in the release pipeline.
+Production: ECS Fargate service behind an ALB. In production, only one
+instance has the cron flags set to `true` to own all schedulers.
+Health check: `/v1/health`. Prisma migrations are applied via
+`prisma migrate deploy` in the release pipeline.
 
 ## Related
 
 - Consumes every `@eazepay/service-*` package from `services/`
 - Used by `consumer-web`, `consumer-mobile`, `merchant-dashboard`,
-  `admin-console`, `partner-portal`, `developer-portal`
+  `admin-console`, `partner-portal`
 - Talks to Postgres + Redis (`infra/terraform/modules/aurora`,
   `infra/terraform/modules/redis`)
