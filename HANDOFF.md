@@ -76,7 +76,7 @@ railway domain            # provision public URL
 ```
 
 Live at https://eazepay-platform-production.up.railway.app.
-Full recipe in [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md).
+Full recipe in [`docs/runbooks/railway-deploy.md`](docs/runbooks/railway-deploy.md).
 
 Production target for the rest: ECS Fargate (api, webhooks) +
 Vercel (consumer-web, merchant-dashboard, admin-console) + EAS
@@ -163,7 +163,7 @@ Security + scale work landed before this handoff. Treat the platform
 as audit-ready, not just feature-complete.
 
 - **Security fixes closed:** 9 P0 + 10 P1/P2. Full chain-of-custody in
-  [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md). Headline items: SEC-031
+  [`docs/audits/SECURITY_AUDIT_2026-05-15.md`](docs/audits/SECURITY_AUDIT_2026-05-15.md). Headline items: SEC-031
   prod e-sign mock refusal, SEC-034 timestamp replay window on inbound
   webhooks, SEC-041 `@fastify/middie` pinned via `pnpm.overrides`,
   SEC-046 Swagger basic-auth in staging, SEC-047 prod CORS lockdown
@@ -245,7 +245,7 @@ launch; all are worth a half-day each before SOC 2 Type II.
   [`Dockerfile.api`](Dockerfile.api), [`railway.api.toml`](railway.api.toml).
   Provision Postgres + Redis on the same Railway project (both have
   free dev tiers). Step-by-step in
-  [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md) under "Deploying the API".
+  [`docs/runbooks/railway-deploy.md`](docs/runbooks/railway-deploy.md) under "Deploying the API".
 - **Swap mock adapters for production.** `services/payment` (Modern
   Treasury / Stripe / partner bank), `services/user` (KMS KeyManager),
   `services/risk` (Sift / Castle / SEON), `services/notification`
@@ -256,7 +256,7 @@ launch; all are worth a half-day each before SOC 2 Type II.
 - **Step-up MFA for `/v1/me?reveal=full`.** Endpoint refuses with 403
   `step_up_required` today; wire it through `OtpService` with a new
   `purpose: 'reveal_profile'` and a 5-minute fresh-challenge window
-  (SEC-023 follow-up in [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md)).
+  (SEC-023 follow-up in [`docs/audits/SECURITY_AUDIT_2026-05-15.md`](docs/audits/SECURITY_AUDIT_2026-05-15.md)).
 - **TOTP enrolment + recovery codes.** OTP-via-SMS/email today;
   TOTP is the next MFA hardening tier
   ([`SOC2_EVIDENCE_MAP.md`](docs/SOC2_EVIDENCE_MAP.md) §6).

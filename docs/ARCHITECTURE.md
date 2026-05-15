@@ -14,13 +14,15 @@
 A delta layer on top of the original foundation document. Everything below this section reflects the original blueprint — read it for the "why". This section reflects the "what's actually in the repo right now".
 
 ### Deployed
+
 - **`apps/partner-portal`** is live on Railway at https://eazepay-platform-production.up.railway.app. It hosts every public-facing surface AND the authenticated portals on one Next.js service.
   - Public: `/landing/{medpay,tradepay,coachpay}`, `/apply/{brand}`, `/lenders`, `/lenders/[id]`, `/docs`, `/sign-in`, `/welcome`.
   - Brand-scoped merchant portals: `/v/{brand}/{applications,insights,settlements,transactions,send-link,submit,team,settings,api-keys,integrations}`.
   - Master operator: `/`, `/insights`, `/partners`, `/applications`, `/lender-marketplace`, `/lender-marketplace/access`, `/marketplaces`, `/control-panel`, `/onboarding-pipeline`, `/approvals`, `/payouts`, `/reports`, `/events`, `/dead-letter`, `/webhooks`, `/admin`, `/eaze-ai`.
-  - Build path: repo-root `Dockerfile` (3-stage standalone) + `railway.toml`. See [`/RAILWAY_DEPLOY.md`](../RAILWAY_DEPLOY.md).
+  - Build path: repo-root `Dockerfile` (3-stage standalone) + `railway.toml`. See [`runbooks/railway-deploy.md`](runbooks/railway-deploy.md).
 
 ### Implemented (in repo, not deployed)
+
 - **`apps/api`** — NestJS BFF + public API, composes every `@eazepay/service-*` module. Runs locally on `:3000`, Swagger at `/docs`.
 - **`apps/webhooks`** — inbound webhook receiver (`:3010`), kept separate for blast-radius isolation.
 - **`apps/consumer-web`** (`:3001`), **`apps/merchant-dashboard`** (`:3002`), **`apps/admin-console`** (`:3003`) — Next.js sibling surfaces, run locally.
@@ -34,17 +36,18 @@ A delta layer on top of the original foundation document. Everything below this 
 
 Seven named software agents wrap the orchestration engine. Each is a discrete service with a typed contract, an "ONLINE/DEGRADED/OFFLINE" health state, and a streaming last-action log surfaced in the operator console. Pattern modelled on AUREAN AI's named-agent architecture — explicit, observable, instrumented.
 
-| # | Agent | Role | Where it lives |
-|---|---|---|---|
-| 01 | **PRISM** | Intake Agent — reshapes apply-form question order based on partial answers; learns which sequences convert per traffic source | `services/application` + apply-flow client |
-| 02 | **VEGA** | Enrichment Agent — orchestrates 12 enrichment providers in parallel, fallback + dedupe | `services/orchestration` |
-| 03 | **ORACLE** | Scoring Agent — calibrated propensity model trained on closed-won outcomes, nightly retrain on dispositions | `services/risk` + `services/orchestration` |
-| 04 | **HELIX** | Routing Agent — matches qualified leads to right rep, capacity-aware, learns rep-tier fit | `services/admin` + `services/orchestration` |
-| 05 | **NEXUS** | Lender Marketplace Agent — 52-lender parallel waterfall, prime → subprime, soft pull only, real-time stip-rate awareness | `services/orchestration` + `services/lender` |
-| 06 | **FLUX** | Funding Agent — disbursement orchestration, retries, reconciliation back to ad campaigns. (Previously labelled "Payment Agent" — the platform does not process payments; FLUX orchestrates the lender → merchant funds path.) | `services/payment` |
-| 07 | **ECHO** | Attribution Agent — holds pixel events until lead clears qualification, fires weighted conversions to Meta + Google CAPI, uploads closed-won as offline conversions | `services/webhook` + `services/notification` |
+| #   | Agent      | Role                                                                                                                                                                                                                          | Where it lives                               |
+| --- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 01  | **PRISM**  | Intake Agent — reshapes apply-form question order based on partial answers; learns which sequences convert per traffic source                                                                                                 | `services/application` + apply-flow client   |
+| 02  | **VEGA**   | Enrichment Agent — orchestrates 12 enrichment providers in parallel, fallback + dedupe                                                                                                                                        | `services/orchestration`                     |
+| 03  | **ORACLE** | Scoring Agent — calibrated propensity model trained on closed-won outcomes, nightly retrain on dispositions                                                                                                                   | `services/risk` + `services/orchestration`   |
+| 04  | **HELIX**  | Routing Agent — matches qualified leads to right rep, capacity-aware, learns rep-tier fit                                                                                                                                     | `services/admin` + `services/orchestration`  |
+| 05  | **NEXUS**  | Lender Marketplace Agent — 52-lender parallel waterfall, prime → subprime, soft pull only, real-time stip-rate awareness                                                                                                      | `services/orchestration` + `services/lender` |
+| 06  | **FLUX**   | Funding Agent — disbursement orchestration, retries, reconciliation back to ad campaigns. (Previously labelled "Payment Agent" — the platform does not process payments; FLUX orchestrates the lender → merchant funds path.) | `services/payment`                           |
+| 07  | **ECHO**   | Attribution Agent — holds pixel events until lead clears qualification, fires weighted conversions to Meta + Google CAPI, uploads closed-won as offline conversions                                                           | `services/webhook` + `services/notification` |
 
 The agent layer is the operator-facing abstraction over the underlying services. It is visible in three places:
+
 - **Public landing pages** — `apps/partner-portal/app/landing/{medpay,tradepay,coachpay}/page.tsx` — marketing view of what each agent does, with live "last action" cards.
 - **Operator insights** — `apps/partner-portal/app/insights/page.tsx` (cross-brand) and `apps/partner-portal/app/v/[brand]/insights/page.tsx` (brand-scoped) — institutional decisioning dashboard with per-agent health, throughput, drift, and audit-grade history.
 - **Underlying services** — split across `orchestration`, `risk`, `lender`, `payment`, `application`, `admin`, `webhook`, `notification`.
@@ -52,6 +55,7 @@ The agent layer is the operator-facing abstraction over the underlying services.
 The fair-routing default ([ADR-0013](adr/0013-fair-routing-default.md)) sits inside NEXUS; the immutable audit outbox ([ADR-0011](adr/0011-immutable-audit-via-outbox.md)) backs the streaming last-action log; the JIT PII unmask ([ADR-0017](adr/0017-jit-pii-unmask.md)) governs what operators see in HELIX's queue.
 
 ### Three brand verticals
+
 All three are first-class on `BrandCode` in `libs/shared-types/src/brands.ts` and carried on Merchant, LenderProduct, LenderConnection, and Application rows:
 
 - **MedPay** — dental / medical / vet / fertility / cosmetic. $1.5k – $50k tickets.
@@ -79,32 +83,42 @@ The blueprint below is the foundation that was built before code was written. It
 ## 1. Product Vision
 
 ### 1.1 What EazePay is
+
 EazePay is a two-sided embedded finance and payments platform. On one side, **consumers** apply for finance — directly through the EazePay app or via a merchant link — and EazePay routes their application across an internal PE-backed lender, BNPL providers, prime/near-prime/subprime partners, and category-specialist lenders. On the other side, **merchants** integrate EazePay at checkout (link, widget, SDK, or API), accept finance-backed sales, settle funds, and manage the customer relationship through a dashboard.
 
 EazePay is not a single lender, not a single payments rail, and not a referral broker. It is a **lender orchestration + payments + merchant operating system** — a vertical fintech stack where the lending decision, the payment flow, the merchant settlement, and the consumer relationship all live under one roof.
 
 ### 1.2 Consumer route
+
 A consumer downloads EazePay → KYCs → tells us what they need finance for (auto, home improvement, medical, retail goods, debt consolidation, personal) → completes a soft-pull / affordability layer → EazePay's orchestration engine evaluates the case across internal + external lenders → presents ranked offers → consumer accepts → docs are signed → funds disburse → consumer manages repayments and unlock future offers in-app.
 
 ### 1.3 Merchant route
+
 A merchant onboards → KYB → connects payments and selects which finance products to offer → generates application links, QR codes, or embeds a widget at checkout → customer applies → EazePay underwrites and routes → merchant is notified of approval → merchant fulfills the sale → EazePay disburses to the merchant and collects from the consumer over time. Merchant gets a dashboard of applications, conversion, settlements, chargebacks, and lender mix.
 
 ### 1.4 Why EazePay becomes the operating layer
+
 Because **the same orchestration brain** serves both surfaces. A consumer who applies direct can later be routed into a merchant offer; a merchant-referred consumer becomes an EazePay account holder for life. EazePay sits between capital (PE-backed internal book + lender partners), distribution (merchants), and demand (consumers). That three-sided position is what makes this defensible — anyone can build a checkout button; very few teams can run the orchestration, the underwriting, the merchant economics, and the consumer relationship simultaneously.
 
 ### 1.5 Why the mobile app matters
+
 The mobile app is the **consumer system of record**. Repayments, KYC re-verification, push notifications for offers, document collection, support, future cross-sell — all gravitate to the app. Without it, EazePay is a referral funnel; with it, EazePay owns the lifetime value. The app also unlocks biometric auth, device-bound risk signals, and a much lower fraud rate than browser-only flows.
 
 ### 1.6 Why the merchant platform matters
+
 Merchant distribution is what makes the unit economics work. Direct-to-consumer customer acquisition cost in lending is brutal ($150-$400 per funded loan in AU). Merchant-embedded financing gets us applications at near-zero CAC because the merchant is paying for the customer. The merchant platform is also where we earn MDR (merchant discount rate), subscription fees, and per-application fees — three revenue lines that don't depend on us holding lending risk.
 
 ### 1.7 PE-backed in-house lender (BuzzPay, built by TrueTopia) inside the ecosystem
+
 BuzzPay is treated as **just another lender** at the orchestration layer — except it gets first-look priority where it's economically optimal and within risk appetite. This matters legally and architecturally:
+
 - **Legally:** BuzzPay (built by the TrueTopia team) must operate under one of two recognised US models — (a) a **bank-partner model** where a chartered bank (e.g. Cross River, WebBank, FinWise, Celtic, Lead Bank) is the true lender of record and BuzzPay/TrueTopia services and/or purchases receivables under a bank-service-provider agreement, or (b) a **state-licensed lender model** with consumer lending / installment / sales-finance licences in each state of operation. Pick one explicitly; do not blur. Most modern fintech lenders run (a) for nationwide reach with (b) as a fallback in states where bank-partner economics fail. Underwriting decisions for BuzzPay must be independently auditable, and the "true lender" must own the credit decision in form and substance — Madden + True Lender doctrines apply.
 - **Architecturally:** BuzzPay exposes the same `LenderProduct` interface as external lenders. Orchestration logic does not branch on "internal vs external" — it branches on price, eligibility, risk-adjusted return, and capital availability. This keeps us honest about whether we're routing fairly and gives us a defensible UDAAP and Reg B story.
 
 ### 1.8 Lender orchestration / waterfalling
+
 The orchestration engine evaluates each application against a configurable decision graph:
+
 1. Hard knockouts (sanctions, age, residency, fraud).
 2. Soft eligibility (each lender's published criteria).
 3. Soft-pull / bureau enrichment.
@@ -115,6 +129,7 @@ The orchestration engine evaluates each application against a configurable decis
 8. Fallback (manual review, alternative product, decline + reasons).
 
 ### 1.9 Direct vs merchant-referred consumers
+
 Both flows produce the same `Application` entity — only the `originationChannel` and `merchantContext` differ. This means a consumer onboarded via a merchant link automatically has an EazePay account, can repay through the app, and can apply for a future unrelated loan without re-KYCing. The merchant's attribution and economics persist on the original application but don't lock the consumer in.
 
 ---
@@ -127,46 +142,46 @@ EazePay is built as a service-oriented backend (modular monolith at MVP, breakin
 
 ## 3. User Personas
 
-| Persona | Goals | Pain points | Required surfaces | Required data | Permissions | Security concerns | Success metrics |
-|---|---|---|---|---|---|---|---|
-| **Direct consumer borrower** | Get finance fast, see real offers, repay easily | Hidden fees, slow approvals, declined without reason | iOS/Android app, web fallback | Own profile, applications, offers, repayments, docs | Self-service only | Account takeover, SIM swap, phishing | Time-to-offer, approval rate, NPS, on-time repayment |
-| **Merchant-referred consumer** | Buy the thing, finance painless | Too many redirects, app installs forced | Mobile web → optional app, app deep link | As above + merchant context | Self-service only | Same as above + merchant impersonation | Conversion, application start→submit, AOV uplift |
-| **Merchant owner** | More sales, predictable settlement, low risk | Chargebacks, finance partner integration pain, opaque fees | Merchant dashboard (web), mobile web | Own merchant, all applications referred, settlements, team | Full merchant admin, billing | Credential theft, key leakage, internal fraud | GMV, finance attach rate, settlement-to-payout time |
-| **Merchant admin/staff** | Operate day-to-day | Cluttered UI, can't find applications | Merchant dashboard | Scoped: applications, customers, transactions | Configurable RBAC | Over-permissioning, exfiltration | Operational throughput |
-| **EazePay internal ops** | Process applications, resolve exceptions | Manual data hunting, tool sprawl | Admin console | All applications, all merchants, masked PII unless purpose-bound | Role-based + just-in-time elevation | Insider risk, PII exposure | Time-to-decision, exception backlog |
-| **Underwriting team** | Make sound credit decisions, defend them | Inconsistent data, no audit trail | Underwriting console | Application + bureau + bank + docs | UW role + approval limits | Data leakage, bias | Default rate by cohort, decision SLA |
-| **Compliance/risk team** | Stay on the right side of CFPB / state regulators / partner-bank exam | Fragmented evidence, late audit prep | Compliance console, audit log viewer | Read-most, cannot mutate financial state | Audit-only + reviewer | Tampering, log gaps | Findings closed, complaint SLA, reportable-event timeliness |
-| **Lender partner** | See routed applications, manage limits, pull data | Manual reconciliation, no real-time view | Lender partner portal + API + webhooks | Only own routed cases | Partner-scoped | Cross-tenant data leakage | Approval rate, funded volume, dispute rate |
-| **PE / internal capital team (TrueTopia + EazePay capital)** | Track BuzzPay book performance | No real-time book view | Capital dashboard (subset of admin) | Aggregated BuzzPay loan tape, risk metrics | Read-only + report export | Material non-public info | Yield, default, vintage curves |
-| **Support team** | Resolve tickets fast | Switching tools, no context | Support console + ticketing integration | Customer + application + masked PII per ticket | Scoped to active ticket (purpose-bound access) | Social engineering | First-response time, CSAT |
-| **Sales/onboarding** | Land merchants, get them transacting | Slow KYB, drop-off in setup | Internal sales console + merchant impersonation | CRM + merchant pipeline | Scoped + impersonation with consent | Impersonation abuse | Time-to-first-transaction |
-| **Developer/integration partner** | Integrate widget/API/SDK | Bad docs, sandbox parity gaps | Developer portal, sandbox, API keys | Own integration, test data | API-key scoped | Key leakage, prod misuse | Integration time, sandbox→prod conversion |
+| Persona                                                      | Goals                                                                 | Pain points                                                | Required surfaces                               | Required data                                                    | Permissions                                    | Security concerns                             | Success metrics                                             |
+| ------------------------------------------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------- |
+| **Direct consumer borrower**                                 | Get finance fast, see real offers, repay easily                       | Hidden fees, slow approvals, declined without reason       | iOS/Android app, web fallback                   | Own profile, applications, offers, repayments, docs              | Self-service only                              | Account takeover, SIM swap, phishing          | Time-to-offer, approval rate, NPS, on-time repayment        |
+| **Merchant-referred consumer**                               | Buy the thing, finance painless                                       | Too many redirects, app installs forced                    | Mobile web → optional app, app deep link        | As above + merchant context                                      | Self-service only                              | Same as above + merchant impersonation        | Conversion, application start→submit, AOV uplift            |
+| **Merchant owner**                                           | More sales, predictable settlement, low risk                          | Chargebacks, finance partner integration pain, opaque fees | Merchant dashboard (web), mobile web            | Own merchant, all applications referred, settlements, team       | Full merchant admin, billing                   | Credential theft, key leakage, internal fraud | GMV, finance attach rate, settlement-to-payout time         |
+| **Merchant admin/staff**                                     | Operate day-to-day                                                    | Cluttered UI, can't find applications                      | Merchant dashboard                              | Scoped: applications, customers, transactions                    | Configurable RBAC                              | Over-permissioning, exfiltration              | Operational throughput                                      |
+| **EazePay internal ops**                                     | Process applications, resolve exceptions                              | Manual data hunting, tool sprawl                           | Admin console                                   | All applications, all merchants, masked PII unless purpose-bound | Role-based + just-in-time elevation            | Insider risk, PII exposure                    | Time-to-decision, exception backlog                         |
+| **Underwriting team**                                        | Make sound credit decisions, defend them                              | Inconsistent data, no audit trail                          | Underwriting console                            | Application + bureau + bank + docs                               | UW role + approval limits                      | Data leakage, bias                            | Default rate by cohort, decision SLA                        |
+| **Compliance/risk team**                                     | Stay on the right side of CFPB / state regulators / partner-bank exam | Fragmented evidence, late audit prep                       | Compliance console, audit log viewer            | Read-most, cannot mutate financial state                         | Audit-only + reviewer                          | Tampering, log gaps                           | Findings closed, complaint SLA, reportable-event timeliness |
+| **Lender partner**                                           | See routed applications, manage limits, pull data                     | Manual reconciliation, no real-time view                   | Lender partner portal + API + webhooks          | Only own routed cases                                            | Partner-scoped                                 | Cross-tenant data leakage                     | Approval rate, funded volume, dispute rate                  |
+| **PE / internal capital team (TrueTopia + EazePay capital)** | Track BuzzPay book performance                                        | No real-time book view                                     | Capital dashboard (subset of admin)             | Aggregated BuzzPay loan tape, risk metrics                       | Read-only + report export                      | Material non-public info                      | Yield, default, vintage curves                              |
+| **Support team**                                             | Resolve tickets fast                                                  | Switching tools, no context                                | Support console + ticketing integration         | Customer + application + masked PII per ticket                   | Scoped to active ticket (purpose-bound access) | Social engineering                            | First-response time, CSAT                                   |
+| **Sales/onboarding**                                         | Land merchants, get them transacting                                  | Slow KYB, drop-off in setup                                | Internal sales console + merchant impersonation | CRM + merchant pipeline                                          | Scoped + impersonation with consent            | Impersonation abuse                           | Time-to-first-transaction                                   |
+| **Developer/integration partner**                            | Integrate widget/API/SDK                                              | Bad docs, sandbox parity gaps                              | Developer portal, sandbox, API keys             | Own integration, test data                                       | API-key scoped                                 | Key leakage, prod misuse                      | Integration time, sandbox→prod conversion                   |
 
 ---
 
 ## 4. Product Surface Map
 
-| Surface | Description | Primary tech | Auth model |
-|---|---|---|---|
-| iOS app | Consumer system of record | React Native (recommended — see §10) over Swift bridges for biometrics, secure enclave | OAuth2 + biometric + device-bound refresh token |
-| Android app | Same as iOS | React Native + native KeyStore bridges | Same |
-| Consumer web | Fallback for merchant-referred non-app users; full feature parity for desktop borrowers | Next.js (App Router) + TS | OAuth2 + WebAuthn |
-| Merchant dashboard | Web app for merchants | Next.js + TS | OAuth2 + WebAuthn + optional SSO (SAML/OIDC) |
-| Admin/ops console | EazePay internal | Next.js + TS, separate auth domain | Internal SSO (Okta/Google Workspace) + step-up MFA + just-in-time access |
-| Underwriting console | Subset of admin, specialised UI | Same codebase, role-gated routes | UW role + approval limits |
-| Lender partner portal | External partner web | Next.js + TS, separate tenancy | OAuth2 + per-partner SSO |
-| Public API | Versioned REST + webhooks | NestJS (Node) — see §10 | API key (HMAC-signed) + OAuth2 client credentials |
-| Checkout widget | Drop-in JS for merchant checkouts | Vanilla TS bundle, ~30KB gzipped target | Public publishable key + server-side session |
-| Application link flow | Hosted application web flow opened from a merchant link | Next.js, optimised for mobile web | Stateless link token (signed, expiring) |
-| Embedded merchant finance flow | iframe + postMessage SDK | Same as widget | Same |
-| Consumer direct loan flow | App + web | App / Next.js | OAuth2 |
-| Merchant onboarding flow | Web + email + e-sign | Next.js + DocuSign/equivalent | Magic link + password + MFA |
-| Settlement tracking | Merchant dashboard module | Same | Same |
-| Notification system | Push (APNs/FCM), email (SES/SendGrid), SMS (Twilio), in-app | Notification service | Internal |
-| Support system | In-app chat + ticketing (Zendesk or Intercom) | Embed + backend bridge | Customer auth + agent SSO |
-| Compliance review tools | Admin module | Same admin app | Compliance role |
-| Risk monitoring tools | Admin module + alerting | Same | Risk role |
-| Developer portal | Docs + sandbox + API keys | Next.js + Mintlify or similar | Developer account |
+| Surface                        | Description                                                                             | Primary tech                                                                           | Auth model                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| iOS app                        | Consumer system of record                                                               | React Native (recommended — see §10) over Swift bridges for biometrics, secure enclave | OAuth2 + biometric + device-bound refresh token                          |
+| Android app                    | Same as iOS                                                                             | React Native + native KeyStore bridges                                                 | Same                                                                     |
+| Consumer web                   | Fallback for merchant-referred non-app users; full feature parity for desktop borrowers | Next.js (App Router) + TS                                                              | OAuth2 + WebAuthn                                                        |
+| Merchant dashboard             | Web app for merchants                                                                   | Next.js + TS                                                                           | OAuth2 + WebAuthn + optional SSO (SAML/OIDC)                             |
+| Admin/ops console              | EazePay internal                                                                        | Next.js + TS, separate auth domain                                                     | Internal SSO (Okta/Google Workspace) + step-up MFA + just-in-time access |
+| Underwriting console           | Subset of admin, specialised UI                                                         | Same codebase, role-gated routes                                                       | UW role + approval limits                                                |
+| Lender partner portal          | External partner web                                                                    | Next.js + TS, separate tenancy                                                         | OAuth2 + per-partner SSO                                                 |
+| Public API                     | Versioned REST + webhooks                                                               | NestJS (Node) — see §10                                                                | API key (HMAC-signed) + OAuth2 client credentials                        |
+| Checkout widget                | Drop-in JS for merchant checkouts                                                       | Vanilla TS bundle, ~30KB gzipped target                                                | Public publishable key + server-side session                             |
+| Application link flow          | Hosted application web flow opened from a merchant link                                 | Next.js, optimised for mobile web                                                      | Stateless link token (signed, expiring)                                  |
+| Embedded merchant finance flow | iframe + postMessage SDK                                                                | Same as widget                                                                         | Same                                                                     |
+| Consumer direct loan flow      | App + web                                                                               | App / Next.js                                                                          | OAuth2                                                                   |
+| Merchant onboarding flow       | Web + email + e-sign                                                                    | Next.js + DocuSign/equivalent                                                          | Magic link + password + MFA                                              |
+| Settlement tracking            | Merchant dashboard module                                                               | Same                                                                                   | Same                                                                     |
+| Notification system            | Push (APNs/FCM), email (SES/SendGrid), SMS (Twilio), in-app                             | Notification service                                                                   | Internal                                                                 |
+| Support system                 | In-app chat + ticketing (Zendesk or Intercom)                                           | Embed + backend bridge                                                                 | Customer auth + agent SSO                                                |
+| Compliance review tools        | Admin module                                                                            | Same admin app                                                                         | Compliance role                                                          |
+| Risk monitoring tools          | Admin module + alerting                                                                 | Same                                                                                   | Risk role                                                                |
+| Developer portal               | Docs + sandbox + API keys                                                               | Next.js + Mintlify or similar                                                          | Developer account                                                        |
 
 ---
 
@@ -202,6 +217,7 @@ Future offers  →  pre-qualified offers based on repayment behavior + consent
 ```
 
 **Critical journey rules:**
+
 - Soft pull consent screen is its own step. Never bundled with terms acceptance. Auditable E-SIGN-compliant consent event written before any bureau call. FCRA permissible purpose recorded.
 - Offer screen never re-orders by EazePay revenue without user-visible disclosure. Default sort is "lowest total cost" for UDAAP defensibility and to avoid steering claims under ECOA.
 - Decline path delivers a **FCRA + ECOA-compliant Adverse Action Notice** with specific principal reasons, credit score disclosure where applicable, bureau contact info, and ECOA non-discrimination notice. Delivered in-app + email within 30 days.
@@ -213,6 +229,7 @@ Future offers  →  pre-qualified offers based on repayment behavior + consent
 ## 6. Merchant Journey
 
 ### 6.1 Merchant generates and sends a link
+
 ```
 Merchant logs into dashboard
 → "Create application link" → choose product, amount, optional pre-fill (sale value, item description, customer email)
@@ -230,6 +247,7 @@ Customer opens link on mobile web
 ```
 
 ### 6.2 Merchant onboarding
+
 ```
 Sign up (email + password + MFA enrol)
 → Business details (legal name, EIN, DBA, formation state, industry, website)
@@ -247,6 +265,7 @@ Sign up (email + password + MFA enrol)
 ```
 
 ### 6.3 KYB depth (US)
+
 EIN verification (IRS TIN match where eligible), Secretary of State good-standing check (state-specific), beneficial ownership per **FinCEN CTA / Beneficial Ownership Information rule** (≥25% owners + control persons), CIP per BSA, OFAC SDN + consolidated screen on entity + every BO + every authorized signer, MCC / NAICS classification, prohibited-merchant blocklist (firearms outside FFL, gambling without licence, marijuana including state-legal MRBs unless we explicitly stand up an MRB program, adult, MLM, debt collection, deceptive marketing), bank account verification via Plaid + micro-deposit fallback. Ongoing: OFAC re-screen on any roster change + monthly batch, periodic refresh (annual for low-risk, semi-annual+ for elevated).
 
 ---
@@ -277,6 +296,7 @@ Application lands in queue (auto-routed by orchestration; manual review only on 
 ## 8. Figma Design System Plan
 
 ### 8.1 File structure (Figma)
+
 ```
 EazePay /
 ├── 00 — Brand Foundations
@@ -295,6 +315,7 @@ EazePay /
 ```
 
 ### 8.2 Tokens (recommended)
+
 - **Color:** semantic tokens (`color/bg/default`, `color/text/primary`, `color/intent/success/bg`, etc.) — never raw hex referenced from screens. Two themes: light + dark, AA-contrast-compliant minimum, AAA on body text.
 - **Typography:** Inter or SF Pro Text/Display + a numerical-preferred font for amounts (e.g. SF Pro Mono tabular figures) to keep currency aligned. Type scale: 12 / 14 / 16 / 18 / 20 / 24 / 32 / 40.
 - **Spacing:** 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 56 / 80.
@@ -317,6 +338,7 @@ Tokens live in Figma Variables and are exported to `eazepay-design-system` repo 
 **Compliance / trust UI:** standardised disclosure pattern — `<DisclosurePanel>` with title, plain-English summary, expandable full text, "I have read" checkbox where required, audit hook that fires the consent event on tick.
 
 ### 8.4 Accessibility
+
 - WCAG 2.1 AA minimum; AAA for credit disclosure copy.
 - All interactive elements ≥44×44pt touch target (mobile).
 - Focus visible on all controls, keyboard-operable on web.
@@ -325,9 +347,11 @@ Tokens live in Figma Variables and are exported to `eazepay-design-system` repo 
 - No information conveyed by color alone (decline reasons must include icon + text).
 
 ### 8.5 Naming conventions
+
 `Component / Variant / State` — e.g. `Button / Primary / Default`, `Button / Primary / Loading`, `OfferCard / Recommended / Default`. Code Connect mappings exported so `eazepay-design-system` React components match Figma component names 1:1.
 
 ### 8.6 Prototype flows
+
 For sign-off, prototypes for: full consumer onboarding, full merchant onboarding, application link customer flow, offer accept + e-sign, repayment management, hardship request, merchant generate-link → settlement, admin underwriting decision.
 
 ---
@@ -335,6 +359,7 @@ For sign-off, prototypes for: full consumer onboarding, full merchant onboarding
 ## 9. Screen Inventory
 
 ### Consumer app (mobile)
+
 1. Splash
 2. Welcome (3 carousel)
 3. Sign up — choose method
@@ -387,6 +412,7 @@ For sign-off, prototypes for: full consumer onboarding, full merchant onboarding
 50. Account locked / fraud hold
 
 ### Merchant dashboard (web)
+
 1. Login
 2. MFA challenge
 3. Onboarding — business details
@@ -417,6 +443,7 @@ For sign-off, prototypes for: full consumer onboarding, full merchant onboarding
 28. Settings (org profile, branding for hosted flow)
 
 ### Admin / ops console
+
 1. Login (SSO)
 2. Step-up MFA
 3. Application queue (filters: status, age, risk, lender, merchant)
@@ -446,35 +473,39 @@ For sign-off, prototypes for: full consumer onboarding, full merchant onboarding
 
 **Decision: React Native (Expo bare workflow or RN CLI) + TypeScript.**
 
-| Option | Pros | Cons | Verdict |
-|---|---|---|---|
-| Native Swift + Kotlin | Best perf, full platform access | 2x build cost, 2x team, slower iteration | Reject for MVP. Revisit only if RN bottlenecks emerge. |
-| Flutter | Good perf, single codebase | Dart ecosystem smaller, fintech library gaps (Plaid, Persona, Stripe SDKs all JS/Swift/Kotlin first), narrower US fintech hiring pool | Reject. |
-| **React Native + TS** | Shares logic with web, mature US fintech library coverage (Plaid, Stripe, Persona/Socure/Jumio, Sift), easy native bridges where needed | Bridge maintenance, perf ceiling on heavy animations | **Accept.** |
+| Option                | Pros                                                                                                                                    | Cons                                                                                                                                  | Verdict                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Native Swift + Kotlin | Best perf, full platform access                                                                                                         | 2x build cost, 2x team, slower iteration                                                                                              | Reject for MVP. Revisit only if RN bottlenecks emerge. |
+| Flutter               | Good perf, single codebase                                                                                                              | Dart ecosystem smaller, fintech library gaps (Plaid, Persona, Stripe SDKs all JS/Swift/Kotlin first), narrower US fintech hiring pool | Reject.                                                |
+| **React Native + TS** | Shares logic with web, mature US fintech library coverage (Plaid, Stripe, Persona/Socure/Jumio, Sift), easy native bridges where needed | Bridge maintenance, perf ceiling on heavy animations                                                                                  | **Accept.**                                            |
 
 Native bridges required: biometrics (Keychain / KeyStore), secure enclave for refresh token, camera + ML Kit for ID capture, Apple Pay / Google Pay (V2), push (APNs / FCM), App Attest / Play Integrity for device attestation.
 
 State: React Query + Zustand. Navigation: React Navigation. Forms: React Hook Form + Zod. Crypto: native bridges only — never JS-side crypto for sensitive material.
 
 ### 10.2 Web frontend
+
 **Next.js 14+ (App Router) + TypeScript + Tailwind + shadcn/ui base, themed with EazePay design tokens.**
+
 - Server components by default, client components only where needed.
 - Route handlers for BFF aggregation against the public API.
 - Strict CSP, Trusted Types, SRI on third-party scripts.
 - Three Next apps: `consumer-web`, `merchant-dashboard`, `admin-console`. Same monorepo, separate deployments, separate auth domains.
 
 ### 10.3 Backend
+
 **Decision: NestJS (Node 20 LTS) + TypeScript for primary services. Go for the orchestration engine and decisioning service if/when latency demands.**
 
-| Option | Pros | Cons |
-|---|---|---|
-| **NestJS** | Strong DI, TS shared with FE, fintech ecosystem, fast hiring in AU | Single-threaded; not ideal for CPU-heavy decisioning at scale |
-| Go | Excellent perf + concurrency for orchestration, single binary | Smaller AU talent pool, more boilerplate for CRUD services |
-| Java/Kotlin (Spring) | Mature, regulated-industry pedigree | Heavy, slower iteration, smaller cultural fit for our team size |
+| Option               | Pros                                                               | Cons                                                            |
+| -------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------- |
+| **NestJS**           | Strong DI, TS shared with FE, fintech ecosystem, fast hiring in AU | Single-threaded; not ideal for CPU-heavy decisioning at scale   |
+| Go                   | Excellent perf + concurrency for orchestration, single binary      | Smaller AU talent pool, more boilerplate for CRUD services      |
+| Java/Kotlin (Spring) | Mature, regulated-industry pedigree                                | Heavy, slower iteration, smaller cultural fit for our team size |
 
 **Recommendation:** NestJS for everything at MVP. Carve out the orchestration engine into Go in V1 if benchmarks demand (target P99 orchestration call < 800ms including external lender calls, which means our internal logic budget is ~150ms — Node will hold this).
 
 **Datastores:**
+
 - **PostgreSQL 16** (Aurora PostgreSQL on AWS) — primary OLTP. Multi-AZ. Logical replication to a read replica + analytics warehouse.
 - **Redis (ElastiCache)** — sessions, rate limiting, idempotency keys, short-TTL caches. Never source-of-truth.
 - **DynamoDB** — high-write append-only audit log (cheaper at scale than Postgres for this workload).
@@ -536,6 +567,7 @@ VPC: 3 AZ in `us-east-1`, mirror in `us-west-2` for DR (warm-standby Aurora Glob
 **Auth provider:** AWS Cognito for the heavy lifting (user pool, OAuth2, MFA, OIDC federation for merchant SSO) augmented with our own session service for device binding, refresh rotation, and risk-based step-up. We do not roll our own password hashing or OAuth — too much regulated risk for too little upside. Auth0 is a viable alternative but more expensive at scale; reject.
 
 ### 10.6 Observability
+
 - **Logs:** structured JSON, OpenTelemetry, centralised in Datadog or Grafana Loki. PII scrubbing pipeline before egress.
 - **Metrics:** OpenTelemetry → Datadog / Prometheus + Grafana.
 - **Traces:** OpenTelemetry, all external lender calls instrumented with vendor + product + decision dimensions.
@@ -611,34 +643,40 @@ README · HANDOFF · CONTRIBUTING · CHANGELOG · LICENSE · SECURITY · RAILWAY
 **Why monorepo:** shared types between FE/BE, atomic cross-cutting changes, single CI policy, single security baseline. **Why Nx:** project graph, affected-builds, code generators, opinionated scaling.
 
 #### `eazepay/design-system`
+
 Standalone repo — design tokens (Style Dictionary), Figma plugin/sync, React + RN component packages, Storybook. Published to GitHub Packages and consumed by `platform` via `@eazepay/ui`.
 
 #### `eazepay/infra`
+
 Terraform (AWS) + GitHub Actions OIDC. Separate state per environment. Atlantis or Terraform Cloud for plan/apply. **Never** in the product monorepo — different review cadence, different approvers, different blast radius.
 
 #### `eazepay/integrations`
+
 Reference SDKs and example integrations for merchants. Also where we publish the public widget bundle and the JS/Python/PHP SDKs. Public repo (V1).
 
 #### `eazepay/sdk` (V1)
+
 Public-facing language SDKs (TS, Python, PHP, Ruby first). Auto-generated from OpenAPI + handwritten ergonomics layer. Public.
 
 #### `eazepay/admin` — **collapsed into platform monorepo** as `apps/admin-console`. Resist the urge to split.
 
 #### `eazepay/docs`
+
 Public docs site (Mintlify). Source for developer.eazepay.com.
 
 ### 11.2 Per-repo policies
 
-| Repo | Visibility | CI required | Review | Branch protection | Secrets |
-|---|---|---|---|---|---|
-| platform | private | lint, typecheck, unit, integration, e2e (smoke), security scan, container scan | 2 reviewers, 1 codeowner from affected scope | main protected, signed commits, linear history | OIDC to AWS, no long-lived |
-| design-system | private | lint, typecheck, unit, visual regression (Chromatic) | 1 reviewer | main protected | npm token via OIDC |
-| infra | private | terraform fmt, validate, plan, tfsec, checkov | 2 reviewers incl. infra owner | main protected, manual apply gate | OIDC to AWS |
-| integrations | public | lint, typecheck, build, e2e against sandbox | 1 reviewer | main protected | public, no secrets |
-| sdk | public | per-language CI | 1 reviewer | main protected | npm/PyPI via OIDC |
-| docs | private | build, link check | 1 reviewer | main protected | none |
+| Repo          | Visibility | CI required                                                                    | Review                                       | Branch protection                              | Secrets                    |
+| ------------- | ---------- | ------------------------------------------------------------------------------ | -------------------------------------------- | ---------------------------------------------- | -------------------------- |
+| platform      | private    | lint, typecheck, unit, integration, e2e (smoke), security scan, container scan | 2 reviewers, 1 codeowner from affected scope | main protected, signed commits, linear history | OIDC to AWS, no long-lived |
+| design-system | private    | lint, typecheck, unit, visual regression (Chromatic)                           | 1 reviewer                                   | main protected                                 | npm token via OIDC         |
+| infra         | private    | terraform fmt, validate, plan, tfsec, checkov                                  | 2 reviewers incl. infra owner                | main protected, manual apply gate              | OIDC to AWS                |
+| integrations  | public     | lint, typecheck, build, e2e against sandbox                                    | 1 reviewer                                   | main protected                                 | public, no secrets         |
+| sdk           | public     | per-language CI                                                                | 1 reviewer                                   | main protected                                 | npm/PyPI via OIDC          |
+| docs          | private    | build, link check                                                              | 1 reviewer                                   | main protected                                 | none                       |
 
 ### 11.3 Branching
+
 Trunk-based. Short-lived feature branches (≤2 days). Required PR. Squash-merge to main. Release branches only for mobile (one per app store submission).
 
 ---
@@ -650,17 +688,20 @@ Below: entities with key fields, relationships, indexes, sensitivity, encryption
 > Notation: `🔒 PII`, `🔐 sensitive (financial)`, `🛡 secret`, `📜 audit-required` (every mutation logged).
 
 ### 12.1 Identity & users
+
 - **User** — `id (uuid)`, `email 🔒`, `phone 🔒`, `passwordHash 🛡`, `mfaSecret 🛡`, `createdAt`, `status`, `kycStatus`, `riskLevel`. Index: `email unique`, `phone unique`. 📜
 - **ConsumerProfile** — `userId fk`, `legalName 🔒`, `dob 🔒`, `address 🔒`, `taxResidency`, `pepStatus`, `sanctionsLastChecked`. Encrypted at column level via KMS-wrapped data keys. 📜
 - **MerchantUser** — `id`, `merchantId fk`, `userId fk`, `role`, `permissions[]`, `lastLoginAt`. 📜
 - **Session** — `id`, `userId`, `deviceId`, `refreshTokenHash 🛡`, `ip`, `userAgent`, `expiresAt`, `revokedAt`. Hot in Redis, persisted in PG for forensics.
 
 ### 12.2 Merchant
+
 - **Merchant** — `id`, `legalName`, `dba`, `ein 🔒`, `formationState`, `entityType`, `industry (NAICS + MCC)`, `riskTier`, `status`, `kybStatus`, `createdAt`, `mdrBps`, `applicationFeeCents`, `settlementBankAccountId`. 📜
 - **Business** (1:1 with Merchant for AU; allows multi-entity in future) — `abn`, `asicExtractRef`, `incorporatedDate`.
 - **BeneficialOwner** — `id`, `merchantId`, `legalName 🔒`, `dob 🔒`, `address 🔒`, `ownershipPct`, `isControlling`, `kycStatus`. 📜
 
 ### 12.3 Application & lending
+
 - **Application** — `id`, `consumerId`, `merchantId nullable`, `originationChannel`, `requestedAmountCents 🔐`, `category`, `purpose`, `status`, `submittedAt`, `decisionAt`, `riskScore 🔐`, `affordabilityResult 🔐`. Index: `consumerId,createdAt`, `merchantId,createdAt`, `status`. 📜
 - **LoanRequest** — `applicationId fk`, `amountCents 🔐`, `termMonths`, `purposeDetail`.
 - **UnderwritingData** — `applicationId fk`, `bureauReportRef`, `bankDataRef`, `incomeMonthlyCents 🔐`, `expensesMonthlyCents 🔐`, `existingDebtCents 🔐`, `creditScore 🔐`. Encrypted column-level. 📜
@@ -673,16 +714,19 @@ Below: entities with key fields, relationships, indexes, sensitivity, encryption
 - **Repayment** — `id`, `loanId`, `dueDate`, `amountDueCents 🔐`, `amountPaidCents 🔐`, `paidAt`, `status`. 📜
 
 ### 12.4 Documents, consents, contracts
+
 - **Document** — `id`, `ownerType (consumer|merchant|application)`, `ownerId`, `type`, `s3Key`, `sha256`, `mimeType`, `uploadedAt`, `ocrResultRef`, `retentionUntil`. 🔒 📜
 - **Consent** — `id`, `userId`, `type (soft_pull|hard_pull|cdr|marketing|terms|privacy)`, `version`, `grantedAt`, `revokedAt`, `evidenceRef (signed event hash)`, `ipAddress`, `userAgent`. Append-only. 📜
 - **Contract** — `id`, `parties[]`, `type`, `version`, `signedAt`, `signatureProvider`, `envelopeId`, `documentId fk`. 📜
 
 ### 12.5 Payments & money
+
 - **PaymentMethod** — `id`, `userId`, `type (bank|card)`, `tokenRef 🛡` (no PAN/PCI; tokenised in PSP), `last4`, `status`. 📜
 - **Transaction** — `id`, `loanId nullable`, `merchantId nullable`, `direction`, `amountCents 🔐`, `currency`, `status`, `providerRef`, `occurredAt`. 📜
 - **Settlement** — `id`, `merchantId`, `periodStart`, `periodEnd`, `grossCents`, `feesCents`, `netCents`, `payoutAt`, `status`. 📜
 
 ### 12.6 Risk, compliance, ops
+
 - **RiskFlag** — `id`, `subjectType`, `subjectId`, `flagType`, `severity`, `evidenceJson`, `raisedAt`, `resolvedAt`. 📜
 - **ComplianceReview** — `id`, `subjectType`, `subjectId`, `reason`, `status`, `assignedTo`, `outcome`, `outcomeAt`, `reportableMatterRef`. 📜
 - **AuditLog** — `id`, `actorType`, `actorId`, `action`, `targetType`, `targetId`, `before`, `after`, `ip`, `userAgent`, `at`, `prevHash`, `hash`. Append-only, hash-chained. Immutable storage (S3 Object Lock + DynamoDB).
@@ -690,12 +734,14 @@ Below: entities with key fields, relationships, indexes, sensitivity, encryption
 - **Notification** — `id`, `userId`, `channel`, `template`, `payloadHash`, `status`, `sentAt`. 📜
 
 ### 12.7 Integrations
+
 - **APIKey** — `id`, `merchantId`, `prefix`, `hash 🛡`, `scopes[]`, `lastUsedAt`, `revokedAt`. 📜
 - **Integration** — `id`, `merchantId`, `type`, `config` (encrypted), `status`. 📜
 - **WebhookEndpoint** — `id`, `merchantId`, `url`, `secret 🛡`, `events[]`, `status`. 📜
 - **WebhookEvent** — `id`, `endpointId`, `eventType`, `payload`, `attempts`, `nextRetryAt`, `deliveredAt`. 📜
 
 ### 12.8 Cross-cutting standards
+
 - All money in **integer cents (BigInt)**. Never floats.
 - All timestamps **UTC, ISO 8601, microsecond precision**.
 - All FKs enforced; no orphans.
@@ -708,6 +754,7 @@ Below: entities with key fields, relationships, indexes, sensitivity, encryption
 ## 13. API Specification
 
 ### 13.1 Conventions
+
 - REST, JSON, versioned in URL: `/v1/...`. New version when breaking.
 - Auth: `Authorization: Bearer <jwt>` (consumer/merchant user) OR `X-Api-Key: <key>` + `X-Signature: <hmac>` (server-to-server).
 - Idempotency: `Idempotency-Key` header required on all POST that creates money or applications. 24h TTL.
@@ -717,6 +764,7 @@ Below: entities with key fields, relationships, indexes, sensitivity, encryption
 - All endpoints log to audit with actor + target + before/after hash.
 
 ### 13.2 Auth
+
 ```
 POST /v1/auth/register
   body: { email | phone, password, marketingConsent: bool }
@@ -737,6 +785,7 @@ POST /v1/auth/refresh
 ```
 
 ### 13.3 Consumer
+
 ```
 GET  /v1/me
 PATCH /v1/me
@@ -756,6 +805,7 @@ POST /v1/payment-assistance  (UDAAP / CFPB-aligned hardship + SCRA pathways)
 ```
 
 ### 13.4 Merchant
+
 ```
 POST  /v1/merchants
 GET   /v1/merchants/:id
@@ -772,6 +822,7 @@ POST  /v1/merchants/:id/webhooks
 ```
 
 ### 13.5 Admin (internal)
+
 ```
 GET  /v1/admin/applications
 GET  /v1/admin/applications/:id
@@ -784,6 +835,7 @@ POST /v1/admin/jit-access  # request just-in-time elevation
 ```
 
 ### 13.6 Lender orchestration (server-to-server)
+
 ```
 POST /v1/orchestration/evaluate
   body: { applicationId }
@@ -795,6 +847,7 @@ GET  /v1/orchestration/:applicationId/result
 ```
 
 ### 13.7 Webhooks (inbound)
+
 ```
 POST /v1/webhooks/lenders/:lender   # signature-verified per lender
 POST /v1/webhooks/payments/:provider
@@ -804,9 +857,11 @@ POST /v1/webhooks/esign/:provider
 ```
 
 ### 13.8 Webhooks (outbound to merchants)
+
 Events: `application.created`, `application.submitted`, `application.approved`, `application.declined`, `offer.accepted`, `loan.funded`, `repayment.due`, `repayment.paid`, `repayment.failed`, `merchant.settlement.created`, `kyb.status_changed`. HMAC-SHA256 signed with per-endpoint secret. Retry: exponential backoff up to 24h, then dead-letter. Replayable from dashboard.
 
 ### 13.9 Per-endpoint requirements
+
 For every endpoint we document: request schema (Zod), response schema, error codes, auth model, RBAC scopes, rate limit class, idempotency, audit fields, PII fields, retention, sandbox parity. Generated into OpenAPI 3.1 from code (NestJS + nestjs-zod + @anatine/zod-openapi). Single source of truth, no hand-written specs.
 
 ---
@@ -814,17 +869,20 @@ For every endpoint we document: request schema (Zod), response schema, error cod
 ## 14. Lender Orchestration / Waterfall Engine
 
 ### 14.1 Inputs
+
 - Normalized application + applicant + bureau + bank data + risk score + merchant context (if any).
 - Lender registry (active products, eligibility rules, capacity, current-window approval rate, latency p95).
 - Capital constraints (BuzzPay book exposure caps, vintage limits).
 - Compliance constraints (responsible lending, target market determinations).
 
 ### 14.2 Routing modes
+
 - **Parallel:** dispatch to all eligible lenders supporting parallel quote APIs, aggregate within timeout (5s soft, 8s hard).
 - **Waterfall:** sequential, ranked by expected value × approval probability × consumer benefit.
 - **Hybrid (default):** parallel within tier, waterfall across tiers.
 
 ### 14.3 Tier definitions
+
 1. **Tier 0 — Internal (BuzzPay, by TrueTopia)** — first look if eligible AND risk-adjusted return positive AND book capacity available.
 2. **Tier 1 — Prime partners** — strong credit, low APR.
 3. **Tier 2 — Near-prime / specialist** — by category (auto, medical, home improvement).
@@ -852,15 +910,15 @@ async function orchestrate(appId: string): Promise<OrchestrationResult> {
 
   // Rank: expected risk-adjusted value to consumer first, then to EazePay
   const ranked = rankCandidates(candidates, ctx, {
-    consumerWeight: 0.6,   // consumer-best default — UDAAP + ECOA defensibility
-    eazepayWeight:  0.4,
+    consumerWeight: 0.6, // consumer-best default — UDAAP + ECOA defensibility
+    eazepayWeight: 0.4,
   });
 
   // Tiered hybrid execution
   const offers: Offer[] = [];
   for (const tier of groupByTier(ranked)) {
     const tierResults = await Promise.allSettled(
-      tier.map(p => callLender(p, ctx, { timeoutMs: 5000 }))
+      tier.map((p) => callLender(p, ctx, { timeoutMs: 5000 })),
     );
     offers.push(...collectApprovals(tierResults));
     if (offers.length >= MIN_OFFERS_TO_PRESENT) break; // usually 3
@@ -882,20 +940,23 @@ async function orchestrate(appId: string): Promise<OrchestrationResult> {
 ```
 
 ### 14.5 Lender adapter interface
+
 ```typescript
 interface LenderAdapter {
   id: LenderProductId;
   isEligible(ctx: ApplicationContext): Promise<EligibilityResult>;
   quote(ctx: ApplicationContext, opts: QuoteOpts): Promise<QuoteResult>;
-  bind(offerId: OfferId): Promise<BindResult>;            // accept the offer
+  bind(offerId: OfferId): Promise<BindResult>; // accept the offer
   fund(loanId: LoanId): Promise<FundResult>;
   status(externalRef: string): Promise<LenderStatus>;
   webhookVerify(req: IncomingRequest): Promise<WebhookEvent>;
 }
 ```
+
 Each external lender + BuzzPay implements the same adapter. Adapter registry is config-driven so adding a lender = ship a new adapter + DB row, not a code change in orchestration.
 
 ### 14.6 Operational concerns
+
 - **Lender outage:** circuit breaker per adapter (Hystrix-style). Open after 50% error in 1min window over 20+ calls. Half-open after 30s. Open lender excluded from routing automatically; on-call paged.
 - **SLA tracking:** every adapter call timed; p50/p95/p99 per lender per hour. Dashboards in admin.
 - **Approval-rate optimization:** continuous A/B of ranking weights with bandit (controlled experiment, not silent ML). Always shadow first; promote with explicit approval.
@@ -907,6 +968,7 @@ Each external lender + BuzzPay implements the same adapter. Adapter registry is 
 ## 15. Decisioning & Intelligence Layer
 
 ### 15.1 Components
+
 1. **Rules engine** — declarative (e.g. `json-rules-engine`, or a custom DSL with versioning). All decision rules versioned in DB; every decision records `policyVersion`. Rule changes go through PR + compliance review + canary.
 2. **Affordability model (Ability-to-Repay)** — deterministic calculation: `(net income − fixed commitments − essential expenses − this loan repayment) ≥ buffer`. Inputs from Plaid (cashflow underwriting), with fallback to user-declared + payslip + uploaded bank statements. Output: pass/fail + buffer dollars + sensitivity (what if income drops 10%). DTI computed and stored.
 3. **Risk scoring** — gradient boosted model trained on (application features, bureau, bank cashflow features) → probability of default at 12 months. **Explainability mandatory**: SHAP values stored per decision; top-5 contributors surfaced to UW console.
@@ -916,6 +978,7 @@ Each external lender + BuzzPay implements the same adapter. Adapter registry is 
 7. **Approval likelihood** — pre-submit estimator surfaced to consumer to reduce wasted hard pulls.
 
 ### 15.2 AI / ML guardrails (mandatory)
+
 - **Human in the loop** for any decline based on a model output until model is post-deployment validated for ≥ 12 months AND covered by a formal model risk policy.
 - **Adverse action reasons** are model-aware: every decline has at least 2 specific reasons mapped to consumer-readable statements. Model contributors must map to a regulator-acceptable taxonomy (we maintain this mapping).
 - **No protected-attribute features.** No proxies allowed without statistical bias testing (disparate impact, equalised odds) on protected attributes (age, gender, postcode-as-race-proxy). Quarterly bias review by compliance.
@@ -928,6 +991,7 @@ Each external lender + BuzzPay implements the same adapter. Adapter registry is 
 ## 16. Security, Compliance & Risk
 
 ### 16.1 Federal lending & consumer-finance obligations
+
 - **Lending model** — choose ONE explicitly: (a) bank-partner / true-lender model with a chartered partner bank (Cross River, WebBank, FinWise, Celtic Bank, Lead Bank), or (b) state-by-state consumer lending / installment / sales-finance licences (NMLS-registered). Document the choice in a board-approved policy. Build the platform so the "true lender" attribute on `Loan` is structural, not cosmetic — the lender of record owns the credit decision in form and substance.
 - **TILA / Regulation Z** — APR computed and disclosed with the federally-prescribed methodology; pre-contract disclosures + final disclosures + payment schedule + right of rescission for closed-end loans secured by principal dwelling (likely N/A for unsecured personal loans but the engine handles it). Schumer-box-style summary for any open-end or credit-card-like product. Advertising rules (triggering terms) enforced at marketing surface.
 - **ECOA / Regulation B** — non-discrimination across protected classes; **specific** Adverse Action Notice within 30 days of decision (notice of incompleteness within 30 days; counter-offers tracked); spousal/joint applicant handling; appraisal/valuation rules where applicable; data retention 25 months for declined apps (12 months for businesses where applicable). Reason-code library is mapped to Reg B examples, never generic.
@@ -941,6 +1005,7 @@ Each external lender + BuzzPay implements the same adapter. Adapter registry is 
 - **State usury + licensing** — under bank-partner model, partner bank's home-state usury applies (subject to current True Lender / Madden risk). Under direct model, per-state APR caps + licensure (NMLS) required. Maintain a **state-rules matrix** in the rules engine; orchestration filters offers per applicant state.
 
 ### 16.2 BSA / AML / Sanctions
+
 - **BSA / FinCEN registration** — consumer lending alone is not a "financial institution" under BSA in the same way as money transmitters, but if EazePay touches money movement, holds funds, issues a prepaid product, or operates as MSB-adjacent we register as MSB and align with FinCEN expectations. Clarify scope with counsel before launch (open question in §22). Bank-partner model typically inherits the bank's BSA program but EazePay still needs a service-provider AML program.
 - **AML Program** — written, board-approved: designated BSA/AML Officer, risk assessment, CIP, ongoing monitoring, **SAR** filing workflow (30-day rule from detection), CTR if MSB scope ever applies, independent testing annually, training. SARs are filed via FinCEN's BSA E-Filing.
 - **CIP / KYC** — IDV via Alloy / Persona / Socure / Jumio with liveness; SSN verification; OFAC screen; PEP screen via WorldCheck/ComplyAdvantage/LexisNexis; CIP record retained ≥5 years post-account-closure.
@@ -949,14 +1014,16 @@ Each external lender + BuzzPay implements the same adapter. Adapter registry is 
 - **Travel Rule** — N/A unless we enter funds-transfer scope; flag and reassess at V2.
 
 ### 16.3 Privacy
+
 - **GLBA Privacy Rule** — initial Privacy Notice at relationship start; annual notice (or annual-notice exception if conditions met); opt-out for data sharing with non-affiliated third parties for marketing.
 - **State privacy laws** — CCPA/CPRA (CA), CDPA (VA), CPA (CO), CTDPA (CT), UCPA (UT), and the rapidly growing list (TX, OR, MT, IA, DE, IN, TN, NJ, NH, KY, MN, MD, RI). Build a **single rights-management platform** (right-to-know, right-to-delete, right-to-correct, right-to-portability, opt-out of sale/sharing/targeted ads, sensitive PI controls) that satisfies the strictest state. Honor Global Privacy Control (GPC) signal where required. Track applicability per resident state.
 - **Children's privacy** — block <18 at sign-up; no COPPA scope intended.
-- **Health data** — if we ever finance medical procedures and ingest medical data, HIPAA may apply to our merchant-side handling; current scope assumes we receive only the *amount and category*, not protected health information. Contractually prohibit merchants from sending PHI.
+- **Health data** — if we ever finance medical procedures and ingest medical data, HIPAA may apply to our merchant-side handling; current scope assumes we receive only the _amount and category_, not protected health information. Contractually prohibit merchants from sending PHI.
 - **Data residency** — US regions only (`us-east-1` primary, `us-west-2` DR). SCP-enforced. Cross-border processor use requires DPA + assessment.
 - **Breach notification** — patchwork of 50 state laws + GLBA + FTC Health Breach Notification Rule (if in scope). Maintain breach-response matrix that maps incident type → notice obligations + timelines per state. Notify state AGs / regulators per statute.
 
 ### 16.4 PCI & money handling
+
 - **PCI DSS** — tokenizing PSP path (Stripe / Adyen / Finix) so PAN never touches our systems → **SAQ A**. iframes / hosted fields only. Never log card data; never store CVV; never accept raw PAN over our APIs.
 - **ACH (Nacha)** — Originator obligations: Nacha Operating Rules compliance, WEB debit account validation (commercial reasonable methods, e.g. Plaid Auth, micro-deposits, Nacha-validated DB), return rate monitoring (Unauthorized ≤0.5%, Administrative ≤3%, Overall ≤15%), authorization retention. Use an ODFI partner (the bank partner or Modern Treasury / Column / Increase / Stripe Treasury).
 - **Card payments for repayments** — debit card preferred (Reg E coverage); credit card disallowed for loan repayments (CFPB stance).
@@ -964,19 +1031,23 @@ Each external lender + BuzzPay implements the same adapter. Adapter registry is 
 - **Money handling segregation** — funding accounts, operating accounts, and reserves segregated. For-benefit-of (FBO) account architecture if we hold consumer funds (likely N/A at MVP; revisit at wallet/V2).
 
 ### 16.5 SOC 2 + bank-partner readiness from day one
+
 - SOC 2 Type I within 9 months, Type II within 18 (bank partners will require this). Map controls to AICPA TSC. Vanta or Drata for evidence collection.
 - **Bank-partner oversight** — partner banks (Cross River et al) impose their own program: written policies, risk and compliance committee, MRM (model risk), complaints, marketing review, change management, audit rights, MIS reporting cadence (often monthly), exam cooperation. Build the **bank-partner reporting pack** as a first-class artifact.
 - **Model Risk (SR 11-7 / OCC 2011-12)** — partner banks expect SR 11-7-aligned MRM for any model that influences credit, fraud, or pricing. Inventory, validation, ongoing monitoring, independent review. (See §15.2.)
 - **NYDFS Part 500** — if we operate in or with NY consumers/partners, the NYDFS cybersecurity regulation applies to us as a covered entity or service provider. CISO certification, incident reporting (72 hours), MFA, encryption, access reviews.
 
 ### 16.3 Card & money
+
 - **PCI DSS** — we will use a tokenizing PSP (Stripe/Adyen) with iframe/redirect collection so PAN never touches our systems. Target SAQ A. Never log card data. Never store CVV.
 - **Money handling** — settlement bank accounts segregated. Reconciliation daily. Trust account treatment if/when applicable.
 
 ### 16.4 SOC 2 readiness from day one
+
 Type I within 12 months, Type II within 24. Controls library mapped to AICPA TSC. Evidence collection automated where possible (Vanta/Drata) — evaluate at MVP+3 months.
 
 ### 16.5 Encryption & key management
+
 - **In transit** — TLS 1.3, mTLS for service-to-service in VPC, Cloudfront-managed certs at edge.
 - **At rest** — AES-256-GCM, envelope via AWS KMS CMKs. Per-tenant data keys for largest customers (V1).
 - **Field-level** — Postgres `pgcrypto` for non-searchable PII; deterministic AES-SIV via app-layer for searchable PII.
@@ -985,6 +1056,7 @@ Type I within 12 months, Type II within 24. Controls library mapped to AICPA TSC
 - **Tokenisation** — PII tokenisation vault for analytics (Skyflow-style or self-hosted) — V1.
 
 ### 16.6 Identity & access
+
 - **Workforce** — SSO (Okta/Google), MFA everywhere, hardware keys for admin roles, just-in-time elevation for prod data access (every prod read of customer PII has a ticket reason + time-boxed).
 - **Customer auth** — OAuth2 + OIDC via Cognito; passwords with Argon2id; MFA via TOTP + SMS (SMS only as fallback); WebAuthn V1; biometrics on mobile.
 - **Service-to-service** — IAM roles + STS, no long-lived keys. mTLS within mesh.
@@ -992,12 +1064,14 @@ Type I within 12 months, Type II within 24. Controls library mapped to AICPA TSC
 - **Session security** — refresh rotation, device binding, anomaly detection (impossible travel, new device step-up).
 
 ### 16.7 Application security
+
 - Threat modelling per service (STRIDE) before merge.
 - SAST (Semgrep), DAST (OWASP ZAP), dependency (Snyk/Dependabot), container (Trivy), IaC (tfsec/checkov), secret scanning (Gitleaks). All in CI; blocking on high.
 - Penetration testing pre-launch then annually + after material change. CVD program live at launch.
 - Secure SDLC: PR template includes security checklist; security champion per service.
 
 ### 16.8 Incident response
+
 - 24/7 on-call rotation. Severity matrix (SEV1-SEV4) with response SLAs.
 - Runbooks per critical service.
 - Forensics: CloudTrail in audit account (write-once), VPC Flow Logs, GuardDuty + Security Hub.
@@ -1005,6 +1079,7 @@ Type I within 12 months, Type II within 24. Controls library mapped to AICPA TSC
 - Tabletop exercises quarterly.
 
 ### 16.9 Vendor / third-party risk
+
 - Vendor questionnaire + SOC 2 Type II / ISO 27001 evidence + DPA + data flow mapping for every vendor handling NPI or money. Annual review. **Interagency Guidance on Third-Party Relationships (June 2023)** is the bar for bank-partner-facing vendor management.
 - Lender / partner due diligence: licensing (state NMLS or charter), CFPB enforcement history, complaints history, financial soundness, BSA/AML program, dispute mechanism, security posture.
 
@@ -1051,6 +1126,7 @@ Type I within 12 months, Type II within 24. Controls library mapped to AICPA TSC
 ## 17. Data Architecture
 
 ### 17.1 Topology
+
 ```
 OLTP (Aurora PG)
   → CDC via DMS / Debezium → S3 (raw)
@@ -1068,6 +1144,7 @@ Audit log
 ```
 
 ### 17.2 Data domains
+
 - **Operational** (PG): real-time, transactional, source of truth.
 - **Audit** (DynamoDB + S3): append-only, hash-chained, immutable.
 - **Analytics warehouse**: dimensionally modelled, daily/streaming load, ML feature store (V1).
@@ -1075,6 +1152,7 @@ Audit log
 - **Reporting layer**: pre-aggregated marts for merchant/lender/internal dashboards.
 
 ### 17.3 Event taxonomy (initial)
+
 ```
 user.registered
 user.kyc.started, user.kyc.completed, user.kyc.failed
@@ -1096,9 +1174,11 @@ support.ticket.created, .resolved
 risk.flag.raised, .resolved
 compliance.review.opened, .closed
 ```
+
 Every event includes: `eventId`, `eventType`, `eventVersion`, `occurredAt`, `actor`, `subject`, `payload (PII-redacted)`, `correlationId`, `causationId`.
 
 ### 17.4 PII in analytics
+
 Either tokenise at the boundary (preferred) or strict allow-list of de-identified fields into the warehouse. No raw PII in BI tools. Joins back to PII only via vault lookups with logged access.
 
 ---
@@ -1106,19 +1186,23 @@ Either tokenise at the boundary (preferred) or strict allow-list of de-identifie
 ## 18. Infrastructure & DevOps
 
 ### 18.1 Environments
-| Env | Purpose | Data | Auth |
-|---|---|---|---|
-| local | Dev laptops | Synthetic | Local Cognito mock |
-| dev | Shared dev | Synthetic | Cognito dev pool |
-| staging | Pre-prod, prod-like | Synthetic + sanitised prod-like volume | Cognito staging |
-| sandbox | Public dev sandbox for partners | Synthetic | Sandbox keys |
-| prod | Live | Real | Prod Cognito |
+
+| Env     | Purpose                         | Data                                   | Auth               |
+| ------- | ------------------------------- | -------------------------------------- | ------------------ |
+| local   | Dev laptops                     | Synthetic                              | Local Cognito mock |
+| dev     | Shared dev                      | Synthetic                              | Cognito dev pool   |
+| staging | Pre-prod, prod-like             | Synthetic + sanitised prod-like volume | Cognito staging    |
+| sandbox | Public dev sandbox for partners | Synthetic                              | Sandbox keys       |
+| prod    | Live                            | Real                                   | Prod Cognito       |
 
 ### 18.2 IaC
+
 Terraform (preferred over CDK for hireability + tooling maturity). Modules per concern. Remote state in S3 + DynamoDB lock per env, with KMS encryption. PR-driven plan, manual-approved apply (Atlantis).
 
 ### 18.3 CI/CD
+
 GitHub Actions with OIDC to AWS — no long-lived deployment keys. Pipeline:
+
 ```
 PR opened
   → lint + typecheck + unit + affected-build
@@ -1135,17 +1219,21 @@ PR merged → main
 ```
 
 ### 18.4 Release strategy
+
 - Backend: trunk-based, deploy multiple times per day, feature-flagged, canary.
 - Mobile: weekly release train. EAS Build (Expo) or Fastlane. Phased rollout (1% → 10% → 100%) on both stores. Forced upgrade path for security fixes via remote config.
 - Web: continuous on merge.
 
 ### 18.5 Monitoring & alerting
+
 SLOs per critical journey. Burn-rate alerts. PagerDuty rotation. Status page (Statuspage.io). Synthetics on top 5 journeys every 5 min from 2 regions. Real-user monitoring on web + mobile (Datadog RUM or Sentry Performance).
 
 ### 18.6 Backups & DR
+
 Aurora automated backups + cross-region snapshot copy. RPO 15 min, RTO 4 h for critical. Quarterly restore drill (recorded). DR plan documented per service. Multi-AZ for everything stateful.
 
 ### 18.7 Cost guardrails
+
 Tag every resource (`env`, `service`, `owner`, `costCenter`). Monthly cost review per service owner. Anomaly detection alerts. Right-sizing review quarterly.
 
 ---
@@ -1153,6 +1241,7 @@ Tag every resource (`env`, `service`, `owner`, `costCenter`). Monthly cost revie
 ## 19. Testing Strategy
 
 ### 19.1 Pyramid
+
 - **Unit** (Vitest/Jest, RN: Jest + React Native Testing Library): ≥80% on services, ≥70% on UI. Fast, parallel.
 - **Integration:** services + real Postgres (Testcontainers) + mocked third-parties. Catch contract bugs.
 - **Contract** (Pact): every external integration (lender, KYC, payment) has a contract test.
@@ -1167,6 +1256,7 @@ Tag every resource (`env`, `service`, `owner`, `costCenter`). Monthly cost revie
 - **Regression:** visual regression on design system (Chromatic).
 
 ### 19.2 UAT
+
 Two-week UAT before any new lender goes live. UAT sign-off required from: Product, Risk, Compliance, Engineering. UAT environment uses synthetic but realistic data. UAT script library maintained.
 
 ---
@@ -1174,6 +1264,7 @@ Two-week UAT before any new lender goes live. UAT sign-off required from: Produc
 ## 20. MVP / V1 / V2 Roadmap
 
 ### 20.1 MVP (Months 0–6) — "Loan in the box"
+
 **Goal:** end-to-end loan, one merchant beta, one external lender + BuzzPay, single category.
 
 - Consumer mobile app (RN, iOS + Android)
@@ -1200,6 +1291,7 @@ Two-week UAT before any new lender goes live. UAT sign-off required from: Produc
 - CI/CD with canary, IaC, secret scanning, dep scanning, SAST
 
 ### 20.2 V1 (Months 6–12) — "Real product"
+
 - Full mobile app polish + WebAuthn + biometrics V2 + offline mode for repayment screens
 - Production merchant dashboard (analytics, team management, branding, API keys, webhooks)
 - 3–5 lender integrations across tiers
@@ -1213,6 +1305,7 @@ Two-week UAT before any new lender goes live. UAT sign-off required from: Produc
 - SOC 2 Type I + bank-partner audit pack
 
 ### 20.3 V2 (Months 12–24) — "Platform"
+
 - Drop-in checkout widget GA + iframe SDK
 - Lender marketplace (self-onboarding for partners with our review)
 - Wallet / payments features (BNPL self-issued, virtual card V1)
@@ -1230,6 +1323,7 @@ Two-week UAT before any new lender goes live. UAT sign-off required from: Produc
 Tasks below are **atomic, ordered, and Claude-Code executable**. Each task name is a directive — Claude Code can execute them sequentially or in parallel where dependencies allow.
 
 ### Phase A — Foundations (Week 1–2)
+
 1. **Init `eazepay/infra` repo.** Terraform skeleton, AWS Organizations, accounts (`dev`, `staging`, `prod`, `audit`, `security`, `shared-services`), OIDC GitHub federation, baseline guardrails (Config, GuardDuty, CloudTrail to audit account).
 2. **Init `eazepay/platform` Nx monorepo.** pnpm, TypeScript strict, ESLint, Prettier, commitlint, Husky, conventional commits, GitHub Actions CI skeleton.
 3. **Init `eazepay/design-system`.** Style Dictionary, Storybook, RN + React component packages, GitHub Packages publish.
@@ -1237,6 +1331,7 @@ Tasks below are **atomic, ordered, and Claude-Code executable**. Each task name 
 5. **Observability baseline.** Datadog or OTel collector, log pipeline with PII scrubber, dashboards skeletons, status page.
 
 ### Phase B — Backend skeleton (Week 2–4)
+
 6. **Scaffold `apps/api` NestJS app.** Health, auth stub, OpenAPI generator, Zod everywhere, Pino logging, OpenTelemetry, Postgres connection via Prisma or TypeORM (recommend **Prisma** for DX).
 7. **Scaffold internal modules** under `services/` matching §10.4: empty modules with typed interfaces and DI registration.
 8. **Database schema v0.** Prisma schema covering §12 entities. Migrations checked in. Seed scripts for synthetic data.
@@ -1248,6 +1343,7 @@ Tasks below are **atomic, ordered, and Claude-Code executable**. Each task name 
 14. **Notification service.** Push (APNs/FCM), email (SES), SMS (Twilio + 10DLC registration), in-app. Templating + i18n stub (en-US first; es-US V1 — Spanish-language ECOA/Reg B copy maintained).
 
 ### Phase C — Application & orchestration (Week 4–8)
+
 15. **Application module + state machine.** XState-based machine: draft → submitted → underwriting → offers_presented → accepted → contracted → funding → active. Strict transitions, audit on each.
 16. **Lender adapter framework.** Interface from §14.5, registry, circuit breaker (opossum), shared HTTP client with mTLS support, sandbox/prod URL switch, signature verification helpers.
 17. **BuzzPay adapter.** First implementation against BuzzPay sandbox API (mock with Mockoon/MSW with realistic latency until live). Wire the bank-partner-of-record metadata into every approved Loan record.
@@ -1263,6 +1359,7 @@ Tasks below are **atomic, ordered, and Claude-Code executable**. Each task name 
 27. **Webhook outbound service.** HMAC signing, retry with backoff + DLQ, replay UI in admin.
 
 ### Phase D — Mobile app (Week 6–12, parallel with C)
+
 28. **Init `apps/consumer-mobile`** RN + TS + Expo bare. Native bridges: Keychain/KeyStore, secure refresh-token storage, biometrics, App Attest / Play Integrity, deep link handling for application links.
 29. **Auth + onboarding screens.** Sign up, OTP, profile, biometric enrol. Wired to API.
 30. **KYC flow.** ID capture, liveness, SSN entry, processing, success/fail/manual-review states. Persona / Socure / Jumio SDK behind Alloy orchestration.
@@ -1274,12 +1371,14 @@ Tasks below are **atomic, ordered, and Claude-Code executable**. Each task name 
 36. **Detox E2E for top 8 journeys.**
 
 ### Phase E — Web surfaces (Week 8–14)
+
 37. **Application link hosted flow** (`apps/consumer-web`). Same component library as mobile (RN-Web where feasible) or web-native React. Mobile-first, optimised for cold-start <1s on 4G.
 38. **Merchant dashboard.** Onboarding flow, KYB status, link generator, applications list/detail, settlements, API keys, webhooks, team.
 39. **Admin console.** Application queue, UW workspace, audit log viewer, lender perf dashboard, configuration.
 40. **Developer portal** (Mintlify). API docs auto-generated from OpenAPI, sandbox keys.
 
 ### Phase F — Compliance & launch hardening (Week 12–18)
+
 41. **AML Program artefacts.** Written AML Program board-approved, BSA Officer designated, SAR workflow + FinCEN E-Filing path, integrated checks (OFAC, PEP, sanctions, MLA, SCRA queue UI).
 42. **CFPB complaint workflow + state-rights portal.** UI + workflow + 15/60-day SLA tracking; CCPA/CPRA + multi-state DSAR portal with GPC honoring.
 43. **Disclosure machinery.** TILA / Reg Z box generator (pre-contract + final), ECOA Adverse Action Notice generator with reason taxonomy, FCRA Risk-Based Pricing / Score Disclosure exception, GLBA Privacy Notice (initial + annual) — all template-versioned and testable.
@@ -1292,6 +1391,7 @@ Tasks below are **atomic, ordered, and Claude-Code executable**. Each task name 
 50. **Soft launch with one beta merchant + 100 consumer waitlist** (start in 1–3 states permitted under partner-bank export footprint to limit blast radius).
 
 ### Phase G — Iterate to V1
+
 51. Add lenders, parallel orchestration, hard pull at accept, repayment automation, public API GA, SDKs, SOC 2 Type I, expanded state coverage.
 
 ---
@@ -1343,23 +1443,23 @@ In execution order. Targets the next 2 weeks.
 
 ## Appendix A — Decisions made in this document (single page)
 
-| # | Area | Decision |
-|---|---|---|
-| 1 | Mobile | React Native + TS, native bridges where required |
-| 2 | Web | Next.js App Router + TS + Tailwind + design system |
-| 3 | Backend | NestJS modular monolith on Node 20; Go for orchestration only if benchmarks demand |
-| 4 | Datastore | Aurora PostgreSQL 16, Redis, DynamoDB (audit), S3 (docs) |
-| 5 | Cloud | AWS `us-east-1` primary + `us-west-2` DR, multi-account, OIDC-only deploys, US-only SCP |
-| 6 | Auth | Cognito + custom session/device layer |
-| 7 | Repos | Hybrid: Nx monorepo for product, separate infra + design-system + sdk + integrations + docs |
-| 8 | Orchestration | Hybrid (parallel within tier, waterfall across tiers) with adapter interface |
-| 9 | BuzzPay (TrueTopia) | Same `LenderAdapter` interface as externals; first-look only when economically optimal AND eligible. Lender-of-record (partner bank) carried structurally on every Loan |
-| 10 | Decisioning | Rules engine + deterministic affordability at MVP; shadow ML thereafter; SR 11-7 model risk + ECOA fair-lending review mandatory |
-| 11 | Compliance | Lending model (bank-partner vs state-licensed) locked pre-MVP. Federal: BSA, OFAC, TILA/Reg Z, ECOA/Reg B, FCRA, GLBA + Safeguards, EFTA/Reg E, UDAAP, MLA, SCRA, E-SIGN. State privacy patchwork (CCPA/CPRA + others). CFPB complaint workflow. |
-| 12 | Security | Cognito + WebAuthn V1, KMS envelope, mTLS internal, append-only audit, JIT prod access, SOC 2 Type I within 9mo, NYDFS Part 500 readiness if NY-in-scope |
-| 13 | CI/CD | GitHub Actions OIDC, Terraform, canary deploys, Detox/Playwright E2E |
-| 14 | Money | Integer cents, BigInt; never floats |
-| 15 | PII | Column-level encryption; deterministic AES-SIV for searchable PII; tokenisation vault by V1 |
+| #   | Area                | Decision                                                                                                                                                                                                                                         |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Mobile              | React Native + TS, native bridges where required                                                                                                                                                                                                 |
+| 2   | Web                 | Next.js App Router + TS + Tailwind + design system                                                                                                                                                                                               |
+| 3   | Backend             | NestJS modular monolith on Node 20; Go for orchestration only if benchmarks demand                                                                                                                                                               |
+| 4   | Datastore           | Aurora PostgreSQL 16, Redis, DynamoDB (audit), S3 (docs)                                                                                                                                                                                         |
+| 5   | Cloud               | AWS `us-east-1` primary + `us-west-2` DR, multi-account, OIDC-only deploys, US-only SCP                                                                                                                                                          |
+| 6   | Auth                | Cognito + custom session/device layer                                                                                                                                                                                                            |
+| 7   | Repos               | Hybrid: Nx monorepo for product, separate infra + design-system + sdk + integrations + docs                                                                                                                                                      |
+| 8   | Orchestration       | Hybrid (parallel within tier, waterfall across tiers) with adapter interface                                                                                                                                                                     |
+| 9   | BuzzPay (TrueTopia) | Same `LenderAdapter` interface as externals; first-look only when economically optimal AND eligible. Lender-of-record (partner bank) carried structurally on every Loan                                                                          |
+| 10  | Decisioning         | Rules engine + deterministic affordability at MVP; shadow ML thereafter; SR 11-7 model risk + ECOA fair-lending review mandatory                                                                                                                 |
+| 11  | Compliance          | Lending model (bank-partner vs state-licensed) locked pre-MVP. Federal: BSA, OFAC, TILA/Reg Z, ECOA/Reg B, FCRA, GLBA + Safeguards, EFTA/Reg E, UDAAP, MLA, SCRA, E-SIGN. State privacy patchwork (CCPA/CPRA + others). CFPB complaint workflow. |
+| 12  | Security            | Cognito + WebAuthn V1, KMS envelope, mTLS internal, append-only audit, JIT prod access, SOC 2 Type I within 9mo, NYDFS Part 500 readiness if NY-in-scope                                                                                         |
+| 13  | CI/CD               | GitHub Actions OIDC, Terraform, canary deploys, Detox/Playwright E2E                                                                                                                                                                             |
+| 14  | Money               | Integer cents, BigInt; never floats                                                                                                                                                                                                              |
+| 15  | PII                 | Column-level encryption; deterministic AES-SIV for searchable PII; tokenisation vault by V1                                                                                                                                                      |
 
 ---
 
@@ -1382,4 +1482,4 @@ In execution order. Targets the next 2 weeks.
 
 ---
 
-*End of EazePay CTO Architecture & Execution Blueprint v0.1.*
+_End of EazePay CTO Architecture & Execution Blueprint v0.1._

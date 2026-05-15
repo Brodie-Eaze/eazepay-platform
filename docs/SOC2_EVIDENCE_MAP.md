@@ -175,7 +175,7 @@ the engagement.
 
 1. This document (`docs/SOC2_EVIDENCE_MAP.md`) - start here.
 2. `SECURITY.md` - top-level security posture.
-3. `SECURITY_AUDIT.md` - 2026-05-15 adversarial audit, referenced by SEC-XXX IDs throughout.
+3. [`audits/SECURITY_AUDIT_2026-05-15.md`](audits/SECURITY_AUDIT_2026-05-15.md) - 2026-05-15 adversarial audit, referenced by SEC-XXX IDs throughout.
 4. `docs/PEN_TEST_READINESS.md` - pen-test prep checklist with current implementation status.
 5. `docs/SLO.md` - operational SLOs with error budgets.
 6. `docs/compliance/` - operational policy docs (vendor management, data classification, change management, access review, incident-response drill, business continuity).

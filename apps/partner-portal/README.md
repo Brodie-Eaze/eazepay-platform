@@ -11,7 +11,7 @@ URL you can hand prospective merchants the `/landing/<brand>` page,
 point lenders to `/lenders` and `/docs`, route consumers through
 `/apply/<brand>`, and let internal operators sign in to run the
 business at `/insights`, `/applications`, `/onboarding-pipeline`,
-etc. Today this is the *primary* hosted experience for the platform.
+etc. Today this is the _primary_ hosted experience for the platform.
 
 Currently deployed to:
 **https://eazepay-platform-production.up.railway.app**
@@ -34,23 +34,24 @@ pnpm --filter @eazepay/partner-portal dev
 
 The app starts on `http://localhost:3004`. Browse the landing pages
 without any backend running:
+
 - http://localhost:3004/landing/medpay
 - http://localhost:3004/landing/tradepay
 - http://localhost:3004/landing/coachpay
 
 ## URL conventions
 
-| Pattern | Audience | Purpose |
-|---|---|---|
-| `/landing/{medpay\|tradepay\|coachpay}` | Prospective merchants | Public marketing landings |
-| `/apply/{brand}` | End consumers | Branded consumer apply flow |
-| `/v/{brand}/...` | Authenticated merchants | Per-brand merchant portal (single-vertical view) |
-| `/lenders`, `/lenders/[id]` | Prospective lender marketplaces | Public developer hub |
-| `/docs` | Lender integrators | API reference + curl examples |
-| `/sign-in` | Operators + partners | Auth |
-| `/welcome`, `/onboarding/*`, `/onboarding-pipeline` | New merchants + the team onboarding them | Onboarding wizard + pipeline |
-| `/insights`, `/applications`, `/partners`, `/lender-marketplace`, `/marketplaces`, `/payouts`, `/settlements`, `/disputes`, `/queues`, `/reports`, `/events`, `/admin` | Master operator | Command-centre surfaces |
-| `/api/v1/*` | Marketplaces, lenders, integrators | Public API (Next.js route handlers) |
+| Pattern                                                                                                                                                                | Audience                                 | Purpose                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| `/landing/{medpay\|tradepay\|coachpay}`                                                                                                                                | Prospective merchants                    | Public marketing landings                        |
+| `/apply/{brand}`                                                                                                                                                       | End consumers                            | Branded consumer apply flow                      |
+| `/v/{brand}/...`                                                                                                                                                       | Authenticated merchants                  | Per-brand merchant portal (single-vertical view) |
+| `/lenders`, `/lenders/[id]`                                                                                                                                            | Prospective lender marketplaces          | Public developer hub                             |
+| `/docs`                                                                                                                                                                | Lender integrators                       | API reference + curl examples                    |
+| `/sign-in`                                                                                                                                                             | Operators + partners                     | Auth                                             |
+| `/welcome`, `/onboarding/*`, `/onboarding-pipeline`                                                                                                                    | New merchants + the team onboarding them | Onboarding wizard + pipeline                     |
+| `/insights`, `/applications`, `/partners`, `/lender-marketplace`, `/marketplaces`, `/payouts`, `/settlements`, `/disputes`, `/queues`, `/reports`, `/events`, `/admin` | Master operator                          | Command-centre surfaces                          |
+| `/api/v1/*`                                                                                                                                                            | Marketplaces, lenders, integrators       | Public API (Next.js route handlers)              |
 
 ## Environment
 
@@ -83,7 +84,7 @@ them.
 **Railway.** Single service named `partner-portal` in the
 `eazepay-platform` project. The repo-root `Dockerfile` is a 3-stage
 build (deps → builder → runner) and produces the Next.js standalone
-output (~150 MB image). See [`/RAILWAY_DEPLOY.md`](../../RAILWAY_DEPLOY.md)
+output (~150 MB image). See [`docs/runbooks/railway-deploy.md`](../../docs/runbooks/railway-deploy.md)
 for the full deploy recipe.
 
 ```bash

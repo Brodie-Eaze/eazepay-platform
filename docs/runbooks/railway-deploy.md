@@ -9,19 +9,19 @@ lenders to `/lenders` and `/docs`, and route consumers through
 
 ## What ships on this service
 
-| Route | Audience | Purpose |
-|---|---|---|
-| `/landing/medpay` | Prospective medical merchants | Vertical landing page |
-| `/landing/tradepay` | Prospective trades merchants | Vertical landing page |
-| `/landing/coachpay` | Prospective coaching merchants | Vertical landing page |
-| `/welcome` | New merchant | Onboarding wizard |
-| `/apply/medpay` `/apply/tradepay` `/apply/coachpay` | End consumer | Branded apply flow |
-| `/lenders` | Prospective lender marketplaces | Public developer hub |
-| `/docs` | Lender integrators | API reference + curl examples |
-| `/sign-in` | Operators + partners | Auth |
-| `/v/<brand>/...` | Authenticated merchant | Per-brand merchant portal |
-| `/marketplaces` `/onboarding-pipeline` `/lender-marketplace` `/partners` etc. | Master operator | Command-centre surfaces |
-| `/api/v1/*` | Marketplaces, lenders, integrators | Public API |
+| Route                                                                         | Audience                           | Purpose                       |
+| ----------------------------------------------------------------------------- | ---------------------------------- | ----------------------------- |
+| `/landing/medpay`                                                             | Prospective medical merchants      | Vertical landing page         |
+| `/landing/tradepay`                                                           | Prospective trades merchants       | Vertical landing page         |
+| `/landing/coachpay`                                                           | Prospective coaching merchants     | Vertical landing page         |
+| `/welcome`                                                                    | New merchant                       | Onboarding wizard             |
+| `/apply/medpay` `/apply/tradepay` `/apply/coachpay`                           | End consumer                       | Branded apply flow            |
+| `/lenders`                                                                    | Prospective lender marketplaces    | Public developer hub          |
+| `/docs`                                                                       | Lender integrators                 | API reference + curl examples |
+| `/sign-in`                                                                    | Operators + partners               | Auth                          |
+| `/v/<brand>/...`                                                              | Authenticated merchant             | Per-brand merchant portal     |
+| `/marketplaces` `/onboarding-pipeline` `/lender-marketplace` `/partners` etc. | Master operator                    | Command-centre surfaces       |
+| `/api/v1/*`                                                                   | Marketplaces, lenders, integrators | Public API                    |
 
 ---
 
@@ -52,6 +52,7 @@ railway init
 ```
 
 When prompted:
+
 - **Project name:** `eazepay-platform` (or anything you want)
 - **Service:** `partner-portal`
 - **Environment:** `production`
@@ -95,6 +96,7 @@ Replace `<your-url>` with the Railway-issued domain (or your custom
 domain). All of these are **public** unless noted otherwise.
 
 ### Send to prospective merchants
+
 ```
 https://<your-url>/landing/medpay        # dental, med spa, vet, fertility
 https://<your-url>/landing/tradepay      # HVAC, roofing, solar, trades
@@ -102,6 +104,7 @@ https://<your-url>/landing/coachpay      # high-ticket coaches, courses, DFY
 ```
 
 ### Send to prospective lender marketplaces
+
 ```
 https://<your-url>/lenders               # public developer hub
 https://<your-url>/lenders/lp_buzzpay_prime    # per-lender detail (example)
@@ -109,13 +112,16 @@ https://<your-url>/docs                  # API reference + curl examples
 ```
 
 ### Send to a new merchant to onboard (one-time signed link)
+
 ```
 https://<your-url>/welcome
 ```
+
 (Generate a signed invite link from the onboarding pipeline at
 `/onboarding-pipeline` once you're signed in as Admin.)
 
 ### Send to a consumer to apply (public, no auth)
+
 ```
 https://<your-url>/apply/medpay?ref=<partner-id>
 https://<your-url>/apply/tradepay?ref=<partner-id>
@@ -123,6 +129,7 @@ https://<your-url>/apply/coachpay?ref=<partner-id>
 ```
 
 ### Internal / authenticated only
+
 ```
 https://<your-url>/sign-in               # operator + brand-portal login
 https://<your-url>/                      # master command centre (after login)
@@ -157,11 +164,11 @@ Returns 200 once the Next.js server is accepting connections.
 The demo runs without any environment variables. For production you'll
 want to set these via the Railway dashboard (Variables tab):
 
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend BFF URL (defaults to `http://localhost:3300` for local) |
-| `NODE_ENV` | Already set to `production` in the Dockerfile |
-| `NEXT_TELEMETRY_DISABLED` | Already set to `1` in the Dockerfile |
+| Variable                  | Purpose                                                         |
+| ------------------------- | --------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`     | Backend BFF URL (defaults to `http://localhost:3300` for local) |
+| `NODE_ENV`                | Already set to `production` in the Dockerfile                   |
+| `NEXT_TELEMETRY_DISABLED` | Already set to `1` in the Dockerfile                            |
 
 Railway auto-injects `$PORT`; the container respects it.
 
@@ -191,7 +198,7 @@ independently and run upgrades on independent cadences.
 
 1. **Create a new Railway service** in the same project as the
    partner-portal. From the Railway dashboard click `+ New` → `GitHub
-   Repo` and pick the same repository. (The CLI alternative is
+Repo` and pick the same repository. (The CLI alternative is
    `railway init --service eazepay-api` inside the repo.)
 2. **Set the Dockerfile path to `Dockerfile.api`.** In the new
    service's Settings → Build, override Dockerfile Path to
@@ -251,9 +258,9 @@ process exits non-zero three times in a row.
 
 ### Coordinating the two services
 
-| Topic | Where it lives |
-|---|---|
-| Public marketing + portal renderer | `partner-portal` service (root `railway.toml` + `Dockerfile`) |
-| Public + authenticated REST API | `eazepay-api` service (`railway.api.toml` + `Dockerfile.api`) |
-| Database + Redis | Provisioned once per project; both services reference the same add-ons via `DATABASE_URL` / `REDIS_URL` |
-| Scheduled jobs | Only on the `eazepay-api` replica with `CRON_LEADER=true` |
+| Topic                              | Where it lives                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Public marketing + portal renderer | `partner-portal` service (root `railway.toml` + `Dockerfile`)                                           |
+| Public + authenticated REST API    | `eazepay-api` service (`railway.api.toml` + `Dockerfile.api`)                                           |
+| Database + Redis                   | Provisioned once per project; both services reference the same add-ons via `DATABASE_URL` / `REDIS_URL` |
+| Scheduled jobs                     | Only on the `eazepay-api` replica with `CRON_LEADER=true`                                               |
