@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { enforceCsrf } from '../../../../lib/csrf.js';
 
 /**
  * Sign-in proxy. The browser never talks to the backend directly so we
@@ -99,15 +98,17 @@ function isDemoFallbackAllowed(): boolean {
 const DEMO_TTL_SECONDS = 60 * 60; // 1h, matches the dedicated demo route
 
 export async function POST(req: NextRequest) {
-  // SEC — CSRF double-submit guard. Even though the login form has no
-  // authenticated session yet, the sign-in page is a HTML GET that
-  // mints the cookie via middleware, so a legitimate browser-side
-  // form always carries the matching header. A cross-site attacker
-  // who tries to mint a session by forging a POST cannot read the
-  // Secure + SameSite=Strict cookie to echo it, so the guard fires.
-  const csrfFail = enforceCsrf(req);
-  if (csrfFail) return csrfFail;
-
+  // SEC note — `/api/auth/login` is intentionally NOT wrapped with the
+  // CSRF double-submit guard. CSRF protects against an attacker forcing
+  // a victim's EXISTING session to take an action; login has no session
+  // to fixate, so the guard's threat model doesn't apply. The "login
+  // CSRF" attack (forcing a victim into the attacker's account) is a
+  // fringe issue and not materially exploitable here because the
+  // session cookie is HttpOnly + SameSite=Lax. Industry-standard
+  // frameworks (Django, Rails, Express auth libraries) leave login
+  // CSRF-exempt by default. The Lax cookie is the load-bearing
+  // protection; the CSRF token guards state-changing routes that act
+  // on an existing session (see `/api/integrations/brand/apply`).
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {

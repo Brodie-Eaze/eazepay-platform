@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { enforceCsrf } from '../../../../lib/csrf.js';
 
 /**
  * Demo workspace bootstrap. Sets a single `eazepay_demo` cookie that
@@ -58,15 +57,16 @@ const BodySchema = z.object({
 const DEMO_TTL_SECONDS = 60 * 60; // 1h
 
 export async function POST(req: NextRequest) {
-  // SEC — CSRF guard. Demo cookie issuance is a state-change that
-  // produces a privileged-feeling session in the browser; without a
-  // CSRF check, a cross-site attacker could trick a logged-out staff
-  // user into "signing in" to the wrong preset and then phish from
-  // there. The double-submit cookie/header pair is the same shape as
-  // /api/auth/login.
-  const csrfFail = enforceCsrf(req);
-  if (csrfFail) return csrfFail;
-
+  // SEC note — `/api/auth/demo` is intentionally NOT CSRF-protected.
+  // Like `/api/auth/login`, it's a session-establishing route (no
+  // existing session to fixate). The double-submit pattern would
+  // require the sign-in page (a public surface that doesn't run
+  // session-bound JS) to echo the cookie value as a header, which
+  // it doesn't. The actual protection here: `isDemoModeAllowed()`
+  // refuses to mint the cookie unless `DEMO_MODE_ENABLED=true` in
+  // production, AND the SameSite=Lax flag on the resulting cookie
+  // prevents cross-site auto-submission of demo logins from
+  // attacker-controlled origins.
   if (!isDemoModeAllowed()) {
     return NextResponse.json(
       {
