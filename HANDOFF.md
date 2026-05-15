@@ -31,14 +31,14 @@ path, not a code problem.
 
 ## Repo layout
 
-| Top-level | What lives there |
-|---|---|
-| `apps/` | 7 boundary processes — `api` (NestJS BFF, :3000), `partner-portal` (Next.js, :3004, deployed to Railway), `consumer-web` (:3001), `merchant-dashboard` (:3002), `admin-console` (:3003), `consumer-mobile` (Expo), `webhooks` (NestJS, :3010). Each has its own `README.md`. |
-| `services/` | 13 `@eazepay/service-*` packages — modular-monolith business logic: auth, user, merchant, application, orchestration, lender, payment, notification, compliance-doc, risk, audit, webhook, admin. |
-| `libs/` | 4 shared packages: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS`), `shared-utils` (Problem details, envelope encryption, idempotency), `api-client` (framework-free fetch + typed client), `ui` (tokens + Tailwind preset + web component lib). |
-| `docs/` | `ARCHITECTURE.md` (CTO blueprint, ~1300 lines), `INDEX.md` (docs navigation), `bff-contract.md`, 17 ADRs + template, runbooks (local-development, incident-response). |
-| `infra/` | Terraform modules + per-env compositions for dev / staging / prod (composed, not applied — Railway is today's deploy target). |
-| `tools/` | Nx generators + repo scripts (reserved). |
+| Top-level   | What lives there                                                                                                                                                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/`     | 7 boundary processes — `api` (NestJS BFF, :3000), `partner-portal` (Next.js, :3004, deployed to Railway), `consumer-web` (:3001), `merchant-dashboard` (:3002), `admin-console` (:3003), `consumer-mobile` (Expo), `webhooks` (NestJS, :3010). Each has its own `README.md`. |
+| `services/` | 13 `@eazepay/service-*` packages — modular-monolith business logic: auth, user, merchant, application, orchestration, lender, payment, notification, compliance-doc, risk, audit, webhook, admin.                                                                            |
+| `libs/`     | 4 shared packages: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS`), `shared-utils` (Problem details, envelope encryption, idempotency), `api-client` (framework-free fetch + typed client), `ui` (tokens + Tailwind preset + web component lib).                  |
+| `docs/`     | `ARCHITECTURE.md` (CTO blueprint, ~1300 lines), `INDEX.md` (docs navigation), `bff-contract.md`, 17 ADRs + template, runbooks (local-development, incident-response).                                                                                                        |
+| `infra/`    | Terraform modules + per-env compositions for dev / staging / prod (composed, not applied — Railway is today's deploy target).                                                                                                                                                |
+| `tools/`    | Nx generators + repo scripts (reserved).                                                                                                                                                                                                                                     |
 
 It's an Nx + pnpm workspaces monorepo. Node 20+, ESM-only,
 TypeScript everywhere.
@@ -193,7 +193,7 @@ as audit-ready, not just feature-complete.
 - Run `pnpm --filter @eazepay/api prisma:migrate:deploy` before
   switching DNS to the new revision.
 - Verify Aurora multi-AZ, KMS key rotation enabled, S3 bucket private
-  + VPC endpoint, WAF rules attached.
+  - VPC endpoint, WAF rules attached.
 
 ## Conventions worth knowing on day 1
 
@@ -209,3 +209,47 @@ as audit-ready, not just feature-complete.
   ([`ADR-0016`](docs/adr/0016-pii-vault-envelope-encryption.md),
   [`ADR-0017`](docs/adr/0017-jit-pii-unmask.md))
 - Architecturally load-bearing decisions need a new ADR.
+
+## Engineer day-1 follow-ups
+
+Genuine gaps the hardening sprint flagged but didn't close. None block
+launch; all are worth a half-day each before SOC 2 Type II.
+
+- **ESLint flat-config across the workspace.** Pre-commit hook already
+  runs `lint-staged` (Prettier on staged files). Install
+  `eslint` + `@typescript-eslint/parser` + `@typescript-eslint/eslint-plugin`
+  - `eslint-plugin-react-hooks` + `eslint-config-next` at the root,
+    add `eslint.config.mjs` enforcing `no-floating-promises`,
+    `consistent-type-imports`, `react-hooks/exhaustive-deps`,
+    `no-explicit-any` (warn). Wire the existing `nx affected -t lint`
+    target. The nx CI workflow in `.github/workflows/ci.yml` already
+    expects this — currently a no-op because no project defines a lint
+    executor.
+- **Deploy `apps/api` to its own Railway service.** Artifacts ready:
+  [`Dockerfile.api`](Dockerfile.api), [`railway.api.toml`](railway.api.toml).
+  Provision Postgres + Redis on the same Railway project (both have
+  free dev tiers). Step-by-step in
+  [`RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md) under "Deploying the API".
+- **Swap mock adapters for production.** `services/payment` (Modern
+  Treasury / Stripe / partner bank), `services/user` (KMS KeyManager),
+  `services/risk` (Sift / Castle / SEON), `services/notification`
+  (Twilio + SES), `services/lender` (US Bank / Engine.Tech / Queen
+  Street live credentials), `services/audit` (DynamoDB sink for
+  immutable chain). Each adapter throws `not_implemented` at startup
+  in non-development today; that's the integration checklist.
+- **Step-up MFA for `/v1/me?reveal=full`.** Endpoint refuses with 403
+  `step_up_required` today; wire it through `OtpService` with a new
+  `purpose: 'reveal_profile'` and a 5-minute fresh-challenge window
+  (SEC-023 follow-up in [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md)).
+- **TOTP enrolment + recovery codes.** OTP-via-SMS/email today;
+  TOTP is the next MFA hardening tier
+  ([`SOC2_EVIDENCE_MAP.md`](docs/SOC2_EVIDENCE_MAP.md) §6).
+- **HIBP password check.** Add a `PwnedPasswordsAdapter` to
+  `services/auth` that hashes locally and queries the k-anonymity
+  API. Fail-open on outage but stamp `risk_signal=hibp_unchecked`.
+- **DynamoDB audit sink.** Required before SOC 2 Type II so the
+  hash-chained audit log is on infrastructure the operator's audit
+  account cannot tamper. Local-fs sink ships today for dev.
+- **Counsel review of `/legal/*` copy.** Already production-grade
+  scaffold; insert state-specific add-ons for NY / CA / MA before
+  enabling those markets.
