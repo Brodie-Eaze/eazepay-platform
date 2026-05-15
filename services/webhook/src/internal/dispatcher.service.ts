@@ -1,13 +1,31 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import { PiiVaultService } from '@eazepay/service-user';
+import { DelayedError, Worker, type Job, type ConnectionOptions } from 'bullmq';
+import type { Redis } from 'ioredis';
+import type { PiiVaultService } from '@eazepay/service-user';
+import type { CronLeaderService } from '@eazepay/service-audit';
+import { LOCK_ID_WEBHOOK_DISPATCHER } from '@eazepay/service-audit';
 import {
   DISPATCHER_CRON_OPTIONS,
   type DispatcherCronOptions,
   PRISMA,
+  WEBHOOK_QUEUE_REDIS,
 } from './tokens.js';
+import type { WebhookQueueService } from './queue.service.js';
+import {
+  WEBHOOK_DELIVERY_QUEUE_NAME,
+  WORKER_CONCURRENCY,
+  PER_MERCHANT_CONCURRENCY,
+  type WebhookDeliveryJobData,
+} from './queue.service.js';
 import { computeSignature, webhookSecretAadContext } from './webhook-signing.js';
 
 const BATCH_SIZE = 50;
@@ -16,29 +34,23 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const CIRCUIT_BREAK_THRESHOLD = 20; // consecutive failures → endpoint paused
 
 /**
- * Cron-driven outbound webhook dispatcher.
+ * SEC-035 — Cron-driven outbound webhook DISPATCHER.
  *
- * Selects pending deliveries whose nextAttemptAt has elapsed, signs
- * each payload with the endpoint's secret (HMAC-SHA256), POSTs with a
- * 10-second timeout, and records the outcome.
+ * Pre-fix architecture: this class POSTed each candidate row inline on
+ * the elected leader replica's cron thread. One slow merchant blocked
+ * every subsequent delivery in the batch for a full minute.
  *
- * Failure handling:
- *  - 2xx          → status=delivered, lastDeliveredAt updated,
- *                   consecutiveFailures reset to 0.
- *  - 4xx (non 408) → terminal failure (status=failed). Client misconfig
- *                   is the merchant's problem; we don't keep retrying.
- *  - 5xx / 408 / network → status=pending, nextAttemptAt scheduled
- *                   with exponential backoff, attempts++.
- *  - When attempts >= MAX_ATTEMPTS → status=dead_letter.
- *  - When endpoint.consecutiveFailures >= threshold → endpoint paused
- *    automatically; merchant must rotate / fix and reactivate.
+ * Post-fix architecture: this class is now ENQUEUE-ONLY. It selects due
+ * candidates and pushes them into the BullMQ
+ * `eazepay.webhook.deliveries` queue keyed by merchant id. The actual
+ * HTTP POST + claim-then-attempt logic lives in {@link WebhookWorker}
+ * (below), which runs on EVERY replica with a per-merchant concurrency
+ * cap. Slow merchants back-pressure their own queue partition; fast
+ * merchants stay fast.
  *
- * Hard rules:
- *  - One in-flight attempt per delivery per cron tick. We claim rows
- *    via update-with-where guard before issuing the HTTP call.
- *  - The HMAC signature header is `X-EazePay-Signature: sha256=<hex>`
- *    over `<timestamp>.<payload-bytes>`. Timestamp + tolerance window
- *    in the X-EazePay-Timestamp header — same shape as Stripe / Square.
+ * Leader election (advisory lock + env flag + per-cron kill-switch) gates
+ * this class ONLY. Workers are not leader-gated — they benefit from
+ * horizontal scale.
  */
 @Injectable()
 export class WebhookDispatcher {
@@ -46,62 +58,199 @@ export class WebhookDispatcher {
 
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    private readonly vault: PiiVaultService,
     @Inject(DISPATCHER_CRON_OPTIONS) private readonly options: DispatcherCronOptions,
+    private readonly cronLeader: CronLeaderService,
+    private readonly queue: WebhookQueueService,
   ) {}
 
   // Every minute. Tight enough that latency is reasonable, sparse
   // enough that we don't hammer the DB on a quiet system.
   //
-  // Handler-entry guard. Two flags, both must be true:
-  //  - cronLeader: only the elected leader replica should run timed
-  //    crons. Other replicas would do duplicate DB work and clutter
-  //    metrics — the row-claim transactions bound correctness, not
-  //    cost.
-  //  - dispatcherEnabled: per-cron kill-switch so an operator can
-  //    pause webhook delivery during an incident without disabling
-  //    audit drain / collection.
-  // Both gates are also enforced at provider-registration time in
-  // {@link WebhookModule.forRoot} — this is defense in depth so a
-  // hot-reloaded config (or a future runtime toggle) can't accidentally
-  // fire the cron.
+  // Three-layer guard. ALL must allow the tick to fire:
+  //   1. Postgres advisory lock (PRIMARY). pg_try_advisory_lock at
+  //      LOCK_ID_WEBHOOK_DISPATCHER — only ONE replica per tick
+  //      acquires. Real distributed lock; survives env-flag
+  //      misconfiguration.
+  //   2. cronLeader env flag (secondary kill-switch).
+  //   3. dispatcherEnabled per-cron kill-switch.
+  // Layers 2 + 3 are also enforced at provider-registration time in
+  // {@link WebhookModule.forRoot}; this handler-entry check is defense
+  // in depth.
   @Cron(CronExpression.EVERY_MINUTE)
   async runMinute(): Promise<void> {
     if (!this.options.cronLeader) return;
     if (!this.options.dispatcherEnabled) return;
-    await this.drain();
+    const lock = await this.cronLeader.tryAcquireLock(LOCK_ID_WEBHOOK_DISPATCHER);
+    if (!lock.held) return;
+    try {
+      await this.drain();
+    } finally {
+      await lock.releaseFn();
+    }
   }
 
-  /** Public for /admin trigger and tests. */
-  async drain(): Promise<{ attempted: number; delivered: number; failed: number }> {
+  /**
+   * Public for /admin trigger and tests. Selects due rows and enqueues
+   * a BullMQ job per row. The worker pool ({@link WebhookWorker}) does
+   * the actual HTTP POST.
+   *
+   * Returns an `enqueued` count (instead of the old delivered/failed)
+   * because per-job outcomes are asynchronous from this method's POV.
+   * The admin replay UX still surfaces per-row outcomes via the
+   * WebhookDelivery.status field, which the worker updates inline.
+   */
+  async drain(): Promise<{ attempted: number; enqueued: number }> {
     const candidates = await this.prisma.webhookDelivery.findMany({
       where: {
         status: 'pending',
         OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: new Date() } }],
         endpoint: { status: 'active' },
       },
-      include: { endpoint: true },
+      include: { endpoint: { select: { merchantId: true } } },
       orderBy: { createdAt: 'asc' },
       take: BATCH_SIZE,
     });
 
-    let delivered = 0;
-    let failed = 0;
+    let enqueued = 0;
     for (const d of candidates) {
-      // Claim the row: only proceed if we successfully transitioned
-      // pending → in_flight. A second worker on the same row no-ops.
-      const claim = await this.prisma.webhookDelivery.updateMany({
-        where: { id: d.id, status: 'pending' },
-        data: { status: 'in_flight' },
-      });
-      if (claim.count === 0) continue;
-
-      const result = await this.attempt(d);
-      if (result.terminal && result.delivered) delivered++;
-      else if (result.terminal) failed++;
+      try {
+        await this.queue.enqueueDelivery({
+          deliveryId: d.id,
+          merchantId: d.endpoint.merchantId,
+          endpointId: d.endpointId,
+        });
+        enqueued++;
+      } catch (err) {
+        this.logger.error(
+          { err, deliveryId: d.id },
+          'webhook delivery enqueue failed — will retry on next tick',
+        );
+      }
     }
 
-    return { attempted: candidates.length, delivered, failed };
+    return { attempted: candidates.length, enqueued };
+  }
+}
+
+/**
+ * SEC-035 — BullMQ-backed webhook delivery WORKER.
+ *
+ * Runs on EVERY API replica (not leader-gated). Pulls jobs from the
+ * `eazepay.webhook.deliveries` queue, performs the same claim-then-
+ * attempt logic that lived inline in WebhookDispatcher pre-fix:
+ *
+ *   1. Atomic pending → in_flight transition. Two workers on the same
+ *      jobId no-op (only one wins the row claim).
+ *   2. Decrypt endpoint secret (AAD-bound to endpoint.id).
+ *   3. HMAC-SHA256 sign `<timestamp>.<body>`.
+ *   4. POST with 10s timeout.
+ *   5. Record outcome — success / retry / dead-letter / circuit-break.
+ *
+ * Per-merchant rate limiting strategy:
+ *   BullMQ OSS doesn't have native per-group concurrency. We emulate
+ *   it with an in-process per-merchant in-flight counter. When a
+ *   merchant's slot count reaches PER_MERCHANT_CONCURRENCY (2), we
+ *   call `worker.rateLimit(duration)` and return without processing —
+ *   BullMQ re-queues the job. A slow merchant maxes out their 2 slots
+ *   and back-pressures themselves; the worker's other 8 slots
+ *   (concurrency 10 - 2 in-flight) stay free for everyone else.
+ *
+ * NB: this is a per-replica counter. Fleet-wide per-merchant
+ * concurrency = PER_MERCHANT_CONCURRENCY × N replicas. Acceptable
+ * because the goal is "isolate slow tenants", not "global rate
+ * limiting" — those guarantees are already provided by the underlying
+ * merchant's endpoint capacity.
+ */
+@Injectable()
+export class WebhookWorker implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(WebhookWorker.name);
+  private worker?: Worker<WebhookDeliveryJobData>;
+  /** Per-merchant in-flight job count. Incremented when a job starts,
+   *  decremented in finally. Used by the rate-limit check at job entry. */
+  private readonly inFlightByMerchant = new Map<string, number>();
+
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    private readonly vault: PiiVaultService,
+    @Inject(WEBHOOK_QUEUE_REDIS) private readonly redis: Redis,
+  ) {}
+
+  onModuleInit(): void {
+    const connection: ConnectionOptions = this.redis;
+    this.worker = new Worker<WebhookDeliveryJobData>(
+      WEBHOOK_DELIVERY_QUEUE_NAME,
+      async (job, token) => this.process(job, token),
+      {
+        connection,
+        concurrency: WORKER_CONCURRENCY,
+      },
+    );
+    this.worker.on('failed', (job, err) => {
+      // DelayedError is the per-merchant rate-limit signal — expected,
+      // not a failure. Skip the log so it doesn't pollute the error
+      // stream.
+      if (err.name === 'DelayedError') return;
+      this.logger.error({ jobId: job?.id, err: err.message }, 'webhook worker job failed');
+    });
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    try {
+      await this.worker?.close();
+    } catch (err) {
+      this.logger.warn({ err }, 'webhook worker close failed');
+    }
+  }
+
+  private async process(job: Job<WebhookDeliveryJobData>, token?: string): Promise<void> {
+    const { deliveryId, merchantId } = job.data;
+
+    // Per-merchant concurrency cap. If this merchant already has
+    // PER_MERCHANT_CONCURRENCY jobs in flight on this replica, ask
+    // BullMQ to delay this job 1s and throw the DelayedError sentinel
+    // so BullMQ stops processing the current invocation and puts the
+    // job in the delayed set. The slow merchant's queue depth grows
+    // but the worker's other slots stay available for other merchants.
+    const current = this.inFlightByMerchant.get(merchantId) ?? 0;
+    if (current >= PER_MERCHANT_CONCURRENCY) {
+      // 1-second cooldown — short enough to keep the queue moving,
+      // long enough that a slow merchant doesn't busy-spin the worker.
+      await job.moveToDelayed(Date.now() + 1_000, token);
+      // DelayedError is BullMQ's signal that the processor handed the
+      // job off (via moveToDelayed) and the framework should pick the
+      // next job. Without this throw, BullMQ marks the job complete
+      // and the delayed-set entry is orphaned.
+      throw new DelayedError();
+    }
+
+    this.inFlightByMerchant.set(merchantId, current + 1);
+    try {
+      await this.deliver(deliveryId);
+    } finally {
+      const next = (this.inFlightByMerchant.get(merchantId) ?? 1) - 1;
+      if (next <= 0) this.inFlightByMerchant.delete(merchantId);
+      else this.inFlightByMerchant.set(merchantId, next);
+    }
+  }
+
+  private async deliver(deliveryId: string): Promise<void> {
+    // Re-fetch the row — payloads stay out of Redis to bound the
+    // secrets blast radius if Redis is ever exfiltrated.
+    const d = await this.prisma.webhookDelivery.findUnique({
+      where: { id: deliveryId },
+      include: { endpoint: true },
+    });
+    if (!d || !d.endpoint) return;
+
+    // Claim the row: only proceed if we successfully transitioned
+    // pending → in_flight. A second worker on the same row no-ops.
+    const claim = await this.prisma.webhookDelivery.updateMany({
+      where: { id: d.id, status: 'pending' },
+      data: { status: 'in_flight' },
+    });
+    if (claim.count === 0) return;
+
+    await this.attempt(d);
   }
 
   private async attempt(
@@ -138,12 +287,7 @@ export class WebhookDispatcher {
       this.logger.warn(
         `webhook endpoint ${d.endpoint.id} has no secretCiphertext (pre-migration row) — failing delivery ${d.id} until merchant rotates`,
       );
-      return this.recordOutcome(
-        d,
-        attempts,
-        null,
-        'endpoint_secret_unmigrated_rotate_required',
-      );
+      return this.recordOutcome(d, attempts, null, 'endpoint_secret_unmigrated_rotate_required');
     }
 
     // Decrypt the raw secret. AAD is bound to the endpoint id, so a
@@ -159,15 +303,8 @@ export class WebhookDispatcher {
       secret = plaintext.toString('utf8');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown_error';
-      this.logger.error(
-        `webhook endpoint ${d.endpoint.id} secret decrypt failed: ${msg}`,
-      );
-      return this.recordOutcome(
-        d,
-        attempts,
-        null,
-        `endpoint_secret_decrypt_failed: ${msg}`,
-      );
+      this.logger.error(`webhook endpoint ${d.endpoint.id} secret decrypt failed: ${msg}`);
+      return this.recordOutcome(d, attempts, null, `endpoint_secret_decrypt_failed: ${msg}`);
     }
 
     // HMAC-SHA256 over `<timestamp>.<bodyJson>` with the RAW secret —

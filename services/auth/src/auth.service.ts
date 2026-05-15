@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import { BadRequest, NotFound, sha256Hex } from '@eazepay/shared-utils';
+import { BadRequest, Conflict, NotFound, sha256Hex } from '@eazepay/shared-utils';
 import type { SessionId, UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
 import { IDENTITY_PROVIDER, type IdentityProvider } from './ports/identity-provider.port.js';
@@ -9,12 +9,16 @@ import { NOTIFICATION_GATEWAY, type NotificationGateway } from './ports/notifica
 import type { OtpService } from './internal/otp.service.js';
 import type { TokenService } from './internal/token.service.js';
 import type { SessionService } from './internal/session.service.js';
+import type { TotpService } from './internal/totp.service.js';
+import type { PasswordPolicyService } from './internal/password-policy.service.js';
 import type { LoginResult, RefreshResult, RegisterResult, VerifyOtpResult } from './auth.types.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import type { RefreshDto } from './dto/refresh.dto.js';
 import type { ResendOtpDto } from './dto/resend-otp.dto.js';
+import type { TotpEnrollVerifyDto } from './dto/totp-enroll.dto.js';
+import type { TotpVerifyDto } from './dto/totp-verify.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -27,9 +31,35 @@ export class AuthService {
     private readonly otp: OtpService,
     private readonly tokens: TokenService,
     private readonly sessions: SessionService,
+    private readonly totp: TotpService,
+    private readonly passwordPolicy: PasswordPolicyService,
   ) {}
 
   async register(dto: RegisterDto): Promise<RegisterResult> {
+    // SEC-015 — HIBP k-anonymity check.
+    //
+    // Threat closed: a user picking `Tr0ub4dor!23` — which appears 10k+
+    // times in the HIBP corpus — is functionally giving an attacker a
+    // bearer credential the first time their email shows up in any
+    // future credential-stuff campaign. The k-anonymity API lets us
+    // refuse those passwords without ever sending the plaintext (we
+    // ship only the first 5 chars of SHA-1).
+    //
+    // Reset paths are deliberately NOT gated by this check. A user
+    // locked out of an account because their old password was breached
+    // needs a way back in; we let them reset and the reset target is
+    // checked here on the NEXT register/change-password call. The
+    // dedicated change-password endpoint (when it lands) re-uses
+    // `passwordPolicy.checkBreached` — see the docstring on
+    // password-policy.service.ts.
+    const breachCheck = await this.passwordPolicy.checkBreached(dto.password);
+    if (breachCheck.breached) {
+      throw Conflict({
+        code: 'password_breached',
+        detail: `This password has appeared in ${breachCheck.count} data breaches. Choose another.`,
+      });
+    }
+
     // 1. Provision identity (creates User row + password hash).
     const { userId } = await this.identity.signUp({
       email: dto.email,
@@ -404,5 +434,191 @@ export class AuthService {
         },
       };
     });
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  SEC-016 — TOTP second-factor enrolment + verify.
+  //
+  //  We read/write the new totp_secret_ciphertext + totp_recovery_codes
+  //  columns through $queryRaw / $executeRaw rather than the generated
+  //  Prisma client. Reason: this lets the migration land in the same
+  //  PR as the application code without requiring a `prisma generate`
+  //  step between them. Once codegen has run end-to-end the calls can
+  //  be swapped to typed `user.update` calls; the SQL above is
+  //  parameterised and bound, so injection isn't a concern in the
+  //  interim shape.
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Phase 1: mint a fresh TOTP secret + recovery codes, return the
+   * otpauth:// URI for QR display. Nothing is persisted yet — the
+   * caller is expected to display the QR + recovery codes once, then
+   * call enrolTotpVerify with the user's first authenticator code.
+   *
+   * Why we don't commit on init: see TotpService.initEnrolment
+   * docstring — committing eagerly lets an attacker who can call init
+   * on a victim's session learn the secret without ever holding the
+   * device.
+   */
+  async enrolTotpInit(userId: UserId): Promise<{
+    secret: string;
+    otpauthUri: string;
+    recoveryCodesPlaintext: string[];
+  }> {
+    // Refuse re-enrolment when a secret is already on file. A user
+    // wanting to rotate must explicitly disable TOTP first (separate
+    // future endpoint) so a stolen access token cannot replace the
+    // user's enrolled device with the attacker's silently.
+    const existing = await this.prisma.$queryRaw<
+      Array<{
+        totp_secret_ciphertext: string | null;
+        email: string | null;
+        phone_e164: string | null;
+      }>
+    >`SELECT totp_secret_ciphertext, email, phone_e164 FROM "users" WHERE id = ${userId}::uuid LIMIT 1`;
+    const row = existing[0];
+    if (!row) throw NotFound({ code: 'user_not_found' });
+    if (row.totp_secret_ciphertext) {
+      throw Conflict({
+        code: 'totp_already_enrolled',
+        detail: 'TOTP is already enrolled for this account.',
+      });
+    }
+
+    const accountLabel = row.email ?? row.phone_e164 ?? userId;
+    const result = await this.totp.initEnrolment({
+      userId,
+      accountLabel,
+      issuer: 'EazePay',
+    });
+
+    return {
+      secret: result.secret,
+      otpauthUri: result.otpauthUri,
+      recoveryCodesPlaintext: result.recoveryCodesPlaintext,
+    };
+  }
+
+  /**
+   * Phase 2: commit the secret + hashed recovery codes to the User
+   * row. Triggered by the user typing their first authenticator code.
+   * Writes the audit row in the same transaction so the secret + the
+   * audit anchor can't drift apart.
+   */
+  async enrolTotpVerify(
+    userId: UserId,
+    dto: TotpEnrollVerifyDto,
+  ): Promise<{ ok: true; remaining: number }> {
+    const committed = await this.totp.commitEnrolment({
+      userId,
+      secret: dto.secret,
+      code: dto.code,
+      recoveryCodesPlaintext: dto.recoveryCodesPlaintext,
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      // The Prisma client's typegen hasn't seen the new columns yet
+      // (the migration lands in the same PR as this code); use
+      // $executeRaw with parameter binding to keep injection out of
+      // scope while we sidestep the typegen race.
+      await tx.$executeRaw`
+        UPDATE "users"
+          SET "totp_secret_ciphertext" = ${committed.sealedSecret},
+              "totp_recovery_codes"    = ${JSON.stringify(committed.recoveryCodes)}::jsonb,
+              "updated_at"             = now()
+          WHERE "id" = ${userId}::uuid
+      `;
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'auth.mfa.totp.enrolled',
+          targetType: 'User',
+          targetId: userId,
+          after: { recoveryCodesIssued: committed.recoveryCodes.length },
+        },
+      });
+    });
+
+    return { ok: true, remaining: committed.recoveryCodes.length };
+  }
+
+  /**
+   * Login-time TOTP verify. Replaces the SMS/email OTP verify when the
+   * user has TOTP enrolled. Accepts either a 6-digit TOTP code or a
+   * formatted recovery code (xxxxx-xxxxx). On success, issues an
+   * access + refresh token pair via `issueSession`.
+   *
+   * Recovery-code path mutates the persisted array to mark the slot
+   * `used: true` and writes an `auth.mfa.recovery_code_used` audit row
+   * carrying the remaining-count. Both writes happen in the same
+   * transaction as the session insert so a recovery code is never
+   * burned without a session being issued (and never used twice).
+   */
+  async verifyTotp(dto: TotpVerifyDto): Promise<VerifyOtpResult> {
+    // The challengeId here came from /auth/login. We resolve it back to
+    // a userId via the same Redis state the SMS/email verify path uses,
+    // so the brute-force counter + concurrency cap still apply.
+    const probe = await this.otp.supersedePriorChallenge(dto.challengeId);
+    if (!probe) {
+      throw NotFound({ code: 'otp_challenge_not_found' });
+    }
+    const userId = probe.userId;
+
+    const row = await this.prisma.$queryRaw<
+      Array<{
+        totp_secret_ciphertext: string | null;
+        totp_recovery_codes: Array<{ hash: string; used: boolean; usedAt?: string }> | null;
+      }>
+    >`
+      SELECT "totp_secret_ciphertext", "totp_recovery_codes"
+        FROM "users"
+        WHERE "id" = ${userId}::uuid
+        LIMIT 1
+    `;
+    const userRow = row[0];
+    if (!userRow) throw NotFound({ code: 'user_not_found' });
+
+    const verifyOutcome = await this.totp.verifyChallenge({
+      userId,
+      submittedCode: dto.code,
+      sealedSecret: userRow.totp_secret_ciphertext,
+      recoveryCodes: userRow.totp_recovery_codes ?? [],
+    });
+
+    if (verifyOutcome.kind === 'recovery_code_ok') {
+      // Persist the burned slot + audit row BEFORE session is issued so
+      // a crash between verify-and-session cannot leave a recovery
+      // code "unused but verified".
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`
+          UPDATE "users"
+             SET "totp_recovery_codes" = ${JSON.stringify(verifyOutcome.updatedRecoveryCodes)}::jsonb,
+                 "updated_at"          = now()
+           WHERE "id" = ${userId}::uuid
+        `;
+        await tx.auditOutbox.create({
+          data: {
+            actorType: 'user',
+            actorId: userId,
+            action: 'auth.mfa.recovery_code_used',
+            targetType: 'User',
+            targetId: userId,
+            after: { remaining: verifyOutcome.remaining },
+          },
+        });
+      });
+    } else {
+      // Plain TOTP success — audit alongside the session insert in
+      // issueSession via the action string.
+    }
+
+    return this.issueSession(
+      userId,
+      dto.deviceId,
+      verifyOutcome.kind === 'recovery_code_ok'
+        ? 'auth.mfa.totp.recovery_login'
+        : 'auth.mfa.totp.verified',
+    );
   }
 }

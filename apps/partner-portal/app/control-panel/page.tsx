@@ -19,6 +19,7 @@ import {
   type ButtonSize,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { Modal, ErrorBanner } from '../../components/a11y';
 
 /* Local typed re-export — the upstream Button declares its props via a
  * destructured function signature, which strict TS JSX inference doesn't
@@ -33,7 +34,13 @@ type ButtonProps = {
   className?: string;
 };
 const Button: React.FC<ButtonProps> = (props) => <_Button {...(props as any)} />;
-import { partners as MASTER_PARTNERS, type PartnerSummary, type Niche, type ProductBrand, type ApprovalStatus } from '../../lib/master-data';
+import {
+  partners as MASTER_PARTNERS,
+  type PartnerSummary,
+  type Niche,
+  type ProductBrand,
+  type ApprovalStatus,
+} from '../../lib/master-data';
 
 /**
  * Control Panel — operational list of every partner on the platform.
@@ -78,7 +85,11 @@ const brandTone: Record<ProductBrand, StatusTone> = {
 function seed(): LocalPartner[] {
   return MASTER_PARTNERS.map((p) => ({
     ...p,
-    uiStatus: ((p.status === 'approved' ? 'Approved' : p.status === 'pending' ? 'Pending' : 'Suspended') as LocalPartner['uiStatus']),
+    uiStatus: (p.status === 'approved'
+      ? 'Approved'
+      : p.status === 'pending'
+        ? 'Pending'
+        : 'Suspended') as LocalPartner['uiStatus'],
   }));
 }
 
@@ -102,7 +113,8 @@ export default function ControlPanelPage() {
     let list = rows.filter((p) => {
       if (search) {
         const q = search.toLowerCase();
-        if (!p.legalName.toLowerCase().includes(q) && !p.email.toLowerCase().includes(q)) return false;
+        if (!p.legalName.toLowerCase().includes(q) && !p.email.toLowerCase().includes(q))
+          return false;
       }
       if (niche && p.niche !== niche) return false;
       if (status && p.uiStatus !== status) return false;
@@ -130,7 +142,9 @@ export default function ControlPanelPage() {
   function toggleStatus(id: string, next: LocalPartner['uiStatus']) {
     setRows((prev) => prev.map((p) => (p.id === id ? { ...p, uiStatus: next } : p)));
     setOpenKebab(null);
-    flash(`Partner ${next === 'Approved' ? 'reactivated' : next === 'Suspended' ? 'suspended' : 'moved to pending'}`);
+    flash(
+      `Partner ${next === 'Approved' ? 'reactivated' : next === 'Suspended' ? 'suspended' : 'moved to pending'}`,
+    );
   }
 
   function addPartner(p: Omit<LocalPartner, 'fundedCount' | 'netCents' | 'approvedOn' | 'status'>) {
@@ -155,7 +169,7 @@ export default function ControlPanelPage() {
         title="Control Panel"
         description="Full partner management — profiles, applications, payouts, users, and lender access"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               size="sm"
               variant="secondary"
@@ -176,31 +190,61 @@ export default function ControlPanelPage() {
         {/* Stats bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           <StatTile label="Total partners" value={String(stats.total)} hint="across all brands" />
-          <StatTile label="Active" value={String(stats.active)} hint="approved & live" tone="success" />
-          <StatTile label="Suspended" value={String(stats.suspended)} hint="blocked from intake" tone={stats.suspended > 0 ? 'danger' : 'neutral'} />
-          <StatTile label="Funded volume" value={<Money cents={stats.totalFunded} compact />} hint="all-time net" />
+          <StatTile
+            label="Active"
+            value={String(stats.active)}
+            hint="approved & live"
+            tone="success"
+          />
+          <StatTile
+            label="Suspended"
+            value={String(stats.suspended)}
+            hint="blocked from intake"
+            tone={stats.suspended > 0 ? 'danger' : 'neutral'}
+          />
+          <StatTile
+            label="Funded volume"
+            value={<Money cents={stats.totalFunded} compact />}
+            hint="all-time net"
+          />
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 h-10 flex-1 min-w-[260px] max-w-md">
-            <SearchIcon size={14} className="text-fg-muted" />
+        <div
+          className="flex flex-wrap items-stretch gap-2 mb-3"
+          role="search"
+          aria-label="Filter partners"
+        >
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 h-10 flex-1 min-w-[220px] sm:min-w-[260px] max-w-md focus-within:border-border-strong focus-within:ring-2 focus-within:ring-border-focus/30">
+            <SearchIcon size={14} className="text-fg-muted" aria-hidden />
+            <span className="sr-only">Search partners</span>
             <input
               placeholder="Search by partner name or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search partners by name or email"
               className="flex-1 bg-transparent outline-none text-[13px] text-fg placeholder:text-fg-muted/80"
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} className="text-fg-muted hover:text-fg">
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+                className="inline-flex items-center justify-center h-7 w-7 -mr-1.5 rounded text-fg-muted hover:text-fg hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+              >
                 <XIcon size={12} />
               </button>
             )}
-          </div>
+          </label>
+          <label className="sr-only" htmlFor="filter-niche">
+            Niche
+          </label>
           <select
+            id="filter-niche"
             value={niche}
             onChange={(e) => setNiche(e.target.value as Niche | '')}
-            className="h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none"
+            aria-label="Filter by niche"
+            className="h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong flex-1 sm:flex-none min-w-[140px]"
           >
             <option value="">All niches</option>
             <option value="medical">Medical</option>
@@ -209,10 +253,15 @@ export default function ControlPanelPage() {
             <option value="dental">Dental</option>
             <option value="consumer">Consumer</option>
           </select>
+          <label className="sr-only" htmlFor="filter-status">
+            Status
+          </label>
           <select
+            id="filter-status"
             value={status}
             onChange={(e) => setStatus(e.target.value as LocalPartner['uiStatus'] | '')}
-            className="h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none"
+            aria-label="Filter by status"
+            className="h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong flex-1 sm:flex-none min-w-[140px]"
           >
             <option value="">All statuses</option>
             <option value="Approved">Approved</option>
@@ -221,7 +270,7 @@ export default function ControlPanelPage() {
           </select>
         </div>
 
-        <p className="text-[12px] text-fg-muted mb-3">
+        <p className="text-[12px] text-fg-muted mb-3" role="status" aria-live="polite">
           {filtered.length} partner{filtered.length === 1 ? '' : 's'} found
           {(search || niche || status) && (
             <button
@@ -231,7 +280,7 @@ export default function ControlPanelPage() {
                 setNiche('');
                 setStatus('');
               }}
-              className="ml-2 text-accent hover:underline"
+              className="ml-2 text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
             >
               Clear filters
             </button>
@@ -241,53 +290,102 @@ export default function ControlPanelPage() {
         <Card>
           <CardBody className="p-0">
             {filtered.length === 0 ? (
-              <div className="py-10 text-center text-[13px] text-fg-muted">
-                No partners match the current filters.
+              <div role="status" className="py-10 px-5 text-center text-[13px] text-fg-muted">
+                No partners match the current filters.{' '}
+                {(search || niche || status) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearch('');
+                      setNiche('');
+                      setStatus('');
+                    }}
+                    className="ml-1 text-accent font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             ) : (
-              <ul className="divide-y divide-border">
+              <ul className="divide-y divide-border" aria-label={`${filtered.length} partners`}>
                 {filtered.map((p) => (
-                  <li key={p.id} className="relative grid grid-cols-12 items-center gap-3 px-5 py-3.5 hover:bg-bg-muted/30">
+                  <li
+                    key={p.id}
+                    className="relative grid grid-cols-1 md:grid-cols-12 items-start md:items-center gap-2 md:gap-3 px-4 sm:px-5 py-3.5 hover:bg-bg-muted/30"
+                  >
                     <Link
                       href={`/control-panel/${p.id}`}
-                      className="col-span-5 flex items-center gap-3 min-w-0 group"
+                      className="md:col-span-5 flex items-center gap-3 min-w-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-md"
                     >
-                      <span className="size-10 rounded-full bg-bg-muted text-fg-secondary flex items-center justify-center font-semibold text-[12px] shrink-0">
+                      <span
+                        className="size-10 rounded-full bg-bg-muted text-fg-secondary flex items-center justify-center font-semibold text-[12px] shrink-0"
+                        aria-hidden
+                      >
                         {p.initials}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-fg truncate group-hover:underline">{p.legalName}</p>
-                        <p className="text-[11px] text-fg-muted truncate">{p.email} {p.phone && <span>· {p.phone}</span>}</p>
+                        <p className="text-[13px] font-semibold text-fg truncate group-hover:underline">
+                          {p.legalName}
+                        </p>
+                        <p className="text-[11px] text-fg-muted truncate">
+                          {p.email} {p.phone && <span>· {p.phone}</span>}
+                        </p>
                       </div>
                     </Link>
-                    <div className="col-span-1">
+                    <div className="md:col-span-1 flex md:block items-center gap-2">
+                      <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+                        Brand
+                      </span>
                       <StatusPill tone={brandTone[p.product]}>{p.product}</StatusPill>
                     </div>
-                    <div className="col-span-1 text-[12px] text-fg-secondary capitalize">{nicheLabel[p.niche]}</div>
-                    <div className="col-span-2 text-right">
+                    <div className="md:col-span-1 text-[12px] text-fg-secondary capitalize flex md:block items-center gap-2">
+                      <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+                        Niche
+                      </span>
+                      {nicheLabel[p.niche]}
+                    </div>
+                    <div className="md:col-span-2 flex md:block items-baseline gap-2 md:gap-0 md:text-right">
+                      <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+                        Funded
+                      </span>
                       <p className="text-[12px] font-semibold text-fg tabular-nums">
                         <Money cents={p.netCents} compact />
                       </p>
-                      <p className="text-[10px] text-fg-muted tabular-nums">{p.fundedCount} funded</p>
+                      <p className="text-[10px] text-fg-muted tabular-nums md:mt-0 ml-2 md:ml-0">
+                        {p.fundedCount} funded
+                      </p>
                     </div>
-                    <div className="col-span-1">
-                      <StatusPill tone={statusTone[p.uiStatus]} dot>{p.uiStatus}</StatusPill>
+                    <div className="md:col-span-1 flex md:block items-center gap-2">
+                      <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+                        Status
+                      </span>
+                      <StatusPill tone={statusTone[p.uiStatus]} dot>
+                        {p.uiStatus}
+                      </StatusPill>
                     </div>
-                    <div className="col-span-2 flex items-center justify-end gap-1">
+                    <div className="md:col-span-2 flex items-center md:justify-end gap-1.5 mt-1 md:mt-0">
                       <Link
                         href={`/control-panel/${p.id}`}
-                        className="inline-flex items-center justify-center gap-1.5 h-8 rounded-md border border-border bg-bg-elevated text-[11px] font-medium text-fg-secondary hover:bg-bg-muted px-2.5"
+                        className="inline-flex items-center justify-center gap-1.5 h-9 min-w-[44px] rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
                       >
                         Open <ArrowRightIcon size={11} />
                       </Link>
                       <div className="relative">
                         <button
                           type="button"
-                          aria-label="Quick actions"
+                          aria-label={`Quick actions for ${p.legalName}`}
+                          aria-haspopup="menu"
+                          aria-expanded={openKebab === p.id}
                           onClick={() => setOpenKebab((k) => (k === p.id ? null : p.id))}
-                          className="h-8 w-8 rounded-md border border-border bg-bg-elevated text-fg-secondary hover:bg-bg-muted inline-flex items-center justify-center"
+                          className="h-9 w-11 rounded-md border border-border bg-bg-elevated text-fg-secondary hover:bg-bg-muted inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden
+                          >
                             <circle cx="5" cy="12" r="1.6" />
                             <circle cx="12" cy="12" r="1.6" />
                             <circle cx="19" cy="12" r="1.6" />
@@ -301,28 +399,51 @@ export default function ControlPanelPage() {
                               aria-label="Close menu"
                               onClick={() => setOpenKebab(null)}
                             />
-                            <div className="absolute right-0 top-9 z-30 w-56 rounded-lg border border-border bg-bg-elevated shadow-lg py-1 text-[12px]">
+                            <div
+                              role="menu"
+                              aria-label={`Actions for ${p.legalName}`}
+                              className="absolute right-0 top-10 z-30 w-56 rounded-lg border border-border bg-bg-elevated shadow-lg py-1 text-[12px]"
+                            >
                               {p.uiStatus !== 'Suspended' && (
-                                <KebabItem onClick={() => toggleStatus(p.id, 'Suspended')} icon={<AlertIcon size={12} />} danger>
+                                <KebabItem
+                                  onClick={() => toggleStatus(p.id, 'Suspended')}
+                                  icon={<AlertIcon size={12} />}
+                                  danger
+                                >
                                   Suspend
                                 </KebabItem>
                               )}
                               {p.uiStatus === 'Suspended' && (
-                                <KebabItem onClick={() => toggleStatus(p.id, 'Approved')} icon={<CheckIcon size={12} />}>
+                                <KebabItem
+                                  onClick={() => toggleStatus(p.id, 'Approved')}
+                                  icon={<CheckIcon size={12} />}
+                                >
                                   Reactivate
                                 </KebabItem>
                               )}
-                              <KebabLink href={`/applications/${p.id}`} icon={<ExternalIcon size={12} />}>
+                              <KebabLink
+                                href={`/applications/${p.id}`}
+                                icon={<ExternalIcon size={12} />}
+                              >
                                 View applications
                               </KebabLink>
-                              <KebabLink href={`/payouts/${p.id}`} icon={<ExternalIcon size={12} />}>
+                              <KebabLink
+                                href={`/payouts/${p.id}`}
+                                icon={<ExternalIcon size={12} />}
+                              >
                                 View payouts
                               </KebabLink>
-                              <KebabLink href="/lender-marketplace/access" icon={<ExternalIcon size={12} />}>
+                              <KebabLink
+                                href="/lender-marketplace/access"
+                                icon={<ExternalIcon size={12} />}
+                              >
                                 Lender access
                               </KebabLink>
-                              <div className="border-t border-border my-1" />
-                              <KebabLink href={`/control-panel/${p.id}`} icon={<ArrowRightIcon size={12} />}>
+                              <div className="border-t border-border my-1" role="separator" />
+                              <KebabLink
+                                href={`/control-panel/${p.id}`}
+                                icon={<ArrowRightIcon size={12} />}
+                              >
                                 Open detail page
                               </KebabLink>
                             </div>
@@ -360,11 +481,19 @@ function StatTile({
   tone?: StatusTone;
 }) {
   const accent =
-    tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-fg';
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>{value}</p>
+      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>
+        {value}
+      </p>
       {hint && <p className="text-[10px] text-fg-muted mt-1.5">{hint}</p>}
     </div>
   );
@@ -384,10 +513,11 @@ function KebabItem({
   return (
     <button
       type="button"
+      role="menuitem"
       onClick={onClick}
-      className={`w-full text-left px-3 py-1.5 flex items-center gap-2 ${danger ? 'text-danger hover:bg-danger/5' : 'text-fg-secondary hover:bg-bg-muted hover:text-fg'}`}
+      className={`w-full text-left px-3 py-2 flex items-center gap-2 focus-visible:outline-none focus-visible:bg-bg-muted ${danger ? 'text-danger hover:bg-danger/5' : 'text-fg-secondary hover:bg-bg-muted hover:text-fg'}`}
     >
-      {icon}
+      <span aria-hidden>{icon}</span>
       {children}
     </button>
   );
@@ -403,8 +533,12 @@ function KebabLink({
   icon?: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="w-full text-left px-3 py-1.5 flex items-center gap-2 text-fg-secondary hover:bg-bg-muted hover:text-fg">
-      {icon}
+    <Link
+      href={href}
+      role="menuitem"
+      className="w-full text-left px-3 py-2 flex items-center gap-2 text-fg-secondary hover:bg-bg-muted hover:text-fg focus-visible:outline-none focus-visible:bg-bg-muted"
+    >
+      <span aria-hidden>{icon}</span>
       {children}
     </Link>
   );
@@ -422,41 +556,57 @@ function AddPartnerModal({
   const [phone, setPhone] = useState('');
   const [niche, setNiche] = useState<Niche>('medical');
   const [product, setProduct] = useState<ProductBrand>('MedPay');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const initials = legalName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0]?.toUpperCase() ?? '')
-      .join('');
-    const id = 'p_' + (legalName.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8) || Date.now().toString(36));
-    onAdd({
-      id,
-      initials: initials || 'NP',
-      legalName,
-      email,
-      phone: phone || undefined,
-      niche,
-      product,
-      uiStatus: 'Approved',
-    });
+    setError(null);
+    setSubmitting(true);
+    try {
+      const initials = legalName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0]?.toUpperCase() ?? '')
+        .join('');
+      const id =
+        'p_' +
+        (legalName
+          .toLowerCase()
+          .replace(/[^a-z]/g, '')
+          .slice(0, 8) || Date.now().toString(36));
+      onAdd({
+        id,
+        initials: initials || 'NP',
+        legalName,
+        email,
+        phone: phone || undefined,
+        niche,
+        product,
+        uiStatus: 'Approved',
+      });
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Could not create partner.');
+      setSubmitting(false);
+    }
   }
 
   return (
-    <ModalShell title="Add Partner" onClose={onClose}>
-      <form onSubmit={submit} className="space-y-3">
+    <Modal open onClose={onClose} title="Add Partner" size="sm">
+      <form onSubmit={submit} className="space-y-3" aria-busy={submitting}>
+        {error && <ErrorBanner onDismiss={() => setError(null)}>{error}</ErrorBanner>}
         <Field label="Legal name" value={legalName} onChange={setLegalName} required />
         <Field label="Contact email" value={email} onChange={setEmail} type="email" required />
         <Field label="Phone" value={phone} onChange={setPhone} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block text-[12px] font-medium text-fg-secondary">
             Niche
             <select
               value={niche}
               onChange={(e) => setNiche(e.target.value as Niche)}
-              className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+              aria-label="Niche"
+              className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
             >
               <option value="medical">Medical</option>
               <option value="trades">Trades</option>
@@ -470,7 +620,8 @@ function AddPartnerModal({
             <select
               value={product}
               onChange={(e) => setProduct(e.target.value as ProductBrand)}
-              className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+              aria-label="Initial brand"
+              className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
             >
               <option value="MedPay">MedPay</option>
               <option value="TradePay">TradePay</option>
@@ -483,44 +634,17 @@ function AddPartnerModal({
           <Button size="sm" variant="secondary" type="button" onClick={onClose}>
             Cancel
           </Button>
-          <Button size="sm" variant="primary" type="submit" disabled={!legalName || !email}>
-            Create partner
+          <Button
+            size="sm"
+            variant="primary"
+            type="submit"
+            disabled={!legalName || !email || submitting}
+          >
+            {submitting ? 'Creating…' : 'Create partner'}
           </Button>
         </div>
       </form>
-    </ModalShell>
-  );
-}
-
-function ModalShell({
-  title,
-  onClose,
-  children,
-  size = 'md',
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-  size?: 'md' | 'lg';
-}) {
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-label="Close modal"
-      />
-      <div className={`relative w-full ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'} rounded-xl border border-border bg-bg-elevated shadow-xl`}>
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h2 className="text-[15px] font-semibold text-fg">{title}</h2>
-          <button onClick={onClose} className="text-fg-muted hover:text-fg" aria-label="Close">
-            <XIcon size={16} />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -539,14 +663,24 @@ function Field({
 }) {
   return (
     <label className="block text-[12px] font-medium text-fg-secondary">
-      {label}
-      {required && <span className="text-danger ml-0.5">*</span>}
+      <span>
+        {label}
+        {required && (
+          <>
+            <span className="text-danger ml-0.5" aria-hidden>
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
+        )}
+      </span>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus:border-border-strong"
+        aria-required={required}
+        className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
       />
     </label>
   );
@@ -554,8 +688,13 @@ function Field({
 
 function Toast({ message }: { message: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2">
-      <CheckIcon size={14} />
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2"
+    >
+      <CheckIcon size={14} aria-hidden />
       {message}
     </div>
   );

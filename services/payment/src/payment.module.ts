@@ -1,5 +1,7 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { DynamicModule, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import type { PrismaClient } from '@prisma/client';
+import { CronLeaderService } from '@eazepay/service-audit';
 import { LoanController } from './loan.controller.js';
 import { PaymentMethodController } from './payment-method.controller.js';
 import { PaymentService } from './payment.service.js';
@@ -60,18 +62,11 @@ export class PaymentModule {
           }
           return new MockBankAccountAdapter();
         }
-        throw new Error(
-          `Bank account provider ${options.bankAccountProvider} not yet implemented`,
-        );
+        throw new Error(`Bank account provider ${options.bankAccountProvider} not yet implemented`);
       },
     };
 
-    const providers: Provider[] = [
-      prisma,
-      paymentProvider,
-      bankProvider,
-      PaymentService,
-    ];
+    const providers: Provider[] = [prisma, paymentProvider, bankProvider, PaymentService];
     // Provider-registration gate: scheduler class is only instantiated
     // when BOTH flags are true. The handler-entry check inside the
     // service is defense in depth on top of this.
@@ -84,6 +79,9 @@ export class PaymentModule {
           collectionCronEnabled: options.collectionCronEnabled,
         },
       });
+      // Postgres advisory-lock leader election — PRIMARY mechanism that
+      // makes the cron safe against env-flag misconfiguration.
+      providers.push(CronLeaderService);
       providers.push(CollectionScheduler);
     }
 

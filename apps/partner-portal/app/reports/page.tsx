@@ -19,6 +19,7 @@ import {
   AlertIcon,
   TrendUpIcon,
   TrendDownIcon,
+  EmptyState,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
@@ -71,16 +72,66 @@ interface ReportDef {
 }
 
 const REPORTS: ReportDef[] = [
-  { id: 'finperf', title: 'Financing Performance', desc: 'Funded volume by month × brand', category: 'Financial' },
-  { id: 'lender', title: 'Lender Win/Loss', desc: 'Approval rate per lender + top decline reasons', category: 'Lender' },
-  { id: 'funnel', title: 'Application Funnel', desc: 'Lead → pre-qual → KYC → decision → funded', category: 'Operations' },
-  { id: 'payouts', title: 'Payout Schedule', desc: 'Upcoming, settled, and pending payouts', category: 'Financial' },
-  { id: 'audit', title: 'Audit Trail', desc: 'Override events, manual unmasks, dual-control approvals', category: 'Compliance' },
-  { id: 'compliance', title: 'Compliance Posture', desc: 'FCRA/ECOA reason mix, AAN latency, override sample', category: 'Compliance' },
-  { id: 'leaderboard', title: 'Partner Leaderboard', desc: 'Top funded volume, approval, retention', category: 'Operations' },
-  { id: 'cohort', title: 'Cohort Performance', desc: 'Vintage cohorts × delinquency triangle', category: 'Risk' },
-  { id: 'echo', title: 'ECHO Attribution', desc: 'Pixel events fired vs. lead quality', category: 'Operations' },
-  { id: 'risk', title: 'Risk Snapshot', desc: 'SENTRY composite scores + velocity flags', category: 'Risk' },
+  {
+    id: 'finperf',
+    title: 'Financing Performance',
+    desc: 'Funded volume by month × brand',
+    category: 'Financial',
+  },
+  {
+    id: 'lender',
+    title: 'Lender Win/Loss',
+    desc: 'Approval rate per lender + top decline reasons',
+    category: 'Lender',
+  },
+  {
+    id: 'funnel',
+    title: 'Application Funnel',
+    desc: 'Lead → pre-qual → KYC → decision → funded',
+    category: 'Operations',
+  },
+  {
+    id: 'payouts',
+    title: 'Payout Schedule',
+    desc: 'Upcoming, settled, and pending payouts',
+    category: 'Financial',
+  },
+  {
+    id: 'audit',
+    title: 'Audit Trail',
+    desc: 'Override events, manual unmasks, dual-control approvals',
+    category: 'Compliance',
+  },
+  {
+    id: 'compliance',
+    title: 'Compliance Posture',
+    desc: 'FCRA/ECOA reason mix, AAN latency, override sample',
+    category: 'Compliance',
+  },
+  {
+    id: 'leaderboard',
+    title: 'Partner Leaderboard',
+    desc: 'Top funded volume, approval, retention',
+    category: 'Operations',
+  },
+  {
+    id: 'cohort',
+    title: 'Cohort Performance',
+    desc: 'Vintage cohorts × delinquency triangle',
+    category: 'Risk',
+  },
+  {
+    id: 'echo',
+    title: 'ECHO Attribution',
+    desc: 'Pixel events fired vs. lead quality',
+    category: 'Operations',
+  },
+  {
+    id: 'risk',
+    title: 'Risk Snapshot',
+    desc: 'SENTRY composite scores + velocity flags',
+    category: 'Risk',
+  },
 ];
 
 interface SavedView {
@@ -92,7 +143,13 @@ interface SavedView {
 }
 const PRESET_VIEWS: SavedView[] = [
   { id: 'v_1', name: 'Q2 funded — TradePay only', reportId: 'finperf', desc: 'TradePay · QTD' },
-  { id: 'v_2', name: 'Helio Dental Group · funnel', reportId: 'funnel', desc: 'partner deep-dive', partner: 'p_helio' },
+  {
+    id: 'v_2',
+    name: 'Helio Dental Group · funnel',
+    reportId: 'funnel',
+    desc: 'partner deep-dive',
+    partner: 'p_helio',
+  },
   { id: 'v_3', name: 'Lender win rate · last 90d', reportId: 'lender', desc: 'cross-brand · 90d' },
   { id: 'v_4', name: 'AAN delivery SLA monitor', reportId: 'compliance', desc: 'compliance · 30d' },
 ];
@@ -174,7 +231,9 @@ export default function ReportsPage() {
   }
 
   const current = REPORTS.find((r) => r.id === reportId)!;
-  const filteredReports = REPORTS.filter((r) => !query || r.title.toLowerCase().includes(query.toLowerCase()));
+  const filteredReports = REPORTS.filter(
+    (r) => !query || r.title.toLowerCase().includes(query.toLowerCase()),
+  );
 
   return (
     <>
@@ -183,9 +242,9 @@ export default function ReportsPage() {
         title="Reports"
         description="Operational reporting across the partner network — financials, lender performance, compliance posture."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="secondary" onClick={() => setShowSchedules((v) => !v)}>
-              <ClockIcon size={12} />
+              <ClockIcon size={12} aria-hidden />
               {showSchedules ? 'Hide schedules' : 'Scheduled reports'}
             </Button>
             <Button size="sm" variant="primary" onClick={() => flash('New report wizard opened')}>
@@ -198,27 +257,36 @@ export default function ReportsPage() {
       <PageBody>
         <div className="grid grid-cols-12 gap-4">
           {/* LEFT RAIL — Report Library */}
-          <aside className="col-span-12 lg:col-span-3">
+          <aside className="col-span-12 lg:col-span-3" aria-label="Report library">
             <Card>
               <div className="px-4 pt-3 pb-2 border-b border-border">
-                <h2 className="text-[12px] font-semibold text-fg">Report Library</h2>
-                <input
-                  placeholder="Search reports…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="mt-2 w-full h-8 rounded-md border border-border bg-bg-elevated px-2.5 text-[12px] outline-none focus:border-border-strong"
-                />
+                <h2 className="text-[12px] font-semibold text-fg" id="report-library-heading">
+                  Report Library
+                </h2>
+                <label className="block mt-2">
+                  <span className="sr-only">Search reports</span>
+                  <input
+                    placeholder="Search reports…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    aria-label="Search reports"
+                    className="w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
+                  />
+                </label>
               </div>
               <CardBody className="p-0">
-                <ul className="py-1">
+                <ul className="py-1" role="listbox" aria-labelledby="report-library-heading">
                   {filteredReports.map((r) => (
-                    <li key={r.id}>
+                    <li key={r.id} role="option" aria-selected={reportId === r.id}>
                       <button
                         type="button"
                         onClick={() => setReportId(r.id)}
-                        className={`w-full text-left px-4 py-2 border-l-2 transition-colors ${reportId === r.id ? 'border-accent bg-bg-muted/50' : 'border-transparent hover:bg-bg-muted/30'}`}
+                        aria-pressed={reportId === r.id}
+                        className={`w-full text-left px-4 py-2 border-l-2 transition-colors focus-visible:outline-none focus-visible:bg-bg-muted/50 focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-inset ${reportId === r.id ? 'border-accent bg-bg-muted/50' : 'border-transparent hover:bg-bg-muted/30'}`}
                       >
-                        <p className={`text-[12px] font-semibold ${reportId === r.id ? 'text-fg' : 'text-fg-secondary'}`}>
+                        <p
+                          className={`text-[12px] font-semibold ${reportId === r.id ? 'text-fg' : 'text-fg-secondary'}`}
+                        >
                           {r.title}
                         </p>
                         <p className="text-[10px] text-fg-muted mt-0.5">{r.desc}</p>
@@ -226,7 +294,21 @@ export default function ReportsPage() {
                     </li>
                   ))}
                   {filteredReports.length === 0 && (
-                    <li className="px-4 py-6 text-center text-[11px] text-fg-muted">No reports match.</li>
+                    <li className="px-4 py-6 text-center text-[11px] text-fg-muted" role="status">
+                      No reports match
+                      {query && (
+                        <>
+                          {' '}
+                          <button
+                            type="button"
+                            onClick={() => setQuery('')}
+                            className="text-accent font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
+                          >
+                            Clear search
+                          </button>
+                        </>
+                      )}
+                    </li>
                   )}
                 </ul>
               </CardBody>
@@ -234,8 +316,17 @@ export default function ReportsPage() {
 
             {/* Bottom rail — Saved Views */}
             <div className="mt-3">
-              <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted mb-2 px-1">Saved views</p>
-              <div className="grid grid-cols-1 gap-1.5">
+              <p
+                className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted mb-2 px-1"
+                id="saved-views-heading"
+              >
+                Saved views
+              </p>
+              <div
+                className="grid grid-cols-1 gap-1.5"
+                role="group"
+                aria-labelledby="saved-views-heading"
+              >
                 {PRESET_VIEWS.map((v) => (
                   <button
                     key={v.id}
@@ -245,7 +336,8 @@ export default function ReportsPage() {
                       if (v.partner) setPartner(v.partner);
                       flash(`Loaded view: ${v.name}`);
                     }}
-                    className="text-left rounded-lg border border-border bg-bg-elevated px-3 py-2 hover:bg-bg-muted/40"
+                    aria-label={`Load view: ${v.name} (${v.desc})`}
+                    className="text-left rounded-lg border border-border bg-bg-elevated px-3 py-2 hover:bg-bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
                   >
                     <p className="text-[12px] font-semibold text-fg truncate">{v.name}</p>
                     <p className="text-[10px] text-fg-muted">{v.desc}</p>
@@ -314,7 +406,14 @@ function ReportCanvas({
   onExport: (fmt: 'CSV' | 'PDF' | 'Email') => void;
 }) {
   const selectedPartner = partner !== 'all' ? MASTER_PARTNERS.find((p) => p.id === partner) : null;
-  const brandSlug = brand === 'MedPay' ? 'medpay' : brand === 'TradePay' ? 'tradepay' : brand === 'CoachPay' ? 'coachpay' : null;
+  const brandSlug =
+    brand === 'MedPay'
+      ? 'medpay'
+      : brand === 'TradePay'
+        ? 'tradepay'
+        : brand === 'CoachPay'
+          ? 'coachpay'
+          : null;
 
   return (
     <div className="space-y-4">
@@ -329,50 +428,72 @@ function ReportCanvas({
           }
           description={report.desc}
           action={
-            <div className="flex items-center gap-1.5">
+            <div
+              className="flex items-center gap-1.5 flex-wrap"
+              role="group"
+              aria-label="Export options"
+            >
               <button
                 type="button"
                 onClick={() => onExport('CSV')}
-                className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-border bg-bg-elevated text-[11px] text-fg-secondary hover:bg-bg-muted"
+                aria-label="Export as CSV"
+                className="min-h-[36px] px-2.5 inline-flex items-center gap-1 rounded-md border border-border bg-bg-elevated text-[11px] text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
               >
-                <DocIcon size={11} /> CSV
+                <DocIcon size={11} aria-hidden /> CSV
               </button>
               <button
                 type="button"
                 onClick={() => onExport('PDF')}
-                className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-border bg-bg-elevated text-[11px] text-fg-secondary hover:bg-bg-muted"
+                aria-label="Export as PDF"
+                className="min-h-[36px] px-2.5 inline-flex items-center gap-1 rounded-md border border-border bg-bg-elevated text-[11px] text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
               >
-                <DocIcon size={11} /> PDF
+                <DocIcon size={11} aria-hidden /> PDF
               </button>
               <button
                 type="button"
                 onClick={() => onExport('Email')}
-                className="h-8 px-2.5 inline-flex items-center gap-1 rounded-md border border-border bg-bg-elevated text-[11px] text-fg-secondary hover:bg-bg-muted"
+                aria-label="Email this report"
+                className="min-h-[36px] px-2.5 inline-flex items-center gap-1 rounded-md border border-border bg-bg-elevated text-[11px] text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
               >
-                <ClockIcon size={11} /> Email
+                <ClockIcon size={11} aria-hidden /> Email
               </button>
             </div>
           }
         />
         <CardBody>
           <div className="flex flex-wrap items-center gap-2">
-            <FilterChip label="Range" value={range} onChange={(v) => setRange(v as DateRange)} options={[
-              ['7d', 'Last 7 days'],
-              ['30d', 'Last 30 days'],
-              ['90d', 'Last 90 days'],
-              ['qtd', 'QTD'],
-              ['ytd', 'YTD'],
-            ]} />
-            <FilterChip label="Brand" value={brand} onChange={(v) => setBrand(v as BrandFilter)} options={[
-              ['All', 'All brands'],
-              ['MedPay', 'MedPay'],
-              ['TradePay', 'TradePay'],
-              ['CoachPay', 'CoachPay'],
-            ]} />
-            <FilterChip label="Partner" value={partner} onChange={setPartner} options={[
-              ['all', 'All partners'],
-              ...MASTER_PARTNERS.map((p) => [p.id, p.legalName] as [string, string]),
-            ]} />
+            <FilterChip
+              label="Range"
+              value={range}
+              onChange={(v) => setRange(v as DateRange)}
+              options={[
+                ['7d', 'Last 7 days'],
+                ['30d', 'Last 30 days'],
+                ['90d', 'Last 90 days'],
+                ['qtd', 'QTD'],
+                ['ytd', 'YTD'],
+              ]}
+            />
+            <FilterChip
+              label="Brand"
+              value={brand}
+              onChange={(v) => setBrand(v as BrandFilter)}
+              options={[
+                ['All', 'All brands'],
+                ['MedPay', 'MedPay'],
+                ['TradePay', 'TradePay'],
+                ['CoachPay', 'CoachPay'],
+              ]}
+            />
+            <FilterChip
+              label="Partner"
+              value={partner}
+              onChange={setPartner}
+              options={[
+                ['all', 'All partners'],
+                ...MASTER_PARTNERS.map((p) => [p.id, p.legalName] as [string, string]),
+              ]}
+            />
             {selectedPartner && brandSlug && (
               <Link
                 href={`/v/${brandSlug}/insights?partnerId=${selectedPartner.id}`}
@@ -394,7 +515,9 @@ function ReportCanvas({
       </Card>
 
       {/* Body — each report renders its own KPI strip + chart + table. */}
-      {report.id === 'finperf' && <FinancingPerformanceReport brand={brand} range={range} partner={partner} />}
+      {report.id === 'finperf' && (
+        <FinancingPerformanceReport brand={brand} range={range} partner={partner} />
+      )}
       {report.id === 'lender' && <LenderWinLossReport brand={brand} range={range} />}
       {report.id === 'funnel' && <FunnelReport brand={brand} range={range} partner={partner} />}
       {report.id === 'payouts' && <PayoutScheduleReport brand={brand} range={range} />}
@@ -420,12 +543,13 @@ function FilterChip({
   onChange: (v: string) => void;
 }) {
   return (
-    <label className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-border bg-bg-elevated px-2.5 text-[12px]">
+    <label className="inline-flex items-center gap-1.5 h-10 rounded-lg border border-border bg-bg-elevated px-2.5 text-[12px] focus-within:border-border-strong focus-within:ring-2 focus-within:ring-border-focus/30">
       <span className="text-fg-muted">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent outline-none text-fg font-medium pr-1"
+        aria-label={label}
+        className="bg-transparent outline-none text-fg font-medium pr-1 h-full"
       >
         {options.map(([v, l]) => (
           <option key={v} value={v}>
@@ -441,7 +565,15 @@ function FilterChip({
 /*  Report bodies                                                           */
 /* ----------------------------------------------------------------------- */
 
-function FinancingPerformanceReport({ brand, range, partner }: { brand: BrandFilter; range: DateRange; partner: string }) {
+function FinancingPerformanceReport({
+  brand,
+  range,
+  partner,
+}: {
+  brand: BrandFilter;
+  range: DateRange;
+  partner: string;
+}) {
   const mult = brandMultiplier(brand) * rangeMultiplier(range);
   const partnerMult = partner === 'all' ? 1 : 0.18;
   const months = ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'];
@@ -454,12 +586,11 @@ function FinancingPerformanceReport({ brand, range, partner }: { brand: BrandFil
     coachpay: Math.floor((80 + r() * 150) * mult * partnerMult),
   }));
   const totalFunded = data.reduce((s, d) => s + d.value, 0);
-  const avgTicket = Math.floor(totalFunded * 100 / Math.max(1, data.length * 14));
+  const avgTicket = Math.floor((totalFunded * 100) / Math.max(1, data.length * 14));
   const yoy = Math.floor((r() - 0.4) * 60);
 
   // Table — top partners by funded volume in window.
-  const tableRows = MASTER_PARTNERS
-    .filter((p) => partner === 'all' || p.id === partner)
+  const tableRows = MASTER_PARTNERS.filter((p) => partner === 'all' || p.id === partner)
     .map((p) => {
       const r2 = rand(hashStr(p.id + brand + range));
       const fundedK = Math.floor(p.netCents / 100_000) * mult;
@@ -481,8 +612,16 @@ function FinancingPerformanceReport({ brand, range, partner }: { brand: BrandFil
         <Kpi label="Funded volume" value={`$${(totalFunded / 1000).toFixed(1)}M`} delta={yoy} />
         <Kpi label="Avg ticket" value={`$${(avgTicket / 100).toLocaleString()}`} />
         <Kpi label="Funded apps" value={String(tableRows.reduce((s, r) => s + r.funded, 0))} />
-        <Kpi label="Approval rate" value={`${Math.floor(50 + r() * 22)}%`} delta={Math.floor(r() * 8) - 3} />
-        <Kpi label="Top partner" value={(tableRows[0]?.partner ?? '—').split(' ')[0] ?? '—'} hint="by volume" />
+        <Kpi
+          label="Approval rate"
+          value={`${Math.floor(50 + r() * 22)}%`}
+          delta={Math.floor(r() * 8) - 3}
+        />
+        <Kpi
+          label="Top partner"
+          value={(tableRows[0]?.partner ?? '—').split(' ')[0] ?? '—'}
+          hint="by volume"
+        />
       </div>
 
       <Card>
@@ -509,12 +648,50 @@ function FinancingPerformanceReport({ brand, range, partner }: { brand: BrandFil
       <ReportTable
         title={`Partner performance — ${tableRows.length} partner${tableRows.length === 1 ? '' : 's'}`}
         columns={[
-          { key: 'partner', label: 'Partner', render: (r: typeof tableRows[number]) => <Link href={`/control-panel/${r.partnerId}`} className="font-medium text-fg hover:underline">{r.partner}</Link> },
-          { key: 'apps', label: 'Apps', align: 'right', render: (r: typeof tableRows[number]) => r.apps },
-          { key: 'funded', label: 'Funded', align: 'right', render: (r: typeof tableRows[number]) => r.funded },
-          { key: 'volumeCents', label: 'Volume', align: 'right', render: (r: typeof tableRows[number]) => <Money cents={r.volumeCents} noFractions /> },
-          { key: 'avgTicketCents', label: 'Avg ticket', align: 'right', render: (r: typeof tableRows[number]) => <Money cents={r.avgTicketCents} noFractions /> },
-          { key: 'approvalRate', label: 'Approval', align: 'right', render: (r: typeof tableRows[number]) => `${r.approvalRate}%` },
+          {
+            key: 'partner',
+            label: 'Partner',
+            render: (r: (typeof tableRows)[number]) => (
+              <Link
+                href={`/control-panel/${r.partnerId}`}
+                className="font-medium text-fg hover:underline"
+              >
+                {r.partner}
+              </Link>
+            ),
+          },
+          {
+            key: 'apps',
+            label: 'Apps',
+            align: 'right',
+            render: (r: (typeof tableRows)[number]) => r.apps,
+          },
+          {
+            key: 'funded',
+            label: 'Funded',
+            align: 'right',
+            render: (r: (typeof tableRows)[number]) => r.funded,
+          },
+          {
+            key: 'volumeCents',
+            label: 'Volume',
+            align: 'right',
+            render: (r: (typeof tableRows)[number]) => <Money cents={r.volumeCents} noFractions />,
+          },
+          {
+            key: 'avgTicketCents',
+            label: 'Avg ticket',
+            align: 'right',
+            render: (r: (typeof tableRows)[number]) => (
+              <Money cents={r.avgTicketCents} noFractions />
+            ),
+          },
+          {
+            key: 'approvalRate',
+            label: 'Approval',
+            align: 'right',
+            render: (r: (typeof tableRows)[number]) => `${r.approvalRate}%`,
+          },
         ]}
         rows={tableRows}
       />
@@ -526,23 +703,37 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
   const mult = brandMultiplier(brand) * rangeMultiplier(range);
   const r = rand(hashStr(`lender-${brand}-${range}`));
   const lenders = [
-    'CapitalOne', 'CrossRiver', 'WebBank', 'LeadBank', 'FinWise',
-    'LendFi', 'BlueVine', 'Affirm', 'Helia Medical', 'SageHeal',
-    'Orion Capital', 'Kestrel', 'Atlas Career Cap', 'ClearPath', 'Summit Premier',
+    'CapitalOne',
+    'CrossRiver',
+    'WebBank',
+    'LeadBank',
+    'FinWise',
+    'LendFi',
+    'BlueVine',
+    'Affirm',
+    'Helia Medical',
+    'SageHeal',
+    'Orion Capital',
+    'Kestrel',
+    'Atlas Career Cap',
+    'ClearPath',
+    'Summit Premier',
   ];
-  const rows = lenders.map((name) => {
-    const apps = Math.max(8, Math.floor((50 + r() * 380) * mult));
-    const approvals = Math.floor(apps * (0.3 + r() * 0.55));
-    return {
-      lender: name,
-      apps,
-      approvals,
-      declines: apps - approvals,
-      approvalRate: Math.round((approvals / Math.max(1, apps)) * 100),
-      avgAprBps: 700 + Math.floor(r() * 1800),
-      volumeCents: approvals * (8_000_00 + Math.floor(r() * 30_000_00)),
-    };
-  }).sort((a, b) => b.volumeCents - a.volumeCents);
+  const rows = lenders
+    .map((name) => {
+      const apps = Math.max(8, Math.floor((50 + r() * 380) * mult));
+      const approvals = Math.floor(apps * (0.3 + r() * 0.55));
+      return {
+        lender: name,
+        apps,
+        approvals,
+        declines: apps - approvals,
+        approvalRate: Math.round((approvals / Math.max(1, apps)) * 100),
+        avgAprBps: 700 + Math.floor(r() * 1800),
+        volumeCents: approvals * (8_000_00 + Math.floor(r() * 30_000_00)),
+      };
+    })
+    .sort((a, b) => b.volumeCents - a.volumeCents);
 
   const declineReasons = [
     { label: 'DTI > 50%', pct: 28 },
@@ -558,16 +749,31 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Lenders in window" value={String(rows.length)} />
-        <Kpi label="Weighted approval" value={`${Math.round(rows.reduce((s, r) => s + r.approvalRate, 0) / rows.length)}%`} />
-        <Kpi label="Top lender" value={(rows[0]?.lender ?? '—')} hint="by funded volume" />
-        <Kpi label="Total funded vol." value={<Money cents={rows.reduce((s, r) => s + r.volumeCents, 0)} compact />} />
+        <Kpi
+          label="Weighted approval"
+          value={`${Math.round(rows.reduce((s, r) => s + r.approvalRate, 0) / rows.length)}%`}
+        />
+        <Kpi label="Top lender" value={rows[0]?.lender ?? '—'} hint="by funded volume" />
+        <Kpi
+          label="Total funded vol."
+          value={<Money cents={rows.reduce((s, r) => s + r.volumeCents, 0)} compact />}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <Card className="lg:col-span-2">
           <CardHeader title="Approval rate by lender" />
           <CardBody>
-            <HorizontalBars data={rows.slice(0, 10).map((r) => ({ label: r.lender, value: r.approvalRate, sub: `${r.approvals}/${r.apps}` }))} maxLabel="100%" />
+            <HorizontalBars
+              data={rows
+                .slice(0, 10)
+                .map((r) => ({
+                  label: r.lender,
+                  value: r.approvalRate,
+                  sub: `${r.approvals}/${r.apps}`,
+                }))}
+              maxLabel="100%"
+            />
           </CardBody>
         </Card>
         <Card>
@@ -593,13 +799,63 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
       <ReportTable
         title={`Lender performance — ${rows.length} lenders`}
         columns={[
-          { key: 'lender', label: 'Lender', render: (r: typeof rows[number]) => <span className="font-medium text-fg">{r.lender}</span> },
-          { key: 'apps', label: 'Apps', align: 'right', render: (r: typeof rows[number]) => r.apps },
-          { key: 'approvals', label: 'Approved', align: 'right', render: (r: typeof rows[number]) => r.approvals },
-          { key: 'declines', label: 'Declined', align: 'right', render: (r: typeof rows[number]) => <span className="text-fg-muted">{r.declines}</span> },
-          { key: 'approvalRate', label: 'Approval %', align: 'right', render: (r: typeof rows[number]) => <span className={r.approvalRate >= 60 ? 'text-success' : r.approvalRate < 40 ? 'text-danger' : 'text-fg'}>{r.approvalRate}%</span> },
-          { key: 'avgAprBps', label: 'Avg APR', align: 'right', render: (r: typeof rows[number]) => `${(r.avgAprBps / 100).toFixed(2)}%` },
-          { key: 'volumeCents', label: 'Volume', align: 'right', render: (r: typeof rows[number]) => <Money cents={r.volumeCents} compact /> },
+          {
+            key: 'lender',
+            label: 'Lender',
+            render: (r: (typeof rows)[number]) => (
+              <span className="font-medium text-fg">{r.lender}</span>
+            ),
+          },
+          {
+            key: 'apps',
+            label: 'Apps',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => r.apps,
+          },
+          {
+            key: 'approvals',
+            label: 'Approved',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => r.approvals,
+          },
+          {
+            key: 'declines',
+            label: 'Declined',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => (
+              <span className="text-fg-muted">{r.declines}</span>
+            ),
+          },
+          {
+            key: 'approvalRate',
+            label: 'Approval %',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => (
+              <span
+                className={
+                  r.approvalRate >= 60
+                    ? 'text-success'
+                    : r.approvalRate < 40
+                      ? 'text-danger'
+                      : 'text-fg'
+                }
+              >
+                {r.approvalRate}%
+              </span>
+            ),
+          },
+          {
+            key: 'avgAprBps',
+            label: 'Avg APR',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => `${(r.avgAprBps / 100).toFixed(2)}%`,
+          },
+          {
+            key: 'volumeCents',
+            label: 'Volume',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => <Money cents={r.volumeCents} compact />,
+          },
         ]}
         rows={rows}
       />
@@ -607,7 +863,15 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
   );
 }
 
-function FunnelReport({ brand, range, partner }: { brand: BrandFilter; range: DateRange; partner: string }) {
+function FunnelReport({
+  brand,
+  range,
+  partner,
+}: {
+  brand: BrandFilter;
+  range: DateRange;
+  partner: string;
+}) {
   const mult = brandMultiplier(brand) * rangeMultiplier(range);
   const partnerMult = partner === 'all' ? 1 : 0.18;
   const top = Math.floor(4200 * mult * partnerMult);
@@ -622,14 +886,18 @@ function FunnelReport({ brand, range, partner }: { brand: BrandFilter; range: Da
   const stages = steps.map((s, i) => ({
     ...s,
     convPct: i === 0 ? 100 : Math.round((s.value / steps[i - 1]!.value) * 100),
-    dropPct: i === 0 ? 0 : Math.round(((steps[i - 1]!.value - s.value) / steps[i - 1]!.value) * 100),
+    dropPct:
+      i === 0 ? 0 : Math.round(((steps[i - 1]!.value - s.value) / steps[i - 1]!.value) * 100),
   }));
 
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Top of funnel" value={top.toLocaleString()} />
-        <Kpi label="End-to-end conv." value={`${Math.round((stages[stages.length - 1]!.value / top) * 100)}%`} />
+        <Kpi
+          label="End-to-end conv."
+          value={`${Math.round((stages[stages.length - 1]!.value / top) * 100)}%`}
+        />
         <Kpi label="Biggest drop" value={largestDropLabel(stages)} hint="largest stage loss" />
         <Kpi label="Median time-to-fund" value="2h 14m" hint="approval → funded" />
       </div>
@@ -644,10 +912,33 @@ function FunnelReport({ brand, range, partner }: { brand: BrandFilter; range: Da
       <ReportTable
         title="Stage performance"
         columns={[
-          { key: 'label', label: 'Stage', render: (r: typeof stages[number]) => <span className="font-medium text-fg">{r.label}</span> },
-          { key: 'value', label: 'Volume', align: 'right', render: (r: typeof stages[number]) => r.value.toLocaleString() },
-          { key: 'convPct', label: 'Stage conv.', align: 'right', render: (r: typeof stages[number]) => `${r.convPct}%` },
-          { key: 'dropPct', label: 'Drop', align: 'right', render: (r: typeof stages[number]) => <span className={r.dropPct > 30 ? 'text-danger' : 'text-fg-muted'}>{r.dropPct}%</span> },
+          {
+            key: 'label',
+            label: 'Stage',
+            render: (r: (typeof stages)[number]) => (
+              <span className="font-medium text-fg">{r.label}</span>
+            ),
+          },
+          {
+            key: 'value',
+            label: 'Volume',
+            align: 'right',
+            render: (r: (typeof stages)[number]) => r.value.toLocaleString(),
+          },
+          {
+            key: 'convPct',
+            label: 'Stage conv.',
+            align: 'right',
+            render: (r: (typeof stages)[number]) => `${r.convPct}%`,
+          },
+          {
+            key: 'dropPct',
+            label: 'Drop',
+            align: 'right',
+            render: (r: (typeof stages)[number]) => (
+              <span className={r.dropPct > 30 ? 'text-danger' : 'text-fg-muted'}>{r.dropPct}%</span>
+            ),
+          },
         ]}
         rows={stages}
       />
@@ -672,12 +963,19 @@ function PayoutScheduleReport({ brand, range }: { brand: BrandFilter; range: Dat
         grossCents: gross,
         feeCents: fee,
         netCents: gross - fee,
-        status: (j === 0 ? 'pending' : j === 1 ? 'settled' : 'paid') as 'pending' | 'settled' | 'paid',
+        status: (j === 0 ? 'pending' : j === 1 ? 'settled' : 'paid') as
+          | 'pending'
+          | 'settled'
+          | 'paid',
       };
     });
   });
-  const totalPending = rows.filter((r) => r.status === 'pending').reduce((s, r) => s + r.netCents, 0);
-  const totalSettled = rows.filter((r) => r.status === 'settled').reduce((s, r) => s + r.netCents, 0);
+  const totalPending = rows
+    .filter((r) => r.status === 'pending')
+    .reduce((s, r) => s + r.netCents, 0);
+  const totalSettled = rows
+    .filter((r) => r.status === 'settled')
+    .reduce((s, r) => s + r.netCents, 0);
   const totalPaid = rows.filter((r) => r.status === 'paid').reduce((s, r) => s + r.netCents, 0);
 
   return (
@@ -691,12 +989,56 @@ function PayoutScheduleReport({ brand, range }: { brand: BrandFilter; range: Dat
       <ReportTable
         title={`Payout schedule — ${rows.length} cycles`}
         columns={[
-          { key: 'partner', label: 'Partner', render: (r: typeof rows[number]) => <Link href={`/payouts/${r.partnerId}`} className="font-medium text-fg hover:underline">{r.partner}</Link> },
-          { key: 'date', label: 'Date', render: (r: typeof rows[number]) => r.date },
-          { key: 'grossCents', label: 'Gross', align: 'right', render: (r: typeof rows[number]) => <Money cents={r.grossCents} /> },
-          { key: 'feeCents', label: 'Fee', align: 'right', render: (r: typeof rows[number]) => <span className="text-fg-muted"><Money cents={r.feeCents} /></span> },
-          { key: 'netCents', label: 'Net', align: 'right', render: (r: typeof rows[number]) => <span className="font-semibold"><Money cents={r.netCents} /></span> },
-          { key: 'status', label: 'Status', render: (r: typeof rows[number]) => <StatusPill tone={r.status === 'paid' ? 'success' : r.status === 'settled' ? 'info' : 'warning'}>{r.status}</StatusPill> },
+          {
+            key: 'partner',
+            label: 'Partner',
+            render: (r: (typeof rows)[number]) => (
+              <Link
+                href={`/payouts/${r.partnerId}`}
+                className="font-medium text-fg hover:underline"
+              >
+                {r.partner}
+              </Link>
+            ),
+          },
+          { key: 'date', label: 'Date', render: (r: (typeof rows)[number]) => r.date },
+          {
+            key: 'grossCents',
+            label: 'Gross',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => <Money cents={r.grossCents} />,
+          },
+          {
+            key: 'feeCents',
+            label: 'Fee',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => (
+              <span className="text-fg-muted">
+                <Money cents={r.feeCents} />
+              </span>
+            ),
+          },
+          {
+            key: 'netCents',
+            label: 'Net',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => (
+              <span className="font-semibold">
+                <Money cents={r.netCents} />
+              </span>
+            ),
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            render: (r: (typeof rows)[number]) => (
+              <StatusPill
+                tone={r.status === 'paid' ? 'success' : r.status === 'settled' ? 'info' : 'warning'}
+              >
+                {r.status}
+              </StatusPill>
+            ),
+          },
         ]}
         rows={rows}
       />
@@ -727,7 +1069,10 @@ function AuditTrailReport({ range }: { range: DateRange }) {
       id: `aud_${i}`,
       ts: new Date(Date.now() - i * 1000 * 60 * 60 * Math.ceil(r() * 6)).toISOString(),
       event: evt,
-      actor: ['brodie@amalafinance.com.au', 'compliance@eaze.internal', 'risk@eaze.internal'][Math.floor(r() * 3)] ?? 'system',
+      actor:
+        ['brodie@amalafinance.com.au', 'compliance@eaze.internal', 'risk@eaze.internal'][
+          Math.floor(r() * 3)
+        ] ?? 'system',
       target: MASTER_PARTNERS[Math.floor(r() * MASTER_PARTNERS.length)]!.legalName,
       severity: (['info', 'warning', 'critical'] as const)[Math.floor(r() * 3)] ?? 'info',
     };
@@ -737,18 +1082,65 @@ function AuditTrailReport({ range }: { range: DateRange }) {
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Audited events" value={String(rows.length)} />
-        <Kpi label="Critical" value={String(rows.filter((r) => r.severity === 'critical').length)} hint="last window" />
-        <Kpi label="Manual unmasks" value={String(rows.filter((r) => r.event.includes('unmask')).length)} />
+        <Kpi
+          label="Critical"
+          value={String(rows.filter((r) => r.severity === 'critical').length)}
+          hint="last window"
+        />
+        <Kpi
+          label="Manual unmasks"
+          value={String(rows.filter((r) => r.event.includes('unmask')).length)}
+        />
         <Kpi label="Distinct actors" value={String(new Set(rows.map((r) => r.actor)).size)} />
       </div>
       <ReportTable
         title="Audit log"
         columns={[
-          { key: 'ts', label: 'Timestamp', render: (r: typeof rows[number]) => <span className="font-mono text-[11px] text-fg-muted">{new Date(r.ts).toISOString().replace('T', ' ').slice(0, 19)}</span> },
-          { key: 'event', label: 'Event', render: (r: typeof rows[number]) => <span className="font-medium text-fg">{r.event}</span> },
-          { key: 'actor', label: 'Actor', render: (r: typeof rows[number]) => <span className="text-fg-secondary">{r.actor}</span> },
-          { key: 'target', label: 'Target', render: (r: typeof rows[number]) => <span className="text-fg-muted">{r.target}</span> },
-          { key: 'severity', label: 'Severity', render: (r: typeof rows[number]) => <StatusPill tone={r.severity === 'critical' ? 'danger' : r.severity === 'warning' ? 'warning' : 'info'}>{r.severity}</StatusPill> },
+          {
+            key: 'ts',
+            label: 'Timestamp',
+            render: (r: (typeof rows)[number]) => (
+              <span className="font-mono text-[11px] text-fg-muted">
+                {new Date(r.ts).toISOString().replace('T', ' ').slice(0, 19)}
+              </span>
+            ),
+          },
+          {
+            key: 'event',
+            label: 'Event',
+            render: (r: (typeof rows)[number]) => (
+              <span className="font-medium text-fg">{r.event}</span>
+            ),
+          },
+          {
+            key: 'actor',
+            label: 'Actor',
+            render: (r: (typeof rows)[number]) => (
+              <span className="text-fg-secondary">{r.actor}</span>
+            ),
+          },
+          {
+            key: 'target',
+            label: 'Target',
+            render: (r: (typeof rows)[number]) => <span className="text-fg-muted">{r.target}</span>,
+          },
+          {
+            key: 'severity',
+            label: 'Severity',
+            render: (r: (typeof rows)[number]) => (
+              <StatusPill
+                tone={
+                  r.severity === 'critical'
+                    ? 'danger'
+                    : r.severity === 'warning'
+                      ? 'warning'
+                      : 'info'
+                }
+              >
+                {r.severity}
+              </StatusPill>
+            ),
+          },
         ]}
         rows={rows}
       />
@@ -779,7 +1171,12 @@ function ComplianceReport({ brand, range }: { brand: BrandFilter; range: DateRan
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Declined apps" value={total.toLocaleString()} />
-        <Kpi label="AAN p99 latency" value={`${aanLatency[2]?.mins ?? 0}m`} hint="SLA: 30 days" tone="success" />
+        <Kpi
+          label="AAN p99 latency"
+          value={`${aanLatency[2]?.mins ?? 0}m`}
+          hint="SLA: 30 days"
+          tone="success"
+        />
         <Kpi label="Override sample" value="100% audited" tone="success" />
         <Kpi label="Compliance flags" value={String(Math.floor(r() * 6))} hint="open this period" />
       </div>
@@ -789,7 +1186,11 @@ function ComplianceReport({ brand, range }: { brand: BrandFilter; range: DateRan
           <CardHeader title="FCRA/ECOA decline reason mix" />
           <CardBody>
             <HorizontalBars
-              data={reasons.map((r) => ({ label: `${r.code} — ${r.label}`, value: Math.round((r.count / total) * 100), sub: String(r.count) }))}
+              data={reasons.map((r) => ({
+                label: `${r.code} — ${r.label}`,
+                value: Math.round((r.count / total) * 100),
+                sub: String(r.count),
+              }))}
               maxLabel="100%"
             />
           </CardBody>
@@ -805,7 +1206,10 @@ function ComplianceReport({ brand, range }: { brand: BrandFilter; range: DateRan
                     <span className="font-bold tabular-nums">{p.mins}m</span>
                   </div>
                   <div className="h-2 rounded-full bg-bg-muted overflow-hidden">
-                    <div className={`h-full ${p.mins < 30 ? 'bg-success' : 'bg-warning'}`} style={{ width: `${Math.min(100, p.mins * 1.5)}%` }} />
+                    <div
+                      className={`h-full ${p.mins < 30 ? 'bg-success' : 'bg-warning'}`}
+                      style={{ width: `${Math.min(100, p.mins * 1.5)}%` }}
+                    />
                   </div>
                 </li>
               ))}
@@ -820,10 +1224,30 @@ function ComplianceReport({ brand, range }: { brand: BrandFilter; range: DateRan
       <ReportTable
         title="Decline reasons — full breakdown"
         columns={[
-          { key: 'code', label: 'Code', render: (r: typeof reasons[number]) => <span className="font-mono text-[11px]">{r.code}</span> },
-          { key: 'label', label: 'Reason', render: (r: typeof reasons[number]) => <span className="text-fg">{r.label}</span> },
-          { key: 'count', label: 'Count', align: 'right', render: (r: typeof reasons[number]) => r.count.toLocaleString() },
-          { key: 'pct', label: 'Share', align: 'right', render: (r: typeof reasons[number]) => `${Math.round((r.count / total) * 100)}%` },
+          {
+            key: 'code',
+            label: 'Code',
+            render: (r: (typeof reasons)[number]) => (
+              <span className="font-mono text-[11px]">{r.code}</span>
+            ),
+          },
+          {
+            key: 'label',
+            label: 'Reason',
+            render: (r: (typeof reasons)[number]) => <span className="text-fg">{r.label}</span>,
+          },
+          {
+            key: 'count',
+            label: 'Count',
+            align: 'right',
+            render: (r: (typeof reasons)[number]) => r.count.toLocaleString(),
+          },
+          {
+            key: 'pct',
+            label: 'Share',
+            align: 'right',
+            render: (r: (typeof reasons)[number]) => `${Math.round((r.count / total) * 100)}%`,
+          },
         ]}
         rows={reasons}
       />
@@ -857,13 +1281,56 @@ function LeaderboardReport({ brand }: { brand: BrandFilter }) {
       <ReportTable
         title={`Partner leaderboard — ${rows.length}`}
         columns={[
-          { key: 'rank', label: '#', render: (_r: typeof rows[number], i: number) => <span className="font-bold tabular-nums">{i + 1}</span>, align: 'right' },
-          { key: 'partner', label: 'Partner', render: (r: typeof rows[number]) => <Link href={`/control-panel/${r.partnerId}`} className="font-medium text-fg hover:underline">{r.partner}</Link> },
-          { key: 'apps', label: 'Apps', align: 'right', render: (r: typeof rows[number]) => r.apps },
-          { key: 'funded', label: 'Funded', align: 'right', render: (r: typeof rows[number]) => r.funded },
-          { key: 'volumeCents', label: 'Volume', align: 'right', render: (r: typeof rows[number]) => <Money cents={r.volumeCents} compact /> },
-          { key: 'approvalRate', label: 'Approval %', align: 'right', render: (r: typeof rows[number]) => `${r.approvalRate}%` },
-          { key: 'retention', label: 'Retention %', align: 'right', render: (r: typeof rows[number]) => `${r.retention}%` },
+          {
+            key: 'rank',
+            label: '#',
+            render: (_r: (typeof rows)[number], i: number) => (
+              <span className="font-bold tabular-nums">{i + 1}</span>
+            ),
+            align: 'right',
+          },
+          {
+            key: 'partner',
+            label: 'Partner',
+            render: (r: (typeof rows)[number]) => (
+              <Link
+                href={`/control-panel/${r.partnerId}`}
+                className="font-medium text-fg hover:underline"
+              >
+                {r.partner}
+              </Link>
+            ),
+          },
+          {
+            key: 'apps',
+            label: 'Apps',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => r.apps,
+          },
+          {
+            key: 'funded',
+            label: 'Funded',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => r.funded,
+          },
+          {
+            key: 'volumeCents',
+            label: 'Volume',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => <Money cents={r.volumeCents} compact />,
+          },
+          {
+            key: 'approvalRate',
+            label: 'Approval %',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => `${r.approvalRate}%`,
+          },
+          {
+            key: 'retention',
+            label: 'Retention %',
+            align: 'right',
+            render: (r: (typeof rows)[number]) => `${r.retention}%`,
+          },
         ]}
         rows={rows}
       />
@@ -893,22 +1360,47 @@ function CohortReport({ brand }: { brand: BrandFilter }) {
       <Card>
         <CardHeader title="Delinquency triangle — % 30+dpd by months on book" />
         <CardBody>
-          <div className="overflow-x-auto">
-            <table className="text-[11px] w-full border-collapse">
+          <div
+            className="overflow-x-auto"
+            role="region"
+            aria-label="Delinquency triangle"
+            tabIndex={0}
+          >
+            <table className="text-[11px] w-full min-w-[480px] border-collapse">
+              <caption className="sr-only">
+                Delinquency triangle — 30+ days past due percentages by cohort vintage across months
+                on book.
+              </caption>
               <thead className="bg-bg-muted/40">
                 <tr>
-                  <th className="px-3 py-1.5 text-left font-semibold text-fg-muted uppercase text-[10px] tracking-wider">Cohort</th>
+                  <th
+                    scope="col"
+                    className="px-3 py-1.5 text-left font-semibold text-fg-muted uppercase text-[10px] tracking-wider"
+                  >
+                    Cohort
+                  </th>
                   {[0, 3, 6, 9, 12].map((m) => (
-                    <th key={m} className="px-3 py-1.5 text-right font-semibold text-fg-muted uppercase text-[10px] tracking-wider">M+{m}</th>
+                    <th
+                      key={m}
+                      scope="col"
+                      className="px-3 py-1.5 text-right font-semibold text-fg-muted uppercase text-[10px] tracking-wider"
+                    >
+                      M+{m}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {matrix.map((row) => (
                   <tr key={row.cohort} className="border-t border-border">
-                    <td className="px-3 py-2 font-mono font-medium text-fg">{row.cohort}</td>
+                    <th scope="row" className="px-3 py-2 font-mono font-medium text-fg text-left">
+                      {row.cohort}
+                    </th>
                     {row.cells.map((c, i) => (
-                      <td key={i} className={`px-3 py-2 text-right tabular-nums ${c === null ? 'text-fg-muted/40' : c > 3 ? 'text-danger font-semibold' : c > 1.5 ? 'text-warning' : 'text-fg-secondary'}`}>
+                      <td
+                        key={i}
+                        className={`px-3 py-2 text-right tabular-nums ${c === null ? 'text-fg-muted/40' : c > 3 ? 'text-danger font-semibold' : c > 1.5 ? 'text-warning' : 'text-fg-secondary'}`}
+                      >
                         {c === null ? '—' : `${c}%`}
                       </td>
                     ))}
@@ -928,19 +1420,49 @@ function EchoReport({ brand, range }: { brand: BrandFilter; range: DateRange }) 
   const r = rand(hashStr(`echo-${brand}-${range}`));
   const events = [
     { name: 'page_view', fired: Math.floor(48_200 * mult), qualified: Math.floor(8_600 * mult) },
-    { name: 'lead_form_start', fired: Math.floor(12_400 * mult), qualified: Math.floor(7_400 * mult) },
-    { name: 'lead_form_submit', fired: Math.floor(6_200 * mult), qualified: Math.floor(5_100 * mult) },
-    { name: 'pixel_kyc_started', fired: Math.floor(4_800 * mult), qualified: Math.floor(4_100 * mult) },
-    { name: 'pixel_kyc_passed', fired: Math.floor(3_900 * mult), qualified: Math.floor(3_900 * mult) },
-    { name: 'application_funded', fired: Math.floor(1_840 * mult), qualified: Math.floor(1_840 * mult) },
+    {
+      name: 'lead_form_start',
+      fired: Math.floor(12_400 * mult),
+      qualified: Math.floor(7_400 * mult),
+    },
+    {
+      name: 'lead_form_submit',
+      fired: Math.floor(6_200 * mult),
+      qualified: Math.floor(5_100 * mult),
+    },
+    {
+      name: 'pixel_kyc_started',
+      fired: Math.floor(4_800 * mult),
+      qualified: Math.floor(4_100 * mult),
+    },
+    {
+      name: 'pixel_kyc_passed',
+      fired: Math.floor(3_900 * mult),
+      qualified: Math.floor(3_900 * mult),
+    },
+    {
+      name: 'application_funded',
+      fired: Math.floor(1_840 * mult),
+      qualified: Math.floor(1_840 * mult),
+    },
   ];
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="Total pixel events" value={(events.reduce((s, e) => s + e.fired, 0)).toLocaleString()} />
-        <Kpi label="Qualified leads" value={(events[2]!.qualified).toLocaleString()} />
-        <Kpi label="Funded / qualified" value={`${Math.round((events[5]!.qualified / events[2]!.qualified) * 100)}%`} />
-        <Kpi label="Pixel coverage" value={`${75 + Math.floor(r() * 22)}%`} hint="of partner pages" />
+        <Kpi
+          label="Total pixel events"
+          value={events.reduce((s, e) => s + e.fired, 0).toLocaleString()}
+        />
+        <Kpi label="Qualified leads" value={events[2]!.qualified.toLocaleString()} />
+        <Kpi
+          label="Funded / qualified"
+          value={`${Math.round((events[5]!.qualified / events[2]!.qualified) * 100)}%`}
+        />
+        <Kpi
+          label="Pixel coverage"
+          value={`${75 + Math.floor(r() * 22)}%`}
+          hint="of partner pages"
+        />
       </div>
       <Card>
         <CardHeader title="Pixel events → qualified pipeline" />
@@ -955,7 +1477,10 @@ function EchoReport({ brand, range }: { brand: BrandFilter; range: DateRange }) 
                   </span>
                 </div>
                 <div className="h-2.5 rounded-full bg-bg-muted overflow-hidden flex">
-                  <div className="h-full bg-accent" style={{ width: `${Math.max(2, (e.qualified / e.fired) * 100)}%` }} />
+                  <div
+                    className="h-full bg-accent"
+                    style={{ width: `${Math.max(2, (e.qualified / e.fired) * 100)}%` }}
+                  />
                 </div>
               </li>
             ))}
@@ -981,20 +1506,86 @@ function RiskReport({ brand }: { brand: BrandFilter }) {
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="SENTRY median" value={String(Math.round(partners.reduce((s, p) => s + p.composite, 0) / partners.length))} hint="composite risk score" />
-        <Kpi label="Velocity flags" value={String(partners.filter((p) => p.velocityFlag).length)} tone={partners.filter((p) => p.velocityFlag).length > 2 ? 'warning' : 'neutral'} />
-        <Kpi label="High-risk partners" value={String(partners.filter((p) => p.composite > 75).length)} hint="composite > 75" />
-        <Kpi label="Fraud signals" value={String(partners.reduce((s, p) => s + p.fraud, 0))} hint="last 30d" />
+        <Kpi
+          label="SENTRY median"
+          value={String(
+            Math.round(partners.reduce((s, p) => s + p.composite, 0) / partners.length),
+          )}
+          hint="composite risk score"
+        />
+        <Kpi
+          label="Velocity flags"
+          value={String(partners.filter((p) => p.velocityFlag).length)}
+          tone={partners.filter((p) => p.velocityFlag).length > 2 ? 'warning' : 'neutral'}
+        />
+        <Kpi
+          label="High-risk partners"
+          value={String(partners.filter((p) => p.composite > 75).length)}
+          hint="composite > 75"
+        />
+        <Kpi
+          label="Fraud signals"
+          value={String(partners.reduce((s, p) => s + p.fraud, 0))}
+          hint="last 30d"
+        />
       </div>
       <ReportTable
         title="SENTRY composite scores"
         columns={[
-          { key: 'partner', label: 'Partner', render: (r: typeof partners[number]) => <Link href={`/control-panel/${r.partnerId}`} className="font-medium text-fg hover:underline">{r.partner}</Link> },
-          { key: 'composite', label: 'Composite', align: 'right', render: (r: typeof partners[number]) => <span className={`font-bold tabular-nums ${r.composite > 75 ? 'text-danger' : r.composite > 60 ? 'text-warning' : 'text-success'}`}>{r.composite}</span> },
-          { key: 'velocityFlag', label: 'Velocity', render: (r: typeof partners[number]) => r.velocityFlag ? <StatusPill tone="warning" icon={<AlertIcon size={10} />}>Flagged</StatusPill> : <StatusPill tone="success">OK</StatusPill> },
-          { key: 'nsfRate', label: 'NSF %', align: 'right', render: (r: typeof partners[number]) => `${r.nsfRate}%` },
-          { key: 'chargeoff', label: 'Charge-off %', align: 'right', render: (r: typeof partners[number]) => `${r.chargeoff}%` },
-          { key: 'fraud', label: 'Fraud signals', align: 'right', render: (r: typeof partners[number]) => r.fraud },
+          {
+            key: 'partner',
+            label: 'Partner',
+            render: (r: (typeof partners)[number]) => (
+              <Link
+                href={`/control-panel/${r.partnerId}`}
+                className="font-medium text-fg hover:underline"
+              >
+                {r.partner}
+              </Link>
+            ),
+          },
+          {
+            key: 'composite',
+            label: 'Composite',
+            align: 'right',
+            render: (r: (typeof partners)[number]) => (
+              <span
+                className={`font-bold tabular-nums ${r.composite > 75 ? 'text-danger' : r.composite > 60 ? 'text-warning' : 'text-success'}`}
+              >
+                {r.composite}
+              </span>
+            ),
+          },
+          {
+            key: 'velocityFlag',
+            label: 'Velocity',
+            render: (r: (typeof partners)[number]) =>
+              r.velocityFlag ? (
+                <StatusPill tone="warning" icon={<AlertIcon size={10} />}>
+                  Flagged
+                </StatusPill>
+              ) : (
+                <StatusPill tone="success">OK</StatusPill>
+              ),
+          },
+          {
+            key: 'nsfRate',
+            label: 'NSF %',
+            align: 'right',
+            render: (r: (typeof partners)[number]) => `${r.nsfRate}%`,
+          },
+          {
+            key: 'chargeoff',
+            label: 'Charge-off %',
+            align: 'right',
+            render: (r: (typeof partners)[number]) => `${r.chargeoff}%`,
+          },
+          {
+            key: 'fraud',
+            label: 'Fraud signals',
+            align: 'right',
+            render: (r: (typeof partners)[number]) => r.fraud,
+          },
         ]}
         rows={partners}
       />
@@ -1018,19 +1609,26 @@ function ScheduledPanel({
   const [reportId, setReportId] = useState<ReportId>('finperf');
   const [frequency, setFrequency] = useState<Frequency>('weekly');
   const [recipients, setRecipients] = useState('');
+  const [saving, setSaving] = useState(false);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    setSaving(true);
     const today = new Date();
     today.setDate(today.getDate() + (frequency === 'daily' ? 1 : frequency === 'weekly' ? 7 : 30));
-    onAdd({
-      id: 's_' + Date.now().toString(36),
-      reportId,
-      frequency,
-      recipients,
-      nextRun: today.toISOString().slice(0, 10),
-    });
-    setRecipients('');
+    // Simulate the async save the BFF would do — keeps the button in
+    // loading state long enough for it to be perceivable.
+    setTimeout(() => {
+      onAdd({
+        id: 's_' + Date.now().toString(36),
+        reportId,
+        frequency,
+        recipients,
+        nextRun: today.toISOString().slice(0, 10),
+      });
+      setRecipients('');
+      setSaving(false);
+    }, 400);
   }
 
   return (
@@ -1080,8 +1678,24 @@ function ScheduledPanel({
               />
             </label>
             <div className="md:col-span-4 flex justify-end">
-              <Button size="sm" variant="primary" type="submit" disabled={!recipients}>
-                Create schedule
+              <Button
+                size="sm"
+                variant="primary"
+                type="submit"
+                disabled={!recipients || saving}
+                aria-busy={saving}
+              >
+                {saving ? (
+                  <>
+                    <span
+                      className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-r-transparent"
+                      aria-hidden
+                    />
+                    Saving…
+                  </>
+                ) : (
+                  'Create schedule'
+                )}
               </Button>
             </div>
           </form>
@@ -1089,40 +1703,73 @@ function ScheduledPanel({
       </Card>
 
       <Card>
-        <CardHeader title={`Active schedules (${schedules.length})`} description="Click a row to inspect or remove." />
+        <CardHeader
+          title={`Active schedules (${schedules.length})`}
+          description="Click a row to inspect or remove."
+        />
         <CardBody className="p-0">
-          <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+          <div className="hidden md:grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
             <span className="col-span-4">Report</span>
             <span className="col-span-2">Frequency</span>
             <span className="col-span-3">Recipients</span>
             <span className="col-span-2">Next run</span>
             <span className="col-span-1 text-right">Action</span>
           </div>
-          <ul className="divide-y divide-border">
-            {schedules.length === 0 ? (
-              <li className="px-5 py-10 text-center text-[12px] text-fg-muted">No schedules yet.</li>
-            ) : (
-              schedules.map((s) => {
+          {schedules.length === 0 ? (
+            <EmptyState
+              title="No schedules yet"
+              description="Use the form above to schedule a report. Recipients will receive a CSV + summary on the cadence you pick."
+              className="m-4"
+            />
+          ) : (
+            <ul
+              className="divide-y divide-border"
+              aria-label={`${schedules.length} scheduled reports`}
+            >
+              {schedules.map((s) => {
                 const r = REPORTS.find((x) => x.id === s.reportId);
                 return (
-                  <li key={s.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
-                    <div className="col-span-4">
+                  <li
+                    key={s.id}
+                    className="grid grid-cols-1 md:grid-cols-12 items-start md:items-center gap-2 md:gap-0 px-4 sm:px-5 py-3 text-[12px]"
+                  >
+                    <div className="md:col-span-4">
                       <p className="font-semibold text-fg">{r?.title ?? s.reportId}</p>
                       <p className="text-[10px] text-fg-muted">{r?.desc}</p>
                     </div>
-                    <div className="col-span-2 capitalize text-fg-secondary">{s.frequency}</div>
-                    <div className="col-span-3 text-fg-muted truncate">{s.recipients}</div>
-                    <div className="col-span-2 font-mono text-[11px] text-fg-secondary">{s.nextRun}</div>
-                    <div className="col-span-1 text-right">
-                      <button onClick={() => onRemove(s.id)} className="text-[11px] text-danger hover:underline">
+                    <div className="md:col-span-2 capitalize text-fg-secondary">
+                      <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted mr-1">
+                        Cadence:
+                      </span>
+                      {s.frequency}
+                    </div>
+                    <div className="md:col-span-3 text-fg-muted truncate">
+                      <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold mr-1">
+                        To:
+                      </span>
+                      {s.recipients}
+                    </div>
+                    <div className="md:col-span-2 font-mono text-[11px] text-fg-secondary">
+                      <span className="md:hidden font-sans text-[10px] uppercase tracking-wider font-semibold text-fg-muted mr-1">
+                        Next:
+                      </span>
+                      {s.nextRun}
+                    </div>
+                    <div className="md:col-span-1 md:text-right">
+                      <button
+                        type="button"
+                        onClick={() => onRemove(s.id)}
+                        aria-label={`Remove schedule for ${r?.title ?? s.reportId}`}
+                        className="text-[11px] text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40 rounded min-h-[36px] inline-flex items-center px-1"
+                      >
                         Remove
                       </button>
                     </div>
                   </li>
                 );
-              })
-            )}
-          </ul>
+              })}
+            </ul>
+          )}
         </CardBody>
       </Card>
     </div>
@@ -1146,16 +1793,28 @@ function Kpi({
   delta?: number;
   tone?: StatusTone;
 }) {
-  const valColor = tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+  const valColor =
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-fg';
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${valColor}`}>{value}</p>
+      <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${valColor}`}>
+        {value}
+      </p>
       <div className="mt-1.5 flex items-center gap-1.5">
         {typeof delta === 'number' && (
-          <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${delta >= 0 ? 'text-success' : 'text-danger'}`}>
+          <span
+            className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${delta >= 0 ? 'text-success' : 'text-danger'}`}
+          >
             {delta >= 0 ? <TrendUpIcon size={10} /> : <TrendDownIcon size={10} />}
-            {delta >= 0 ? '+' : ''}{delta}%
+            {delta >= 0 ? '+' : ''}
+            {delta}%
           </span>
         )}
         {hint && <span className="text-[10px] text-fg-muted">{hint}</span>}
@@ -1189,7 +1848,16 @@ function StackedBars({
   return (
     <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
       {[0.25, 0.5, 0.75, 1].map((t) => (
-        <line key={t} x1={16} x2={width - 16} y1={padTop + chartH * (1 - t)} y2={padTop + chartH * (1 - t)} stroke="currentColor" opacity={0.08} strokeDasharray="2 4" />
+        <line
+          key={t}
+          x1={16}
+          x2={width - 16}
+          y1={padTop + chartH * (1 - t)}
+          y2={padTop + chartH * (1 - t)}
+          stroke="currentColor"
+          opacity={0.08}
+          strokeDasharray="2 4"
+        />
       ))}
       {data.map((d, i) => {
         let yCursor = padTop + chartH;
@@ -1200,12 +1868,36 @@ function StackedBars({
             {d.segments.map((seg, si) => {
               const h = (seg.value / max) * chartH;
               yCursor -= h;
-              return <rect key={si} x={x} y={yCursor} width={barW} height={h} rx={2} className={seg.color} />;
+              return (
+                <rect
+                  key={si}
+                  x={x}
+                  y={yCursor}
+                  width={barW}
+                  height={h}
+                  rx={2}
+                  className={seg.color}
+                />
+              );
             })}
-            <text x={x + barW / 2} y={padTop - 4} textAnchor="middle" fontSize="9.5" fill="currentColor" opacity={0.7}>
+            <text
+              x={x + barW / 2}
+              y={padTop - 4}
+              textAnchor="middle"
+              fontSize="9.5"
+              fill="currentColor"
+              opacity={0.7}
+            >
               ${totalForLabel}K
             </text>
-            <text x={x + barW / 2} y={height - 6} textAnchor="middle" fontSize="10" fill="currentColor" opacity={0.6}>
+            <text
+              x={x + barW / 2}
+              y={height - 6}
+              textAnchor="middle"
+              fontSize="10"
+              fill="currentColor"
+              opacity={0.6}
+            >
               {d.label}
             </text>
           </g>
@@ -1230,7 +1922,9 @@ function HorizontalBars({
           <div className="flex items-center justify-between text-[11px] mb-1">
             <span className="text-fg-secondary truncate pr-2">{d.label}</span>
             <span className="text-fg-muted tabular-nums whitespace-nowrap">
-              {d.value}{maxLabel?.includes('%') ? '%' : ''}{d.sub && ` · ${d.sub}`}
+              {d.value}
+              {maxLabel?.includes('%') ? '%' : ''}
+              {d.sub && ` · ${d.sub}`}
             </span>
           </div>
           <div className="h-2 rounded-full bg-bg-muted overflow-hidden">
@@ -1242,7 +1936,11 @@ function HorizontalBars({
   );
 }
 
-function FunnelSVG({ stages }: { stages: Array<{ label: string; value: number; convPct: number }> }) {
+function FunnelSVG({
+  stages,
+}: {
+  stages: Array<{ label: string; value: number; convPct: number }>;
+}) {
   const width = 720;
   const height = 220;
   const max = stages[0]!.value;
@@ -1256,14 +1954,44 @@ function FunnelSVG({ stages }: { stages: Array<{ label: string; value: number; c
         const y = (height - 40 - barH) / 2 + 10;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={stepW - 12} height={barH} rx={4} className="fill-accent" opacity={0.85 - i * 0.08} />
-            <text x={x + (stepW - 12) / 2} y={y - 4} fontSize="10" textAnchor="middle" fill="currentColor" opacity={0.7}>
+            <rect
+              x={x}
+              y={y}
+              width={stepW - 12}
+              height={barH}
+              rx={4}
+              className="fill-accent"
+              opacity={0.85 - i * 0.08}
+            />
+            <text
+              x={x + (stepW - 12) / 2}
+              y={y - 4}
+              fontSize="10"
+              textAnchor="middle"
+              fill="currentColor"
+              opacity={0.7}
+            >
               {s.value.toLocaleString()}
             </text>
-            <text x={x + (stepW - 12) / 2} y={y + barH + 14} fontSize="10" textAnchor="middle" fill="currentColor" opacity={0.85} className="font-medium">
+            <text
+              x={x + (stepW - 12) / 2}
+              y={y + barH + 14}
+              fontSize="10"
+              textAnchor="middle"
+              fill="currentColor"
+              opacity={0.85}
+              className="font-medium"
+            >
               {s.label}
             </text>
-            <text x={x + (stepW - 12) / 2} y={y + barH + 26} fontSize="9" textAnchor="middle" fill="currentColor" opacity={0.55}>
+            <text
+              x={x + (stepW - 12) / 2}
+              y={y + barH + 26}
+              fontSize="9"
+              textAnchor="middle"
+              fill="currentColor"
+              opacity={0.55}
+            >
               {s.convPct}%
             </text>
           </g>
@@ -1280,7 +2008,19 @@ interface ColDef<T> {
   render: (row: T, idx: number) => React.ReactNode;
 }
 
-function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string; columns: ColDef<T>[]; rows: T[]; pageSize?: number }) {
+function ReportTable<T>({
+  title,
+  columns,
+  rows,
+  pageSize = 10,
+  emptyLabel = 'No rows match the current filters.',
+}: {
+  title: string;
+  columns: ColDef<T>[];
+  rows: T[];
+  pageSize?: number;
+  emptyLabel?: string;
+}) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
@@ -1292,8 +2032,11 @@ function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string
       const bv = b[sortKey];
       if (av == null) return 1;
       if (bv == null) return -1;
-      if (typeof av === 'number' && typeof bv === 'number') return sortDir === 'asc' ? av - bv : bv - av;
-      return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+      if (typeof av === 'number' && typeof bv === 'number')
+        return sortDir === 'asc' ? av - bv : bv - av;
+      return sortDir === 'asc'
+        ? String(av).localeCompare(String(bv))
+        : String(bv).localeCompare(String(av));
     });
   }, [rows, sortKey, sortDir]);
 
@@ -1313,29 +2056,50 @@ function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string
     <Card>
       <CardHeader title={title} description={`Page ${page + 1} of ${pages}`} />
       <CardBody className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full text-[12px]">
+        <div className="overflow-x-auto" role="region" aria-label={title} tabIndex={0}>
+          <table className="w-full min-w-[640px] text-[12px]">
+            <caption className="sr-only">{title}</caption>
             <thead className="bg-bg-muted/40 border-b border-border">
               <tr>
-                {columns.map((c) => (
-                  <th
-                    key={c.key}
-                    onClick={() => clickHeader(c.key)}
-                    className={`px-4 py-2 cursor-pointer select-none text-[10px] uppercase tracking-wider font-semibold text-fg-muted hover:text-fg ${c.align === 'right' ? 'text-right' : 'text-left'}`}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {c.label}
-                      {sortKey === c.key && <span className="opacity-60">{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                    </span>
-                  </th>
-                ))}
+                {columns.map((c) => {
+                  const sortState =
+                    sortKey === c.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+                  return (
+                    <th
+                      key={c.key}
+                      scope="col"
+                      aria-sort={sortState}
+                      className={`px-4 py-2 text-[10px] uppercase tracking-wider font-semibold text-fg-muted ${c.align === 'right' ? 'text-right' : 'text-left'}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => clickHeader(c.key)}
+                        aria-label={`Sort by ${c.label}${sortState !== 'none' ? `, currently ${sortState}` : ''}`}
+                        className={`inline-flex items-center gap-1 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded ${c.align === 'right' ? 'flex-row-reverse' : ''}`}
+                      >
+                        {c.label}
+                        {sortKey === c.key && (
+                          <span className="opacity-60" aria-hidden>
+                            {sortDir === 'asc' ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {pageRows.map((row, i) => (
-                <tr key={start + i} className="border-b border-border last:border-b-0 hover:bg-bg-muted/30">
+                <tr
+                  key={start + i}
+                  className="border-b border-border last:border-b-0 hover:bg-bg-muted/30"
+                >
                   {columns.map((c) => (
-                    <td key={c.key} className={`px-4 py-2.5 ${c.align === 'right' ? 'text-right tabular-nums' : ''}`}>
+                    <td
+                      key={c.key}
+                      className={`px-4 py-2.5 ${c.align === 'right' ? 'text-right tabular-nums' : ''}`}
+                    >
                       {c.render(row, start + i)}
                     </td>
                   ))}
@@ -1343,8 +2107,12 @@ function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string
               ))}
               {pageRows.length === 0 && (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-10 text-center text-fg-muted text-[12px]">
-                    No rows.
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-10 text-center text-fg-muted text-[12px]"
+                    role="status"
+                  >
+                    {emptyLabel}
                   </td>
                 </tr>
               )}
@@ -1352,8 +2120,11 @@ function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string
           </table>
         </div>
         {pages > 1 && (
-          <div className="flex items-center justify-between px-4 py-2 border-t border-border text-[11px] text-fg-muted">
-            <span>
+          <nav
+            aria-label="Pagination"
+            className="flex items-center justify-between px-4 py-2 border-t border-border text-[11px] text-fg-muted"
+          >
+            <span role="status" aria-live="polite">
               Showing {start + 1}–{Math.min(start + pageSize, sorted.length)} of {sorted.length}
             </span>
             <div className="flex items-center gap-1.5">
@@ -1361,7 +2132,8 @@ function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string
                 type="button"
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="h-7 px-2.5 rounded-md border border-border bg-bg-elevated disabled:opacity-40 hover:bg-bg-muted"
+                aria-label="Previous page"
+                className="min-h-[36px] px-2.5 rounded-md border border-border bg-bg-elevated disabled:opacity-40 hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
               >
                 Prev
               </button>
@@ -1369,12 +2141,13 @@ function ReportTable<T>({ title, columns, rows, pageSize = 10 }: { title: string
                 type="button"
                 disabled={page >= pages - 1}
                 onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
-                className="h-7 px-2.5 rounded-md border border-border bg-bg-elevated disabled:opacity-40 hover:bg-bg-muted"
+                aria-label="Next page"
+                className="min-h-[36px] px-2.5 rounded-md border border-border bg-bg-elevated disabled:opacity-40 hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
               >
                 Next
               </button>
             </div>
-          </div>
+          </nav>
         )}
       </CardBody>
     </Card>
@@ -1388,8 +2161,13 @@ function largestDropLabel(stages: Array<{ label: string; dropPct: number }>): st
 
 function Toast({ message }: { message: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2">
-      <CheckIcon size={14} />
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2"
+    >
+      <CheckIcon size={14} aria-hidden />
       {message}
     </div>
   );

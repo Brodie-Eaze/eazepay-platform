@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD, Reflector } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -25,6 +25,7 @@ import { RedisModule } from '../redis/redis.module.js';
 import { RedisService } from '../redis/redis.service.js';
 import { IdempotencyInterceptor } from '../common/interceptors/idempotency.interceptor.js';
 import { ProblemExceptionFilter } from '../common/filters/problem-exception.filter.js';
+import { RequestIdMiddleware } from '../common/middleware/request-id.middleware.js';
 import { OrchestrationPostSubmitAdapter } from './post-submit.adapter.js';
 import { PaymentContractedHookAdapter } from './contracted-hook.adapter.js';
 import { ApplicationLinkController } from './application-link.controller.js';
@@ -79,6 +80,10 @@ const env = loadEnv();
     AdminModule.forRoot({ prismaToken: PrismaService }),
     WebhookModule.forRoot({
       prismaToken: PrismaService,
+      // SEC-035 — BullMQ queue + worker reuse the shared API ioredis
+      // client (no second pool per replica). The factory in
+      // WebhookModule.forRoot calls `.client` on the injected service.
+      redisToken: RedisService,
       // CRON_LEADER is the umbrella gate — see config/env.ts. Set true
       // on exactly one replica in production. The per-cron
       // `dispatcherEnabled` is the fine-grained kill-switch.
@@ -130,9 +135,9 @@ const env = loadEnv();
       inject: [RedisService],
       useFactory: (redis: RedisService) => ({
         throttlers: [
-          { name: 'short', ttl: 1_000, limit: 5 },     // 5 req/sec/IP — burst guard
-          { name: 'medium', ttl: 10_000, limit: 30 },  // 30 req/10s/IP — spike guard
-          { name: 'long', ttl: 60_000, limit: 120 },   // 120 req/min/IP — sustained
+          { name: 'short', ttl: 1_000, limit: 5 }, // 5 req/sec/IP — burst guard
+          { name: 'medium', ttl: 10_000, limit: 30 }, // 30 req/10s/IP — spike guard
+          { name: 'long', ttl: 60_000, limit: 120 }, // 120 req/min/IP — sustained
         ],
         storage: new ThrottlerStorageRedisService(redis.client),
       }),
@@ -155,8 +160,7 @@ const env = loadEnv();
     LoggerModule.forRoot({
       pinoHttp: {
         level: env.LOG_LEVEL,
-        transport:
-          env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
+        transport: env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
         // PII redaction baseline. Tighten in dedicated logging service.
         redact: {
           paths: [
@@ -198,4 +202,12 @@ const env = loadEnv();
     { provide: APP_FILTER, useClass: ProblemExceptionFilter },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // SEC-051 — request-id middleware runs FIRST so every log line +
+  // every Problem+JSON response carries the same correlation id. We
+  // honour an inbound `X-Request-Id` if the caller supplied one
+  // (partner-portal sets one) and mint a UUID otherwise.
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

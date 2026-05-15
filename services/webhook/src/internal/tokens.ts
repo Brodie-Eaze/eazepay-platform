@@ -4,6 +4,10 @@ export const PRISMA = Symbol.for('eazepay.prisma');
  *  {@link WebhookDispatcher} so the @Cron handler can short-circuit
  *  before touching the database. */
 export const DISPATCHER_CRON_OPTIONS = Symbol.for('eazepay.webhook.dispatcherCronOptions');
+/** DI token for the ioredis client shared with the rest of the API
+ *  (rate limiter, idempotency cache). Reused by the BullMQ queue +
+ *  worker to avoid a second Redis connection per replica. */
+export const WEBHOOK_QUEUE_REDIS = Symbol.for('eazepay.webhook.queueRedis');
 
 export interface DispatcherCronOptions {
   /** True only on the single replica elected as cron leader. When false

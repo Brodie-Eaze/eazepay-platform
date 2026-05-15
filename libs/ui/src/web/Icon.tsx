@@ -114,6 +114,13 @@ export const CheckIcon: FC<IconProps> = ({ size = 18, ...rest }) => (
     <path d="m5 12 5 5L20 7" />
   </svg>
 );
+export const MenuIcon: FC<IconProps> = ({ size = 18, ...rest }) => (
+  <svg {...base(size)} {...rest}>
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
 export const XIcon: FC<IconProps> = ({ size = 18, ...rest }) => (
   <svg {...base(size)} {...rest}>
     <path d="M6 6l12 12M18 6l-12 12" />

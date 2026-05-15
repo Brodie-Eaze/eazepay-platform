@@ -1,12 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaClient } from '@prisma/client';
-import {
-  COLLECTION_CRON_OPTIONS,
-  type CollectionCronOptions,
-  PRISMA,
-} from './tokens.js';
-import { PaymentService } from '../payment.service.js';
+import type { PrismaClient } from '@prisma/client';
+import type { CronLeaderService } from '@eazepay/service-audit';
+import { LOCK_ID_COLLECTION } from '@eazepay/service-audit';
+import { COLLECTION_CRON_OPTIONS, type CollectionCronOptions, PRISMA } from './tokens.js';
+import type { PaymentService } from '../payment.service.js';
 
 const BATCH_SIZE = 500;
 // Cap the number of batches per tick so the collection cron cannot
@@ -48,28 +46,34 @@ export class CollectionScheduler {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly payments: PaymentService,
     @Inject(COLLECTION_CRON_OPTIONS) private readonly options: CollectionCronOptions,
+    private readonly cronLeader: CronLeaderService,
   ) {}
 
   // 08:00 UTC daily — early enough for ACH same-day windows.
   //
-  // Handler-entry guard. Two flags, both must be true:
-  //  - cronLeader: only the elected leader replica should run timed
-  //    crons. Without this, N replicas would each charge every
-  //    due-today repayment N times. The PaymentProvider idempotency
-  //    key collapses charges, but each replica still burns DB +
-  //    provider API quota.
-  //  - collectionCronEnabled: per-cron kill-switch. Operators flip
-  //    this off (via env reload + restart) during high-return-rate
-  //    incidents without having to disable the webhook / audit crons
-  //    or take the leader replica down entirely.
-  // Both gates are also enforced at provider-registration time in
+  // Three-layer guard. ALL must allow the tick to fire:
+  //   1. Postgres advisory lock (PRIMARY). pg_try_advisory_lock at
+  //      LOCK_ID_COLLECTION — only ONE replica per tick acquires.
+  //      Real distributed lock; survives env-flag misconfiguration.
+  //   2. cronLeader env flag (secondary kill-switch).
+  //   3. collectionCronEnabled per-cron kill-switch. Operators flip
+  //      this off (via env reload + restart) during high-return-rate
+  //      incidents without having to disable the webhook / audit crons
+  //      or take the leader replica down entirely.
+  // Layers 2 + 3 are also enforced at provider-registration time in
   // {@link PaymentModule.forRoot} — this handler-entry check is
   // defense in depth.
   @Cron(CronExpression.EVERY_DAY_AT_8AM)
   async runDaily(): Promise<void> {
     if (!this.options.cronLeader) return;
     if (!this.options.collectionCronEnabled) return;
-    await this.collectDue();
+    const lock = await this.cronLeader.tryAcquireLock(LOCK_ID_COLLECTION);
+    if (!lock.held) return;
+    try {
+      await this.collectDue();
+    } finally {
+      await lock.releaseFn();
+    }
   }
 
   /** Public entry point so it can also be triggered manually from /admin. */

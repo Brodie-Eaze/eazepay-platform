@@ -1,10 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import {
-  redeemInvite,
-  getInvite,
-  BRAND_FROM_CONFIG_SLUG,
-} from '../../../../../lib/invites-store';
+import { redeemInvite, getInvite, BRAND_FROM_CONFIG_SLUG } from '../../../../../lib/invites-store';
+import { enforceCsrf } from '../../../../../lib/csrf.js';
+import { enforce as enforceEdgeRateLimit } from '../../../../../lib/edge-rate-limit.js';
 
 /**
  * Brand onboarding — BFF proxy.
@@ -33,6 +31,18 @@ const PROVIDER_BY_BRAND: Record<string, string> = {
   processing: 'mycamp',
 };
 
+/**
+ * Originating client IP for rate-limit bucketing. Forwarded-for is the
+ * canonical Vercel / Cloudflare / NLB header; trust the leftmost
+ * address when present (typical CDN convention). Falls back to the
+ * direct remote address Next exposes. Never trust a header the
+ * consumer can mint themselves without a hop layer in front.
+ */
+function pickClientIp(req: NextRequest): string {
+  const xff = req.headers.get('x-forwarded-for') ?? '';
+  return xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3300';
 
 const BodySchema = z.object({
@@ -57,7 +67,58 @@ const BodySchema = z.object({
   inviteToken: z.string().min(1).optional(),
 });
 
+/**
+ * SEC — CSRF wrapping scope.
+ *
+ * Wrapped (this file): /api/integrations/brand/apply because the
+ * consumer apply form is the highest-value state-changing surface in
+ * the partner-portal — a cross-site forged submission could enroll a
+ * merchant on the operator's behalf, or pre-populate fraudulent KYB
+ * data into a real session.
+ *
+ * Also wrapped: /api/auth/login (mint a session) and /api/auth/demo
+ * (mint a demo session). Both can produce a privileged-feeling
+ * session that an attacker could exploit downstream.
+ *
+ * NOT wrapped (deferred — defended by SameSite=Lax + auth-token
+ * binding):
+ *   - /api/auth/logout              (idempotent, low-risk)
+ *   - /api/onboarding/invite        (operator-only, JSON-only)
+ *   - /api/v/[brand]/consumer-invites
+ *   - /api/applications/consent     (idempotent receipt write)
+ * Track in SEC-### follow-up to wrap the deferred set when the
+ * client fetch helper is centralised (today only this route uses a
+ * non-portable cookie-bound form post).
+ */
 export async function POST(req: NextRequest) {
+  // CSRF first, then per-IP edge rate limit, then the body parse +
+  // backend dispatch. Order matters: CSRF rejection is constant-cost,
+  // rate-limit rejection is constant-cost, only after both do we burn
+  // any cycles parsing the body.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
+  const ip = pickClientIp(req);
+  const rl = enforceEdgeRateLimit(ip);
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({
+        type: 'about:blank',
+        title: 'Too Many Requests',
+        status: 429,
+        code: 'rate_limited',
+        detail: 'Too many submissions from this network. Retry shortly.',
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': Math.ceil((rl.retryAfterMs ?? 60_000) / 1000).toString(),
+        },
+      },
+    );
+  }
+
   const url = new URL(req.url);
   const brandParam = url.searchParams.get('brand') ?? '';
 
@@ -99,12 +160,7 @@ export async function POST(req: NextRequest) {
   if (parsed.data.inviteToken) {
     const invite = await getInvite(parsed.data.inviteToken);
     const expectedBrand = BRAND_FROM_CONFIG_SLUG[parsed.data.brand];
-    if (
-      invite &&
-      invite.status === 'active' &&
-      expectedBrand &&
-      invite.brand === expectedBrand
-    ) {
+    if (invite && invite.status === 'active' && expectedBrand && invite.brand === expectedBrand) {
       invitedById = invite.invitedById;
       inviteIsValid = true;
     }
@@ -131,7 +187,10 @@ export async function POST(req: NextRequest) {
       }
       const json = (await res.json()) as { applicationId?: string };
       if (inviteIsValid && parsed.data.inviteToken) {
-        await redeemInvite(parsed.data.inviteToken, json.applicationId ?? `app_${Date.now().toString(36)}`);
+        await redeemInvite(
+          parsed.data.inviteToken,
+          json.applicationId ?? `app_${Date.now().toString(36)}`,
+        );
       }
       return NextResponse.json(json);
     } catch {

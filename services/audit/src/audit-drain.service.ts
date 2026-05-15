@@ -1,11 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaClient } from '@prisma/client';
-import {
-  AUDIT_DRAIN_CRON_OPTIONS,
-  type AuditDrainCronOptions,
-  PRISMA,
-} from './internal/tokens.js';
+import type { PrismaClient } from '@prisma/client';
+import { AUDIT_DRAIN_CRON_OPTIONS, type AuditDrainCronOptions, PRISMA } from './internal/tokens.js';
+import type { CronLeaderService } from './internal/cron-leader.service.js';
+import { LOCK_ID_AUDIT_DRAIN } from './internal/cron-leader.service.js';
 import { AUDIT_SINK, type AuditSink } from './ports/audit-sink.port.js';
 import { validateAuditPayload } from './audit-payload.js';
 
@@ -31,28 +29,37 @@ export class AuditDrainService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(AUDIT_SINK) private readonly sink: AuditSink,
     @Inject(AUDIT_DRAIN_CRON_OPTIONS) private readonly options: AuditDrainCronOptions,
+    private readonly cronLeader: CronLeaderService,
   ) {}
 
   // Every minute. The audit sink is best-effort eventual; one minute
   // is well within any practical SLA on audit-drain freshness.
   //
-  // Handler-entry guard. Two flags, both must be true:
-  //  - cronLeader: only the elected leader replica should run timed
-  //    crons. Other replicas would race on the same AuditOutbox rows;
-  //    the publishedAt update bounds correctness, but the wasted
-  //    sink-puts (one per row, paid per write on DynamoDB) are real
-  //    money at scale.
-  //  - drainEnabled: per-cron kill-switch so an operator can pause
-  //    the drain during an incident without affecting webhook /
-  //    collection crons.
-  // Both gates are also enforced at provider-registration time in
-  // {@link AuditModule.forRoot} — this handler-entry check is defense
+  // Three-layer guard. ALL must allow the tick to fire:
+  //   1. Postgres advisory lock (PRIMARY). pg_try_advisory_lock at
+  //      LOCK_ID_AUDIT_DRAIN — only ONE replica per tick acquires.
+  //      Real distributed lock; survives env-flag misconfiguration.
+  //      See services/audit/src/internal/cron-leader.service.ts.
+  //   2. cronLeader env flag (secondary kill-switch). Lets an operator
+  //      yank a misbehaving replica out of the rotation without
+  //      restarting Postgres.
+  //   3. drainEnabled per-cron kill-switch. Lets an operator pause
+  //      audit drain during an incident without affecting webhook /
+  //      collection crons.
+  // Layers 2 + 3 are also enforced at provider-registration time in
+  // {@link AuditModule.forRoot}; this handler-entry check is defense
   // in depth.
   @Cron(CronExpression.EVERY_MINUTE)
   async runMinute(): Promise<void> {
     if (!this.options.cronLeader) return;
     if (!this.options.drainEnabled) return;
-    await this.drain();
+    const lock = await this.cronLeader.tryAcquireLock(LOCK_ID_AUDIT_DRAIN);
+    if (!lock.held) return;
+    try {
+      await this.drain();
+    } finally {
+      await lock.releaseFn();
+    }
   }
 
   /** Public entrypoint for /admin trigger and tests. */

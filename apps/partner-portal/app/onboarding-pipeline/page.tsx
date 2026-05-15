@@ -19,7 +19,9 @@ import {
   UsersIcon,
   CopyIcon,
   XIcon,
+  Skeleton,
 } from '@eazepay/ui/web';
+import { Modal, ErrorBanner, EmptyDataState } from '../../components/a11y';
 import { BRANDS } from '@eazepay/shared-types';
 import {
   ONBOARDING_BUSINESSES,
@@ -100,9 +102,24 @@ interface InviteRow {
 }
 
 const BRAND_TILES: Array<{ id: InviteBrand; name: string; accent: string; tagline: string }> = [
-  { id: 'medpay', name: 'MedPay', accent: '#0E7C66', tagline: 'Patient financing — dental, medical, vision, vet, fertility.' },
-  { id: 'tradepay', name: 'TradePay', accent: '#F97316', tagline: 'Home improvement, solar, HVAC, roofing, contractor jobs.' },
-  { id: 'coachpay', name: 'CoachPay', accent: '#6366F1', tagline: 'Pay-over-time for coaching, certifications, bootcamps.' },
+  {
+    id: 'medpay',
+    name: 'MedPay',
+    accent: '#0E7C66',
+    tagline: 'Patient financing — dental, medical, vision, vet, fertility.',
+  },
+  {
+    id: 'tradepay',
+    name: 'TradePay',
+    accent: '#F97316',
+    tagline: 'Home improvement, solar, HVAC, roofing, contractor jobs.',
+  },
+  {
+    id: 'coachpay',
+    name: 'CoachPay',
+    accent: '#6366F1',
+    tagline: 'Pay-over-time for coaching, certifications, bootcamps.',
+  },
 ];
 
 const EXPIRY_OPTIONS: Array<{ hours: number; label: string }> = [
@@ -199,12 +216,12 @@ export default function OnboardingPipelinePage() {
         title="Onboarding Pipeline"
         description="Every business EazePay is currently shepherding through configuration. Drill into any row to manage KYB, document requests, comms, and approval."
         actions={
-          <div className="flex flex-wrap items-center gap-2 justify-end">
+          <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end">
             <Button size="sm" variant="secondary">
-              <DocIcon size={13} /> Export queue
+              <DocIcon size={13} aria-hidden /> Export queue
             </Button>
             <Button size="sm" onClick={() => setShowInvite(true)}>
-              <SendIcon size={13} /> Generate invite link
+              <SendIcon size={13} aria-hidden /> Generate invite link
             </Button>
           </div>
         }
@@ -240,91 +257,136 @@ export default function OnboardingPipelinePage() {
         )}
 
         <Banner intent="info" className="mb-4">
-          <strong>How onboarding works.</strong> Generate a direct invite link for a brand, send
-          it to the business, and they land on a brand-locked onboarding wizard with their
-          details prefilled. On submit, the application is stamped with your invite token and
-          shows up here.
+          <strong>How onboarding works.</strong> Generate a direct invite link for a brand, send it
+          to the business, and they land on a brand-locked onboarding wizard with their details
+          prefilled. On submit, the application is stamped with your invite token and shows up here.
         </Banner>
 
         {/* Tabs */}
         <div className="flex flex-wrap items-center gap-1 mb-3 -mx-1">
-          {TABS.map((t) => {
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={
-                  'h-8 inline-flex items-center gap-1.5 px-3 rounded-full text-[12px] font-semibold transition-colors ' +
-                  (active
-                    ? 'bg-[#0d1530] text-white'
-                    : 'text-fg-secondary hover:text-fg hover:bg-bg-muted')
-                }
-              >
-                {t.label}
-                <span
+          <div
+            role="tablist"
+            aria-label="Pipeline filters"
+            className="flex flex-wrap items-center gap-1"
+          >
+            {TABS.map((t) => {
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  id={`pipeline-tab-${t.id}`}
+                  aria-selected={active}
+                  aria-controls="pipeline-tabpanel"
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setTab(t.id)}
                   className={
-                    'text-[10px] tabular-nums ' + (active ? 'text-white/70' : 'text-fg-muted')
+                    'min-h-[36px] inline-flex items-center gap-1.5 px-3 rounded-full text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-1 ' +
+                    (active
+                      ? 'bg-[#0d1530] text-white'
+                      : 'text-fg-secondary hover:text-fg hover:bg-bg-muted')
                   }
                 >
-                  {counts[t.id]}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{t.label}</span>
+                  <span
+                    className={
+                      'text-[10px] tabular-nums ' + (active ? 'text-white/70' : 'text-fg-muted')
+                    }
+                    aria-label={`${counts[t.id]} items`}
+                  >
+                    {counts[t.id]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           <div className="flex-1" />
           {tab !== 'my_invites' && (
-            <div className="flex items-center gap-2 h-8 rounded-md border border-border bg-bg-elevated px-2.5 w-72">
-              <SearchIcon size={13} className="text-fg-muted" />
+            <label className="flex items-center gap-2 min-h-[36px] rounded-md border border-border bg-bg-elevated px-2.5 w-full sm:w-72 focus-within:border-border-strong focus-within:ring-2 focus-within:ring-border-focus/30">
+              <SearchIcon size={13} className="text-fg-muted" aria-hidden />
+              <span className="sr-only">Search businesses by name, EIN, or contact</span>
               <input
                 type="text"
                 placeholder="Search by name, EIN, contact…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 h-full bg-transparent outline-none text-[12px]"
+                aria-label="Search businesses by name, EIN, or contact"
+                className="flex-1 bg-transparent outline-none text-[12px]"
               />
-            </div>
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="inline-flex items-center justify-center h-6 w-6 rounded text-fg-muted hover:text-fg hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+                >
+                  <XIcon size={11} />
+                </button>
+              )}
+            </label>
           )}
         </div>
 
-        {tab === 'my_invites' ? (
-          <YourInvitesPanel
-            invites={invites}
-            loading={invitesLoading}
-            onGenerate={() => setShowInvite(true)}
-          />
-        ) : (
-          <Card>
-            <CardBody className="p-0">
-              <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted bg-bg-muted/40 border-b border-border">
-                <span className="col-span-4">Business</span>
-                <span className="col-span-2">Brand</span>
-                <span className="col-span-2">Status</span>
-                <span className="col-span-2">Integrations</span>
-                <span className="col-span-1 text-right">Last activity</span>
-                <span className="col-span-1 text-right">Actions</span>
-              </div>
-              {rows.length === 0 ? (
-                <div className="px-5 py-12 text-center text-[13px] text-fg-muted">
-                  No businesses match this filter.
+        <div id="pipeline-tabpanel" role="tabpanel" aria-labelledby={`pipeline-tab-${tab}`}>
+          {tab === 'my_invites' ? (
+            <YourInvitesPanel
+              invites={invites}
+              loading={invitesLoading}
+              onGenerate={() => setShowInvite(true)}
+            />
+          ) : (
+            <Card>
+              <CardBody className="p-0">
+                <div className="hidden md:grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted bg-bg-muted/40 border-b border-border">
+                  <span className="col-span-4">Business</span>
+                  <span className="col-span-2">Brand</span>
+                  <span className="col-span-2">Status</span>
+                  <span className="col-span-2">Integrations</span>
+                  <span className="col-span-1 text-right">Last activity</span>
+                  <span className="col-span-1 text-right">Actions</span>
                 </div>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {rows.map((b) => (
-                    <PipelineRow
-                      key={b.id}
-                      biz={b}
-                      invitedByOperator={invitedEmailSet.has(
-                        b.primaryContact.email.toLowerCase(),
-                      )}
-                    />
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
-        )}
+                {rows.length === 0 ? (
+                  <EmptyDataState
+                    className="m-4"
+                    title="No businesses match this filter"
+                    description={
+                      query
+                        ? 'Try clearing the search or pick a different tab.'
+                        : 'Switch tabs above or generate a fresh invite to start a new flow.'
+                    }
+                    action={
+                      query ? (
+                        <Button size="sm" variant="secondary" onClick={() => setQuery('')}>
+                          Clear search
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => setShowInvite(true)}>
+                          <SendIcon size={13} /> Generate invite link
+                        </Button>
+                      )
+                    }
+                  />
+                ) : (
+                  <ul
+                    className="divide-y divide-border"
+                    aria-label={`${rows.length} businesses in pipeline`}
+                  >
+                    {rows.map((b) => (
+                      <PipelineRow
+                        key={b.id}
+                        biz={b}
+                        invitedByOperator={invitedEmailSet.has(
+                          b.primaryContact.email.toLowerCase(),
+                        )}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </CardBody>
+            </Card>
+          )}
+        </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           <StatCard
@@ -358,9 +420,7 @@ function PipelineRow({
   biz: OnboardingBusiness;
   invitedByOperator?: boolean;
 }) {
-  const integrationsDone = Object.values(biz.integrations).filter(
-    (s) => s === 'completed',
-  ).length;
+  const integrationsDone = Object.values(biz.integrations).filter((s) => s === 'completed').length;
   const integrationsTotal = Object.values(biz.integrations).length;
 
   const initials = biz.legalName
@@ -370,14 +430,19 @@ function PipelineRow({
     .slice(0, 2)
     .toUpperCase();
 
+  const integrationsPct = Math.round((integrationsDone / integrationsTotal) * 100);
   return (
     <li>
       <Link
         href={`/onboarding-pipeline/${biz.id}`}
-        className="grid grid-cols-12 items-center gap-3 px-5 py-3 hover:bg-bg-muted/40 transition-colors"
+        aria-label={`${biz.legalName} — ${STATUS_LABEL[biz.status]} — ${integrationsDone} of ${integrationsTotal} integrations complete`}
+        className="grid grid-cols-1 md:grid-cols-12 items-start md:items-center gap-2 md:gap-3 px-4 sm:px-5 py-3 hover:bg-bg-muted/40 transition-colors focus-visible:outline-none focus-visible:bg-bg-muted/50"
       >
-        <div className="col-span-4 flex items-center gap-3 min-w-0">
-          <span className="size-9 rounded-lg bg-bg-muted text-fg-secondary font-semibold text-[11px] flex items-center justify-center shrink-0">
+        <div className="md:col-span-4 flex items-center gap-3 min-w-0">
+          <span
+            className="size-9 rounded-lg bg-bg-muted text-fg-secondary font-semibold text-[11px] flex items-center justify-center shrink-0"
+            aria-hidden
+          >
             {initials}
           </span>
           <div className="min-w-0">
@@ -397,7 +462,10 @@ function PipelineRow({
             </p>
           </div>
         </div>
-        <div className="col-span-2 flex flex-wrap items-center gap-1">
+        <div className="md:col-span-2 flex flex-wrap items-center gap-1">
+          <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+            Brand
+          </span>
           {biz.brands.map((br) => (
             <span
               key={br}
@@ -407,17 +475,31 @@ function PipelineRow({
             </span>
           ))}
         </div>
-        <div className="col-span-2">
+        <div className="md:col-span-2 flex md:block items-center gap-2">
+          <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+            Status
+          </span>
           <StatusPill tone={statusPillTone(biz.status)} dot>
             {STATUS_LABEL[biz.status]}
           </StatusPill>
         </div>
-        <div className="col-span-2">
+        <div className="md:col-span-2">
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-1.5 rounded-full bg-bg-muted overflow-hidden max-w-[120px]">
+            <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+              Integrations
+            </span>
+            <div
+              className="flex-1 h-1.5 rounded-full bg-bg-muted overflow-hidden max-w-[120px]"
+              role="progressbar"
+              aria-valuenow={integrationsPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Integrations ${integrationsDone} of ${integrationsTotal} complete`}
+            >
               <span
                 className="block h-full bg-fg"
-                style={{ width: `${(integrationsDone / integrationsTotal) * 100}%` }}
+                style={{ width: `${integrationsPct}%` }}
+                aria-hidden
               />
             </div>
             <span className="text-[11px] text-fg-secondary tabular-nums">
@@ -425,11 +507,14 @@ function PipelineRow({
             </span>
           </div>
         </div>
-        <div className="col-span-1 text-right text-[11px] text-fg-muted">
+        <div className="md:col-span-1 md:text-right text-[11px] text-fg-muted">
+          <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted mr-1">
+            Last:
+          </span>
           {ago(biz.lastActivityAt)}
         </div>
-        <div className="col-span-1 text-right">
-          <ArrowRightIcon size={13} className="text-fg-muted inline" />
+        <div className="hidden md:flex md:col-span-1 md:justify-end">
+          <ArrowRightIcon size={13} className="text-fg-muted" aria-hidden />
         </div>
       </Link>
     </li>
@@ -507,194 +592,200 @@ function GenerateInviteModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-bg-inverse/40 backdrop-blur-sm px-4 py-10 overflow-y-auto"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      size="lg"
+      title="Generate invite link"
+      description="Brand-locked, optionally prefilled. The business lands on the matching onboarding wizard."
     >
-      <div
-        className="w-full max-w-2xl rounded-lg border border-border bg-bg-elevated shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between px-6 py-4 border-b border-border">
-          <div>
-            <h2 className="text-[15px] font-semibold text-fg">Generate invite link</h2>
-            <p className="text-[12px] text-fg-muted mt-0.5">
-              Brand-locked, optionally prefilled. The business lands on the matching onboarding
-              wizard.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-fg-muted hover:text-fg shrink-0 ml-2"
-          >
-            <XIcon size={16} />
-          </button>
-        </div>
-
-        {result ? (
-          <div className="px-6 py-5 space-y-4">
-            <div className="flex items-start gap-3">
-              <span className="size-9 rounded-lg bg-[#0d1530] text-white flex items-center justify-center shrink-0">
-                <CheckIcon size={16} />
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-fg">Invite link ready</p>
-                <p className="text-[11px] text-fg-muted mt-0.5">
-                  Expires {new Date(result.expiresAt).toLocaleString('en-AU', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}{' '}
-                  · Token {result.token.slice(0, 8)}
-                </p>
-              </div>
+      {result ? (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3" role="status" aria-live="polite">
+            <span
+              className="size-9 rounded-lg bg-[#0d1530] text-white flex items-center justify-center shrink-0"
+              aria-hidden
+            >
+              <CheckIcon size={16} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-fg">Invite link ready</p>
+              <p className="text-[11px] text-fg-muted mt-0.5">
+                Expires{' '}
+                {new Date(result.expiresAt).toLocaleString('en-AU', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}{' '}
+                · Token {result.token.slice(0, 8)}
+              </p>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <code className="flex-1 font-mono text-[12px] text-fg-secondary bg-bg-muted rounded px-3 py-2 truncate">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex-1 min-w-[180px]">
+              <span className="sr-only">Invite URL</span>
+              <code className="block w-full font-mono text-[12px] text-fg-secondary bg-bg-muted rounded px-3 py-2 truncate">
                 {result.url}
               </code>
-              <Button size="sm" variant="secondary" onClick={() => copyLink(result.url)}>
-                {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
-                {copied ? 'Copied' : 'Copy link'}
+            </label>
+            <Button size="sm" variant="secondary" onClick={() => copyLink(result.url)}>
+              {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
+              {copied ? 'Copied' : 'Copy link'}
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+            <Link
+              href={result.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[12px] font-semibold text-fg-secondary hover:text-fg inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
+            >
+              Open the onboarding page <ArrowRightIcon size={12} />
+            </Link>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setResult(null);
+                  setBrand(null);
+                  setBusinessName('');
+                  setContactEmail('');
+                  setContactPhone('');
+                }}
+              >
+                Generate another
+              </Button>
+              <Button size="sm" onClick={onClose}>
+                Done
               </Button>
             </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <section>
+            <p
+              className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-secondary mb-2"
+              id="invite-brand-label"
+            >
+              Brand <span className="text-fg-muted">(locked once sent)</span>
+            </p>
+            <div
+              role="radiogroup"
+              aria-labelledby="invite-brand-label"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-2"
+            >
+              {BRAND_TILES.map((t) => {
+                const active = brand === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setBrand(t.id)}
+                    className={
+                      'text-left rounded-md border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-1 ' +
+                      (active
+                        ? 'border-[#0d1530] bg-[#0d1530]/5'
+                        : 'border-border bg-bg hover:bg-bg-muted/40')
+                    }
+                    style={active ? { boxShadow: `inset 0 0 0 1px ${t.accent}` } : undefined}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                        style={{ background: t.accent }}
+                        aria-hidden
+                      />
+                      <span className="text-[13px] font-semibold text-fg">{t.name}</span>
+                    </div>
+                    <p className="text-[11px] text-fg-muted leading-snug">{t.tagline}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border">
-              <Link
-                href={result.url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[12px] font-semibold text-fg-secondary hover:text-fg inline-flex items-center gap-1"
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field label="Business name" optional>
+              <input
+                placeholder="Atlas Dental Group"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                aria-label="Business name (optional)"
+                className="w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong outline-none"
+              />
+            </Field>
+            <Field label="Contact email" optional>
+              <input
+                type="email"
+                placeholder="owner@business.com"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                aria-label="Contact email (optional)"
+                className="w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong outline-none"
+              />
+            </Field>
+            <Field label="Contact phone" optional>
+              <input
+                type="tel"
+                placeholder="+1 (555) 123-4567"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                aria-label="Contact phone (optional)"
+                className="w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong outline-none"
+              />
+            </Field>
+            <Field label="Link expiry">
+              <select
+                value={expiryHours}
+                onChange={(e) => setExpiryHours(Number(e.target.value) as 24 | 168 | 720)}
+                aria-label="Link expiry"
+                className="w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong outline-none"
               >
-                Open the onboarding page <ArrowRightIcon size={12} />
-              </Link>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setResult(null);
-                    setBrand(null);
-                    setBusinessName('');
-                    setContactEmail('');
-                    setContactPhone('');
-                  }}
-                >
-                  Generate another
-                </Button>
-                <Button size="sm" onClick={onClose}>
-                  Done
-                </Button>
-              </div>
+                {EXPIRY_OPTIONS.map((o) => (
+                  <option key={o.hours} value={o.hours}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </section>
+
+          {error && <ErrorBanner onDismiss={() => setError(null)}>{error}</ErrorBanner>}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+            <p className="text-[11px] text-fg-muted max-w-sm leading-snug">
+              You copy the link. You send it via your channel of choice. The system stamps the
+              application with your operator id when they submit.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={generate} disabled={!brand || submitting}>
+                {submitting ? (
+                  <>
+                    <span
+                      className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-r-transparent"
+                      aria-hidden
+                    />
+                    Generating…
+                  </>
+                ) : (
+                  'Generate link'
+                )}
+              </Button>
             </div>
           </div>
-        ) : (
-          <div className="px-6 py-5 space-y-5">
-            <section>
-              <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-secondary mb-2">
-                Brand <span className="text-fg-muted">(locked once sent)</span>
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {BRAND_TILES.map((t) => {
-                  const active = brand === t.id;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setBrand(t.id)}
-                      className={
-                        'text-left rounded-md border p-3 transition-colors ' +
-                        (active
-                          ? 'border-[#0d1530] bg-[#0d1530]/5'
-                          : 'border-border bg-bg hover:bg-bg-muted/40')
-                      }
-                      style={active ? { boxShadow: `inset 0 0 0 1px ${t.accent}` } : undefined}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ background: t.accent }}
-                        />
-                        <span className="text-[13px] font-semibold text-fg">{t.name}</span>
-                      </div>
-                      <p className="text-[11px] text-fg-muted leading-snug">{t.tagline}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Field label="Business name" optional>
-                <input
-                  placeholder="Atlas Dental Group"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  className="w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px]"
-                />
-              </Field>
-              <Field label="Contact email" optional>
-                <input
-                  type="email"
-                  placeholder="owner@business.com"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  className="w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px]"
-                />
-              </Field>
-              <Field label="Contact phone" optional>
-                <input
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  className="w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px]"
-                />
-              </Field>
-              <Field label="Link expiry">
-                <select
-                  value={expiryHours}
-                  onChange={(e) =>
-                    setExpiryHours(Number(e.target.value) as 24 | 168 | 720)
-                  }
-                  className="w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px]"
-                >
-                  {EXPIRY_OPTIONS.map((o) => (
-                    <option key={o.hours} value={o.hours}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-            </section>
-
-            {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
-                {error}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <p className="text-[11px] text-fg-muted max-w-sm leading-snug">
-                You copy the link. You send it via your channel of choice. The system stamps the
-                application with your operator id when they submit.
-              </p>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button size="sm" onClick={generate} disabled={!brand || submitting}>
-                  {submitting ? 'Generating…' : 'Generate link'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -733,37 +824,37 @@ function YourInvitesPanel({
     return (
       <Card>
         <CardBody>
-          <p className="text-[12px] text-fg-muted text-center py-8">Loading your invites…</p>
+          <div
+            className="space-y-2 py-3"
+            role="status"
+            aria-busy="true"
+            aria-live="polite"
+            aria-label="Loading your invites"
+          >
+            <Skeleton rows={4} bare />
+          </div>
         </CardBody>
       </Card>
     );
   }
   if (invites.length === 0) {
     return (
-      <Card>
-        <CardBody>
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <span className="size-10 rounded-lg bg-bg-muted text-fg-secondary flex items-center justify-center mb-3">
-              <SendIcon size={16} />
-            </span>
-            <p className="text-[13px] font-semibold text-fg">No invites yet</p>
-            <p className="text-[12px] text-fg-muted mt-1 max-w-sm">
-              Generate a direct invite link for any brand and send it to the business yourself.
-            </p>
-            <div className="mt-4">
-              <Button size="sm" onClick={onGenerate}>
-                <SendIcon size={13} /> Generate invite link
-              </Button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+      <EmptyDataState
+        title="No invites yet"
+        description="Generate a direct invite link for any brand and send it to the business yourself."
+        icon={<SendIcon size={18} />}
+        action={
+          <Button size="sm" onClick={onGenerate}>
+            <SendIcon size={13} /> Generate invite link
+          </Button>
+        }
+      />
     );
   }
   return (
     <Card>
       <CardBody className="p-0">
-        <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted bg-bg-muted/40 border-b border-border">
+        <div className="hidden md:grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted bg-bg-muted/40 border-b border-border">
           <span className="col-span-3">Business</span>
           <span className="col-span-2">Brand</span>
           <span className="col-span-2">Status</span>
@@ -771,7 +862,7 @@ function YourInvitesPanel({
           <span className="col-span-1 text-right">Created</span>
           <span className="col-span-2 text-right">Actions</span>
         </div>
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border" aria-label={`${invites.length} invites`}>
           {invites.map((inv) => (
             <InviteRowItem key={inv.token} inv={inv} />
           ))}
@@ -791,8 +882,8 @@ function InviteRowItem({ inv }: { inv: InviteRow }) {
     minute: '2-digit',
   });
   return (
-    <li className="grid grid-cols-12 items-center gap-3 px-5 py-3 hover:bg-bg-muted/40">
-      <div className="col-span-3 min-w-0">
+    <li className="grid grid-cols-1 md:grid-cols-12 items-start md:items-center gap-2 md:gap-3 px-4 sm:px-5 py-3 hover:bg-bg-muted/40">
+      <div className="md:col-span-3 min-w-0">
         <p className="text-[13px] font-semibold text-fg truncate">
           {inv.prefill.businessName || 'No business name provided'}
         </p>
@@ -800,7 +891,10 @@ function InviteRowItem({ inv }: { inv: InviteRow }) {
           {inv.prefill.contactEmail || inv.prefill.contactPhone || '—'}
         </p>
       </div>
-      <div className="col-span-2">
+      <div className="md:col-span-2 flex md:block items-center gap-2">
+        <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+          Brand
+        </span>
         <span
           className="inline-flex items-center gap-1.5 text-[11px] font-semibold"
           style={{ color: brandMeta?.accent }}
@@ -808,31 +902,37 @@ function InviteRowItem({ inv }: { inv: InviteRow }) {
           <span
             className="h-2 w-2 rounded-full"
             style={{ background: brandMeta?.accent }}
+            aria-hidden
           />
           {brandMeta?.name}
         </span>
       </div>
-      <div className="col-span-2">
+      <div className="md:col-span-2 flex md:block items-center gap-2">
+        <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+          Status
+        </span>
         <StatusPill
           tone={
-            inv.status === 'active'
-              ? 'info'
-              : inv.status === 'redeemed'
-                ? 'success'
-                : 'neutral'
+            inv.status === 'active' ? 'info' : inv.status === 'redeemed' ? 'success' : 'neutral'
           }
           dot
         >
           {inv.status === 'active' ? 'Active' : inv.status === 'redeemed' ? 'Redeemed' : 'Expired'}
         </StatusPill>
       </div>
-      <div className="col-span-2 text-[11px] text-fg-secondary tabular-nums">
+      <div className="md:col-span-2 text-[11px] text-fg-secondary tabular-nums flex md:block items-center gap-2">
+        <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
+          Expires
+        </span>
         {expiryLabel}
       </div>
-      <div className="col-span-1 text-right text-[11px] text-fg-muted">
+      <div className="md:col-span-1 md:text-right text-[11px] text-fg-muted flex md:block items-center gap-2">
+        <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold">
+          Created
+        </span>
         {ago(inv.createdAt)}
       </div>
-      <div className="col-span-2 flex items-center justify-end gap-1.5">
+      <div className="md:col-span-2 flex items-center md:justify-end gap-1.5 mt-1 md:mt-0">
         <button
           type="button"
           onClick={() => {
@@ -841,19 +941,21 @@ function InviteRowItem({ inv }: { inv: InviteRow }) {
             setTimeout(() => setCopied(false), 1500);
           }}
           disabled={inv.status !== 'active'}
-          className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-[11px] font-semibold text-fg-secondary hover:text-fg hover:bg-bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label={`Copy invite link for ${inv.prefill.businessName || 'this invite'}`}
+          className="inline-flex items-center gap-1 min-h-[36px] px-2 rounded-md text-[11px] font-semibold text-fg-secondary hover:text-fg hover:bg-bg-muted/60 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
         >
-          {copied ? <CheckIcon size={11} /> : <CopyIcon size={11} />}
+          {copied ? <CheckIcon size={11} aria-hidden /> : <CopyIcon size={11} aria-hidden />}
           {copied ? 'Copied' : 'Copy'}
         </button>
         <Link
           href={inv.inviteUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-[11px] font-semibold text-fg-secondary hover:text-fg hover:bg-bg-muted/60"
+          aria-label={`Open invite link for ${inv.prefill.businessName || 'this invite'} in a new tab`}
+          className="inline-flex items-center gap-1 min-h-[36px] px-2 rounded-md text-[11px] font-semibold text-fg-secondary hover:text-fg hover:bg-bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
         >
           Open
-          <ArrowRightIcon size={11} />
+          <ArrowRightIcon size={11} aria-hidden />
         </Link>
       </div>
     </li>

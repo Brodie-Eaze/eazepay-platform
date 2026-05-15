@@ -387,6 +387,24 @@ model User {
   invitedAt    DateTime?     @db.Timestamptz(6) @map("invited_at")
   invitedById  String?       @db.Uuid @map("invited_by_id")
   lastSeenAt   DateTime?     @db.Timestamptz(6) @map("last_seen_at")
+  /// SEC-016 — TOTP second-factor envelope.
+  ///
+  /// Opaque ciphertext sealed via `PiiVaultService.sealOpaque`
+  /// (production) or `LocalTotpVaultAdapter` (development). The AAD
+  /// is bound to `scope=totp_secret` + this user's id so a row-level
+  /// transplant fails the GCM auth-tag check. NULL when the user has
+  /// not yet enrolled TOTP — SMS / email OTP continues to gate login
+  /// for those accounts.
+  totpSecretCiphertext String? @map("totp_secret_ciphertext")
+  /// SEC-016 — array of break-glass recovery codes.
+  ///
+  /// Shape: `{ hash: string; used: boolean; usedAt?: string }[]`.
+  /// Hashes are argon2id with the same work factor as `password_hash`
+  /// because each code is a single-use bypass of the second factor.
+  /// `used: true` is irreversible — the auth service refuses redemption
+  /// of an already-burned code. Single-use is the load-bearing
+  /// property; without it a stolen recovery sheet is permanent.
+  totpRecoveryCodes Json? @map("totp_recovery_codes")
   createdAt    DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt    DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
 
@@ -1277,6 +1295,25 @@ model WebhookDelivery {
   @@index([endpointId, createdAt])
   @@map("webhook_deliveries")
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// Cron leader election — Postgres advisory lock ID registry.
+// ──────────────────────────────────────────────────────────────────────
+// Each timed cron acquires a session-scoped `pg_try_advisory_lock`
+// before doing work. Only ONE replica per tick wins the lock; the rest
+// no-op. This is the PRIMARY distributed-lock mechanism (the
+// `CRON_LEADER` env flag is the secondary kill-switch). See
+// services/audit/src/internal/cron-leader.service.ts.
+//
+// No schema state is stored here — advisory locks are stateless. This
+// comment is the reservation registry; pick a fresh number from the
+// 41xxx range when adding a new cron.
+//
+// Reserved IDs:
+//   41011 — webhook dispatcher cron   (services/webhook)
+//   41012 — audit-outbox drain cron   (services/audit)
+//   41013 — daily repayment collection (services/payment)
+// ──────────────────────────────────────────────────────────────────────
 
 // Outbox pattern for audit log: every regulated mutation writes a row here
 // in the same transaction; a worker drains to the audit service (DynamoDB

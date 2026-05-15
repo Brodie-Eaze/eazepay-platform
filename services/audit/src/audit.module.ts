@@ -1,9 +1,11 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { DynamicModule, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import type { PrismaClient } from '@prisma/client';
 import { AuditDrainService } from './audit-drain.service.js';
 import { AUDIT_SINK } from './ports/audit-sink.port.js';
 import { LocalFsAuditSink } from './adapters/local-fs-audit-sink.adapter.js';
 import { AUDIT_DRAIN_CRON_OPTIONS, PRISMA } from './internal/tokens.js';
+import { CronLeaderService } from './internal/cron-leader.service.js';
 
 export interface AuditModuleOptions {
   prismaToken: symbol | string | (abstract new (...args: never[]) => PrismaClient);
@@ -56,6 +58,9 @@ export class AuditModule {
           drainEnabled: options.drainEnabled,
         },
       });
+      // Postgres advisory-lock leader election — PRIMARY mechanism that
+      // makes the cron safe against env-flag misconfiguration.
+      providers.push(CronLeaderService);
       providers.push(AuditDrainService);
     }
 

@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { mintCsrfToken, setCsrfCookie, CSRF_CONSTANTS } from './lib/csrf.js';
 
 /**
- * Two jobs at the edge, before any route handler or React Server
+ * Three jobs at the edge, before any route handler or React Server
  * Component runs:
  *
  *  1. Inject `x-pathname` on the request headers so server components
@@ -13,6 +14,12 @@ import { NextResponse, type NextRequest } from 'next/server';
  *     (`eazepay_at`) or a demo session (`eazepay_demo`). No cookie →
  *     302 to `/sign-in?from=<encoded path>` so the form can bounce
  *     them back where they came from after authenticating.
+ *
+ *  3. CSRF cookie mint. On any GET to an authenticated path, set the
+ *     `eazepay_csrf` cookie if missing so the page-side fetch helper
+ *     can echo it into the `X-CSRF-Token` header on state-changing
+ *     calls. See lib/csrf.ts for the threat model and the
+ *     state-changing route wrappers that enforce verification.
  */
 
 const PUBLIC_PATHS: ReadonlyArray<string> = [
@@ -55,8 +62,7 @@ export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   const hasRealSession = Boolean(req.cookies.get('eazepay_at')?.value);
-  const hasDemoSession =
-    Boolean(req.cookies.get('eazepay_demo')?.value) && demoCookieTrusted();
+  const hasDemoSession = Boolean(req.cookies.get('eazepay_demo')?.value) && demoCookieTrusted();
   const hasSession = hasRealSession || hasDemoSession;
 
   if (!hasSession && !isPublic(pathname)) {
@@ -67,16 +73,33 @@ export function middleware(req: NextRequest) {
     // sign-in link that redirects to an attacker-controlled host after
     // login. We re-validate at the form layer too.
     const safeFrom =
-      pathname.startsWith('/') && !pathname.startsWith('//')
-        ? pathname + search
-        : '/';
+      pathname.startsWith('/') && !pathname.startsWith('//') ? pathname + search : '/';
     url.search = `?from=${encodeURIComponent(safeFrom)}`;
     return NextResponse.redirect(url);
   }
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-pathname', pathname);
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Mint a CSRF token cookie if missing. We do this on every GET
+  // (public OR authenticated) so the cookie is already present when
+  // the React tree renders a form. State-changing routes — including
+  // the unauthenticated sign-in POST — verify the echoed
+  // X-CSRF-Token header against this cookie.
+  //
+  // Skip non-GET/HEAD methods and internal Next prefetch requests so
+  // the cookie isn't churned on every navigation. Skip /api/ routes
+  // too because their responses are JSON; the cookie is meant to ride
+  // along with HTML page loads.
+  const isReadMethod = req.method === 'GET' || req.method === 'HEAD';
+  const isApi = pathname.startsWith('/api/');
+  const hasCsrfCookie = Boolean(req.cookies.get(CSRF_CONSTANTS.cookieName)?.value);
+  if (isReadMethod && !isApi && !hasCsrfCookie) {
+    setCsrfCookie(res, mintCsrfToken());
+  }
+
+  return res;
 }
 
 export const config = {

@@ -76,7 +76,11 @@ interface BrandSnapshot {
   pendingPayoutDeltaPct: number;
   monthlySubmissions: Array<{ label: string; value: number }>;
   monthlyFunded: Array<{ label: string; value: number }>;
-  creditMix: Array<{ name: 'Prime' | 'NearPrime' | 'Subprime' | 'DeepSubprime'; range: string; count: number }>;
+  creditMix: Array<{
+    name: 'Prime' | 'NearPrime' | 'Subprime' | 'DeepSubprime';
+    range: string;
+    count: number;
+  }>;
 }
 
 const MONTH_LABELS = ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'] as const;
@@ -180,7 +184,11 @@ const fmtCompactUsd = (cents: number): string => {
 };
 
 const fmtUsd = (cents: number): string =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(cents / 100);
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
 
 const fmtDateDDMMYYYY = (iso: string): string => {
   const d = new Date(iso);
@@ -264,7 +272,9 @@ const KpiTile = ({
         <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight text-fg">
           {value}
         </span>
-        <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${tone}`}>
+        <span
+          className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${tone}`}
+        >
           <Arrow size={11} />
           {fmtPctDelta(deltaPct)}
         </span>
@@ -308,7 +318,7 @@ const BarChart = ({
       preserveAspectRatio="xMidYMid meet"
       className="w-full h-auto"
       role="img"
-      aria-label="Monthly bar chart"
+      aria-label={`Monthly values: ${data.map((d) => `${d.label} ${d.value}`).join(', ')}`}
     >
       {/* horizontal grid lines + y-axis labels */}
       {gridLines.map((g) => {
@@ -324,13 +334,7 @@ const BarChart = ({
               strokeWidth={0.5}
               className="text-border"
             />
-            <text
-              x={padLeft - 6}
-              y={y + 3}
-              textAnchor="end"
-              className="fill-fg-muted"
-              fontSize={9}
-            >
+            <text x={padLeft - 6} y={y + 3} textAnchor="end" className="fill-fg-muted" fontSize={9}>
               {g}
             </text>
           </g>
@@ -352,13 +356,7 @@ const BarChart = ({
               rx={2}
               className="fill-fg-secondary/70"
             />
-            <text
-              x={cx}
-              y={height - 6}
-              textAnchor="middle"
-              className="fill-fg-muted"
-              fontSize={10}
-            >
+            <text x={cx} y={height - 6} textAnchor="middle" className="fill-fg-muted" fontSize={10}>
               {d.label}
             </text>
           </g>
@@ -393,7 +391,7 @@ const DonutChart = ({
       viewBox={`0 0 ${size} ${size}`}
       className="w-[160px] h-[160px]"
       role="img"
-      aria-label="Credit mix donut"
+      aria-label={`Credit mix donut, ${total} total applications across ${segments.length} tiers`}
     >
       <circle
         cx={size / 2}
@@ -456,33 +454,196 @@ const DonutChart = ({
 //  which is the right behaviour while the BFF is unwired).
 // ────────────────────────────────────────────────────────────────────
 
-const synthesisedFor = (
-  brand: 'medpay' | 'tradepay' | 'coachpay',
-): ApplicationRow[] => {
+const synthesisedFor = (brand: 'medpay' | 'tradepay' | 'coachpay'): ApplicationRow[] => {
   if (brand === 'medpay') {
     return [
-      { id: 'a_m11', customer: 'Naomi Esposito', customerEmail: 'naomi.e@inbox.test', partner: 'Helio Dental Group', product: 'med-pay', amountCents: 4_800_00, fico: 731, lender: 'CrossRiver', status: 'approved', date: '2026-05-12' },
-      { id: 'a_m12', customer: 'Rafael Maldonado', customerEmail: 'rafael.m@inbox.test', partner: 'Meridian Vision Care', product: 'med-pay', amountCents: 12_600_00, fico: 689, lender: 'WebBank', status: 'submitted', date: '2026-05-11' },
-      { id: 'a_m13', customer: 'Hye-Jin Park', customerEmail: 'hye.p@inbox.test', partner: 'Brio Wellness Clinics', product: 'med-pay', amountCents: 28_400_00, fico: 752, lender: 'LeadBank', status: 'funded', date: '2026-05-09' },
-      { id: 'a_m14', customer: 'Dimitri Volkov', customerEmail: 'dimitri.v@inbox.test', partner: 'Helio Dental Group', product: 'med-pay', amountCents: 2_150_00, fico: 604, lender: 'FinWise', status: 'declined', date: '2026-05-08' },
-      { id: 'a_m15', customer: 'Eleanor Quinn', customerEmail: 'eleanor.q@inbox.test', partner: 'Brio Wellness Clinics', product: 'med-pay', amountCents: 8_900_00, fico: 712, lender: 'CapitalOne', status: 'in_review', date: '2026-05-06' },
+      {
+        id: 'a_m11',
+        customer: 'Naomi Esposito',
+        customerEmail: 'naomi.e@inbox.test',
+        partner: 'Helio Dental Group',
+        product: 'med-pay',
+        amountCents: 4_800_00,
+        fico: 731,
+        lender: 'CrossRiver',
+        status: 'approved',
+        date: '2026-05-12',
+      },
+      {
+        id: 'a_m12',
+        customer: 'Rafael Maldonado',
+        customerEmail: 'rafael.m@inbox.test',
+        partner: 'Meridian Vision Care',
+        product: 'med-pay',
+        amountCents: 12_600_00,
+        fico: 689,
+        lender: 'WebBank',
+        status: 'submitted',
+        date: '2026-05-11',
+      },
+      {
+        id: 'a_m13',
+        customer: 'Hye-Jin Park',
+        customerEmail: 'hye.p@inbox.test',
+        partner: 'Brio Wellness Clinics',
+        product: 'med-pay',
+        amountCents: 28_400_00,
+        fico: 752,
+        lender: 'LeadBank',
+        status: 'funded',
+        date: '2026-05-09',
+      },
+      {
+        id: 'a_m14',
+        customer: 'Dimitri Volkov',
+        customerEmail: 'dimitri.v@inbox.test',
+        partner: 'Helio Dental Group',
+        product: 'med-pay',
+        amountCents: 2_150_00,
+        fico: 604,
+        lender: 'FinWise',
+        status: 'declined',
+        date: '2026-05-08',
+      },
+      {
+        id: 'a_m15',
+        customer: 'Eleanor Quinn',
+        customerEmail: 'eleanor.q@inbox.test',
+        partner: 'Brio Wellness Clinics',
+        product: 'med-pay',
+        amountCents: 8_900_00,
+        fico: 712,
+        lender: 'CapitalOne',
+        status: 'in_review',
+        date: '2026-05-06',
+      },
     ];
   }
   if (brand === 'tradepay') {
     return [
-      { id: 'a_t11', customer: 'Hannah O’Brien', customerEmail: 'hannah.o@inbox.test', partner: 'Orion Roof & Solar', product: 'trade-pay', amountCents: 86_500_00, fico: 724, lender: 'LeadBank', status: 'funded', date: '2026-05-13' },
-      { id: 'a_t12', customer: 'Owen Castellanos', customerEmail: 'owen.c@inbox.test', partner: 'Riverside Renovation Co.', product: 'trade-pay', amountCents: 42_800_00, fico: 681, lender: 'CrossRiver', status: 'approved', date: '2026-05-12' },
-      { id: 'a_t13', customer: 'Mei-Lin Zhao', customerEmail: 'mei.z@inbox.test', partner: 'Summit HVAC Pros', product: 'trade-pay', amountCents: 14_200_00, fico: 645, lender: 'BlueVine', status: 'in_review', date: '2026-05-11' },
-      { id: 'a_t14', customer: 'Bradley Sutton', customerEmail: 'bradley.s@inbox.test', partner: 'Orion Roof & Solar', product: 'trade-pay', amountCents: 117_300_00, fico: 705, lender: 'WebBank', status: 'submitted', date: '2026-05-10' },
-      { id: 'a_t15', customer: 'Solana Martinez', customerEmail: 'solana.m@inbox.test', partner: 'Summit HVAC Pros', product: 'trade-pay', amountCents: 5_400_00, fico: 588, lender: 'FinWise', status: 'declined', date: '2026-05-08' },
+      {
+        id: 'a_t11',
+        customer: 'Hannah O’Brien',
+        customerEmail: 'hannah.o@inbox.test',
+        partner: 'Orion Roof & Solar',
+        product: 'trade-pay',
+        amountCents: 86_500_00,
+        fico: 724,
+        lender: 'LeadBank',
+        status: 'funded',
+        date: '2026-05-13',
+      },
+      {
+        id: 'a_t12',
+        customer: 'Owen Castellanos',
+        customerEmail: 'owen.c@inbox.test',
+        partner: 'Riverside Renovation Co.',
+        product: 'trade-pay',
+        amountCents: 42_800_00,
+        fico: 681,
+        lender: 'CrossRiver',
+        status: 'approved',
+        date: '2026-05-12',
+      },
+      {
+        id: 'a_t13',
+        customer: 'Mei-Lin Zhao',
+        customerEmail: 'mei.z@inbox.test',
+        partner: 'Summit HVAC Pros',
+        product: 'trade-pay',
+        amountCents: 14_200_00,
+        fico: 645,
+        lender: 'BlueVine',
+        status: 'in_review',
+        date: '2026-05-11',
+      },
+      {
+        id: 'a_t14',
+        customer: 'Bradley Sutton',
+        customerEmail: 'bradley.s@inbox.test',
+        partner: 'Orion Roof & Solar',
+        product: 'trade-pay',
+        amountCents: 117_300_00,
+        fico: 705,
+        lender: 'WebBank',
+        status: 'submitted',
+        date: '2026-05-10',
+      },
+      {
+        id: 'a_t15',
+        customer: 'Solana Martinez',
+        customerEmail: 'solana.m@inbox.test',
+        partner: 'Summit HVAC Pros',
+        product: 'trade-pay',
+        amountCents: 5_400_00,
+        fico: 588,
+        lender: 'FinWise',
+        status: 'declined',
+        date: '2026-05-08',
+      },
     ];
   }
   return [
-    { id: 'a_c11', customer: 'Theo Bergeron', customerEmail: 'theo.b@inbox.test', partner: 'Atlas Executive Coaching', product: 'coach-pay', amountCents: 6_800_00, fico: 671, lender: 'Affirm', status: 'approved', date: '2026-05-13' },
-    { id: 'a_c12', customer: 'Aaliyah Singh', customerEmail: 'aaliyah.s@inbox.test', partner: 'Kindred Career Lab', product: 'coach-pay', amountCents: 14_900_00, fico: 702, lender: 'CrossRiver', status: 'funded', date: '2026-05-11' },
-    { id: 'a_c13', customer: 'Mateo Fernandez', customerEmail: 'mateo.f@inbox.test', partner: 'Atlas Executive Coaching', product: 'coach-pay', amountCents: 3_200_00, fico: 622, lender: 'CapitalOne', status: 'in_review', date: '2026-05-09' },
-    { id: 'a_c14', customer: 'Yuki Tanaka', customerEmail: 'yuki.t@inbox.test', partner: 'Kindred Career Lab', product: 'coach-pay', amountCents: 9_400_00, fico: 648, lender: 'LendFi', status: 'submitted', date: '2026-05-08' },
-    { id: 'a_c15', customer: 'Connor Reilly', customerEmail: 'connor.r@inbox.test', partner: 'Atlas Executive Coaching', product: 'coach-pay', amountCents: 1_950_00, fico: 596, lender: 'Affirm', status: 'declined', date: '2026-05-06' },
+    {
+      id: 'a_c11',
+      customer: 'Theo Bergeron',
+      customerEmail: 'theo.b@inbox.test',
+      partner: 'Atlas Executive Coaching',
+      product: 'coach-pay',
+      amountCents: 6_800_00,
+      fico: 671,
+      lender: 'Affirm',
+      status: 'approved',
+      date: '2026-05-13',
+    },
+    {
+      id: 'a_c12',
+      customer: 'Aaliyah Singh',
+      customerEmail: 'aaliyah.s@inbox.test',
+      partner: 'Kindred Career Lab',
+      product: 'coach-pay',
+      amountCents: 14_900_00,
+      fico: 702,
+      lender: 'CrossRiver',
+      status: 'funded',
+      date: '2026-05-11',
+    },
+    {
+      id: 'a_c13',
+      customer: 'Mateo Fernandez',
+      customerEmail: 'mateo.f@inbox.test',
+      partner: 'Atlas Executive Coaching',
+      product: 'coach-pay',
+      amountCents: 3_200_00,
+      fico: 622,
+      lender: 'CapitalOne',
+      status: 'in_review',
+      date: '2026-05-09',
+    },
+    {
+      id: 'a_c14',
+      customer: 'Yuki Tanaka',
+      customerEmail: 'yuki.t@inbox.test',
+      partner: 'Kindred Career Lab',
+      product: 'coach-pay',
+      amountCents: 9_400_00,
+      fico: 648,
+      lender: 'LendFi',
+      status: 'submitted',
+      date: '2026-05-08',
+    },
+    {
+      id: 'a_c15',
+      customer: 'Connor Reilly',
+      customerEmail: 'connor.r@inbox.test',
+      partner: 'Atlas Executive Coaching',
+      product: 'coach-pay',
+      amountCents: 1_950_00,
+      fico: 596,
+      lender: 'Affirm',
+      status: 'declined',
+      date: '2026-05-06',
+    },
   ];
 };
 
@@ -544,10 +705,7 @@ export default function BrandHomePage() {
 
   return (
     <>
-      <PageHeader
-        breadcrumbs={[{ label: 'Overview' }]}
-        title="Dashboard"
-      />
+      <PageHeader breadcrumbs={[{ label: 'Overview' }]} title="Dashboard" />
       <PageBody>
         {/* ─── 6-KPI grid ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
@@ -598,11 +756,7 @@ export default function BrandHomePage() {
               description={<span className="text-[12px]">Application volume over time</span>}
             />
             <CardBody className="pt-3">
-              <BarChart
-                data={snapshot.monthlySubmissions}
-                yMax={subsYMax}
-                yStep={subsYMax / 2}
-              />
+              <BarChart data={snapshot.monthlySubmissions} yMax={subsYMax} yStep={subsYMax / 2} />
             </CardBody>
           </Card>
 
@@ -612,11 +766,7 @@ export default function BrandHomePage() {
               description={<span className="text-[12px]">Funded deals over time</span>}
             />
             <CardBody className="pt-3">
-              <BarChart
-                data={snapshot.monthlyFunded}
-                yMax={fundedYMax}
-                yStep={fundedYMax / 2}
-              />
+              <BarChart data={snapshot.monthlyFunded} yMax={fundedYMax} yStep={fundedYMax / 2} />
             </CardBody>
           </Card>
 
@@ -627,32 +777,22 @@ export default function BrandHomePage() {
             />
             <CardBody className="pt-3">
               <div className="flex flex-col items-center">
-                <DonutChart
-                  segments={donutSegments}
-                  total={creditTotal}
-                />
+                <DonutChart segments={donutSegments} total={creditTotal} />
                 <ul className="mt-4 w-full space-y-1.5">
                   {donutSegments.map((s, i) => (
-                    <li
-                      key={s.name}
-                      className="flex items-center justify-between text-[12px]"
-                    >
+                    <li key={s.name} className="flex items-center justify-between text-[12px]">
                       <span className="flex items-center gap-2 min-w-0">
                         <span
                           className="size-2 rounded-full shrink-0"
                           style={{ backgroundColor: s.color }}
                           aria-hidden
                         />
-                        <span className="text-fg font-medium truncate">
-                          {s.name}
-                        </span>
+                        <span className="text-fg font-medium truncate">{s.name}</span>
                         <span className="text-fg-muted shrink-0">
                           · {snapshot.creditMix[i]?.range ?? ''}
                         </span>
                       </span>
-                      <span className="text-fg font-semibold tabular-nums shrink-0">
-                        {s.count}
-                      </span>
+                      <span className="text-fg font-semibold tabular-nums shrink-0">{s.count}</span>
                     </li>
                   ))}
                 </ul>
@@ -668,36 +808,60 @@ export default function BrandHomePage() {
             action={
               <Link
                 href={`/v/${brandSlug}/applications`}
-                className="inline-flex items-center gap-1 text-[12px] font-semibold hover:underline"
+                aria-label={`View all ${productLabelForBrand(brand)} applications`}
+                className="inline-flex items-center gap-1 text-[12px] font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
                 style={{ color: spec.accentHex }}
               >
-                View all <ArrowRightIcon size={12} />
+                View all <ArrowRightIcon size={12} aria-hidden />
               </Link>
             }
           />
           <CardBody padded={false}>
             {recent.length === 0 ? (
-              <p className="px-5 py-10 text-center text-fg-muted text-[13px]">
+              <p className="px-5 py-10 text-center text-fg-muted text-[13px]" role="status">
                 No activity yet for {productLabelForBrand(brand)}.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-[12px]">
+              <div
+                className="overflow-x-auto"
+                role="region"
+                aria-label="Recent applications"
+                tabIndex={0}
+              >
+                <table className="w-full min-w-[640px] text-[12px]">
+                  <caption className="sr-only">
+                    {recent.length} most recent {productLabelForBrand(brand)} applications
+                  </caption>
                   <thead className="bg-bg-muted/40 text-fg-muted">
                     <tr className="text-left">
-                      <th className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase">
+                      <th
+                        scope="col"
+                        className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                      >
                         Client
                       </th>
-                      <th className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase">
+                      <th
+                        scope="col"
+                        className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                      >
                         Amount
                       </th>
-                      <th className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase">
+                      <th
+                        scope="col"
+                        className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                      >
                         Product
                       </th>
-                      <th className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase">
+                      <th
+                        scope="col"
+                        className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                      >
                         Status
                       </th>
-                      <th className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase">
+                      <th
+                        scope="col"
+                        className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                      >
                         Submitted
                       </th>
                     </tr>
@@ -706,22 +870,15 @@ export default function BrandHomePage() {
                     {recent.map((a) => {
                       const pill = applicationStatusToPill(a.status);
                       return (
-                        <tr
-                          key={a.id}
-                          className="hover:bg-bg-muted/40 transition-colors group"
-                        >
+                        <tr key={a.id} className="hover:bg-bg-muted/40 transition-colors group">
                           <td className="p-0">
                             <Link
                               href={`/v/${brandSlug}/applications/${a.id}`}
                               className="block px-5 py-3"
                               aria-label={`Open application ${a.customer}`}
                             >
-                              <span className="font-medium text-fg">
-                                {a.customer}
-                              </span>
-                              <span className="block text-[11px] text-fg-muted">
-                                {a.partner}
-                              </span>
+                              <span className="font-medium text-fg">{a.customer}</span>
+                              <span className="block text-[11px] text-fg-muted">{a.partner}</span>
                             </Link>
                           </td>
                           <td className="p-0">

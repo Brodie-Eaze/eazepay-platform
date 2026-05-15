@@ -11,6 +11,9 @@
   "scripts": {
     "build": "nx run-many -t build",
     "test": "nx run-many -t test",
+    "test:integration": "vitest run --config apps/api/vitest.integration.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium",
     "lint": "nx run-many -t lint",
     "lint:check": "eslint . --max-warnings=0 --cache",
     "lint:fix": "eslint . --fix",
@@ -26,6 +29,9 @@
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
+    "@playwright/test": "^1.48.0",
+    "@testcontainers/postgresql": "^10.0.0",
+    "@testcontainers/redis": "^10.0.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",

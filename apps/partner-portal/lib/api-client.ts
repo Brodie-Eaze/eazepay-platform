@@ -35,18 +35,51 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Read the CSRF cookie set by middleware. Returns null when absent
+ * (e.g. on the very first page load before middleware has set it, or
+ * in a non-browser execution context like Node-side data fetching).
+ *
+ * The cookie name is duplicated rather than imported from `lib/csrf.ts`
+ * because that module pulls in `node:crypto` for the mint/verify
+ * functions, and `node:crypto` is not available in the Edge runtime
+ * (where some Next.js fetch helpers execute). Keeping the cookie name
+ * inline keeps this helper Edge-compatible.
+ */
+function readCsrfCookieFromDocument(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)eazepay_csrf=([^;]+)/);
+  return match?.[1] ?? null;
+}
+
 /** Low-level fetch wrapper. Throws ApiError on non-2xx. */
-export async function apiRequest<T>(
-  path: string,
-  options?: RequestInit,
-): Promise<T> {
+export async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  // Echo the CSRF cookie into X-CSRF-Token on every non-GET request so
+  // the BFF guards pass without each call site remembering. The cookie
+  // is readable from JS by design (HttpOnly=false) — see lib/csrf.ts
+  // for the threat model and the wrapped routes.
+  const method = options?.method?.toUpperCase() ?? 'GET';
+  const isStateChanging = method !== 'GET' && method !== 'HEAD';
+  const mergedHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (isStateChanging) {
+    mergedHeaders['X-CSRF-Token'] = readCsrfCookieFromDocument() ?? '';
+  }
+  if (options?.headers) {
+    // RequestInit.headers can be Headers | string[][] | Record<string, string>.
+    // Normalise to a record via the Headers constructor so spread above
+    // always yields concrete string values.
+    const incoming = new Headers(options.headers);
+    incoming.forEach((value, key) => {
+      mergedHeaders[key] = value;
+    });
+  }
+
   const res = await fetch(`${BFF_ROOT}${path}`, {
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
     ...options,
+    headers: mergedHeaders,
   });
 
   if (!res.ok) {
@@ -69,12 +102,9 @@ export async function apiRequest<T>(
  * imported with `import { useApi } from '@/lib/api-client'`.
  */
 export function useApi() {
-  const call = useCallback(
-    async <T>(path: string, options?: RequestInit): Promise<T> => {
-      return apiRequest<T>(path, options);
-    },
-    [],
-  );
+  const call = useCallback(async <T>(path: string, options?: RequestInit): Promise<T> => {
+    return apiRequest<T>(path, options);
+  }, []);
   return { call };
 }
 

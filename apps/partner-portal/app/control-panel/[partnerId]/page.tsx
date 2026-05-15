@@ -21,10 +21,12 @@ import {
   PhoneIcon,
   SendIcon,
   ShieldIcon,
+  Skeleton,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { Modal, ErrorBanner } from '../../../components/a11y';
 
 /* Locally-typed Button wrapper to sidestep the codebase-wide
  * upstream-Button JSX-children inference issue. */
@@ -402,7 +404,7 @@ export default function PartnerDetailPage() {
         }
         description={`${partner.email} · ${partner.phone || 'no phone on file'} · partner id ${base.id}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {partner.status !== 'Suspended' ? (
               <Button
                 size="sm"
@@ -412,7 +414,7 @@ export default function PartnerDetailPage() {
                   flash('Partner suspended');
                 }}
               >
-                <AlertIcon size={12} /> Suspend
+                <AlertIcon size={12} aria-hidden /> Suspend
               </Button>
             ) : (
               <Button
@@ -423,7 +425,7 @@ export default function PartnerDetailPage() {
                   flash('Partner reactivated');
                 }}
               >
-                <CheckIcon size={12} /> Reactivate
+                <CheckIcon size={12} aria-hidden /> Reactivate
               </Button>
             )}
             <Button
@@ -431,14 +433,14 @@ export default function PartnerDetailPage() {
               variant="secondary"
               onClick={() => flash('Impersonation token issued (audited)')}
             >
-              <ShieldIcon size={12} /> View as partner
+              <ShieldIcon size={12} aria-hidden /> View as partner
             </Button>
             <Button
               size="sm"
               variant="secondary"
               onClick={() => flash(`Email drafted to ${partner.email}`)}
             >
-              <SendIcon size={12} /> Email
+              <SendIcon size={12} aria-hidden /> Email
             </Button>
             {partner.phone && (
               <Button
@@ -446,15 +448,16 @@ export default function PartnerDetailPage() {
                 variant="secondary"
                 onClick={() => flash(`Calling ${partner.phone}`)}
               >
-                <PhoneIcon size={12} /> Phone
+                <PhoneIcon size={12} aria-hidden /> Phone
               </Button>
             )}
           </div>
         }
       />
 
-      <div className="px-7">
+      <div className="px-4 sm:px-7">
         <Tabs
+          label="Partner sections"
           items={TAB_ITEMS.map((t) => ({ key: t.key, label: t.label }))}
           active={tab}
           onChange={(k: string) => setTab(k as TabKey)}
@@ -462,24 +465,26 @@ export default function PartnerDetailPage() {
       </div>
 
       <PageBody>
-        {tab === 'overview' && (
-          <OverviewTab partner={partner} setPartner={setPartner} flash={flash} />
-        )}
-        {tab === 'users' && <UsersTab partnerId={base.id} email={base.email} flash={flash} />}
-        {tab === 'applications' && (
-          <ApplicationsTab partnerId={base.id} partnerName={base.legalName} />
-        )}
-        {tab === 'payouts' && <PayoutsTab partnerId={base.id} />}
-        {tab === 'lender' && <LenderAccessTab partnerId={base.id} flash={flash} />}
-        {tab === 'activity' && <ActivityTab partnerId={base.id} />}
-        {tab === 'settings' && (
-          <SettingsTab
-            partner={partner}
-            setPartner={setPartner}
-            partnerId={base.id}
-            flash={flash}
-          />
-        )}
+        <div role="tabpanel" id={`tabpanel-${tab}`} aria-labelledby={`tab-${tab}`}>
+          {tab === 'overview' && (
+            <OverviewTab partner={partner} setPartner={setPartner} flash={flash} />
+          )}
+          {tab === 'users' && <UsersTab partnerId={base.id} email={base.email} flash={flash} />}
+          {tab === 'applications' && (
+            <ApplicationsTab partnerId={base.id} partnerName={base.legalName} />
+          )}
+          {tab === 'payouts' && <PayoutsTab partnerId={base.id} />}
+          {tab === 'lender' && <LenderAccessTab partnerId={base.id} flash={flash} />}
+          {tab === 'activity' && <ActivityTab partnerId={base.id} />}
+          {tab === 'settings' && (
+            <SettingsTab
+              partner={partner}
+              setPartner={setPartner}
+              partnerId={base.id}
+              flash={flash}
+            />
+          )}
+        </div>
       </PageBody>
 
       {toast && <Toast message={toast} />}
@@ -741,56 +746,61 @@ function UsersTab({
           }
         />
         <CardBody className="p-0">
-          <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
-            <span className="col-span-4">Name</span>
-            <span className="col-span-4">Email</span>
-            <span className="col-span-2">Role</span>
-            <span className="col-span-1">Last login</span>
-            <span className="col-span-1 text-right">Actions</span>
+          <div className="overflow-x-auto" role="region" aria-label="Team members" tabIndex={0}>
+            <div className="min-w-[640px]">
+              <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+                <span className="col-span-4">Name</span>
+                <span className="col-span-4">Email</span>
+                <span className="col-span-2">Role</span>
+                <span className="col-span-1">Last login</span>
+                <span className="col-span-1 text-right">Actions</span>
+              </div>
+              <ul className="divide-y divide-border" aria-label={`${users.length} team members`}>
+                {users.map((u) => (
+                  <li key={u.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
+                    <div className="col-span-4 font-medium text-fg">{u.name}</div>
+                    <div className="col-span-4 text-fg-secondary truncate">{u.email}</div>
+                    <div className="col-span-2">
+                      {u.role === 'Owner' ? (
+                        <StatusPill tone="accent">Owner</StatusPill>
+                      ) : (
+                        <select
+                          value={u.role}
+                          onChange={(e) => changeRole(u.id, e.target.value as UserRow['role'])}
+                          className="h-7 rounded-md border border-border bg-bg-elevated px-2 text-[11px] outline-none"
+                        >
+                          <option value="Admin">Admin</option>
+                          <option value="Operator">Operator</option>
+                          <option value="Viewer">Viewer</option>
+                        </select>
+                      )}
+                    </div>
+                    <div className="col-span-1 text-[11px] text-fg-muted">
+                      {formatRelative(u.lastLoginAt)}
+                    </div>
+                    <div className="col-span-1 text-right">
+                      {u.role !== 'Owner' && (
+                        <button
+                          type="button"
+                          onClick={() => setRemoveId(u.id)}
+                          aria-label={`Remove ${u.name}`}
+                          className="text-[11px] text-danger hover:underline min-h-[36px] inline-flex items-center px-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <ul className="divide-y divide-border">
-            {users.map((u) => (
-              <li key={u.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
-                <div className="col-span-4 font-medium text-fg">{u.name}</div>
-                <div className="col-span-4 text-fg-secondary truncate">{u.email}</div>
-                <div className="col-span-2">
-                  {u.role === 'Owner' ? (
-                    <StatusPill tone="accent">Owner</StatusPill>
-                  ) : (
-                    <select
-                      value={u.role}
-                      onChange={(e) => changeRole(u.id, e.target.value as UserRow['role'])}
-                      className="h-7 rounded-md border border-border bg-bg-elevated px-2 text-[11px] outline-none"
-                    >
-                      <option value="Admin">Admin</option>
-                      <option value="Operator">Operator</option>
-                      <option value="Viewer">Viewer</option>
-                    </select>
-                  )}
-                </div>
-                <div className="col-span-1 text-[11px] text-fg-muted">
-                  {formatRelative(u.lastLoginAt)}
-                </div>
-                <div className="col-span-1 text-right">
-                  {u.role !== 'Owner' && (
-                    <button
-                      type="button"
-                      onClick={() => setRemoveId(u.id)}
-                      className="text-[11px] text-danger hover:underline"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
         </CardBody>
       </Card>
 
       {showInvite && <InviteUserModal onClose={() => setShowInvite(false)} onAdd={invite} />}
       {removeId && (
-        <ModalShell title="Remove user?" onClose={() => setRemoveId(null)}>
+        <Modal open onClose={() => setRemoveId(null)} size="sm" title="Remove user?">
           <p className="text-[13px] text-fg-secondary">
             This will revoke {users.find((u) => u.id === removeId)?.name}&apos;s access to this
             partner immediately. They will be signed out of any active sessions.
@@ -803,7 +813,7 @@ function UsersTab({
               Remove user
             </Button>
           </div>
-        </ModalShell>
+        </Modal>
       )}
     </>
   );
@@ -819,32 +829,54 @@ function InviteUserModal({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRow['role']>('Operator');
+  const [submitting, setSubmitting] = useState(false);
   return (
-    <ModalShell title="Invite team member" onClose={onClose}>
+    <Modal open onClose={onClose} size="sm" title="Invite team member">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onAdd({ name, email, role });
+          setSubmitting(true);
+          setTimeout(() => {
+            onAdd({ name, email, role });
+            setSubmitting(false);
+          }, 250);
         }}
         className="space-y-3"
+        aria-busy={submitting}
       >
         <label className="block text-[12px] font-medium text-fg-secondary">
-          Full name
+          <span>
+            Full name
+            <span className="sr-only"> (required)</span>
+            <span className="text-danger ml-0.5" aria-hidden>
+              *
+            </span>
+          </span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+            aria-required="true"
+            aria-label="Full name"
+            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
           />
         </label>
         <label className="block text-[12px] font-medium text-fg-secondary">
-          Email
+          <span>
+            Email
+            <span className="sr-only"> (required)</span>
+            <span className="text-danger ml-0.5" aria-hidden>
+              *
+            </span>
+          </span>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+            aria-required="true"
+            aria-label="Email"
+            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
           />
         </label>
         <label className="block text-[12px] font-medium text-fg-secondary">
@@ -852,7 +884,8 @@ function InviteUserModal({
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as UserRow['role'])}
-            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+            aria-label="Role"
+            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
           >
             <option value="Admin">Admin — manage users + settings</option>
             <option value="Operator">Operator — submit applications</option>
@@ -863,12 +896,27 @@ function InviteUserModal({
           <Button size="sm" variant="secondary" type="button" onClick={onClose}>
             Cancel
           </Button>
-          <Button size="sm" variant="primary" type="submit" disabled={!name || !email}>
-            Send invite
+          <Button
+            size="sm"
+            variant="primary"
+            type="submit"
+            disabled={!name || !email || submitting}
+          >
+            {submitting ? (
+              <>
+                <span
+                  className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-r-transparent"
+                  aria-hidden
+                />
+                Sending…
+              </>
+            ) : (
+              'Send invite'
+            )}
           </Button>
         </div>
       </form>
-    </ModalShell>
+    </Modal>
   );
 }
 
@@ -893,42 +941,53 @@ function ApplicationsTab({ partnerId, partnerName }: { partnerId: string; partne
         }
       />
       <CardBody className="p-0">
-        <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
-          <span className="col-span-3">ID</span>
-          <span className="col-span-3">Customer</span>
-          <span className="col-span-2">Product</span>
-          <span className="col-span-2 text-right">Amount</span>
-          <span className="col-span-1">Status</span>
-          <span className="col-span-1 text-right">Date</span>
+        <div
+          className="overflow-x-auto"
+          role="region"
+          aria-label="Recent applications"
+          tabIndex={0}
+        >
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+              <span className="col-span-3">ID</span>
+              <span className="col-span-3">Customer</span>
+              <span className="col-span-2">Product</span>
+              <span className="col-span-2 text-right">Amount</span>
+              <span className="col-span-1">Status</span>
+              <span className="col-span-1 text-right">Date</span>
+            </div>
+            <ul className="divide-y divide-border" aria-label={`${apps.length} applications`}>
+              {apps.map((a) => (
+                <li key={a.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
+                  <div className="col-span-3 font-mono text-fg-muted">{a.id}</div>
+                  <div className="col-span-3 font-medium text-fg">{a.customer}</div>
+                  <div className="col-span-2 text-fg-secondary font-mono text-[11px]">
+                    {a.product}
+                  </div>
+                  <div className="col-span-2 text-right font-semibold tabular-nums">
+                    <Money cents={a.amount} noFractions />
+                  </div>
+                  <div className="col-span-1">
+                    <StatusPill
+                      tone={
+                        a.status === 'funded'
+                          ? 'success'
+                          : a.status === 'approved'
+                            ? 'info'
+                            : a.status === 'declined'
+                              ? 'danger'
+                              : 'neutral'
+                      }
+                    >
+                      {a.status}
+                    </StatusPill>
+                  </div>
+                  <div className="col-span-1 text-right text-[11px] text-fg-muted">{a.date}</div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <ul className="divide-y divide-border">
-          {apps.map((a) => (
-            <li key={a.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
-              <div className="col-span-3 font-mono text-fg-muted">{a.id}</div>
-              <div className="col-span-3 font-medium text-fg">{a.customer}</div>
-              <div className="col-span-2 text-fg-secondary font-mono text-[11px]">{a.product}</div>
-              <div className="col-span-2 text-right font-semibold tabular-nums">
-                <Money cents={a.amount} noFractions />
-              </div>
-              <div className="col-span-1">
-                <StatusPill
-                  tone={
-                    a.status === 'funded'
-                      ? 'success'
-                      : a.status === 'approved'
-                        ? 'info'
-                        : a.status === 'declined'
-                          ? 'danger'
-                          : 'neutral'
-                  }
-                >
-                  {a.status}
-                </StatusPill>
-              </div>
-              <div className="col-span-1 text-right text-[11px] text-fg-muted">{a.date}</div>
-            </li>
-          ))}
-        </ul>
       </CardBody>
     </Card>
   );
@@ -955,40 +1014,48 @@ function PayoutsTab({ partnerId }: { partnerId: string }) {
         }
       />
       <CardBody className="p-0">
-        <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
-          <span className="col-span-3">Payout ID</span>
-          <span className="col-span-2">Date</span>
-          <span className="col-span-2 text-right">Gross</span>
-          <span className="col-span-2 text-right">Fee</span>
-          <span className="col-span-2 text-right">Net</span>
-          <span className="col-span-1">Status</span>
+        <div className="overflow-x-auto" role="region" aria-label="Recent payouts" tabIndex={0}>
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+              <span className="col-span-3">Payout ID</span>
+              <span className="col-span-2">Date</span>
+              <span className="col-span-2 text-right">Gross</span>
+              <span className="col-span-2 text-right">Fee</span>
+              <span className="col-span-2 text-right">Net</span>
+              <span className="col-span-1">Status</span>
+            </div>
+            <ul className="divide-y divide-border" aria-label={`${payouts.length} payout cycles`}>
+              {payouts.map((p) => (
+                <li key={p.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
+                  <div className="col-span-3 font-mono text-fg-muted">{p.id}</div>
+                  <div className="col-span-2 text-fg-secondary">{p.date}</div>
+                  <div className="col-span-2 text-right tabular-nums">
+                    <Money cents={p.grossCents} />
+                  </div>
+                  <div className="col-span-2 text-right tabular-nums text-fg-muted">
+                    <Money cents={p.feeCents} />
+                  </div>
+                  <div className="col-span-2 text-right font-semibold tabular-nums">
+                    <Money cents={p.netCents} />
+                  </div>
+                  <div className="col-span-1">
+                    <StatusPill
+                      tone={
+                        p.status === 'paid'
+                          ? 'success'
+                          : p.status === 'settled'
+                            ? 'info'
+                            : 'warning'
+                      }
+                    >
+                      {p.status}
+                    </StatusPill>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <ul className="divide-y divide-border">
-          {payouts.map((p) => (
-            <li key={p.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
-              <div className="col-span-3 font-mono text-fg-muted">{p.id}</div>
-              <div className="col-span-2 text-fg-secondary">{p.date}</div>
-              <div className="col-span-2 text-right tabular-nums">
-                <Money cents={p.grossCents} />
-              </div>
-              <div className="col-span-2 text-right tabular-nums text-fg-muted">
-                <Money cents={p.feeCents} />
-              </div>
-              <div className="col-span-2 text-right font-semibold tabular-nums">
-                <Money cents={p.netCents} />
-              </div>
-              <div className="col-span-1">
-                <StatusPill
-                  tone={
-                    p.status === 'paid' ? 'success' : p.status === 'settled' ? 'info' : 'warning'
-                  }
-                >
-                  {p.status}
-                </StatusPill>
-              </div>
-            </li>
-          ))}
-        </ul>
       </CardBody>
     </Card>
   );
@@ -1046,54 +1113,65 @@ function LenderAccessTab({ partnerId, flash }: { partnerId: string; flash: (m: s
           }
         />
         <CardBody className="p-0">
-          <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
-            <span className="col-span-3">Lender</span>
-            <span className="col-span-3">Marketplace</span>
-            <span className="col-span-2">Tiers</span>
-            <span className="col-span-2">Source</span>
-            <span className="col-span-2 text-right">Effective</span>
-          </div>
-          <ul className="divide-y divide-border">
-            {view.map((v) => (
-              <li
-                key={v.lender.id}
-                className="grid grid-cols-12 items-center px-5 py-2.5 text-[12px]"
-              >
-                <div className="col-span-3 font-medium text-fg truncate">
-                  {v.lender.displayName}
-                </div>
-                <div className="col-span-3 text-fg-secondary truncate">
-                  {v.marketplace.displayName}
-                </div>
-                <div className="col-span-2 text-[11px] text-fg-muted">
-                  {v.lender.servesTiers.length} tiers
-                </div>
-                <div className="col-span-2 text-[11px]">
-                  {v.effective.via === 'override' ? (
-                    <span className="text-warning">Override</span>
-                  ) : v.effective.via === 'marketplace-paused' ? (
-                    <span className="text-fg-muted">Marketplace paused</span>
-                  ) : (
-                    <span className="text-fg-muted">Global</span>
-                  )}
-                </div>
-                <div className="col-span-2 text-right">
-                  <button
-                    type="button"
-                    onClick={() => flash('Override editor opens in /lender-marketplace/access')}
-                    className="inline-flex items-center gap-1.5 text-[11px]"
+          <div
+            className="overflow-x-auto"
+            role="region"
+            aria-label="Lender access matrix"
+            tabIndex={0}
+          >
+            <div className="min-w-[640px]">
+              <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+                <span className="col-span-3">Lender</span>
+                <span className="col-span-3">Marketplace</span>
+                <span className="col-span-2">Tiers</span>
+                <span className="col-span-2">Source</span>
+                <span className="col-span-2 text-right">Effective</span>
+              </div>
+              <ul className="divide-y divide-border" aria-label={`${view.length} lenders`}>
+                {view.map((v) => (
+                  <li
+                    key={v.lender.id}
+                    className="grid grid-cols-12 items-center px-5 py-2.5 text-[12px]"
                   >
-                    <span
-                      className={`size-4 rounded-full inline-flex items-center justify-center ${v.effective.enabled ? 'bg-success text-white' : 'bg-bg-muted text-fg-muted'}`}
-                    >
-                      {v.effective.enabled ? <CheckIcon size={9} /> : <XIcon size={9} />}
-                    </span>
-                    {v.effective.enabled ? 'Enabled' : 'Disabled'}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    <div className="col-span-3 font-medium text-fg truncate">
+                      {v.lender.displayName}
+                    </div>
+                    <div className="col-span-3 text-fg-secondary truncate">
+                      {v.marketplace.displayName}
+                    </div>
+                    <div className="col-span-2 text-[11px] text-fg-muted">
+                      {v.lender.servesTiers.length} tiers
+                    </div>
+                    <div className="col-span-2 text-[11px]">
+                      {v.effective.via === 'override' ? (
+                        <span className="text-warning">Override</span>
+                      ) : v.effective.via === 'marketplace-paused' ? (
+                        <span className="text-fg-muted">Marketplace paused</span>
+                      ) : (
+                        <span className="text-fg-muted">Global</span>
+                      )}
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => flash('Override editor opens in /lender-marketplace/access')}
+                        aria-label={`${v.effective.enabled ? 'Enabled' : 'Disabled'} — open override editor for ${v.lender.displayName}`}
+                        className="inline-flex items-center gap-1.5 text-[11px] min-h-[36px] px-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+                      >
+                        <span
+                          className={`size-4 rounded-full inline-flex items-center justify-center ${v.effective.enabled ? 'bg-success text-white' : 'bg-bg-muted text-fg-muted'}`}
+                          aria-hidden
+                        >
+                          {v.effective.enabled ? <CheckIcon size={9} /> : <XIcon size={9} />}
+                        </span>
+                        {v.effective.enabled ? 'Enabled' : 'Disabled'}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </CardBody>
       </Card>
     </div>
@@ -1176,10 +1254,15 @@ function SettingsTab({
 }) {
   const [draft, setDraft] = useState(partner);
   const [showDelete, setShowDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   function save() {
-    setPartner(draft);
-    flash('Settings saved');
+    setSaving(true);
+    setTimeout(() => {
+      setPartner(draft);
+      setSaving(false);
+      flash('Settings saved');
+    }, 300);
   }
 
   return (
@@ -1192,16 +1275,25 @@ function SettingsTab({
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">
+              <p
+                className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted"
+                id="partner-status-label"
+              >
                 Status
               </p>
-              <div className="mt-1.5 flex gap-1.5">
+              <div
+                role="radiogroup"
+                aria-labelledby="partner-status-label"
+                className="mt-1.5 flex gap-1.5 flex-wrap"
+              >
                 {(['Approved', 'Pending', 'Suspended'] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
+                    role="radio"
+                    aria-checked={draft.status === s}
                     onClick={() => setDraft({ ...draft, status: s })}
-                    className={`px-3 h-8 rounded-md text-[12px] font-medium border ${draft.status === s ? 'bg-fg text-white border-fg' : 'bg-bg-elevated text-fg-secondary border-border'}`}
+                    className={`px-3 min-h-[36px] rounded-md text-[12px] font-medium border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ${draft.status === s ? 'bg-fg text-white border-fg' : 'bg-bg-elevated text-fg-secondary border-border'}`}
                   >
                     {s}
                   </button>
@@ -1265,11 +1357,26 @@ function SettingsTab({
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-border flex justify-end gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setDraft(partner)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setDraft(partner)}
+              disabled={saving}
+            >
               Reset
             </Button>
-            <Button size="sm" variant="primary" onClick={save}>
-              Save settings
+            <Button size="sm" variant="primary" onClick={save} disabled={saving} aria-busy={saving}>
+              {saving ? (
+                <>
+                  <span
+                    className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-r-transparent"
+                    aria-hidden
+                  />
+                  Saving…
+                </>
+              ) : (
+                'Save settings'
+              )}
             </Button>
           </div>
         </CardBody>
@@ -1297,7 +1404,7 @@ function SettingsTab({
       </Card>
 
       {showDelete && (
-        <ModalShell title="Delete partner?" onClose={() => setShowDelete(false)}>
+        <Modal open onClose={() => setShowDelete(false)} size="sm" title="Delete partner?">
           <p className="text-[13px] text-fg-secondary">
             Type <span className="font-mono font-bold text-danger">{partnerId}</span> to confirm
             deletion. This action is logged to the master audit trail and cannot be undone from the
@@ -1311,7 +1418,7 @@ function SettingsTab({
               flash('Delete request queued — pending dual-control approval');
             }}
           />
-        </ModalShell>
+        </Modal>
       )}
     </div>
   );
@@ -1396,40 +1503,15 @@ function formatRelative(iso: string): string {
   return new Date(iso).toISOString().slice(0, 10);
 }
 
-function ModalShell({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-label="Close modal"
-      />
-      <div className="relative w-full max-w-md rounded-xl border border-border bg-bg-elevated shadow-xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
-          <h2 className="text-[15px] font-semibold text-fg">{title}</h2>
-          <button onClick={onClose} className="text-fg-muted hover:text-fg" aria-label="Close">
-            <XIcon size={16} />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 function Toast({ message }: { message: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2">
-      <CheckIcon size={14} />
+    <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2"
+    >
+      <CheckIcon size={14} aria-hidden />
       {message}
     </div>
   );

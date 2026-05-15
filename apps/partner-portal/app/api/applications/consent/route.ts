@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
 
 /**
  * POST /api/applications/consent — consumer soft-pull consent receipt.
@@ -56,29 +57,51 @@ interface ConsentBody {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC — Per-IP edge rate limit. The consent map is an in-memory
+  // store that grows by one entry per request; without a cap an
+  // attacker can OOM the BFF replica by posting synthetic receipts.
+  // 20 req/min/IP per the brief — see lib/edge-rate-limit.ts for the
+  // sliding-window mechanics and the multi-replica caveat.
+  const xff = req.headers.get('x-forwarded-for') ?? '';
+  const clientIp = xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  const rl = enforceEdgeRateLimit(clientIp);
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({
+        type: 'about:blank',
+        title: 'Too Many Requests',
+        status: 429,
+        code: 'rate_limited',
+        detail: 'Too many consent receipts from this network. Retry shortly.',
+      }),
+      {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': Math.ceil(rl.retryAfterMs / 1000).toString(),
+        },
+      },
+    );
+  }
+
   let body: ConsentBody;
   try {
     body = (await req.json()) as ConsentBody;
   } catch {
-    return NextResponse.json(
-      { ok: false, error: 'invalid_json' },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 });
   }
 
   if (!body.applicationId || !body.sessionId || !body.disclosureVersion) {
-    return NextResponse.json(
-      { ok: false, error: 'missing_required_fields' },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, error: 'missing_required_fields' }, { status: 400 });
   }
 
   // Forwarded-for is set by Vercel / Cloudflare / NLB. Trust the
   // leftmost address (originating client) when present, otherwise fall
   // back to the direct remote address Next exposes. Never trust a
   // header the consumer can mint themselves without a hop layer.
-  const xff = req.headers.get('x-forwarded-for') ?? '';
-  const ip = xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  // Re-use the `clientIp` value computed above for the rate limiter
+  // so the receipt records the same IP that bucketed the call.
+  const ip = clientIp;
   const userAgent = req.headers.get('user-agent') ?? 'unknown';
 
   const receipt = {
@@ -115,13 +138,8 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const applicationId = req.nextUrl.searchParams.get('applicationId');
   if (!applicationId) {
-    return NextResponse.json(
-      { ok: false, error: 'applicationId_required' },
-      { status: 400 },
-    );
+    return NextResponse.json({ ok: false, error: 'applicationId_required' }, { status: 400 });
   }
-  const matches = Array.from(RECEIPTS.values()).filter(
-    (r) => r.applicationId === applicationId,
-  );
+  const matches = Array.from(RECEIPTS.values()).filter((r) => r.applicationId === applicationId);
   return NextResponse.json({ ok: true, receipts: matches });
 }

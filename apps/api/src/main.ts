@@ -14,7 +14,11 @@ import { startTracing, stopTracing } from './observability/tracing.js';
 
 // Tracing must start before NestFactory so auto-instrumentation patches modules at import time.
 const env = loadEnv();
-startTracing(env.OTEL_SERVICE_NAME, env.OTEL_EXPORTER_OTLP_ENDPOINT);
+startTracing({
+  serviceName: env.OTEL_SERVICE_NAME,
+  otlpEndpoint: env.OTEL_EXPORTER_OTLP_ENDPOINT,
+  nodeEnv: env.NODE_ENV,
+});
 
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 const { NestFactory } = await import('@nestjs/core');
@@ -72,25 +76,28 @@ const bootstrap = async (): Promise<void> => {
   // stable so behaviour is unaffected. Resolves cleanly once Nest
   // bumps its platform-fastify peer to the same fastify minor.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await app.getHttpAdapter().getInstance().register(helmet as never, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        // swagger-ui injects inline styles; tolerated because Swagger is
-        // dev-only here. Tighten if we ever mount Swagger in production.
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'"],
-        frameAncestors: ["'none'"],
+  await app
+    .getHttpAdapter()
+    .getInstance()
+    .register(helmet as never, {
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          // swagger-ui injects inline styles; tolerated because Swagger is
+          // dev-only here. Tighten if we ever mount Swagger in production.
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+        },
       },
-    },
-    hsts: {
-      maxAge: 63072000, // 2 years (HSTS preload list requirement)
-      includeSubDomains: true,
-      preload: true,
-    },
-  });
+      hsts: {
+        maxAge: 63072000, // 2 years (HSTS preload list requirement)
+        includeSubDomains: true,
+        preload: true,
+      },
+    });
 
   app.setGlobalPrefix('v1');
   app.useGlobalPipes(
@@ -174,18 +181,14 @@ const bootstrap = async (): Promise<void> => {
             const b = Buffer.from(expected);
             // Length mismatch → fail closed. Don't do `a===b`.
             const { timingSafeEqual } = await import('node:crypto');
-            const ok =
-              a.length === b.length && timingSafeEqual(a, b);
+            const ok = a.length === b.length && timingSafeEqual(a, b);
             if (!ok) {
-              void reply
-                .code(401)
-                .header('WWW-Authenticate', 'Basic realm="EazePay docs"')
-                .send({
-                  type: 'about:blank',
-                  title: 'Unauthorized',
-                  status: 401,
-                  code: 'docs_auth_required',
-                });
+              void reply.code(401).header('WWW-Authenticate', 'Basic realm="EazePay docs"').send({
+                type: 'about:blank',
+                title: 'Unauthorized',
+                status: 401,
+                code: 'docs_auth_required',
+              });
             }
           });
       }

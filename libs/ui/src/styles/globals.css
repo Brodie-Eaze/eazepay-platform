@@ -78,7 +78,12 @@
        --muted-foreground  HSL 228 12% 50%  → rgb(112 119 142) */
   --fg:           18 24 47;
   --fg-secondary: 50 60 100;
-  --fg-muted:     112 119 142;
+  /* `fg-muted` is used heavily for body copy + table sub-labels. The
+     prior value (rgb(112,119,142)) sat at ~4.0:1 against the light
+     `--bg`, which fails WCAG AA for body text (4.5:1). Darkening to
+     rgb(90,96,116) lifts contrast to ~5.3:1 while preserving the
+     visual hierarchy vs. `--fg` and `--fg-secondary`. */
+  --fg-muted:     90 96 116;
   --fg-on-accent: 255 255 255;
   --fg-inverse:   244 245 248;
   --fg-link:      18 24 47;     /* navy link on light surface */
@@ -127,7 +132,11 @@
   --sidebar-fg:         184 188 198;
   --sidebar-accent-bg:  31 41 65;
   --sidebar-accent-fg:  250 250 250;
-  --sidebar-section-fg: 130 137 156;  /* slightly muted vs fg for labels */
+  /* Section labels were rgb(130 137 156) on the dark navy sidebar
+     which fell to ~4.3:1 contrast — short of WCAG AA's 4.5:1 body
+     threshold. rgb(155 162 180) sits at ~6.0:1 and keeps the labels
+     visually quieter than the active row text. */
+  --sidebar-section-fg: 155 162 180;
   --sidebar-border-rgb: 34 41 63;
 
   /* charts — sequential 8-step navy + grey scale. Visual depth alone
@@ -200,7 +209,9 @@
 
   --fg:           235 236 239;   /* 228 10% 93% */
   --fg-secondary: 168 178 195;
-  --fg-muted:     112 118 143;
+  /* See light-mode comment — same WCAG AA contrast bump in dark
+     mode. rgb(155,162,180) gives ~5.8:1 against the dark `--bg`. */
+  --fg-muted:     155 162 180;
   --fg-on-accent: 18 24 48;
   --fg-inverse:   18 24 48;
   --fg-link:      114 133 240;
@@ -329,6 +340,53 @@ textarea {
   outline: 2px solid rgb(var(--border-focus));
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Skip-to-main link. Visually hidden until keyboard focus brings it
+   forward — the first tab stop on every authed page (see
+   `AppShell`). Lets a screen-reader / keyboard user jump past the
+   sidebar nav into the page body in one keystroke. */
+.skip-to-main {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  background: rgb(var(--accent));
+  color: rgb(var(--accent-fg));
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.20);
+  transform: translateY(-200%);
+  transition: transform 120ms ease-out;
+}
+.skip-to-main:focus,
+.skip-to-main:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid rgb(var(--border-focus));
+  outline-offset: 2px;
+}
+
+/* Page heading wrapper — programmatically focused on route change so
+   screen-reader announcements land on "Dashboard" / "Control Panel"
+   instead of the previous link. `tabindex="-1"` keeps it out of the
+   tab order; suppress the default focus ring since the heading is
+   purely a destination, not an interactive control. */
+[data-page-heading]:focus,
+[data-page-heading]:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .bg-grid {
