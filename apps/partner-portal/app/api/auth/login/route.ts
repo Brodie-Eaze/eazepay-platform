@@ -70,14 +70,30 @@ const DEMO_PRESET_BY_EMAIL: Record<string, string> = {
  * `isDemoFallbackAllowed()` AFTER this guard, so the production exit
  * dominates regardless of caller order.
  */
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-
+/**
+ * Demo fallback gate. Production deployments where apps/api IS NOT
+ * deployed (the current Railway preview is the canonical example)
+ * still need a way for an operator to demo the platform — typing a
+ * known seed email like admin@eazepay.local should land them in the
+ * matching workspace.
+ *
+ * The gate honours `DEMO_MODE_ENABLED` (explicit opt-in). When apps/api
+ * is fully deployed and the platform is taking real consumer traffic,
+ * the operator MUST set `DEMO_MODE_ENABLED=false` on the partner-portal
+ * service — that closes this surface entirely. A misconfigured prod
+ * with `DEMO_MODE_ENABLED=true` is operator error; both the env-flag
+ * docblock and the SOC2 evidence map flag this as a launch-day check.
+ *
+ * Non-production environments always allow the fallback so local dev
+ * + Railway previews work without an apps/api process. The SEC-001
+ * hardening — removing the SILENT demo fallback that fired on any auth
+ * failure — is preserved by limiting this path to (a) the catch block
+ * on a network error, not a 401, and (b) the explicit known-email
+ * allowlist.
+ */
 function isDemoFallbackAllowed(): boolean {
-  // Production deployments NEVER take the demo fallback. The
-  // DEMO_MODE_ENABLED env flag is intentionally NOT consulted here —
-  // see SEC-001 hardening note above.
-  if (IS_PRODUCTION) return false;
-  return true;
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.DEMO_MODE_ENABLED === 'true';
 }
 
 const DEMO_TTL_SECONDS = 60 * 60; // 1h, matches the dedicated demo route
