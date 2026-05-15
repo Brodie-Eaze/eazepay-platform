@@ -30,6 +30,37 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3300';
 const ACCESS_TTL_SECONDS = 60 * 60; // 1h
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 30; // 30d
 
+/**
+ * Demo-mode email→preset map. When `DEMO_MODE_ENABLED=true` (e.g. on
+ * the Railway preview where `apps/api` is not yet deployed) and the
+ * backend is unreachable, the login proxy falls back to minting the
+ * matching demo preset cookie so the deployed surface is browsable
+ * without a running API. Real production deployments leave
+ * `DEMO_MODE_ENABLED=false` so this path is never reachable and the
+ * 502 surfaces honestly.
+ *
+ * Any password is accepted in demo mode — the cookie carries no JWT,
+ * it is a read-only navigation marker (see /app/api/auth/demo/route.ts
+ * for the SEC-001 hardening that gates this on DEMO_MODE_ENABLED).
+ */
+const DEMO_PRESET_BY_EMAIL: Record<string, string> = {
+  'admin@eazepay.local': 'admin',
+  'admin@eazepay.com': 'admin',
+  'operator@eazepay.local': 'operator',
+  'master@eazepay.local': 'master',
+  'master@eazepay.com': 'master',
+  'medpay@eazepay.local': 'medpay',
+  'tradepay@eazepay.local': 'tradepay',
+  'coachpay@eazepay.local': 'coachpay',
+};
+
+function isDemoFallbackAllowed(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.DEMO_MODE_ENABLED === 'true';
+}
+
+const DEMO_TTL_SECONDS = 60 * 60; // 1h, matches the dedicated demo route
+
 export async function POST(req: NextRequest) {
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
@@ -84,7 +115,11 @@ export async function POST(req: NextRequest) {
     // If MFA is required, surface the challenge id so the client can
     // redirect to /verify-otp. We don't set tokens yet.
     if (data.mfaRequired && data.challenge) {
-      return NextResponse.json({ ok: true, mfaRequired: true, challengeId: data.challenge.challengeId });
+      return NextResponse.json({
+        ok: true,
+        mfaRequired: true,
+        challengeId: data.challenge.challengeId,
+      });
     }
 
     if (!data.accessToken) {
@@ -119,13 +154,40 @@ export async function POST(req: NextRequest) {
     }
     return response;
   } catch (err) {
+    // Backend unreachable. If demo mode is on and the email matches a
+    // known demo preset, fall back to minting the matching demo cookie
+    // so the deployed surface is browsable without a running API.
+    // Otherwise surface the 502 honestly so the operator knows the
+    // API isn't reachable.
+    if (isDemoFallbackAllowed()) {
+      const preset = DEMO_PRESET_BY_EMAIL[identifier.toLowerCase()];
+      if (preset) {
+        const response = NextResponse.json({
+          ok: true,
+          demoMode: true,
+          preset,
+          notice:
+            'Signed in to the demo workspace. The real EazePay API is not reachable from this deployment.',
+        });
+        response.cookies.set('eazepay_demo', preset, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          path: '/',
+          maxAge: DEMO_TTL_SECONDS,
+        });
+        return response;
+      }
+    }
+
     return NextResponse.json(
       {
         type: 'about:blank',
         title: 'Backend unreachable',
         status: 502,
         code: 'backend_unreachable',
-        detail: 'Could not reach the EazePay API. Try again in a moment.',
+        detail:
+          'Could not reach the EazePay API. Try a demo preset instead, or use one of the known demo emails (admin@eazepay.local, master@eazepay.local).',
       },
       { status: 502 },
     );
