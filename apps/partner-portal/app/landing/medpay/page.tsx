@@ -24,10 +24,10 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
 // positions are above the card top (top: -X%) and below the card bottom
 // (bottom: -X%) so they never overlap the card's visible text.
 const HERO_CHIPS: Array<{ k: string; v: string; top?: string; bottom?: string; left?: string; right?: string; delay: string }> = [
-  { k: 'FCRA',        v: 'soft pull · 0 impact',     top: '-7%',    left:  '4%',  delay: '0s'   },
-  { k: 'Marketplace', v: '52 lenders parallel',      top: '-7%',    right: '4%',  delay: '0.6s' },
-  { k: 'Decision',    v: '< 10s · agentic waterfall', bottom: '-7%', left:  '4%',  delay: '1.2s' },
-  { k: 'Promo',       v: '0% APR · 12mo deferred',   bottom: '-7%', right: '4%',  delay: '1.8s' },
+  { k: 'FCRA',        v: 'soft pull · 0 impact',      top: '-12%',    left:  '2%',  delay: '0s'   },
+  { k: 'Marketplace', v: '52 lenders parallel',       top: '-12%',    right: '2%',  delay: '0.6s' },
+  { k: 'Decision',    v: '< 10s · agentic waterfall', bottom: '-12%', left:  '2%',  delay: '1.2s' },
+  { k: 'Promo',       v: '0% APR · 12mo deferred',    bottom: '-12%', right: '2%',  delay: '1.8s' },
 ];
 
 const TICKER: Array<{ value: string; label: string; delta: string }> = [

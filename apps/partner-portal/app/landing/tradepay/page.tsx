@@ -581,22 +581,22 @@ function Hero() {
 
             {/* Floating chips · each anchored to a corner outside the card body
                 with a consistent offset so they never overlap card content. */}
-            <div className="tp-chip tp-chip-orange" style={{ top: '-16px', left: '-16px' }}>
+            <div className="tp-chip tp-chip-orange" style={{ top: '-56px', left: '-8px' }}>
               <span className="tp-chip-dot tp-chip-dot-orange" />
               <span className="tp-chip-k">LIVE</span>
               <span className="tp-chip-v">12 deals/hr</span>
             </div>
-            <div className="tp-chip" style={{ top: '-16px', right: '-16px' }}>
+            <div className="tp-chip" style={{ top: '-56px', right: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">FUNDED 30D</span>
               <span className="tp-chip-v">$12.8M</span>
             </div>
-            <div className="tp-chip" style={{ bottom: '-16px', left: '-16px' }}>
+            <div className="tp-chip" style={{ bottom: '-56px', left: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">SOFT PULL</span>
               <span className="tp-chip-v">0 impact · 52 lenders</span>
             </div>
-            <div className="tp-chip" style={{ bottom: '-16px', right: '-16px' }}>
+            <div className="tp-chip" style={{ bottom: '-56px', right: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">DECISION</span>
               <span className="tp-chip-v">14s · 52 lenders</span>
