@@ -986,13 +986,13 @@ function WaterfallSchematic() {
         {/* engineering title block */}
         <g>
           <line x1="40" y1="60" x2="220" y2="60" stroke="#94A3B8" strokeWidth="1" />
-          <text x="40" y="74" fontFamily="ui-monospace, monospace" fontSize="9" fill="#64748B" letterSpacing="2">
+          <text x="40" y="74" fontFamily="inherit" fontSize="9" fill="#64748B" letterSpacing="2">
             TP-FLOW-001 · REV. 4.2
           </text>
         </g>
         <g>
           <line x1="1060" y1="60" x2="1240" y2="60" stroke="#94A3B8" strokeWidth="1" />
-          <text x="1240" y="74" textAnchor="end" fontFamily="ui-monospace, monospace" fontSize="9" fill="#64748B" letterSpacing="2">
+          <text x="1240" y="74" textAnchor="end" fontFamily="inherit" fontSize="9" fill="#64748B" letterSpacing="2">
             DETERMINISTIC · 5 STAGES
           </text>
         </g>
@@ -1030,7 +1030,7 @@ function WaterfallSchematic() {
                     x={cx + 247 / 2}
                     y={cy - 14}
                     textAnchor="middle"
-                    fontFamily="ui-monospace, monospace"
+                    fontFamily="inherit"
                     fontSize="9"
                     fill="#64748B"
                     letterSpacing="1.5"
@@ -1064,7 +1064,7 @@ function WaterfallSchematic() {
                 x={cx}
                 y={cy - 8}
                 textAnchor="middle"
-                fontFamily="ui-monospace, monospace"
+                fontFamily="inherit"
                 fontSize="11"
                 fill="#64748B"
                 letterSpacing="2"
@@ -1076,7 +1076,7 @@ function WaterfallSchematic() {
                 x={cx}
                 y={cy + 12}
                 textAnchor="middle"
-                fontFamily="system-ui, -apple-system"
+                fontFamily="inherit"
                 fontSize="14"
                 fontWeight="700"
                 fill="#0F172A"
@@ -1089,7 +1089,7 @@ function WaterfallSchematic() {
                 x={cx}
                 y={cy + 92}
                 textAnchor="middle"
-                fontFamily="system-ui, -apple-system"
+                fontFamily="inherit"
                 fontSize="11"
                 fill="#475569"
                 letterSpacing="0.5"
@@ -2147,7 +2147,7 @@ const CSS = `
 
     color: var(--tp-slate-900);
     background: linear-gradient(180deg, #FAFAF9 0%, #FFFFFF 35%, #F8FAFC 70%, #FFFFFF 100%);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-family: inherit;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     scroll-behavior: smooth;
@@ -2192,7 +2192,7 @@ const CSS = `
     color: transparent;
   }
   .tp-eyebrow {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 11.5px;
     letter-spacing: 0.22em;
     color: var(--tp-slate-600);
@@ -2200,7 +2200,7 @@ const CSS = `
     text-transform: uppercase;
   }
   .tp-eyebrow-dark {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 11.5px;
     letter-spacing: 0.22em;
     color: var(--tp-slate-400);
@@ -2381,7 +2381,7 @@ const CSS = `
 
   /* Hero eyebrow pill */
   .tp-eyebrow-pill {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     color: var(--tp-slate-700);
     padding: 7px 14px;
@@ -2392,7 +2392,7 @@ const CSS = `
     font-weight: 600;
   }
   .tp-eyebrow-pill-dark {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     color: var(--tp-slate-300);
     padding: 7px 14px;
@@ -2566,7 +2566,7 @@ const CSS = `
     box-shadow: 0 0 0 2px rgba(249,115,22,0.18), 0 0 8px rgba(249,115,22,0.6);
   }
   .tp-chip-k {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     color: var(--tp-slate-500);
     letter-spacing: 0.14em;
     font-size: 9.5px;
@@ -2644,14 +2644,14 @@ const CSS = `
     transform: translateY(-2px);
   }
   .tp-stage-n {
-    font-family: ui-monospace, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     font-weight: 700;
     color: var(--tp-slate-400);
     letter-spacing: 0.22em;
   }
   .tp-stage-tag {
-    font-family: ui-monospace, monospace;
+    font-family: inherit;
     font-size: 9.5px;
     font-weight: 600;
     color: var(--tp-slate-700);
@@ -2720,7 +2720,7 @@ const CSS = `
   .tp-mock-dot:nth-child(2) { background: #FBBF24; }
   .tp-mock-dot:nth-child(3) { background: #84CC16; }
   .tp-mock-url {
-    font-family: ui-monospace, monospace;
+    font-family: inherit;
     font-size: 11px;
     color: var(--tp-slate-500);
     margin-left: 12px;
@@ -2728,7 +2728,7 @@ const CSS = `
     text-align: center;
   }
   .tp-mock-badge {
-    font-family: ui-monospace, monospace;
+    font-family: inherit;
     font-size: 9.5px;
     letter-spacing: 0.18em;
     color: var(--tp-slate-700);
@@ -2901,7 +2901,7 @@ const CSS = `
     animation: tpPulseOrange 2.4s ease-in-out infinite;
   }
   .tp-agent-eyebrow {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     color: var(--tp-slate-400);
     letter-spacing: 0.22em;
@@ -2923,7 +2923,7 @@ const CSS = `
     letter-spacing: 0;
   }
   .tp-agent-status {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10px;
     color: rgba(248,250,252,0.85);
     letter-spacing: 0.22em;
@@ -2995,7 +2995,7 @@ const CSS = `
     margin-top: 20px;
     padding-top: 16px;
     border-top: 1px dashed rgba(255,255,255,0.10);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 11px;
     color: var(--tp-slate-400);
     line-height: 1.55;
@@ -3044,7 +3044,7 @@ const CSS = `
     margin-bottom: 14px;
   }
   .tp-agent-stream-title {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
@@ -3052,7 +3052,7 @@ const CSS = `
     font-weight: 600;
   }
   .tp-agent-stream-rate {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     color: var(--tp-slate-400);
     letter-spacing: 0.02em;
@@ -3075,19 +3075,19 @@ const CSS = `
   }
   .tp-agent-stream-src {
     color: var(--tp-slate-300);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     letter-spacing: 0.01em;
   }
   .tp-agent-stream-dest {
     color: #F8FAFC;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-weight: 500;
     text-align: right;
     letter-spacing: 0.01em;
   }
   .tp-agent-stream-dest-muted {
     color: var(--tp-slate-400);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     text-align: right;
     letter-spacing: 0.01em;
   }
@@ -3122,7 +3122,7 @@ const CSS = `
     flex-shrink: 0;
   }
   .tp-agents-coordination-eyebrow {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 10.5px;
     color: var(--tp-slate-400);
     letter-spacing: 0.22em;
@@ -3299,7 +3299,7 @@ const CSS = `
     font-size: 56px;
     line-height: 0.6;
     color: var(--tp-slate-300);
-    font-family: Georgia, serif;
+    font-family: inherit;
     font-weight: 700;
   }
 
@@ -3315,7 +3315,7 @@ const CSS = `
     animation: tpMarquee 32s linear infinite;
   }
   .tp-marquee-item {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: inherit;
     font-size: 13px;
     color: var(--tp-slate-500);
     letter-spacing: 0.08em;

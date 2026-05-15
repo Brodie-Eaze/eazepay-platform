@@ -1507,7 +1507,7 @@ const CSS = `
 .medpay-root {
   background: linear-gradient(180deg, #ECFFFE 0%, #FFFFFF 30%, #F3FBFA 65%, #FFFFFF 100%);
   color: var(--mp-ink);
-  font-family: 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  font-family: inherit;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   min-height: 100vh;
@@ -2939,7 +2939,7 @@ const CSS = `
 
 .mp-agent-titlewrap { min-width: 0; }
 .mp-agent-eyebrow {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
   font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2968,7 +2968,7 @@ const CSS = `
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
   font-size: 10.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -3014,7 +3014,7 @@ const CSS = `
   border: 1px solid var(--mp-line);
 }
 .mp-agent-stat-label {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
   font-size: 10.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -3093,7 +3093,7 @@ const CSS = `
   margin-bottom: 14px;
 }
 .mp-agents-stream-eyebrow {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
   font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -3101,7 +3101,7 @@ const CSS = `
   font-weight: 600;
 }
 .mp-agents-stream-meta {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
   font-size: 11px;
   color: var(--mp-mute);
 }
@@ -3117,7 +3117,7 @@ const CSS = `
   padding: 9px 0;
   border-bottom: 1px solid var(--mp-line);
   font-size: 12.5px;
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
 }
 .mp-agents-stream-row.is-last { border-bottom: none; padding-bottom: 4px; }
 .mp-agents-stream-event { color: var(--mp-ink-2); }
@@ -3158,7 +3158,7 @@ const CSS = `
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 18px -8px rgba(14, 124, 102, 0.35);
 }
 .mp-agents-coord-eyebrow {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-family: inherit;
   font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;

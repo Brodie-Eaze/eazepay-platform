@@ -1814,7 +1814,7 @@ const STYLES = `
   .cp-root {
     background: var(--cp-bg);
     color: var(--cp-text);
-    font-family: Arial, Helvetica, system-ui, -apple-system, sans-serif;
+    font-family: inherit;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     line-height: 1.5;
@@ -3381,7 +3381,7 @@ const STYLES = `
     font-size: 56px;
     line-height: 1;
     color: rgba(167, 139, 250, 0.18);
-    font-family: Georgia, serif;
+    font-family: inherit;
     margin-bottom: -16px;
   }
   .cp-story-quote {
