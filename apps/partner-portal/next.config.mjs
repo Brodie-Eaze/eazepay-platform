@@ -18,10 +18,16 @@ const nextConfig = {
     };
     return config;
   },
-  // Pre-existing TS/ESLint errors in unrelated files (legacy auth + api routes)
-  // would otherwise fail the Railway production build. Skip at build time;
-  // typecheck still runs locally via `npx tsc --noEmit`.
-  typescript: { ignoreBuildErrors: true },
+  // TypeScript: now at 0 errors across the whole partner-portal surface
+  // (the production hardening sprint closed the long tail). Build-time
+  // typecheck stays ON so any new TS error fails the Railway deploy
+  // loudly — engineers get real feedback rather than a green build with
+  // silent type drift. Flip back to `true` only if you are knowingly
+  // shipping during a partial refactor and have a follow-up ticket.
+  typescript: { ignoreBuildErrors: false },
+  // ESLint at build is OFF because ESLint isn't wired across the
+  // workspace yet (see HANDOFF.md "Engineer day-1 follow-ups"). Flip
+  // this to `false` after installing eslint + the recommended plugins.
   eslint: { ignoreDuringBuilds: true },
   experimental: {
     // Many client pages (sign-in, /v/[brand]/*, etc.) call useSearchParams()

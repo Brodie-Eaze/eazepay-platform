@@ -118,17 +118,17 @@ call, not blocking handoff):
 - `apps/api/src/health/health.controller.ts:16` — `TODO`: wire DB
   ping, Redis ping, downstream lender SLA snapshot into the health
   check.
-- `apps/api/src/app/highsale-webhook.controller.ts:39` — `TODO`:
-  graduate the inbound Highsale payload from a `payloadCiphertext`
-  column to full `PiiVaultService` envelope encryption.
+- ~~`apps/api/src/app/highsale-webhook.controller.ts` — Highsale
+  payload encrypted via `PiiVaultService.sealOpaque` with applicationId
+  AAD~~ (closed by QW-4 in the production hardening sprint).
 - `services/auth/src/auth.service.ts:53` — `TODO`: implement the
   re-send-OTP endpoint.
 - `apps/consumer-mobile/src/screens/HomeScreen.tsx:30` — `TODO`:
   surface a proper error UX on the home screen.
-- `apps/partner-portal/next.config.mjs` — `typescript.ignoreBuildErrors`
-  and `eslint.ignoreDuringBuilds` are both `true`. Legacy errors in
-  unrelated `/api` routes and the auth area need cleanup so this
-  can flip back to `false`.
+- ~~`apps/partner-portal/next.config.mjs` — `typescript.ignoreBuildErrors`
+  was `true`~~ — flipped to `false` after the hardening sprint took
+  the whole workspace to 0 TS errors. ESLint at build remains `true`
+  until ESLint is wired (see Engineer day-1 follow-ups).
 
 Sweep results (handoff QA):
 
