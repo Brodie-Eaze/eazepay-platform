@@ -194,10 +194,10 @@ const HERO_CHIPS: Array<{
   delay: string;
   accent?: boolean;
 }> = [
-  { top: '-7%',    left:  '4%', label: 'INSTANT',      value: '10s soft-pull pre-qual', delay: '0s',   accent: true },
-  { top: '-7%',    right: '4%', label: 'MARKETPLACE',  value: '52 lenders parallel',    delay: '0.5s' },
-  { bottom: '-7%', left:  '4%', label: '0% PROMO',     value: 'for qualifying programs', delay: '1.0s' },
-  { bottom: '-7%', right: '4%', label: 'LENDER-DIRECT',value: 'no clawback risk',       delay: '1.5s' },
+  { top: '-12%',    left:  '2%', label: 'INSTANT',      value: '10s soft-pull pre-qual', delay: '0s',   accent: true },
+  { top: '-12%',    right: '2%', label: 'MARKETPLACE',  value: '52 lenders parallel',    delay: '0.5s' },
+  { bottom: '-12%', left:  '2%', label: '0% PROMO',     value: 'for qualifying programs', delay: '1.0s' },
+  { bottom: '-12%', right: '2%', label: 'LENDER-DIRECT',value: 'no clawback risk',       delay: '1.5s' },
 ];
 
 /* ----------------------------------------------------------------------------
@@ -1182,7 +1182,8 @@ function FloatingChips() {
           key={i}
           className={`cp-chip ${c.accent ? 'cp-chip--violet' : ''}`}
           style={{
-            top: c.top,
+            ...(c.top ? { top: c.top } : {}),
+            ...(c.bottom ? { bottom: c.bottom } : {}),
             ...(c.left ? { left: c.left } : {}),
             ...(c.right ? { right: c.right } : {}),
             animationDelay: c.delay,
