@@ -115,20 +115,33 @@ are ready; envs in `infra/terraform/envs/` are composed but not applied.
 Surfaced during the handoff sweep (cleanup of these is engineering's
 call, not blocking handoff):
 
-- `apps/api/src/health/health.controller.ts:16` — `TODO`: wire DB
+- ~~`apps/api/src/health/health.controller.ts:16` — `TODO`: wire DB
   ping, Redis ping, downstream lender SLA snapshot into the health
-  check.
+  check.~~ — closed by the final-wave quality pass. `/v1/health/ready`
+  now pings Postgres (`SELECT 1`) and Redis (`PING`) with a 2 s timeout
+  each, returns 503 + per-dependency status on degradation, and
+  documents the Railway healthcheck-path recommendation (flip to
+  `/v1/health/ready` once the API service is stable in Railway).
 - ~~`apps/api/src/app/highsale-webhook.controller.ts` — Highsale
   payload encrypted via `PiiVaultService.sealOpaque` with applicationId
   AAD~~ (closed by QW-4 in the production hardening sprint).
-- `services/auth/src/auth.service.ts:53` — `TODO`: implement the
-  re-send-OTP endpoint.
-- `apps/consumer-mobile/src/screens/HomeScreen.tsx:30` — `TODO`:
-  surface a proper error UX on the home screen.
+- ~~`services/auth/src/auth.service.ts:53` — `TODO`: implement the
+  re-send-OTP endpoint.~~ — closed by the final-wave quality pass.
+  `POST /auth/resend-otp` lives in `services/auth/src/auth.controller.ts`,
+  burns the prior challenge id, mints a fresh code through the existing
+  notification adapter, inherits the SEC-012 per-identifier rate-limit,
+  and writes an `auth.otp.resent` audit row. Same `OTP_THROTTLE` profile
+  as verify-otp (5/min/IP).
+- ~~`apps/consumer-mobile/src/screens/HomeScreen.tsx:30` — `TODO`:
+  surface a proper error UX on the home screen.~~ — closed by the
+  final-wave quality pass. Inline error banner (dangerBg/dangerFg
+  tokens) with title + detail + Retry button replaces the silent catch.
+  Falls through to `ApiError.problem.title/detail` when the failure is
+  a structured Problem Details response.
 - ~~`apps/partner-portal/next.config.mjs` — `typescript.ignoreBuildErrors`
   was `true`~~ — flipped to `false` after the hardening sprint took
-  the whole workspace to 0 TS errors. ESLint at build remains `true`
-  until ESLint is wired (see Engineer day-1 follow-ups).
+  the whole workspace to 0 TS errors. ESLint at build is now wired
+  workspace-wide via root `.eslintrc.cjs` + `pnpm run lint:check`.
 
 Sweep results (handoff QA):
 
@@ -215,16 +228,19 @@ as audit-ready, not just feature-complete.
 Genuine gaps the hardening sprint flagged but didn't close. None block
 launch; all are worth a half-day each before SOC 2 Type II.
 
-- **ESLint flat-config across the workspace.** Pre-commit hook already
-  runs `lint-staged` (Prettier on staged files). Install
-  `eslint` + `@typescript-eslint/parser` + `@typescript-eslint/eslint-plugin`
-  - `eslint-plugin-react-hooks` + `eslint-config-next` at the root,
-    add `eslint.config.mjs` enforcing `no-floating-promises`,
-    `consistent-type-imports`, `react-hooks/exhaustive-deps`,
-    `no-explicit-any` (warn). Wire the existing `nx affected -t lint`
-    target. The nx CI workflow in `.github/workflows/ci.yml` already
-    expects this — currently a no-op because no project defines a lint
-    executor.
+- ~~**ESLint flat-config across the workspace.**~~ Closed by the
+  final-wave quality pass. Root `.eslintrc.cjs` (classic config — ESLint
+  8.57 because Next.js 14 still depends on it) extends
+  `eslint:recommended` + `@typescript-eslint/recommended` +
+  `plugin:react-hooks/recommended` + `prettier`. Lenient first-install
+  rules (most categories at `warn`, `react-hooks/rules-of-hooks` at
+  `error`). Run with `pnpm run lint:check`. Baseline after install: 0
+  errors, 217 warnings (108 consistent-type-imports, 91 no-unused-vars,
+  16 no-explicit-any, 2 exhaustive-deps). `lint-staged` now ESLint-fixes
+  every staged ts/tsx/js/jsx file pre-commit. Remaining day-2 work: enable
+  `@typescript-eslint/no-floating-promises` (needs `parserOptions.project`
+  — type-aware lint doubles lint time so we left it off); revisit when
+  the warning backlog is cleared.
 - **Deploy `apps/api` to its own Railway service.** Artifacts ready:
   [`Dockerfile.api`](Dockerfile.api), [`railway.api.toml`](railway.api.toml).
   Provision Postgres + Redis on the same Railway project (both have

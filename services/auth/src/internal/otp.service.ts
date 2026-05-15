@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
-import { Redis } from 'ioredis';
+import type { Redis } from 'ioredis';
 import { sha256Hex, BadRequest, TooManyRequests, Unauthorized } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 
@@ -143,13 +143,7 @@ export class OtpService {
     const out: string[] = [];
     let cursor = '0';
     do {
-      const [next, batch] = await this.redis.scan(
-        cursor,
-        'MATCH',
-        pattern,
-        'COUNT',
-        100,
-      );
+      const [next, batch] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       out.push(...batch);
       cursor = next;
     } while (cursor !== '0');
@@ -177,17 +171,13 @@ export class OtpService {
       await this.redis.del(key);
       // SEC-012 — release the active-challenge sentinel so the
       // concurrency cap counts only LIVE challenges, not aborted ones.
-      await this.redis.del(
-        `${ACTIVE_KEY_PREFIX}${record.destination}:${input.challengeId}`,
-      );
+      await this.redis.del(`${ACTIVE_KEY_PREFIX}${record.destination}:${input.challengeId}`);
       throw BadRequest({ code: 'otp_purpose_mismatch' });
     }
 
     if (record.attempts >= MAX_ATTEMPTS) {
       await this.redis.del(key);
-      await this.redis.del(
-        `${ACTIVE_KEY_PREFIX}${record.destination}:${input.challengeId}`,
-      );
+      await this.redis.del(`${ACTIVE_KEY_PREFIX}${record.destination}:${input.challengeId}`);
       throw TooManyRequests({ code: 'otp_attempts_exceeded' });
     }
 
@@ -211,9 +201,43 @@ export class OtpService {
     await this.redis.del(key);
     // SEC-012 — drop the active-challenge sentinel on successful
     // consume too, so a verified challenge frees its concurrency slot.
-    await this.redis.del(
-      `${ACTIVE_KEY_PREFIX}${record.destination}:${input.challengeId}`,
-    );
+    await this.redis.del(`${ACTIVE_KEY_PREFIX}${record.destination}:${input.challengeId}`);
     return record.userId;
+  }
+
+  /**
+   * Find a prior challenge by id, mark it superseded (delete the Redis
+   * keys), and return the metadata callers need to mint a replacement.
+   * Used by the resend-OTP endpoint to ensure a fresh code is sent and
+   * the old code can never be redeemed afterwards.
+   *
+   * Why we don't reuse the existing code: rotating the code blocks the
+   * single most damaging attack on resend — an attacker triggers a
+   * resend, intercepts the SMS/email, and replays the prior code. By
+   * minting a brand-new challenge id + code we ensure the prior code is
+   * dead the instant supersede returns.
+   *
+   * Returns null when no live challenge exists. Callers should treat
+   * null as "challenge already consumed or expired" — surface a friendly
+   * "challenge not found" without leaking which case it was.
+   */
+  async supersedePriorChallenge(challengeId: string): Promise<{
+    userId: UserId;
+    channel: 'sms' | 'email' | 'totp';
+    purpose: 'register_verify' | 'login_mfa' | 'step_up';
+    destinationHash: string;
+  } | null> {
+    const key = KEY_PREFIX + challengeId;
+    const raw = await this.redis.get(key);
+    if (!raw) return null;
+    const record = JSON.parse(raw) as ChallengeRecord;
+    await this.redis.del(key);
+    await this.redis.del(`${ACTIVE_KEY_PREFIX}${record.destination}:${challengeId}`);
+    return {
+      userId: record.userId,
+      channel: record.channel,
+      purpose: record.purpose,
+      destinationHash: record.destination,
+    };
   }
 }

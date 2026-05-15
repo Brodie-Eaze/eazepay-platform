@@ -80,7 +80,7 @@ export const BRAND_FROM_CONFIG_SLUG: Record<string, InviteBrand> = {
 
 const STORE_FILE = path.join(process.cwd(), '.next', 'invites.json');
 
-let invites = new Map<string, InviteRecord>();
+const invites = new Map<string, InviteRecord>();
 let loaded = false;
 
 async function loadIfNeeded() {
@@ -98,11 +98,7 @@ async function loadIfNeeded() {
 async function persist() {
   try {
     await fs.mkdir(path.dirname(STORE_FILE), { recursive: true });
-    await fs.writeFile(
-      STORE_FILE,
-      JSON.stringify(Array.from(invites.values()), null, 2),
-      'utf-8',
-    );
+    await fs.writeFile(STORE_FILE, JSON.stringify(Array.from(invites.values()), null, 2), 'utf-8');
   } catch {
     /* Best-effort — in-memory map is still authoritative for this run. */
   }
@@ -133,7 +129,10 @@ function withStatus(rec: InviteRecord): InviteWithStatus {
 /** Stable, human-ish id derived from email so the pipeline filter
  * matches across page-reloads even without a real auth session. */
 export function invitedIdFromEmail(email: string): string {
-  return `op_${email.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+  return `op_${email
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')}`;
 }
 
 export interface CreateInviteInput {
@@ -143,9 +142,7 @@ export interface CreateInviteInput {
   invitedByEmail: string;
 }
 
-export async function createInvite(
-  input: CreateInviteInput,
-): Promise<InviteWithStatus> {
+export async function createInvite(input: CreateInviteInput): Promise<InviteWithStatus> {
   await loadIfNeeded();
   const token = randomUUID();
   const now = new Date();
@@ -172,9 +169,7 @@ export async function getInvite(token: string): Promise<InviteWithStatus | null>
   return rec ? withStatus(rec) : null;
 }
 
-export async function listInvites(opts?: {
-  invitedById?: string;
-}): Promise<InviteWithStatus[]> {
+export async function listInvites(opts?: { invitedById?: string }): Promise<InviteWithStatus[]> {
   await loadIfNeeded();
   let rows = Array.from(invites.values());
   if (opts?.invitedById) {

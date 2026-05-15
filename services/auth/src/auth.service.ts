@@ -1,30 +1,20 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import { BadRequest, sha256Hex } from '@eazepay/shared-utils';
+import { BadRequest, NotFound, sha256Hex } from '@eazepay/shared-utils';
 import type { SessionId, UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
-import {
-  IDENTITY_PROVIDER,
-  type IdentityProvider,
-} from './ports/identity-provider.port.js';
-import {
-  NOTIFICATION_GATEWAY,
-  type NotificationGateway,
-} from './ports/notification.port.js';
-import { OtpService } from './internal/otp.service.js';
-import { TokenService } from './internal/token.service.js';
-import { SessionService } from './internal/session.service.js';
-import type {
-  LoginResult,
-  RefreshResult,
-  RegisterResult,
-  VerifyOtpResult,
-} from './auth.types.js';
+import { IDENTITY_PROVIDER, type IdentityProvider } from './ports/identity-provider.port.js';
+import { NOTIFICATION_GATEWAY, type NotificationGateway } from './ports/notification.port.js';
+import type { OtpService } from './internal/otp.service.js';
+import type { TokenService } from './internal/token.service.js';
+import type { SessionService } from './internal/session.service.js';
+import type { LoginResult, RefreshResult, RegisterResult, VerifyOtpResult } from './auth.types.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import type { RefreshDto } from './dto/refresh.dto.js';
+import type { ResendOtpDto } from './dto/resend-otp.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -51,7 +41,8 @@ export class AuthService {
     //    row in one Postgres transaction (outbox pattern). Note the OTP
     //    record itself lives in Redis — failure between steps 1 and 2
     //    leaves a User in pending_verification, which is recoverable via
-    //    a re-send-OTP endpoint (TODO).
+    //    the resend-OTP endpoint (POST /auth/resend-otp; see resendOtp()
+    //    below).
     const channel: 'sms' | 'email' = dto.email ? 'email' : 'sms';
     const destination = dto.email ?? dto.phone!;
     const challenge = await this.otp.createChallenge({
@@ -94,11 +85,7 @@ export class AuthService {
     };
   }
 
-  async login(
-    dto: LoginDto,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<LoginResult> {
+  async login(dto: LoginDto, ipAddress?: string, userAgent?: string): Promise<LoginResult> {
     const userId = await this.identity.checkPassword({
       identifier: dto.identifier,
       password: dto.password,
@@ -142,6 +129,114 @@ export class AuthService {
         channel,
         expiresAt: challenge.expiresAt,
       },
+    };
+  }
+
+  /**
+   * Re-send the OTP code attached to an existing challenge.
+   *
+   * Flow:
+   *   1. Look up the prior challenge in Redis by id. If absent or
+   *      expired return 404 `otp_challenge_not_found` — same error
+   *      shape whether it never existed or already aged out, so a
+   *      caller can't probe for valid ids.
+   *   2. Resolve the original delivery destination from the User row
+   *      via Postgres. We store the destination as a sha256 hash in
+   *      Redis (PII minimisation), so the plaintext we deliver to must
+   *      come from the persisted user record. We pick email-first if
+   *      the prior challenge was `email`, otherwise the phoneE164.
+   *      If neither is available (user data drift) we throw NotFound.
+   *   3. Burn the prior challenge id + code via `supersedePriorChallenge`.
+   *      The old code is dead the instant this returns — important so
+   *      a leaked-then-resent code can't replay.
+   *   4. Mint a fresh challenge via `createChallenge`, which re-applies
+   *      the per-identifier sliding-window quota (SEC-012). Resends
+   *      count against that quota — by design.
+   *   5. Deliver the fresh code through the notification adapter.
+   *   6. Write an audit row (`auth.otp.resent`) with userId + channel.
+   *
+   * Return shape matches the original challenge envelope so the client
+   * just swaps the prior challengeId / expiresAt without touching the
+   * verify path.
+   */
+  async resendOtp(
+    dto: ResendOtpDto,
+    _ipAddress?: string,
+    _userAgent?: string,
+  ): Promise<{ challengeId: string; channel: 'sms' | 'email' | 'totp'; expiresAt: string }> {
+    const prior = await this.otp.supersedePriorChallenge(dto.challengeId);
+    if (!prior) {
+      throw NotFound({ code: 'otp_challenge_not_found' });
+    }
+
+    // Resolve plaintext destination from the user row. Redis holds only
+    // the sha256 hash; the user table holds the actual email / phone.
+    const user = await this.prisma.user.findUnique({
+      where: { id: prior.userId },
+      select: { email: true, phoneE164: true },
+    });
+    if (!user) {
+      throw NotFound({ code: 'otp_challenge_not_found' });
+    }
+
+    // The original challenge recorded which channel was used. We deliver
+    // through the same channel on resend so the user receives the code
+    // where they expect (an SMS resend going to email is confusing).
+    let destination: string | null = null;
+    let deliveryChannel: 'sms' | 'email';
+    if (prior.channel === 'email') {
+      destination = user.email;
+      deliveryChannel = 'email';
+    } else if (prior.channel === 'sms') {
+      destination = user.phoneE164;
+      deliveryChannel = 'sms';
+    } else {
+      // TOTP doesn't have a server-side delivery channel; resending
+      // doesn't make sense for it.
+      throw BadRequest({ code: 'otp_resend_unsupported_channel' });
+    }
+    if (!destination) {
+      throw NotFound({ code: 'otp_challenge_not_found' });
+    }
+
+    // SEC-012 rate-limit is re-applied here automatically — createChallenge
+    // INCRs the per-identifier sliding-window counter and throws
+    // 429 otp_request_quota_exceeded when over budget.
+    const fresh = await this.otp.createChallenge({
+      userId: prior.userId,
+      channel: deliveryChannel,
+      destination,
+      purpose: prior.purpose,
+    });
+
+    await this.notifications.deliverOtp({
+      channel: deliveryChannel,
+      to: destination,
+      code: fresh.code,
+      purpose: prior.purpose,
+      ttlSeconds: 600,
+    });
+
+    await this.prisma.auditOutbox.create({
+      data: {
+        actorType: 'user',
+        actorId: prior.userId,
+        action: 'auth.otp.resent',
+        targetType: 'User',
+        targetId: prior.userId,
+        after: {
+          channel: deliveryChannel,
+          purpose: prior.purpose,
+          priorChallengeId: dto.challengeId,
+          newChallengeId: fresh.challengeId,
+        },
+      },
+    });
+
+    return {
+      challengeId: fresh.challengeId,
+      channel: deliveryChannel,
+      expiresAt: fresh.expiresAt,
     };
   }
 

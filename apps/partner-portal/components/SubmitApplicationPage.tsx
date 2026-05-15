@@ -85,13 +85,17 @@ export function SubmitApplicationPage({ config }: { config: SubmitApplicationCon
           <CardBody>
             <h2 className="text-[16px] font-semibold text-fg">Start a New Application</h2>
             <p className="text-[13px] text-fg-secondary mt-1 leading-relaxed max-w-2xl">
-              Submit a customer to check financing eligibility. Our system will run them through
-              the decision engine, match available offers, and route to the best lender.
+              Submit a customer to check financing eligibility. Our system will run them through the
+              decision engine, match available offers, and route to the best lender.
             </p>
 
             <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
               <Step icon={<SendIcon size={18} />} title="Application" sub="Customer intake" />
-              <Step icon={<RouteIcon size={18} />} title="Decision Engine" sub="Instant evaluation" />
+              <Step
+                icon={<RouteIcon size={18} />}
+                title="Decision Engine"
+                sub="Instant evaluation"
+              />
               <Step icon={<BankIcon size={18} />} title="Lender Match" sub="Best-fit routing" />
             </div>
 
@@ -163,14 +167,7 @@ export function SubmitApplicationPage({ config }: { config: SubmitApplicationCon
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 items-center">
               <div className="rounded-xl border border-border bg-bg-elevated p-3 inline-flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrSrc}
-                  width={180}
-                  height={180}
-                  alt="Scan to apply"
-                  className="block"
-                />
+                <img src={qrSrc} width={180} height={180} alt="Scan to apply" className="block" />
               </div>
               <div>
                 <h2 className="text-[16px] font-semibold text-fg">QR Code · Scan to Apply</h2>

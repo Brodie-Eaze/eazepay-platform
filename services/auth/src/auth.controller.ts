@@ -5,11 +5,12 @@ import { Idempotent } from '@eazepay/shared-utils';
 import { Public } from './guards/public.decorator.js';
 import { CurrentSession } from './guards/current-user.decorator.js';
 import type { SessionContext } from './auth.types.js';
-import { AuthService } from './auth.service.js';
-import { RegisterDto } from './dto/register.dto.js';
-import { LoginDto } from './dto/login.dto.js';
-import { VerifyOtpDto } from './dto/verify-otp.dto.js';
-import { RefreshDto } from './dto/refresh.dto.js';
+import type { AuthService } from './auth.service.js';
+import type { RegisterDto } from './dto/register.dto.js';
+import type { LoginDto } from './dto/login.dto.js';
+import type { VerifyOtpDto } from './dto/verify-otp.dto.js';
+import type { RefreshDto } from './dto/refresh.dto.js';
+import type { ResendOtpDto } from './dto/resend-otp.dto.js';
 
 /**
  * Auth-route throttle profile: significantly tighter than the default
@@ -21,16 +22,11 @@ import { RefreshDto } from './dto/refresh.dto.js';
  * Counters are per-IP; the global ThrottlerGuard runs before the JWT
  * guard so unauthenticated floods get cut early.
  */
-const REGISTER_THROTTLE = { default: { limit: 5, ttl: 60_000 } };   // 5/min/IP — abuse signup
-const LOGIN_THROTTLE = { default: { limit: 10, ttl: 60_000 } };     // 10/min/IP — password spray
-const OTP_THROTTLE = { default: { limit: 5, ttl: 60_000 } };        // 5/min/IP — OTP brute force
-const REFRESH_THROTTLE = { default: { limit: 30, ttl: 60_000 } };   // 30/min/IP — sliding sessions
-import type {
-  LoginResult,
-  RefreshResult,
-  RegisterResult,
-  VerifyOtpResult,
-} from './auth.types.js';
+const REGISTER_THROTTLE = { default: { limit: 5, ttl: 60_000 } }; // 5/min/IP — abuse signup
+const LOGIN_THROTTLE = { default: { limit: 10, ttl: 60_000 } }; // 10/min/IP — password spray
+const OTP_THROTTLE = { default: { limit: 5, ttl: 60_000 } }; // 5/min/IP — OTP brute force
+const REFRESH_THROTTLE = { default: { limit: 30, ttl: 60_000 } }; // 30/min/IP — sliding sessions
+import type { LoginResult, RefreshResult, RegisterResult, VerifyOtpResult } from './auth.types.js';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -67,6 +63,28 @@ export class AuthController {
   @ApiOperation({ summary: 'Complete an MFA / OTP challenge and issue tokens' })
   verifyOtp(@Body() dto: VerifyOtpDto): Promise<VerifyOtpResult> {
     return this.auth.verifyOtp(dto);
+  }
+
+  /**
+   * Re-send the OTP code for a challenge whose original SMS/email never
+   * arrived (or expired before the user could read it). Uses the same
+   * throttle profile as verify-otp — 5/min/IP — and additionally
+   * inherits the per-identifier sliding-window quota enforced inside
+   * OtpService (SEC-012). The prior challenge id is burned the moment
+   * the resend succeeds; the response carries a fresh challenge id the
+   * client must use on the subsequent verify-otp call.
+   */
+  @Public()
+  @Throttle(OTP_THROTTLE)
+  @Post('resend-otp')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Re-issue the OTP code for an existing challenge' })
+  resendOtp(
+    @Body() dto: ResendOtpDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ): Promise<{ challengeId: string; channel: 'sms' | 'email' | 'totp'; expiresAt: string }> {
+    return this.auth.resendOtp(dto, ip, userAgent);
   }
 
   @Public()

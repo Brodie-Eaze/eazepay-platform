@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.next/
+coverage/
+*.config.cjs
+*.config.mjs
+*.config.js
+apps/consumer-mobile/.expo/
+apps/consumer-mobile/android/
+apps/consumer-mobile/ios/

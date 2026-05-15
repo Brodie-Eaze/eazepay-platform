@@ -1,17 +1,23 @@
 #!/usr/bin/env sh
 # Pre-commit hook for the EazePay monorepo.
 #
-# Runs lint-staged on every commit so any file touched by the commit
-# gets Prettier auto-formatted before it enters history. The lint-staged
-# config lives in root package.json under "lint-staged".
+# Runs lint-staged on every commit. The lint-staged config lives in
+# root package.json under "lint-staged" and now covers two passes per
+# staged file:
+#
+#   • *.{ts,tsx,js,jsx}  → eslint --fix --max-warnings=0, then prettier --write
+#   • *.{json,md,yml,yaml} → prettier --write
 #
 # Side-effect-free: lint-staged stashes unrelated changes, runs the
-# formatter, re-stages the formatted files, then restores the stash.
-# A commit fails only when Prettier produces an unrecoverable error
-# (e.g. genuine syntax error) — which is what we want.
+# pipeline, re-stages the auto-fixed files, then restores the stash.
+# A commit fails on:
+#   • ESLint error (rule set to 'error', e.g. react-hooks/rules-of-hooks)
+#   • ESLint warning (because --max-warnings=0 promotes them to failures
+#     for staged files — strict on the commit boundary, lenient on the
+#     workspace as a whole)
+#   • Prettier syntax error
 #
-# When ESLint is fully wired across the workspace, add:
-#   pnpm exec lint-staged   # already covers prettier
+# Follow-ups still pending (see HANDOFF.md → Engineer day-1 follow-ups):
 #   pnpm exec nx affected -t typecheck --base=HEAD~1 --head=HEAD --parallel=3
-# to enforce typecheck on the affected packages too.
+# to enforce typecheck on the affected packages on commit too.
 pnpm exec lint-staged
