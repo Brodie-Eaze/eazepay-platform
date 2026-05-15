@@ -575,18 +575,20 @@ function Hero() {
             </div>
           </div>
 
-          {/* RIGHT · Offer card */}
-          <div className="lg:col-span-5 relative reveal">
-            <HeroOfferCard />
+          {/* RIGHT · Offer card · wrapped in 3D scene */}
+          <div className="lg:col-span-5 relative reveal tp-hero-scene">
+            <div className="tp-hero-stage">
+              <HeroOfferCard />
+            </div>
 
             {/* Floating chips · each anchored to a corner outside the card body
                 with a consistent offset so they never overlap card content. */}
-            <div className="tp-chip tp-chip-orange" style={{ top: '-56px', left: '-8px' }}>
+            <div className="tp-chip tp-chip-orange tp-chip-pulse" style={{ top: '-56px', left: '-8px' }}>
               <span className="tp-chip-dot tp-chip-dot-orange" />
               <span className="tp-chip-k">LIVE</span>
               <span className="tp-chip-v">12 deals/hr</span>
             </div>
-            <div className="tp-chip" style={{ top: '-56px', right: '-8px' }}>
+            <div className="tp-chip tp-chip-funded" style={{ top: '-56px', right: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">FUNDED 30D</span>
               <span className="tp-chip-v">$12.8M</span>
@@ -613,7 +615,8 @@ function HeroOfferCard() {
     <div className="tp-offer-card">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200/70">
-        <div className="flex items-center gap-2">
+        <div className="tp-status-pill">
+          <span className="tp-status-pill-scan" aria-hidden />
           <span className="tp-live-dot" />
           <span className="text-[10.5px] uppercase tracking-[0.22em] font-semibold text-slate-700">
             TradePay · approved
@@ -731,11 +734,11 @@ function HeroOfferCard() {
 
 function LiveTicker() {
   return (
-    <section className="relative border-y border-slate-200/70 bg-white/60 backdrop-blur">
+    <section className="relative border-y border-slate-200/70 bg-white/60 backdrop-blur tp-ticker-section">
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6">
           {TICKER.map((t) => (
-            <div key={t.label} className="flex flex-col">
+            <div key={t.label} className="tp-ticker-cell flex flex-col">
               <div className="flex items-baseline gap-2">
                 <div className="text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
                   {t.value}
@@ -882,9 +885,12 @@ function WaterfallSection() {
           </p>
         </div>
 
-        {/* Schematic flow */}
-        <div className="mt-16 reveal">
-          <WaterfallSchematic />
+        {/* Schematic flow · 3D control-panel tilt */}
+        <div className="mt-16 reveal tp-schematic-scene">
+          <div className="tp-schematic-stage">
+            <span className="tp-schematic-scanline" aria-hidden />
+            <WaterfallSchematic />
+          </div>
         </div>
 
         {/* Stage detail cards */}
@@ -931,6 +937,10 @@ function WaterfallSchematic() {
             <stop offset="0%" stopColor="#FFFFFF" />
             <stop offset="100%" stopColor="#F8FAFC" />
           </linearGradient>
+          <filter id="schemNodeLift" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="6" stdDeviation="5" floodColor="#0F172A" floodOpacity="0.22" />
+            <feDropShadow dx="0" dy="2" stdDeviation="1.5" floodColor="#0F172A" floodOpacity="0.18" />
+          </filter>
           <marker
             id="schemArr"
             viewBox="0 0 10 10"
@@ -1040,7 +1050,7 @@ function WaterfallSchematic() {
                 </g>
               )}
 
-              {/* Node ring */}
+              {/* Node ring · raised off the schematic surface */}
               <circle
                 cx={cx}
                 cy={cy}
@@ -1048,6 +1058,7 @@ function WaterfallSchematic() {
                 fill="url(#schemNodeFill)"
                 stroke="#0F172A"
                 strokeWidth="1.2"
+                filter="url(#schemNodeLift)"
               />
               <circle
                 cx={cx}
@@ -1157,9 +1168,11 @@ function PillarFinancing() {
             </div>
           </div>
 
-          {/* Right · large finance mockup */}
-          <div className="lg:col-span-7 reveal">
-            <FinanceMockup />
+          {/* Right · large finance mockup · 3D scene with subtle sway */}
+          <div className="lg:col-span-7 reveal tp-finance-scene">
+            <div className="tp-finance-stage">
+              <FinanceMockup />
+            </div>
           </div>
         </div>
       </div>
@@ -1294,14 +1307,15 @@ function FinanceMockup() {
           <div className="col-span-1 text-right">Status</div>
         </div>
 
-        {/* Offer rows */}
-        <div className="px-6 py-2">
-          {offers.map((o) => (
+        {/* Offer rows · 3D stacked waterfall */}
+        <div className="px-6 py-2 tp-offer-stack">
+          {offers.map((o, idx) => (
             <div
               key={o.lender}
-              className={`grid grid-cols-12 items-center py-3 text-[13px] border-b border-slate-100 last:border-b-0 ${
+              className={`tp-offer-row-3d grid grid-cols-12 items-center py-3 text-[13px] border-b border-slate-100 last:border-b-0 ${
                 o.status === 'primary' ? 'tp-offer-row-primary-lg' : ''
-              }`}
+              } ${o.status !== 'primary' ? 'tp-offer-row-recessed' : ''}`}
+              style={{ ['--tp-row-z' as string]: `${(offers.length - idx - 1) * 6}px` }}
             >
               <div className="col-span-4 flex items-center gap-2.5">
                 {o.status === 'primary' ? (
@@ -1934,9 +1948,9 @@ function CaseStudiesSection() {
           </p>
         </div>
 
-        <div className="mt-14 grid md:grid-cols-3 gap-5 reveal">
+        <div className="mt-14 grid md:grid-cols-3 gap-5 reveal tp-case-scene">
           {CASE_STUDIES.map((c) => (
-            <div key={c.name} className="tp-case-card">
+            <div key={c.name} className="tp-case-card tp-case-card-3d">
               {/* Outcome badges lead */}
               <div className="flex gap-2 mb-5">
                 {c.outcomes.map((o) => (
@@ -3401,6 +3415,244 @@ const CSS = `
     animation: tpPulseOrange 2.8s ease-in-out infinite;
   }
 
+  /* ============================================================
+     3D / DEPTH SYSTEM
+     Pure CSS, no JS. AUREAN-inspired perspective scenes.
+     ============================================================ */
+
+  /* Hero offer-card scene · perspective + gentle float + hover tilt */
+  .tp-hero-scene {
+    perspective: 1400px;
+    perspective-origin: 50% 40%;
+  }
+  .tp-hero-stage {
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+  }
+  .tp-hero-stage:hover {
+    transform: rotateY(-3deg) rotateX(2deg) translateY(-4px);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-hero-stage {
+      animation: tpFloat 9s ease-in-out infinite;
+    }
+  }
+  @keyframes tpFloat {
+    0%, 100% { transform: translateY(0) rotateY(0deg) rotateX(0deg); }
+    50%      { transform: translateY(-8px) rotateY(-0.6deg) rotateX(0.4deg); }
+  }
+
+  /* Hero offer-card status pill scanline · "live" feel */
+  .tp-status-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    overflow: hidden;
+    border-radius: 4px;
+  }
+  .tp-status-pill-scan {
+    position: absolute;
+    left: -30%;
+    top: 0;
+    bottom: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent 0%, rgba(249,115,22,0.18) 50%, transparent 100%);
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-status-pill-scan {
+      animation: tpStatusScan 6s ease-in-out infinite;
+    }
+  }
+  @keyframes tpStatusScan {
+    0%   { transform: translateX(0); opacity: 0; }
+    8%   { opacity: 1; }
+    50%  { transform: translateX(280%); opacity: 1; }
+    92%  { opacity: 0; }
+    100% { transform: translateX(280%); opacity: 0; }
+  }
+
+  /* Hero floating-chip · subtle box-shadow breathe */
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-chip-pulse {
+      animation: tpChipFloat 9s ease-in-out infinite, tpChipPulse 5s ease-in-out infinite;
+    }
+    .tp-chip-funded {
+      animation: tpChipFloat 9s ease-in-out infinite, tpChipFundedPulse 4.5s ease-in-out infinite;
+    }
+  }
+  @keyframes tpChipPulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(249,115,22,0.12),
+        0 10px 24px -8px rgba(249,115,22,0.35);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(249,115,22,0.22),
+        0 14px 32px -8px rgba(249,115,22,0.55);
+    }
+  }
+  @keyframes tpChipFundedPulse {
+    0%, 100% {
+      box-shadow:
+        0 10px 24px -10px rgba(15,23,42,0.25),
+        0 0 0 1px rgba(249,115,22,0.0);
+    }
+    50% {
+      box-shadow:
+        0 12px 28px -10px rgba(15,23,42,0.3),
+        0 0 0 2px rgba(249,115,22,0.18),
+        0 0 18px rgba(249,115,22,0.20);
+    }
+  }
+
+  /* Schematic flow · control-panel tilt + scan line */
+  .tp-schematic-scene {
+    perspective: 2400px;
+    perspective-origin: 50% 80%;
+  }
+  .tp-schematic-stage {
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(8deg);
+    transform-origin: 50% 100%;
+    transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+  }
+  .tp-schematic-stage:hover {
+    transform: rotateX(4deg) translateY(-2px);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-schematic-stage {
+      animation: tpSchematicSway 16s ease-in-out infinite;
+    }
+  }
+  @keyframes tpSchematicSway {
+    0%, 100% { transform: rotateX(8deg) rotateZ(0deg); }
+    50%      { transform: rotateX(8deg) rotateZ(0.4deg); }
+  }
+  .tp-schematic-scanline {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(15,23,42,0.45), transparent);
+    box-shadow: 0 0 14px rgba(249,115,22,0.18);
+    pointer-events: none;
+    z-index: 1;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-schematic-scanline {
+      animation: tpSchematicScan 9s linear infinite;
+    }
+  }
+  @keyframes tpSchematicScan {
+    0%   { top: 4%;  opacity: 0; }
+    8%   { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { top: 96%; opacity: 0; }
+  }
+
+  /* Finance mockup pillar · perspective sway */
+  .tp-finance-scene {
+    perspective: 1800px;
+    perspective-origin: 50% 50%;
+  }
+  .tp-finance-stage {
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+  }
+  .tp-finance-stage:hover {
+    transform: rotateY(-1.5deg) translateY(-3px);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-finance-stage {
+      animation: tpFinanceSway 12s ease-in-out infinite;
+    }
+  }
+  @keyframes tpFinanceSway {
+    0%, 100% { transform: rotateY(-1deg) translateY(0); }
+    50%      { transform: rotateY(1deg) translateY(-4px); }
+  }
+
+  /* Lender waterfall · 3D-stacked offer rows */
+  .tp-offer-stack {
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
+    transform-style: preserve-3d;
+  }
+  .tp-offer-row-3d {
+    transform: translateZ(var(--tp-row-z, 0px));
+    transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.35s ease, background-color 0.35s ease;
+    will-change: transform;
+    border-radius: 8px;
+    position: relative;
+  }
+  .tp-offer-row-recessed {
+    box-shadow: inset 0 1px 3px rgba(15,23,42,0.04);
+  }
+  .tp-offer-row-3d:hover {
+    transform: translateZ(20px) scale(1.015);
+    z-index: 3;
+    background: linear-gradient(90deg, rgba(255,255,255,1), rgba(248,250,252,1));
+    box-shadow:
+      0 16px 32px -12px rgba(15,23,42,0.18),
+      0 6px 12px -4px rgba(15,23,42,0.10);
+  }
+  .tp-offer-row-3d.tp-offer-row-primary-lg:hover {
+    box-shadow:
+      0 18px 36px -14px rgba(249,115,22,0.25),
+      0 6px 14px -4px rgba(15,23,42,0.10);
+  }
+
+  /* KPI ticker · subtle hover lift */
+  .tp-ticker-section {
+    perspective: 1600px;
+    perspective-origin: 50% 50%;
+  }
+  .tp-ticker-cell {
+    transform-style: preserve-3d;
+    transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), filter 0.25s ease;
+    will-change: transform;
+    padding: 2px 0;
+  }
+  .tp-ticker-cell:hover {
+    transform: translateY(-3px) rotateX(2deg);
+    filter: drop-shadow(0 10px 18px rgba(15,23,42,0.10));
+  }
+
+  /* Case-study cards · perspective + hover tilt */
+  .tp-case-scene {
+    perspective: 1500px;
+    perspective-origin: 50% 50%;
+  }
+  .tp-case-card-3d {
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  .tp-case-card-3d:hover {
+    transform: rotateY(-2deg) rotateX(1deg) translateY(-4px);
+    box-shadow:
+      0 22px 48px -18px rgba(15,23,42,0.22),
+      0 8px 18px -8px rgba(15,23,42,0.12);
+  }
+
+  /* Section transition · soft fade gradient between bands */
+  .tp-section-fade-top {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 6%, #000 100%);
+            mask-image: linear-gradient(180deg, transparent 0%, #000 6%, #000 100%);
+  }
+  .tp-section-fade-bottom {
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 94%, transparent 100%);
+            mask-image: linear-gradient(180deg, #000 0%, #000 94%, transparent 100%);
+  }
+
   /* ====== Reveal on scroll ====== */
   .reveal {
     opacity: 0;
@@ -3455,5 +3707,28 @@ const CSS = `
     .tp-trust-cell { border-bottom: 1px solid rgba(15,23,42,0.08); }
     .tp-trust-cell:last-child { border-bottom: 0; }
     .tp-eyebrow-pill { font-size: 9.5px; padding: 6px 10px; }
+  }
+
+  /* ====== Reduced motion · disable every animation and transform-on-hover lift ====== */
+  @media (prefers-reduced-motion: reduce) {
+    .tp-root *,
+    .tp-root *::before,
+    .tp-root *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .tp-hero-stage,
+    .tp-finance-stage,
+    .tp-schematic-stage {
+      transform: none !important;
+    }
+    .tp-hero-stage:hover,
+    .tp-finance-stage:hover,
+    .tp-schematic-stage:hover,
+    .tp-offer-row-3d:hover,
+    .tp-ticker-cell:hover,
+    .tp-case-card-3d:hover {
+      transform: none !important;
+    }
   }
 `;

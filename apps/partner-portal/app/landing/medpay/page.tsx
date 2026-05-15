@@ -24,10 +24,10 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
 // positions are above the card top (top: -X%) and below the card bottom
 // (bottom: -X%) so they never overlap the card's visible text.
 const HERO_CHIPS: Array<{ k: string; v: string; top?: string; bottom?: string; left?: string; right?: string; delay: string }> = [
-  { k: 'FCRA',        v: 'soft pull · 0 impact',      top: '-12%',    left:  '2%',  delay: '0s'   },
-  { k: 'Marketplace', v: '52 lenders parallel',       top: '-12%',    right: '2%',  delay: '0.6s' },
-  { k: 'Decision',    v: '< 10s · agentic waterfall', bottom: '-12%', left:  '2%',  delay: '1.2s' },
-  { k: 'Promo',       v: '0% APR · 12mo deferred',    bottom: '-12%', right: '2%',  delay: '1.8s' },
+  { k: 'FCRA',        v: 'soft pull · 0 impact',         top: '-12%',    left:  '2%',  delay: '0s'   },
+  { k: 'Decision',    v: 'instant · multi-offer',        top: '-12%',    right: '2%',  delay: '0.6s' },
+  { k: 'Payout',      v: 'merchant-direct · 48-72hr',    bottom: '-12%', left:  '2%',  delay: '1.2s' },
+  { k: 'Promo',       v: '0% interest plans · T&Cs',     bottom: '-12%', right: '2%',  delay: '1.8s' },
 ];
 
 const TICKER: Array<{ value: string; label: string; delta: string }> = [
@@ -40,7 +40,7 @@ const TICKER: Array<{ value: string; label: string; delta: string }> = [
 const STATUS_QUO: Array<{ stat: string; label: string }> = [
   { stat: '38%', label: 'Same-day close on implant consults (industry avg.)' },
   { stat: '$1.4M', label: 'Annual case acceptance lost per 3-chair practice' },
-  { stat: '54%', label: 'After-hours calls that go unanswered' },
+  { stat: '54%', label: 'Inbound applications that never get pre-qualified' },
   { stat: '2 to 4 wks', label: 'Avg. time from consult to deposit' },
 ];
 
@@ -83,9 +83,9 @@ const STAGES: Array<{ n: string; stage: string; title: string; body: string; met
   {
     n: '05',
     stage: 'Funded',
-    title: 'Lender disburses to your bank',
-    body: 'The winning lender disburses the approved amount directly to your business account on the lender\'s normal payout schedule. No clawback on routine defaults. Credit risk sits with the lender, not the practice.',
-    metric: 'Lender-direct',
+    title: 'Lender disburses direct to your business account',
+    body: 'Merchant-direct disbursement. No intermediary holds the funds. Payouts generally land within 48 to 72 hours of the loan settling. No clawback on routine defaults. Credit risk sits with the lender, not the practice.',
+    metric: '48-72hr · merchant-direct',
   },
 ];
 
@@ -191,7 +191,7 @@ const AGENTS: Array<{
     span: 7,
     status: 'ONLINE',
     description:
-      'NEXUS routes every qualified patient through a curated multi-lender marketplace, prime to subprime, $1.5k to $50k+. Soft pull only. It learns which lenders approve which patient profiles, watches stip rates in real time, and reroutes around lenders that tighten overnight.',
+      'NEXUS routes every qualified patient through a curated multi-lender marketplace, prime to subprime, $3k to $50k. Soft pull only. It learns which lenders approve which patient profiles, watches stip rates in real time, and reroutes around lenders that tighten overnight.',
     stats: [
       { k: 'Decision', v: '< 10s' },
       { k: 'Pull type', v: 'Soft only' },
@@ -271,7 +271,7 @@ const CASES: Array<{
   },
   {
     quote:
-      'Instant approvals at the consult turned our close rate on $8k+ tickets from a coin-flip into a routine. Strong marketplace coverage, decisions under 10 seconds, and the agentic layer picking up after-hours was a bonus we did not budget for. We never see a deferred deal again.',
+      'Instant approvals at the consult turned our close rate on $8k+ tickets from a coin-flip into a routine. Strong marketplace coverage, decisions under 10 seconds, and the agentic layer pre-qualifying every inbound application around the clock means our front desk only spends time with patients who can actually afford the work. We never see a deferred deal again.',
     name: 'James Park',
     role: 'CFO · MedFirst Solutions · New York, NY',
     outcomes: [
@@ -309,7 +309,7 @@ const OBJECTIONS: Array<{ q: string; a: string }> = [
   },
   {
     q: 'How fast is onboarding really?',
-    a: '5-minute self-serve wizard for the business profile. KYB (IRS TIN, Secretary of State, OFAC, PEP, FinCEN BOI) clears in 60 seconds for clean records. First funded patient in 48 hours, guaranteed, or we waive your first month of platform fees.',
+    a: '5-minute self-serve wizard for the business profile. KYB (IRS TIN, Secretary of State, OFAC, PEP, FinCEN BOI) clears in 60 seconds for clean records. Once a patient is approved and signed, payouts are merchant-direct and generally land within 48 to 72 hours of the loan settling.',
   },
   {
     q: 'How is this different from Sunbit / Cherry / Affirm?',
@@ -488,14 +488,29 @@ export default function MedPayLandingPage(): JSX.Element {
   useReveal();
   const scrolled = useScrolled();
 
-  // ROI calculator state
-  const [leads, setLeads] = useState<number>(180);
-  const [ticket, setTicket] = useState<number>(5500);
-  const [closeRate, setCloseRate] = useState<number>(38);
-  const MULT = 0.78;
-  const liftPct = Math.max(0, 0.71 - closeRate / 100);
-  const recovered = Math.round(leads * ticket * liftPct * 12 * MULT);
-  const monthly = Math.round(recovered / 12);
+  // ROI calculator state — 4-stage funnel
+  const [leads, setLeads] = useState<number>(180);          // pre-qualified leads / month
+  const [showRate, setShowRate] = useState<number>(65);     // % of pre-qual leads that show up
+  const [closeRate, setCloseRate] = useState<number>(40);   // % of shows that say yes to treatment
+  const [fundedRate, setFundedRate] = useState<number>(70); // % of closes that fund via MedPay
+  const [ticket, setTicket] = useState<number>(8000);       // avg ticket $
+
+  // Funded patients = leads × show% × close% × funded%
+  const fundedPerMonth = Math.round(
+    leads * (showRate / 100) * (closeRate / 100) * (fundedRate / 100)
+  );
+  const fundedPerYear = fundedPerMonth * 12;
+  const recoveredAnnual = fundedPerYear * ticket;
+  const fundedMonthlyRevenue = fundedPerMonth * ticket;
+
+  // Illustrative baseline: a typical no-MedPay funded-rate is ~35% due to financing friction.
+  // We frame the "lift" as illustrative — NOT a guarantee.
+  const BASELINE_FUNDED_RATE = 35; // %
+  const baselineFundedPerYear = Math.round(
+    leads * (showRate / 100) * (closeRate / 100) * (BASELINE_FUNDED_RATE / 100) * 12
+  );
+  const baselineRevenueAnnual = baselineFundedPerYear * ticket;
+  const upliftAnnual = Math.max(0, recoveredAnnual - baselineRevenueAnnual);
 
   // Objections accordion state
   const [openIdx, setOpenIdx] = useState<number>(0);
@@ -572,11 +587,13 @@ export default function MedPayLandingPage(): JSX.Element {
               </h1>
 
               <p className="mp-hero-sub">
-                MedPay runs a real-time financing marketplace. <strong>52 lenders</strong>, parallel waterfall,{' '}
-                <strong>real-lender approvals</strong>. So the patient who said{' '}
-                <em>"let me think about it"</em> walks out with a yes-able monthly number. We threw in{' '}
-                <strong>7 autonomous agents</strong> to pick up your after-hours calls, qualify inbound leads,
-                and recover failed disbursements. All under one signup.
+                Pre-qualification agents and the lending waterfall run <strong>in synchrony</strong>.
+                Software agents qualify every inbound application silently on the <strong>financial data</strong>
+                {' '}— soft-pull credit, identity, propensity — so your team&apos;s calendar fills with patients
+                who can <strong>actually afford treatment</strong>. The marketplace then returns an{' '}
+                <strong>instant multi-offer decision</strong> at the chair, the close happens on the same visit,
+                and funds settle <strong>merchant-direct, generally within 48 to 72 hours</strong> of the
+                loan settling. All under one signup.
               </p>
 
               <div className="mp-hero-ctas">
@@ -689,7 +706,7 @@ export default function MedPayLandingPage(): JSX.Element {
                       <Icon.Shield /> Soft pull · 0 credit impact
                     </span>
                     <span>
-                      <Icon.Bolt /> Funded direct by lender
+                      <Icon.Bolt /> Merchant-direct · 48-72hr payout
                     </span>
                   </div>
                 </div>
@@ -703,23 +720,23 @@ export default function MedPayLandingPage(): JSX.Element {
                       <div className="mp-side-label">Lenders quoting</div>
                     </div>
                     <div>
-                      <div className="mp-side-val">5.99 to 24.99%</div>
-                      <div className="mp-side-label">APR range</div>
+                      <div className="mp-side-val">from 5.9%</div>
+                      <div className="mp-side-label">APR (qualifying)</div>
                     </div>
                     <div>
-                      <div className="mp-side-val">$1.5k to $50k</div>
-                      <div className="mp-side-label">Ticket range</div>
+                      <div className="mp-side-val">$3k to $50k</div>
+                      <div className="mp-side-label">Loan range</div>
                     </div>
                     <div>
-                      <div className="mp-side-val">6 to 60 mo</div>
-                      <div className="mp-side-label">Term range</div>
+                      <div className="mp-side-val">up to 60 mo</div>
+                      <div className="mp-side-label">Terms</div>
                     </div>
                   </div>
                   <div className="mp-side-divider" />
                   <div className="mp-side-footrow">
                     <span className="mp-side-rail">
                       <span className="mp-pulse-dot" />
-                      Quote round-trip · 4.8s avg
+                      Merchant-direct payout · 48-72hr after settlement
                     </span>
                   </div>
                 </div>
@@ -821,9 +838,10 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">From cold lead to settled deal.</span>
             </h2>
             <p className="mp-section-body">
-              The financing waterfall runs end-to-end inside MedPay. Soft-pull pre-qual, the agentic layer qualifying
-              inbound calls, a marketplace decision engine that fires 52 lenders in parallel, the best offer winning,
-              and the lender disbursing direct to your business account on approval.
+              The financing waterfall runs end-to-end inside MedPay. Soft-pull pre-qual, the agentic layer
+              pre-qualifying every application on the financial data, a marketplace decision engine that fires
+              52 lenders in parallel, the best offer winning, and the lender disbursing direct to your business
+              account on approval — generally within 48 to 72 hours of settlement.
             </p>
           </div>
 
@@ -910,10 +928,11 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">patient intake to attribution · 24/7.</span>
             </h2>
             <p className="mp-section-body">
-              Each agent has a defined role, a defined scope, and a measurable output. They don&apos;t replace your
-              team. They replace the manual intake reviews, the enrichment vendor sprawl, the broker phone-tag, the
-              failed-ACH chase, and the broken pixel feedback loop your ad account is starving on. Every action is
-              logged, explainable, and FCRA-aware.
+              Each agent has a defined role, a defined scope, and a measurable output. They work on the
+              financial data &mdash; not on the phone. They don&apos;t replace your team; they replace the
+              manual intake reviews, the enrichment vendor sprawl, the lender-routing back-and-forth, the
+              failed-ACH chase, and the broken pixel feedback loop your ad account is starving on. Every
+              action is logged, explainable, and FCRA-aware.
             </p>
           </div>
 
@@ -1079,21 +1098,23 @@ export default function MedPayLandingPage(): JSX.Element {
                   <span className="mp-pillar-tag primary">THE ENGINE</span>
                 </div>
                 <h3 className="mp-pillar-title">
-                  Same-day approvals on <span className="num-tone">$1.5k to $50k</span> tickets. A real marketplace, not a
+                  Instant decisions on <span className="num-tone">$3k to $50k</span> tickets. A real marketplace, not a
                   single lender.
                 </h3>
                 <p className="mp-pillar-body">
                   MedPay plugs into multiple lender marketplaces (engine.tech, HSP Medical, EazePay Direct) and runs a
-                  parallel waterfall on every application. Patient sees one branded screen with the AI-recommended offer
-                  first; alternatives behind a tap. You&apos;re paid in full when the lender disburses. No clawback for
-                  routine defaults.
+                  parallel waterfall on every application. Patient gets an instant decision with multiple offers ranked
+                  to their personal situation. You&apos;re paid in full when the lender disburses, merchant-direct, no
+                  intermediary holding funds. No clawback for routine defaults.
                 </p>
                 <ul className="mp-pillar-bullets">
                   {[
-                    'Soft pull at the chair · zero credit impact, fundability tier in < 10s',
-                    'Promo 0% APR / 12-mo deferred-interest plans for qualifying procedures',
-                    'Terms 6 to 60 months · APR 5.99% to 24.99% across the marketplace',
-                    'Funds disbursed direct by the winning lender · lender carries the credit risk',
+                    'Loans $3,000 to $50,000 · soft pull at the chair · zero credit impact',
+                    'APR from 5.9% for qualifying clients · terms up to 60 months',
+                    '0% interest plans available for qualifying programs · T&Cs apply',
+                    'Instant decision · multiple ranked offers tailored to the patient',
+                    'Merchant-direct payout · funds land generally within 48 to 72 hours',
+                    'Lender carries the credit risk · no clawback on routine defaults',
                     'White-labelled flow · patients see your brand, not the lender',
                     '52 lenders quoted in parallel · 5-second SLA per round-trip',
                   ].map((b, i) => (
@@ -1193,6 +1214,138 @@ export default function MedPayLandingPage(): JSX.Element {
             </div>
           </div>
 
+          {/* ============== SYNERGY CALLOUT ============== */}
+          <div className="mp-synergy reveal">
+            <div className="mp-synergy-grid">
+              <div className="mp-synergy-side">
+                <div className="mp-synergy-eyebrow">
+                  <Icon.Hub />
+                  THE SYNERGY
+                </div>
+                <div className="mp-synergy-pair">
+                  <div className="mp-synergy-half">
+                    <div className="mp-synergy-half-k">Agentic layer</div>
+                    <div className="mp-synergy-half-v">The financial filter</div>
+                  </div>
+                  <div className="mp-synergy-x">&times;</div>
+                  <div className="mp-synergy-half">
+                    <div className="mp-synergy-half-k">Lending waterfall</div>
+                    <div className="mp-synergy-half-v">The closer</div>
+                  </div>
+                </div>
+              </div>
+              <div className="mp-synergy-body">
+                <p>
+                  <strong>The agentic layer is your financial filter. The lending waterfall is your closer.</strong>
+                </p>
+                <p>
+                  Software agents work silently on every inbound application &mdash; soft-pull credit, identity
+                  enrichment, propensity scoring &mdash; and surface only the financially-qualified prospects
+                  to your front desk. Your team&apos;s consult slots fill up with patients who can actually
+                  afford treatment. The lending waterfall returns an instant multi-offer decision at the chair.
+                  Combined, your team converts on the same visit instead of chasing payment plans over two weeks.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ============== CALENDAR QUALITY + PIXEL FEEDBACK LOOP ============== */}
+          <div className="mp-calendar reveal" id="calendar-quality">
+            <div className="mp-calendar-head">
+              <div className="mp-section-tag" style={{ marginBottom: 18 }}>04A &middot; CALENDAR QUALITY</div>
+              <h3 className="mp-calendar-h">
+                <span className="grad-teal">Fill your calendar with buyers,</span>{' '}
+                <span className="grad-teal-deep">not fillers.</span>
+              </h3>
+              <p className="mp-calendar-sub">
+                Your pixel learns what a funded patient looks like.
+              </p>
+            </div>
+
+            <div className="mp-calendar-grid">
+              {/* LEFT: Calendar quality */}
+              <div className="mp-calendar-card">
+                <div className="mp-calendar-card-eyebrow">
+                  <Icon.Bolt />
+                  CONSULT SLOT ECONOMICS
+                </div>
+                <h4 className="mp-calendar-card-h">Every 30-minute slot is finite and expensive.</h4>
+                <p className="mp-calendar-card-body">
+                  A consult with a prospect who can&apos;t afford the treatment is 30 minutes not spent with a
+                  patient who can. Pre-qualifying on the financial data &mdash; before the slot is even
+                  booked &mdash; means your team only sees prospects who can fund.
+                </p>
+
+                {/* mini calendar visualization */}
+                <div className="mp-calendar-cal">
+                  <div className="mp-calendar-cal-head">
+                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+                  </div>
+                  <div className="mp-calendar-cal-body">
+                    {Array.from({ length: 25 }).map((_, i) => {
+                      // ~30% disqualified in pre-MedPay world, near 0 post
+                      const disq = [2, 5, 9, 12, 16, 19, 22].includes(i);
+                      const buyer = !disq;
+                      return (
+                        <div
+                          key={i}
+                          className={`mp-calendar-cal-slot ${buyer ? 'buyer' : 'filler'}`}
+                          title={buyer ? 'Funded buyer' : 'Filler · can’t afford treatment'}
+                        >
+                          <span className="mp-calendar-cal-dot" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mp-calendar-cal-legend">
+                    <span className="lg-buyer"><span className="lg-dot" /> Funded buyer</span>
+                    <span className="lg-filler"><span className="lg-dot" /> Filler &mdash; can&apos;t fund</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT: Pixel feedback loop */}
+              <div className="mp-calendar-card pixel">
+                <div className="mp-calendar-card-eyebrow">
+                  <Icon.Spark />
+                  PIXEL FEEDBACK LOOP &middot; ECHO
+                </div>
+                <h4 className="mp-calendar-card-h">Train your pixel on funded patients, not form fills.</h4>
+                <p className="mp-calendar-card-body">
+                  ECHO holds pixel events until a lead actually clears the financial qualification, then fires
+                  weighted conversions back to Meta and Google via server-side CAPI. Over time, the ad
+                  platforms learn what a <em>funded patient</em> looks like and the algorithms get smarter at
+                  finding more of them. Your ad spend gets more efficient month over month &mdash; not because
+                  you upped budgets, but because you trained your pixel on real buyers.
+                </p>
+
+                {/* loop visualization */}
+                <div className="mp-pixel-loop">
+                  <div className="mp-pixel-loop-row">
+                    <span className="mp-pixel-step n1">01</span>
+                    <span className="mp-pixel-step-label">Lead clicks ad</span>
+                  </div>
+                  <div className="mp-pixel-loop-row">
+                    <span className="mp-pixel-step n2">02</span>
+                    <span className="mp-pixel-step-label">Agents pre-qualify on financial data</span>
+                  </div>
+                  <div className="mp-pixel-loop-row">
+                    <span className="mp-pixel-step n3">03</span>
+                    <span className="mp-pixel-step-label">Funded? &rarr; weighted CAPI event fires</span>
+                  </div>
+                  <div className="mp-pixel-loop-row">
+                    <span className="mp-pixel-step n4">04</span>
+                    <span className="mp-pixel-step-label">Meta &amp; Google retrain on real buyers</span>
+                  </div>
+                  <div className="mp-pixel-loop-row last">
+                    <span className="mp-pixel-step n5">05</span>
+                    <span className="mp-pixel-step-label">CPA falls &mdash; same budget, more funded patients</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1202,23 +1355,23 @@ export default function MedPayLandingPage(): JSX.Element {
           <div className="mp-section-head reveal" style={{ maxWidth: '820px' }}>
             <div className="mp-section-tag">05 · YOUR NUMBERS</div>
             <h2 className="mp-h2">
-              <span className="grad-teal">Recovered case acceptance</span>
+              <span className="grad-teal">Recovered case acceptance,</span>
               <br />
-              <span className="grad-teal-deep">financing-driven, on your numbers.</span>
+              <span className="grad-teal-deep">funnel-modelled on your numbers.</span>
             </h2>
             <p className="mp-section-body">
-              Plug in your real funnel. We&apos;ll show you the case acceptance MedPay financing recovers by closing the
-              gap between &ldquo;let me think about it&rdquo; and an approved monthly. Most practices break even on MedPay in
-              their first 11 days.
+              Plug in your real funnel — pre-qualified leads, show rate, close rate, funded rate, avg ticket.
+              We&apos;ll model the financing-driven revenue from the patients who actually fund through MedPay.
+              Outputs are illustrative, not a guarantee of results.
             </p>
           </div>
 
           <div className="mp-roi-grid reveal">
-            {/* LEFT: sliders */}
+            {/* LEFT: 5 sliders */}
             <div className="mp-roi-card">
               <div className="mp-roi-row">
                 <label htmlFor="roi-leads" className="mp-roi-label">
-                  <span>Patient leads / month</span>
+                  <span>Pre-qualified leads / month</span>
                   <span className="mp-roi-val">{leads}</span>
                 </label>
                 <input
@@ -1238,36 +1391,36 @@ export default function MedPayLandingPage(): JSX.Element {
               </div>
 
               <div className="mp-roi-row">
-                <label htmlFor="roi-ticket" className="mp-roi-label">
-                  <span>Avg treatment ticket</span>
-                  <span className="mp-roi-val">{fmtUsd(ticket)}</span>
+                <label htmlFor="roi-show" className="mp-roi-label">
+                  <span>Show rate</span>
+                  <span className="mp-roi-val">{showRate}%</span>
                 </label>
                 <input
-                  id="roi-ticket"
+                  id="roi-show"
                   type="range"
-                  min={500}
-                  max={25000}
-                  step={100}
-                  value={ticket}
-                  onChange={(e) => setTicket(Number(e.target.value))}
+                  min={20}
+                  max={95}
+                  step={1}
+                  value={showRate}
+                  onChange={(e) => setShowRate(Number(e.target.value))}
                   className="mp-slider"
                 />
                 <div className="mp-slider-scale">
-                  <span>$500</span>
-                  <span>$25,000</span>
+                  <span>20%</span>
+                  <span>95%</span>
                 </div>
               </div>
 
               <div className="mp-roi-row">
                 <label htmlFor="roi-close" className="mp-roi-label">
-                  <span>Current same-day close rate</span>
+                  <span>Close rate (shows &rarr; yes-to-treatment)</span>
                   <span className="mp-roi-val">{closeRate}%</span>
                 </label>
                 <input
                   id="roi-close"
                   type="range"
                   min={5}
-                  max={70}
+                  max={90}
                   step={1}
                   value={closeRate}
                   onChange={(e) => setCloseRate(Number(e.target.value))}
@@ -1275,47 +1428,104 @@ export default function MedPayLandingPage(): JSX.Element {
                 />
                 <div className="mp-slider-scale">
                   <span>5%</span>
-                  <span>70%</span>
+                  <span>90%</span>
+                </div>
+              </div>
+
+              <div className="mp-roi-row">
+                <label htmlFor="roi-funded" className="mp-roi-label">
+                  <span>Funded rate (closes &rarr; accept finance)</span>
+                  <span className="mp-roi-val">{fundedRate}%</span>
+                </label>
+                <input
+                  id="roi-funded"
+                  type="range"
+                  min={10}
+                  max={95}
+                  step={1}
+                  value={fundedRate}
+                  onChange={(e) => setFundedRate(Number(e.target.value))}
+                  className="mp-slider"
+                />
+                <div className="mp-slider-scale">
+                  <span>10%</span>
+                  <span>95%</span>
+                </div>
+              </div>
+
+              <div className="mp-roi-row">
+                <label htmlFor="roi-ticket" className="mp-roi-label">
+                  <span>Avg treatment ticket</span>
+                  <span className="mp-roi-val">{fmtUsd(ticket)}</span>
+                </label>
+                <input
+                  id="roi-ticket"
+                  type="range"
+                  min={3000}
+                  max={50000}
+                  step={500}
+                  value={ticket}
+                  onChange={(e) => setTicket(Number(e.target.value))}
+                  className="mp-slider"
+                />
+                <div className="mp-slider-scale">
+                  <span>$3,000</span>
+                  <span>$50,000</span>
                 </div>
               </div>
 
               <div className="mp-roi-assump">
-                <span className="mp-roi-assump-k">Assumption</span>
-                <span>Estimate based on the close-rate lift observed across 412 medical practices, 2024-26.</span>
+                <span className="mp-roi-assump-k">Funnel</span>
+                <span>
+                  Funded patients/mo = leads &times; show% &times; close% &times; funded%. Sits inside the
+                  MedPay loan range ($3k&ndash;$50k). Adjust each stage to match your real conversion.
+                </span>
               </div>
             </div>
 
             {/* RIGHT: output */}
             <div className="mp-roi-out">
-              <div className="mp-roi-eyebrow">RECOVERED CASE ACCEPTANCE · ANNUAL</div>
+              <div className="mp-roi-eyebrow">FINANCING-DRIVEN REVENUE · ANNUAL</div>
               <div className="mp-roi-bignum">
-                {fmtUsd(recovered)}
+                {fmtUsd(recoveredAnnual)}
                 <span className="mp-roi-trailing">/ year</span>
               </div>
-              <div className="mp-roi-sub">Financing-driven revenue you are leaving on the table today.</div>
+              <div className="mp-roi-sub">
+                Funnel: {leads} pre-qualified leads/mo &rarr; {Math.round(leads * (showRate / 100))} shows &rarr;{' '}
+                {Math.round(leads * (showRate / 100) * (closeRate / 100))} closes &rarr;{' '}
+                <strong>{fundedPerMonth} funded patients/mo</strong> at {fmtUsd(ticket)} avg ticket.
+              </div>
 
               <div className="mp-roi-grid-mini">
                 <div>
-                  <div className="mp-roi-mini-num">{fmtUsd(monthly)}</div>
-                  <div className="mp-roi-mini-lab">per month</div>
+                  <div className="mp-roi-mini-num">{fundedPerMonth.toLocaleString('en-US')}</div>
+                  <div className="mp-roi-mini-lab">funded / month</div>
                 </div>
                 <div>
-                  <div className="mp-roi-mini-num">{Math.round(liftPct * 100)}pp</div>
-                  <div className="mp-roi-mini-lab">close-rate lift</div>
+                  <div className="mp-roi-mini-num">{fundedPerYear.toLocaleString('en-US')}</div>
+                  <div className="mp-roi-mini-lab">funded / year</div>
                 </div>
                 <div>
-                  <div className="mp-roi-mini-num">11 days</div>
-                  <div className="mp-roi-mini-lab">avg payback</div>
+                  <div className="mp-roi-mini-num">{fmtUsd(fundedMonthlyRevenue)}</div>
+                  <div className="mp-roi-mini-lab">funded $ / month</div>
                 </div>
               </div>
+
+              {upliftAnnual > 0 && (
+                <div className="mp-roi-uplift-row">
+                  <div className="mp-roi-uplift-k">Illustrative uplift vs. {BASELINE_FUNDED_RATE}% funded-rate baseline</div>
+                  <div className="mp-roi-uplift-v">+{fmtUsd(upliftAnnual)} / year</div>
+                </div>
+              )}
 
               <a href="/welcome" className="btn-primary-teal lg full">
                 Lock in this number
                 <Icon.Arrow />
               </a>
               <div className="mp-roi-foot">
-                Model: leads × ticket × (post-MedPay close-rate estimate − your current close) × 12 × attach factor.
-                Excludes agent show-rate recovery + larger-ticket upsell lift.
+                Outputs are illustrative based on your inputs. Actual outcomes vary by practice, geography,
+                and patient mix. Not a guarantee of returns. Loans $3,000&ndash;$50,000; APR from 5.9% for
+                qualifying clients; terms up to 60 months; 0% interest plans available, T&amp;Cs apply.
               </div>
             </div>
           </div>
@@ -1445,8 +1655,8 @@ export default function MedPayLandingPage(): JSX.Element {
               <span className="grad-teal-deep">Instantly.</span>
             </h2>
             <p className="mp-final-body">
-              Sign up in 5 minutes. KYB clears in 60 seconds. Your first funded patient inside 48 hours.{' '}
-              <strong>Guaranteed</strong>, or we waive your first month of platform fees.
+              Sign up in 5 minutes. KYB clears in 60 seconds. Instant decisions at the chair, payouts
+              merchant-direct, generally <strong>within 48 to 72 hours</strong> of the loan settling.
             </p>
             <div className="mp-final-ctas">
               <a href="/welcome" className="btn-primary-teal xl">
@@ -2622,11 +2832,266 @@ const CSS = `
   position: relative;
   margin-top: 30px;
 }
+.mp-roi-uplift-row {
+  position: relative;
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(34, 184, 160, 0.28);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap;
+}
+.mp-roi-uplift-k {
+  font-size: 11px; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.72);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.mp-roi-uplift-v {
+  font-size: 18px; font-weight: 700;
+  color: var(--mp-teal-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
 .mp-roi-foot {
   position: relative;
   margin-top: 16px;
   font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.5;
 }
+
+/* ============== SYNERGY CALLOUT ============== */
+.mp-synergy {
+  margin-top: 40px;
+  background:
+    radial-gradient(ellipse 60% 80% at 0% 50%, rgba(34, 184, 160, 0.12), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(236,255,254,0.85) 100%);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 24px;
+  padding: 34px 36px;
+  box-shadow: 0 24px 60px -28px rgba(14, 124, 102, 0.22);
+  position: relative;
+  overflow: hidden;
+}
+.mp-synergy::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(14, 124, 102, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 124, 102, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at 0% 50%, black 0%, transparent 70%);
+  pointer-events: none;
+}
+.mp-synergy-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 40px;
+  align-items: center;
+}
+@media (max-width: 960px) {
+  .mp-synergy-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+.mp-synergy-side {
+  display: flex; flex-direction: column; gap: 18px;
+}
+.mp-synergy-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.mp-synergy-pair {
+  display: flex; align-items: center; gap: 14px;
+}
+.mp-synergy-half {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid var(--mp-line-strong);
+}
+.mp-synergy-half-k {
+  font-size: 10px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--mp-teal); text-transform: uppercase;
+}
+.mp-synergy-half-v {
+  margin-top: 4px;
+  font-size: 16px; font-weight: 700; color: var(--mp-ink);
+  letter-spacing: -0.01em;
+}
+.mp-synergy-x {
+  font-size: 22px; font-weight: 700; color: var(--mp-teal);
+  flex-shrink: 0;
+}
+.mp-synergy-body {
+  font-size: 15px; line-height: 1.65; color: var(--mp-ink-2);
+}
+.mp-synergy-body p { margin: 0 0 12px 0; }
+.mp-synergy-body p:last-child { margin-bottom: 0; }
+.mp-synergy-body strong { color: var(--mp-ink); }
+
+/* ============== CALENDAR QUALITY + PIXEL LOOP ============== */
+.mp-calendar {
+  margin-top: 40px;
+  padding-top: 8px;
+}
+.mp-calendar-head { max-width: 760px; margin-bottom: 28px; }
+.mp-calendar-h {
+  font-size: 36px; font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  margin: 0;
+}
+.mp-calendar-sub {
+  margin-top: 14px;
+  font-size: 17px; line-height: 1.5;
+  color: var(--mp-mute);
+  font-weight: 500;
+}
+.mp-calendar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 960px) {
+  .mp-calendar-grid { grid-template-columns: 1fr; }
+}
+.mp-calendar-card {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: 0 24px 60px -30px rgba(14, 124, 102, 0.22);
+  display: flex; flex-direction: column; gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.mp-calendar-card.pixel {
+  background:
+    radial-gradient(ellipse 60% 60% at 100% 0%, rgba(34, 184, 160, 0.10), transparent 60%),
+    rgba(255,255,255,0.92);
+}
+.mp-calendar-card-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.mp-calendar-card-h {
+  font-size: 22px; font-weight: 700; color: var(--mp-ink);
+  letter-spacing: -0.02em; line-height: 1.25;
+  margin: 0;
+}
+.mp-calendar-card-body {
+  font-size: 14px; line-height: 1.65; color: var(--mp-ink-2);
+  margin: 0;
+}
+.mp-calendar-card-body em { color: var(--mp-teal); font-style: normal; font-weight: 600; }
+
+/* mini calendar visualization */
+.mp-calendar-cal {
+  margin-top: 6px;
+  padding: 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(236, 255, 254, 0.6) 0%, rgba(255,255,255, 0.6) 100%);
+  border: 1px solid var(--mp-line);
+}
+.mp-calendar-cal-head {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  font-size: 10px; letter-spacing: 0.1em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.mp-calendar-cal-body {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.mp-calendar-cal-slot {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .15s ease;
+}
+.mp-calendar-cal-slot.buyer {
+  background: linear-gradient(135deg, rgba(34, 184, 160, 0.22), rgba(14, 124, 102, 0.18));
+  border: 1px solid rgba(34, 184, 160, 0.45);
+}
+.mp-calendar-cal-slot.filler {
+  background: rgba(180, 180, 180, 0.08);
+  border: 1px dashed rgba(120, 120, 120, 0.28);
+}
+.mp-calendar-cal-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+}
+.mp-calendar-cal-slot.buyer .mp-calendar-cal-dot {
+  background: var(--mp-teal);
+  box-shadow: 0 0 0 3px rgba(34, 184, 160, 0.22);
+}
+.mp-calendar-cal-slot.filler .mp-calendar-cal-dot {
+  background: rgba(120, 120, 120, 0.4);
+}
+.mp-calendar-cal-legend {
+  margin-top: 12px;
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-size: 11px; color: var(--mp-mute);
+}
+.mp-calendar-cal-legend .lg-dot {
+  display: inline-block;
+  width: 8px; height: 8px; border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.mp-calendar-cal-legend .lg-buyer .lg-dot {
+  background: var(--mp-teal); box-shadow: 0 0 0 3px rgba(34, 184, 160, 0.18);
+}
+.mp-calendar-cal-legend .lg-filler .lg-dot {
+  background: rgba(120, 120, 120, 0.4);
+}
+
+/* pixel loop visualization */
+.mp-pixel-loop {
+  margin-top: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(236, 255, 254, 0.6) 0%, rgba(255,255,255, 0.6) 100%);
+  border: 1px solid var(--mp-line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.mp-pixel-loop-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--mp-line);
+  position: relative;
+}
+.mp-pixel-loop-row:not(.last)::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  bottom: -8px;
+  width: 1px; height: 8px;
+  background: linear-gradient(180deg, var(--mp-teal-2), transparent);
+  opacity: 0.6;
+}
+.mp-pixel-step {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  color: #fff;
+  background: linear-gradient(135deg, var(--mp-teal-2), var(--mp-teal));
+}
+.mp-pixel-step-label {
+  font-size: 13px; color: var(--mp-ink-2);
+  line-height: 1.4;
+}
+.mp-pixel-step-label strong { color: var(--mp-ink); }
 
 /* ============== STORIES ============== */
 .mp-stories { padding: 110px 0; position: relative; }
@@ -3265,6 +3730,13 @@ const CSS = `
   .mp-roi-out { padding: 28px; }
   .mp-roi-card { padding: 24px; }
   .mp-roi-grid-mini { grid-template-columns: 1fr; }
+
+  .mp-synergy { padding: 24px; }
+  .mp-synergy-pair { flex-direction: column; align-items: stretch; gap: 10px; }
+  .mp-synergy-x { text-align: center; }
+
+  .mp-calendar-card { padding: 22px; }
+  .mp-calendar-h { font-size: 26px; }
 
   .mp-stories-grid { gap: 16px; }
   .mp-story-card { padding: 24px; }
