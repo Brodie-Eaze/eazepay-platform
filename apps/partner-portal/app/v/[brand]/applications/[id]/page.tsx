@@ -12,7 +12,7 @@
  *   - Stage dwell times rendered in monospace
  *   - Last-event glow + ticking second-by-second offsets
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import {
   PageHeader,
@@ -43,6 +43,84 @@ import {
   BankIcon,
   GaugeIcon,
 } from '@eazepay/ui/web';
+
+/* ─── Live-status shapes — mirror the BFF status route response. ─── */
+type LiveStatus =
+  | 'invite_sent'
+  | 'form_started'
+  | 'consent_captured'
+  | 'soft_pull_initiated'
+  | 'soft_pull_returned'
+  | 'orchestration_running'
+  | 'offers_available'
+  | 'offer_accepted'
+  | 'contract_signed'
+  | 'funded';
+
+const LIVE_STATUS_ORDER: LiveStatus[] = [
+  'invite_sent',
+  'form_started',
+  'consent_captured',
+  'soft_pull_initiated',
+  'soft_pull_returned',
+  'orchestration_running',
+  'offers_available',
+  'offer_accepted',
+  'contract_signed',
+  'funded',
+];
+
+const LIVE_STATUS_LABEL: Record<LiveStatus, string> = {
+  invite_sent: 'Invite sent',
+  form_started: 'Form started',
+  consent_captured: 'Consent captured',
+  soft_pull_initiated: 'Soft pull initiated',
+  soft_pull_returned: 'Soft pull returned',
+  orchestration_running: 'Orchestration running',
+  offers_available: 'Offers available',
+  offer_accepted: 'Offer accepted',
+  contract_signed: 'Contract signed',
+  funded: 'Funded',
+};
+
+const LIVE_STATUS_TONE: Record<LiveStatus, StatusTone> = {
+  invite_sent: 'neutral',
+  form_started: 'info',
+  consent_captured: 'info',
+  soft_pull_initiated: 'warning',
+  soft_pull_returned: 'warning',
+  orchestration_running: 'warning',
+  offers_available: 'success',
+  offer_accepted: 'success',
+  contract_signed: 'success',
+  funded: 'success',
+};
+
+interface LiveOffer {
+  lenderId: string;
+  lenderName: string;
+  decision: 'approved' | 'declined' | 'pending';
+  apr?: number;
+  termMonths?: number;
+  amount?: number;
+}
+
+interface LiveTimelineEntry {
+  ts: string;
+  event: LiveStatus | string;
+  detail: string;
+}
+
+interface LiveStatusBody {
+  applicationId: string;
+  status: LiveStatus;
+  statusLabel: string;
+  progressPct: number;
+  timeline: LiveTimelineEntry[];
+  offers: LiveOffer[];
+  consumerContact: { firstName: string; lastInitial: string };
+  lastUpdatedAt: string;
+}
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../../../lib/master-data';
 import {
@@ -419,6 +497,67 @@ export default function DealDetailPage() {
   const highsale = lookupHighsaleSnapshot(app.id);
   const tier: CreditTier | null = highsale?.creditTier ?? null;
 
+  /* ─── Live-tracking poll ─────────────────────────────────────────
+   * Fetch `/api/v/<brand>/applications/<id>/status` every 5s. The
+   * partner sees a real-time pulse on stage transitions + offers as
+   * they roll in. Polling stops when:
+   *   1. status === 'funded'             (terminal happy path)
+   *   2. total elapsed > 30 minutes      (safety cap)
+   *
+   * Network errors do NOT spam the console — we surface a single
+   * "Live updates paused" banner so the operator can refresh. */
+  const [live, setLive] = useState<LiveStatusBody | null>(null);
+  const [liveError, setLiveError] = useState(false);
+  const [pollPaused, setPollPaused] = useState(false);
+  const pollStartedAtRef = useRef<number>(Date.now());
+  const errorLoggedRef = useRef(false);
+
+  const fetchLive = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v/${brandSlug}/applications/${encodeURIComponent(app.id)}/status`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        if (!errorLoggedRef.current) {
+          errorLoggedRef.current = true;
+          /* Single log line — see top-of-function comment. */
+          console.warn(`[live-status] non-2xx for ${app.id}: ${res.status}`);
+        }
+        setLiveError(true);
+        return;
+      }
+      const body = (await res.json()) as LiveStatusBody;
+      setLive(body);
+      setLiveError(false);
+    } catch (err) {
+      if (!errorLoggedRef.current) {
+        errorLoggedRef.current = true;
+        console.warn('[live-status] fetch failed', err);
+      }
+      setLiveError(true);
+    }
+  }, [app.id, brandSlug]);
+
+  useEffect(() => {
+    pollStartedAtRef.current = Date.now();
+    void fetchLive();
+    const interval = window.setInterval(() => {
+      const elapsed = Date.now() - pollStartedAtRef.current;
+      const reachedCap = elapsed > 30 * 60 * 1000;
+      const reachedTerminal = live?.status === 'funded';
+      if (reachedCap || reachedTerminal) {
+        setPollPaused(true);
+        window.clearInterval(interval);
+        return;
+      }
+      void fetchLive();
+    }, 5_000);
+    return () => window.clearInterval(interval);
+    /* live.status is read inside the interval body via the closure
+     * snapshot — that's fine here because we replace the interval each
+     * time `live?.status` flips to a terminal value via this dep. */
+  }, [fetchLive, live?.status]);
+
   // Ticking "now" so relative timestamps refresh every second (real-time feel).
   const [now, setNow] = useState<number>(FROZEN_NOW);
   useEffect(() => {
@@ -589,6 +728,180 @@ export default function DealDetailPage() {
         }
       />
       <PageBody>
+        {/* ─── A. Live tracking — what the partner watches in real time ─── */}
+        <Card className="mb-4">
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                Live consumer tracker
+                <span className="size-1.5 rounded-full bg-info animate-pulse" aria-hidden />
+                <span className="text-[11px] font-normal text-fg-muted">
+                  {pollPaused ? 'paused' : 'polling every 5s'}
+                </span>
+              </span>
+            }
+            description={
+              live
+                ? `Watching ${live.consumerContact.firstName || 'consumer'} ${live.consumerContact.lastInitial || ''}. Last updated ${new Date(live.lastUpdatedAt).toLocaleTimeString()}.`
+                : 'Connecting…'
+            }
+            action={
+              <div className="flex items-center gap-2">
+                {live && (
+                  <StatusPill tone={LIVE_STATUS_TONE[live.status]} dot>
+                    {LIVE_STATUS_LABEL[live.status]}
+                  </StatusPill>
+                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setLiveError(false);
+                    errorLoggedRef.current = false;
+                    void fetchLive();
+                  }}
+                >
+                  Refresh
+                </Button>
+              </div>
+            }
+          />
+          <CardBody>
+            {/* Progress bar */}
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-[11px] text-fg-muted mb-1.5">
+                <span>
+                  {live ? `${live.progressPct}%` : '—'} complete
+                </span>
+                <span className="font-mono">
+                  {live ? `step ${LIVE_STATUS_ORDER.indexOf(live.status) + 1} of ${LIVE_STATUS_ORDER.length}` : ''}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-bg-muted overflow-hidden">
+                <span
+                  className="block h-full bg-accent transition-all"
+                  style={{ width: `${live?.progressPct ?? 0}%` }}
+                />
+              </div>
+            </div>
+            {liveError && (
+              <div className="mb-3 rounded-md border border-warning/30 bg-warning-bg/40 px-3 py-2 text-[12px] text-warning">
+                Live updates paused. Click Refresh to retry.
+              </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Vertical stepper — completed steps marked, current step pulses */}
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
+                  Timeline
+                </div>
+                <ol className="space-y-2">
+                  {LIVE_STATUS_ORDER.map((stage, idx) => {
+                    const currentIdx = live ? LIVE_STATUS_ORDER.indexOf(live.status) : -1;
+                    const isDone = currentIdx >= 0 && idx < currentIdx;
+                    const isActive = currentIdx === idx;
+                    const isPending = currentIdx >= 0 && idx > currentIdx;
+                    /* Resolve the matching timeline entry (server-emitted)
+                     * so we can show the human detail line + relative ts. */
+                    const entry = live?.timeline.find((t) => t.event === stage);
+                    return (
+                      <li key={stage} className="flex items-start gap-3">
+                        <span className="shrink-0 mt-0.5">
+                          {isDone ? (
+                            <span className="inline-flex size-5 rounded-full bg-success-bg ring-1 ring-inset ring-success/40 items-center justify-center text-success">
+                              <CheckIcon size={11} />
+                            </span>
+                          ) : isActive ? (
+                            <span className="relative inline-flex size-5 items-center justify-center">
+                              <span className="absolute inset-0 rounded-full bg-info/20 animate-pulse" aria-hidden />
+                              <span className="relative inline-flex size-2.5 rounded-full bg-info ring-2 ring-info/30" aria-hidden />
+                            </span>
+                          ) : (
+                            <span className="inline-flex size-5 rounded-full bg-bg-elevated ring-1 ring-inset ring-border" aria-hidden />
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={
+                                'text-[13px] font-medium ' +
+                                (isPending ? 'text-fg-muted' : 'text-fg')
+                              }
+                            >
+                              {LIVE_STATUS_LABEL[stage]}
+                            </span>
+                            {entry && (
+                              <span className="font-mono text-[10px] text-fg-muted">
+                                {new Date(entry.ts).toLocaleTimeString()}
+                              </span>
+                            )}
+                          </div>
+                          {entry?.detail && (
+                            <p className="text-[11px] text-fg-muted truncate">{entry.detail}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+              {/* Offers list — populated once orchestration starts returning quotes */}
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted mb-2 flex items-center justify-between">
+                  <span>Lender offers</span>
+                  {live?.offers.length ? (
+                    <span className="font-mono">{live.offers.length} so far</span>
+                  ) : null}
+                </div>
+                {live && live.offers.length === 0 && (
+                  <div className="rounded-md border border-dashed border-border bg-bg-muted/30 px-4 py-6 text-center text-[12px] text-fg-muted">
+                    Offers will appear here once the consumer's application reaches the lender waterfall.
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-2">
+                  {live?.offers.map((offer) => {
+                    const tone: StatusTone =
+                      offer.decision === 'approved'
+                        ? 'success'
+                        : offer.decision === 'declined'
+                          ? 'danger'
+                          : 'info';
+                    return (
+                      <div
+                        key={offer.lenderId}
+                        className="rounded-md border border-border bg-bg-elevated px-3 py-2 flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-medium text-fg truncate">{offer.lenderName}</span>
+                            <StatusPill tone={tone}>
+                              {offer.decision === 'approved'
+                                ? 'Approved'
+                                : offer.decision === 'declined'
+                                  ? 'Declined'
+                                  : 'Pending'}
+                            </StatusPill>
+                          </div>
+                          {offer.decision === 'approved' && (
+                            <p className="text-[11px] text-fg-muted font-mono mt-0.5">
+                              {offer.apr ? `${offer.apr.toFixed(2)}% APR` : ''}
+                              {offer.termMonths ? ` · ${offer.termMonths}mo` : ''}
+                              {typeof offer.amount === 'number' ? ` · $${Math.round(offer.amount / 100).toLocaleString('en-US')}` : ''}
+                            </p>
+                          )}
+                          {offer.decision === 'pending' && (
+                            <p className="text-[11px] text-fg-muted mt-0.5">Quoting in progress…</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
         {/* ─── B. Pipeline progress strip ─── */}
         <Card className="mb-4">
           <CardBody className="py-4">

@@ -1,5 +1,35 @@
 import { z } from 'zod';
 
+/**
+ * ──────────────────────────────────────────────────────────────────────
+ * Single-replica cron leader election (READ THIS BEFORE SCALING)
+ * ──────────────────────────────────────────────────────────────────────
+ * The API runs three background crons:
+ *   1. webhook dispatcher  — every minute   (services/webhook)
+ *   2. audit-outbox drain  — every minute   (services/audit)
+ *   3. repayment collection — daily 08:00 UTC (services/payment)
+ *
+ * Each cron uses optimistic row-claim transactions so duplicates are
+ * bounded, but running the same cron on N replicas wastes DB work,
+ * inflates contention, and makes logs/metrics N-times noisier.
+ *
+ * `CRON_LEADER` is the single umbrella switch. In a multi-replica
+ * deploy, set it to `true` on EXACTLY ONE replica (the "leader") and
+ * `false` on every other replica. When `false`, every cron in this
+ * process no-ops — it stays a fully-functional API server, just
+ * without timed background work.
+ *
+ * The per-cron flags (WEBHOOK_DISPATCHER_ENABLED, AUDIT_DRAIN_ENABLED,
+ * COLLECTION_CRON_ENABLED) remain as fine-grained kill-switches so an
+ * operator can disable a single misbehaving cron during an incident
+ * without taking the whole leader down. `CRON_LEADER=false` overrides
+ * them: leader-off means leader-off, no exceptions.
+ *
+ * Default is `false` so a fresh deploy of N replicas is safe — nothing
+ * runs until you flip the leader on.
+ * ──────────────────────────────────────────────────────────────────────
+ */
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -48,8 +78,19 @@ const EnvSchema = z.object({
     .string()
     .url()
     .default('http://localhost:3000/v1/dev-storage'),
+  /** Umbrella leader-election switch for ALL background crons in this
+   *  process. See the block comment at the top of this file. Set true
+   *  on exactly ONE replica in a multi-replica deploy; false on the
+   *  rest. When false, every @Cron in the API no-ops. Default false so
+   *  scaling out is safe by construction. */
+  CRON_LEADER: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .transform((v) => v === true || v === 'true' || v === '1')
+    .default(false),
   /** When true, this process runs the daily collection cron. In a
-   *  multi-replica deploy, only ONE replica should set this. */
+   *  multi-replica deploy, only ONE replica should set this. Acts as a
+   *  per-cron kill-switch under the CRON_LEADER umbrella — both must
+   *  be true for the cron to fire. */
   COLLECTION_CRON_ENABLED: z
     .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
     .transform((v) => v === true || v === 'true' || v === '1')
@@ -72,7 +113,15 @@ const EnvSchema = z.object({
   /**
    * Comma-separated list of explicit CORS origins. In dev we default
    * to the partner-portal + Lovable preview hosts so the BFF round-trip
-   * works out of the box.
+   * works out of the box. In production the value MUST be supplied
+   * explicitly via `CORS_ALLOWED_ORIGINS` — see the superRefine() at
+   * the bottom of this schema (SEC-047).
+   *
+   * `CORS_ALLOWED_ORIGINS` is the canonical, operator-facing name in
+   * production; `CORS_ORIGINS` is its dev-friendly alias and stays
+   * for backwards compatibility with existing dev / staging configs.
+   * Either may be set; values are merged with `CORS_ALLOWED_ORIGINS`
+   * taking precedence when both are present.
    */
   CORS_ORIGINS: z
     .string()
@@ -86,32 +135,152 @@ const EnvSchema = z.object({
     )
     .transform((s) => s.split(',').map((o) => o.trim()).filter(Boolean)),
   /**
+   * Production CORS allowlist (SEC-047). Comma-separated explicit
+   * origins, e.g. `https://app.eazepay.com,https://partners.eazepay.com,https://api.eazepay.com`.
+   * No default in production — superRefine() below refuses to boot
+   * with an empty allowlist when `NODE_ENV=production`.
+   *
+   * In non-production this is optional and additive on top of
+   * CORS_ORIGINS / CORS_ORIGIN_PATTERNS.
+   */
+  CORS_ALLOWED_ORIGINS: z
+    .string()
+    .optional()
+    .transform((s) =>
+      s ? s.split(',').map((o) => o.trim()).filter(Boolean) : [],
+    ),
+  /**
    * Regex patterns (one per line / comma-separated) for dynamic CORS
    * origins. Used to whitelist Lovable preview URLs without enumerating
    * each commit hash. Example: `^https://.*\.lovable\.app$,^https://.*\.lovableproject\.com$`.
+   *
+   * SEC-047: the Lovable wildcard is a credential-bearing surface
+   * (we send `credentials: true`). It MUST stay out of production —
+   * superRefine() below clears the patterns to `[]` whenever
+   * NODE_ENV=production unless the operator deliberately re-supplies
+   * patterns via this env. The default below only fires for
+   * non-production environments.
    */
   CORS_ORIGIN_PATTERNS: z
     .string()
-    .default(
-      [
-        '^https://.*\\.lovable\\.app$',
-        '^https://.*\\.lovableproject\\.com$',
-      ].join(','),
-    )
-    .transform((s) =>
-      s
-        .split(',')
-        .map((p) => p.trim())
-        .filter(Boolean)
-        .map((p) => new RegExp(p)),
-    ),
+    .optional()
+    .transform((s) => {
+      if (s !== undefined) {
+        return s
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
+      }
+      // Default Lovable preview wildcards — applied only in non-prod
+      // by the superRefine() below.
+      return ['^https://.*\\.lovable\\.app$', '^https://.*\\.lovableproject\\.com$'];
+    }),
   /**
    * HMAC-SHA256 shared secret for the Highsale webhook receiver.
    * Required in non-development environments; the receiver refuses to
    * serve requests when unset.
    */
   HIGHSALE_WEBHOOK_SECRET: z.string().min(16).optional(),
-});
+  /**
+   * SEC-034 — enforce a ±5 minute replay window on inbound webhooks.
+   *
+   * Threat: pre-fix, the Highsale + eSign receivers verified the HMAC
+   * but accepted ANY timestamp. A captured webhook (logged by a
+   * misconfigured proxy, leaked from a pen-test report, or harvested
+   * by a partner with momentary log access) could be replayed 6 months
+   * later and would still verify — re-scoring an old application,
+   * re-firing a contract signature event, etc.
+   *
+   * Fix: include the timestamp in the HMAC input as `<ts>.<rawBody>`,
+   * and reject when the timestamp drifts more than 300 seconds from
+   * our clock. New senders MUST send `x-eazepay-timestamp` (or the
+   * provider equivalent). Old senders without the header fail closed.
+   *
+   * Default is `true` so production is safe by default. Set to `false`
+   * only during a short rollover window if a partner needs time to
+   * adopt the timestamp header; never leave it disabled long-term.
+   */
+  WEBHOOK_REPLAY_WINDOW_ENFORCED: z
+    .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+    .transform((v) => v === true || v === 'true' || v === '1')
+    .default(true),
+  /**
+   * SEC-046 — Swagger UI basic-auth credentials. In staging the
+   * `/docs` + `/docs-json` routes are wrapped in a tiny basic-auth
+   * middleware so the full API surface isn't exposed to anyone with
+   * the URL. Both fields must be set; if either is missing in
+   * staging, Swagger refuses to mount at all (logged at warn).
+   *
+   * Production: Swagger never mounts.
+   * Development: open, credentials ignored.
+   * Staging: required-or-no-Swagger.
+   */
+  SWAGGER_DOCS_USER: z.string().min(1).optional(),
+  SWAGGER_DOCS_PASS: z.string().min(8).optional(),
+})
+  // ────────────────────────────────────────────────────────────────────
+  // Production safety rails (SEC-031, SEC-047). Composed at the schema
+  // level so a misconfigured production deploy refuses to boot rather
+  // than silently degrading to dev-grade security posture.
+  // ────────────────────────────────────────────────────────────────────
+  .superRefine((env, ctx) => {
+    if (env.NODE_ENV !== 'production') return;
+
+    // SEC-031: a mock e-sign provider in production would let anyone
+    // with a `dev-mock` literal flip envelope status to `signed`.
+    // Boot-time refusal is the canonical guard; the controller-side
+    // gate is belt-and-braces.
+    if (env.ESIGN_PROVIDER === 'mock') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['ESIGN_PROVIDER'],
+        message:
+          'ESIGN_PROVIDER=mock is forbidden when NODE_ENV=production. Set it to docusign or dropbox_sign.',
+      });
+    }
+
+    // SEC-047: in production CORS must be locked to an explicit set
+    // of origins, supplied via CORS_ALLOWED_ORIGINS. Empty allowlist
+    // means we'd reject every cross-origin request (functional
+    // breakage), and a stray Lovable wildcard means cross-tenant
+    // credentialed access. Refuse to boot either way.
+    if (env.CORS_ALLOWED_ORIGINS.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CORS_ALLOWED_ORIGINS'],
+        message:
+          'CORS_ALLOWED_ORIGINS must list at least one explicit origin in production (e.g. https://app.eazepay.com,https://partners.eazepay.com). The dev Lovable wildcard is refused in production.',
+      });
+    }
+  })
+  // After validation, compile pattern strings into RegExp objects,
+  // strip Lovable wildcards when running in production, and merge the
+  // production-only CORS_ALLOWED_ORIGINS list into CORS_ORIGINS so
+  // existing consumers (apps/api/src/main.ts) keep working without
+  // re-plumbing. SEC-047.
+  .transform((env) => {
+    const isProd = env.NODE_ENV === 'production';
+    const patternStrings = isProd
+      ? // In prod: only honour patterns the operator explicitly set.
+        // If they didn't set anything, the array is the default which
+        // we deliberately drop here.
+        process.env.CORS_ORIGIN_PATTERNS
+        ? env.CORS_ORIGIN_PATTERNS
+        : []
+      : env.CORS_ORIGIN_PATTERNS;
+    // CORS_ALLOWED_ORIGINS is the canonical prod surface; in prod we
+    // use it exclusively (ignoring the dev defaults baked into
+    // CORS_ORIGINS). In non-prod we merge so localhost still works
+    // even if an operator also supplies CORS_ALLOWED_ORIGINS.
+    const mergedOrigins = isProd
+      ? env.CORS_ALLOWED_ORIGINS
+      : Array.from(new Set([...env.CORS_ORIGINS, ...env.CORS_ALLOWED_ORIGINS]));
+    return {
+      ...env,
+      CORS_ORIGINS: mergedOrigins,
+      CORS_ORIGIN_PATTERNS: patternStrings.map((p) => new RegExp(p)),
+    };
+  });
 
 export type Env = z.infer<typeof EnvSchema>;
 

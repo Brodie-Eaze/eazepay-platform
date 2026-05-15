@@ -547,9 +547,6 @@ export const integrationStateLabel = (s: OnboardingBusiness['integrations'][keyo
 export const checkLabel = (s: CheckState) =>
   s === 'pass' ? 'Pass' : s === 'fail' ? 'Fail' : s === 'running' ? 'Running' : s === 'review' ? 'Review' : 'Pending';
 
-export const findBusiness = (id: string) =>
-  ONBOARDING_BUSINESSES.find((b) => b.id === id);
-
 /**
  * Compute a "Xh ago"-style label relative to the frozen STATIC_NOW
  * baseline. Identical output on server + client, no hydration drift.

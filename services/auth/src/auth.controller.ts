@@ -1,5 +1,6 @@
 import { Body, Controller, Headers, HttpCode, Ip, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Idempotent } from '@eazepay/shared-utils';
 import { Public } from './guards/public.decorator.js';
 import { CurrentSession } from './guards/current-user.decorator.js';
@@ -9,6 +10,21 @@ import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
+
+/**
+ * Auth-route throttle profile: significantly tighter than the default
+ * `long` tier (120/min/IP) configured globally in the API module. These
+ * surfaces are the highest-value attack targets — credential stuffing,
+ * password spray, OTP brute force, refresh-token replay — so each
+ * endpoint gets its own cap.
+ *
+ * Counters are per-IP; the global ThrottlerGuard runs before the JWT
+ * guard so unauthenticated floods get cut early.
+ */
+const REGISTER_THROTTLE = { default: { limit: 5, ttl: 60_000 } };   // 5/min/IP — abuse signup
+const LOGIN_THROTTLE = { default: { limit: 10, ttl: 60_000 } };     // 10/min/IP — password spray
+const OTP_THROTTLE = { default: { limit: 5, ttl: 60_000 } };        // 5/min/IP — OTP brute force
+const REFRESH_THROTTLE = { default: { limit: 30, ttl: 60_000 } };   // 30/min/IP — sliding sessions
 import type {
   LoginResult,
   RefreshResult,
@@ -22,6 +38,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
+  @Throttle(REGISTER_THROTTLE)
   @Post('register')
   @HttpCode(201)
   @Idempotent()
@@ -31,6 +48,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(LOGIN_THROTTLE)
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Initiate login with identifier + password; may require MFA' })
@@ -43,6 +61,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(OTP_THROTTLE)
   @Post('verify-otp')
   @HttpCode(200)
   @ApiOperation({ summary: 'Complete an MFA / OTP challenge and issue tokens' })
@@ -51,6 +70,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle(REFRESH_THROTTLE)
   @Post('refresh')
   @HttpCode(200)
   @ApiOperation({ summary: 'Rotate refresh token and issue a new access token' })

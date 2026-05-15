@@ -144,6 +144,57 @@ Sweep results (handoff QA):
   and `apps/api/src/config/env.ts`), and are the intended fail-loud
   channel before pino is wired up. Leave them.
 
+## Recent hardening (production-readiness sprint)
+
+Security + scale work landed before this handoff. Treat the platform
+as audit-ready, not just feature-complete.
+
+- **Security fixes closed:** 9 P0 + 10 P1/P2. Full chain-of-custody in
+  [`SECURITY_AUDIT.md`](SECURITY_AUDIT.md). Headline items: SEC-031
+  prod e-sign mock refusal, SEC-034 timestamp replay window on inbound
+  webhooks, SEC-041 `@fastify/middie` pinned via `pnpm.overrides`,
+  SEC-046 Swagger basic-auth in staging, SEC-047 prod CORS lockdown
+  with superRefine boot guard.
+- **Scale fixes:** `CRON_LEADER` umbrella switch (single-replica leader
+  election for all three crons), tiered NestJS throttler buckets,
+  `Loan.offerId` unique index, GIN index on `audit_outbox.payload`,
+  batched daily collection sweep (no full-table scan).
+- **New lender adapters:** US Bank (personal loans, US), Engine.Tech
+  (OAuth2 client-credentials, AU + US), Queen Street (AU, Ed25519
+  webhook signing). All three honour the `LenderAdapter` port and ship
+  with env vars wired in `apps/api/.env.example`.
+- **Partner visibility + invites:** real-time partner deal feed,
+  direct-invite-link flow (`/api/onboarding/invite`), consumer-invite
+  routes per brand.
+- **Consumer hardening:** FCRA permissible-purpose + Reg B adverse-
+  action wiring tightened; soft-pull only on intake; AAN renderer
+  retention-tagged.
+- **Repo cleanup:** dead-code paths removed, barrel exports flattened
+  across `@eazepay/service-*` packages, `.DS_Store` purged, gitignore
+  refreshed.
+
+## Deploy day-1 checklist
+
+- Generate secrets: `openssl rand -hex 32` for `JWT_ACCESS_SECRET`,
+  `LOCAL_KEK_HEX` (or wire KMS), `HIGHSALE_WEBHOOK_SECRET`, each
+  lender adapter's `*_WEBHOOK_SECRET`, and `LOCAL_FS_STORAGE_SIGNING_SECRET`.
+- Set `CRON_LEADER=true` on **exactly one** API replica; `false` on
+  every other. See block-comment at the top of
+  [`apps/api/src/config/env.ts`](apps/api/src/config/env.ts).
+- Set `CORS_ALLOWED_ORIGINS` to the explicit prod allowlist (SEC-047
+  refuses boot if empty in `NODE_ENV=production`).
+- Set `ESIGN_PROVIDER` to `docusign` or `dropbox_sign` (SEC-031
+  refuses boot if `mock` in production).
+- Leave `WEBHOOK_REPLAY_WINDOW_ENFORCED=true` (default). Disable only
+  during a short partner rollover window.
+- Configure `SWAGGER_DOCS_USER` + `SWAGGER_DOCS_PASS` for staging.
+  Production never mounts Swagger.
+- Fill `US_BANK_*`, `ENGINE_TECH_*`, `QUEEN_STREET_*` live credentials.
+- Run `pnpm --filter @eazepay/api prisma:migrate:deploy` before
+  switching DNS to the new revision.
+- Verify Aurora multi-AZ, KMS key rotation enabled, S3 bucket private
+  + VPC endpoint, WAF rules attached.
+
 ## Conventions worth knowing on day 1
 
 - Money is always `BigInt` cents. No floats. Ever.

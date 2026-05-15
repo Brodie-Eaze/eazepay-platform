@@ -1,13 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { BadRequest, Conflict, Forbidden, NotFound, sha256Hex } from '@eazepay/shared-utils';
 import type { MerchantId, UserId } from '@eazepay/shared-types';
 import {
   PiiVaultService,
   type PiiV1,
 } from '@eazepay/service-user';
-import { PRISMA } from './internal/tokens.js';
+import { MERCHANT_REGISTRATION_REQUIRES_ADMIN, PRISMA } from './internal/tokens.js';
 import { KYB_PROVIDER, type KybProvider } from './ports/kyb-provider.port.js';
 import type { BoPiiV1 } from './bo-pii.types.js';
 import type { CreateMerchantDto } from './dto/create-merchant.dto.js';
@@ -25,9 +25,36 @@ export class MerchantService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly vault: PiiVaultService,
     @Inject(KYB_PROVIDER) private readonly kyb: KybProvider,
+    @Inject(MERCHANT_REGISTRATION_REQUIRES_ADMIN)
+    private readonly requiresAdmin: boolean,
   ) {}
 
   async create(userId: UserId, dto: CreateMerchantDto): Promise<{ id: MerchantId; slug: string }> {
+    // SEC-017 — outside development, refuse merchant creation from
+    // non-admin users. Threat: pre-fix, any authenticated user could
+    // POST /v1/merchants and become the owner MerchantUser, then add
+    // their own arbitrary beneficial-owner records and submit to KYB.
+    // That feeds two attacks: (1) the orchestration layer treats the
+    // merchant row as a real business and queues real KYB/credit
+    // checks against synthetic data, and (2) once `kybStatus=approved`
+    // (mock or real), the attacker can mint hosted application links
+    // and route consumer applications through a merchant they
+    // fabricated. Dev environments keep the gate off so seed scripts
+    // and local demo flows still work; staging/prod require admin.
+    if (this.requiresAdmin) {
+      const u = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { isAdmin: true, status: true },
+      });
+      if (!u || u.status !== 'active' || !u.isAdmin) {
+        throw Forbidden({
+          code: 'merchant_creation_requires_admin',
+          detail:
+            'Merchant onboarding is admin-gated in this environment. Contact compliance to provision the row, then your account will be linked as owner.',
+        });
+      }
+    }
+
     if (dto.naicsCode && PROHIBITED_NAICS_PREFIXES.some((p) => dto.naicsCode!.startsWith(p))) {
       throw BadRequest({
         code: 'industry_prohibited',
@@ -114,15 +141,27 @@ export class MerchantService {
       throw BadRequest({ code: 'ownership_pct_invalid' });
     }
 
-    // Reuse the same envelope encryption pattern as ConsumerProfile.
-    // The PiiVaultService AAD-binds to the user id; here we pass the
-    // merchant id as the "owner" so each merchant's BO blobs cannot be
-    // swapped between rows.
-    const sealed = await this.vault.seal(merchantId as unknown as UserId, dto.pii as unknown as PiiV1);
+    // SEC-019 — pre-generate the BO row id so the sealed-blob AAD can
+    // bind to THIS specific BO before the row exists. Previously the
+    // AAD was `pii:<merchantId>:v1`, identical for every BO of one
+    // merchant — meaning any ciphertext from BO A could be swapped
+    // onto BO B's row and the GCM auth tag would still verify (wrong-
+    // person PII presented to KYB, leaked under unmask). The fix is
+    // to bind AAD to `pii:bo:<beneficialOwnerId>:v2`, which only
+    // verifies when the row id matches. We compute the id, seal with
+    // it, then insert the row with that exact id inside the
+    // transaction. Sealing OUTSIDE the transaction keeps the KMS
+    // round-trip from holding a DB connection.
+    const beneficialOwnerId = randomUUID();
+    const sealed = await this.vault.sealForBo(
+      beneficialOwnerId,
+      dto.pii as unknown as PiiV1,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       const bo = await tx.beneficialOwner.create({
         data: {
+          id: beneficialOwnerId,
           merchantId,
           piiCiphertext: sealed.ciphertext,
           piiNonce: sealed.nonce,
@@ -168,11 +207,15 @@ export class MerchantService {
       });
     }
 
-    // Open each BO blob for the KYB call. We never persist plaintext;
-    // the KYB adapter receives PII transiently and never stores it.
+    // SEC-019 — open each BO blob via the BO-id-bound AAD. The vault
+    // picks v1 vs v2 AAD by inspecting the persisted schemaVersion,
+    // so legacy v1 rows (merchant-bound AAD) keep decrypting while
+    // new v2 rows (BO-id-bound) cannot be swapped between BOs. We
+    // never persist plaintext; the KYB adapter receives PII
+    // transiently and never stores it.
     const owners = await Promise.all(
       merchant.beneficialOwners.map(async (bo) => ({
-        pii: (await this.vault.open(merchantId as unknown as UserId, {
+        pii: (await this.vault.openForBo(bo.id, merchantId, {
           ciphertext: bo.piiCiphertext,
           nonce: bo.piiNonce,
           dataKeyCiphertext: bo.dataKeyCiphertext,

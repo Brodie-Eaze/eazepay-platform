@@ -41,9 +41,9 @@ const LIVE_TICKER = [
     delta: '+1,840 in 30d',
   },
   {
-    value: '90 days',
-    label: 'Deferred first payment',
-    delta: 'Program starts before they pay',
+    value: '48 to 72h',
+    label: 'Merchant-direct payout',
+    delta: 'Lender disburses to your business account',
   },
   {
     value: '10 sec',
@@ -61,18 +61,18 @@ const STATUS_QUO = [
 
 const WITH_COACHPAY = [
   { stat: 'Closed', label: 'on the discovery call, before the objection lands' },
-  { stat: '48 hrs', label: 'to first funded enrolment after KYB clears' },
+  { stat: '48-72h', label: 'merchant-direct payout from the lender' },
   { stat: '10 sec', label: 'soft-pull pre-qual decision while still on Zoom' },
-  { stat: 'Paid', label: 'in full by the lender. No clawback for routine defaults.' },
+  { stat: 'No clawback', label: 'on routine defaults — lender carries the credit risk' },
 ];
 
 const WATERFALL = [
   {
     n: '01',
     stage: 'Pre-qual',
-    title: 'Soft-pull pre-qual on the call',
+    title: 'Financial-data pre-qual on the call',
     body:
-      "Prospect enters last 4 SSN + DOB during the close. Soft-pull returns approval likelihood in under 10s. Zero credit impact. Your closer pivots from price to monthly.",
+      "Prospect submits last 4 SSN + DOB during the close. Soft-pull credit returns approval likelihood in under 10 seconds, zero credit impact. The closer pivots from price to monthly.",
     metric: '< 10 sec',
   },
   {
@@ -80,7 +80,7 @@ const WATERFALL = [
     stage: 'Agents',
     title: 'ORACLE scores. HELIX routes.',
     body:
-      "ORACLE returns a fundability tier in under 10 seconds. HELIX routes the prospect to the right closer based on tier and capacity. Zero homework after the call. Your closer pivots from price to monthly while the prospect is still on Zoom.",
+      "ORACLE returns a fundability tier on the financial data. HELIX routes the prospect to the right closer based on tier and capacity. All software — no manual handoff, no homework after the call.",
     metric: '<10s decision',
   },
   {
@@ -88,24 +88,24 @@ const WATERFALL = [
     stage: 'Decision',
     title: 'Marketplace waterfalls in parallel',
     body:
-      "CoachPay routes one application across 52 lenders in parallel. engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA across the marketplace.",
+      "CoachPay routes one application across 52 lenders in parallel — engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.",
     metric: '52 lenders',
   },
   {
     n: '04',
     stage: 'Offer',
-    title: 'Best offer wins. 0% promo APR.',
+    title: 'Multiple ranked offers · APR from 5.9%',
     body:
-      "Ranked offer card surfaces the lowest total cost for the prospect, including 0% promo APR on qualifying programs. They sign the e-contract on the call.",
-    metric: 'best APR',
+      "The offer card surfaces multiple ranked offers tailored to the prospect — $5k to $50k tickets, 12 to 60 month terms, APR from 5.9% for qualifying clients. 0% interest plans available for qualifying programs (T&Cs apply).",
+    metric: 'APR from 5.9%',
   },
   {
     n: '05',
     stage: 'Funded',
-    title: 'Lender disburses direct. You keep the program.',
+    title: 'Merchant-direct payout · 48 to 72 hours',
     body:
-      "The lender disburses tuition directly. You've been paid in full on enrolment. Lender carries the credit risk, not you. No clawbacks for routine defaults. Cash collected equals enrolments closed, 1:1.",
-    metric: 'paid in full',
+      "The lender disburses straight to your business account — no intermediary holding funds. Funds generally land within 48 to 72 hours of the loan settling. Lender carries the credit risk; no clawback on routine defaults.",
+    metric: '48 to 72 hours',
   },
 ];
 
@@ -158,7 +158,7 @@ const OBJECTIONS = [
   {
     q: "How is CoachPay different from Affirm, Klarna, or AfterPay sitting on my checkout?",
     a:
-      "Affirm and Klarna are built for retail cart-level BNPL on physical goods. They cap tickets well below high-ticket coaching, and they're a single lender. If they decline, the buyer is gone. CoachPay waterfalls across 52 lenders in parallel (Affirm included), handles tickets through $50k+, supports 0% promo APR on qualifying programs, and ships with seven autonomous agents running intake, scoring, routing, and the lender marketplace. All white-labelled under your brand.",
+      "Affirm and Klarna are built for retail cart-level BNPL on physical goods. They cap tickets well below high-ticket coaching, and they're a single lender. If they decline, the buyer is gone. CoachPay waterfalls across 52 lenders in parallel (Affirm included), handles tickets from $5,000 to $50,000, surfaces multiple ranked offers tailored to the client's situation, and ships with seven autonomous agents running intake, scoring, routing, and the lender marketplace. All white-labelled under your brand.",
   },
   {
     q: "Won't offering financing make my $20k program look like a credit-card sale?",
@@ -168,12 +168,22 @@ const OBJECTIONS = [
   {
     q: "If a student stops paying mid-program, am I on the hook for the cash collected?",
     a:
-      "No. You are paid in full on enrolment the moment they sign the e-contract. The lender on the offer carries the credit risk for routine defaults. If a student quits the program, that's your refund policy decision, not the lender's problem. No surprise clawbacks. Cash collected equals enrolments closed, 1:1.",
+      "No. The lender on the offer carries the credit risk for routine defaults. Once the loan settles, funds land in your business account merchant-direct, generally within 48 to 72 hours — no intermediary holding funds. If a student quits the program, that's your refund policy decision, not the lender's problem. No clawback on routine defaults.",
   },
   {
     q: "What underwriting does CoachPay support for high-ticket programs?",
     a:
-      "Six to sixty month terms. 5.99 to 24.99% APR depending on tier. 0% promo APR available for qualifying programs (verified mastermind, certification, cohort). 90-day deferred first payment so the program starts before the prospect pays. No $99-course caps. No 12-month-only ladder. The waterfall picks the cheapest total cost for the prospect.",
+      "Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to 60 months for lower monthly repayments. 0% interest plans available for qualifying programs (T&Cs apply). Multiple ranked offers tailored to the client's situation. The waterfall picks the cheapest total cost for the prospect across 52 lenders quoted in parallel.",
+  },
+  {
+    q: "How does the merchant payout actually work?",
+    a:
+      "Merchant-direct. The lender disburses straight to your business account once the loan settles — no escrow agent, no marketplace intermediary holding funds. Funds generally land within 48 to 72 hours. The lender carries the credit risk on routine defaults; no surprise clawbacks come back to you.",
+  },
+  {
+    q: "What happens when the primary lender doesn't approve the full ticket?",
+    a:
+      "The card-stacking layer routes the client through 800+ credit card and BNPL options, ranked by remaining credit available, statement-cycle timing, and 0% promo windows. A $35k mastermind can fund across one personal loan plus two cards instead of being declined. Same instant-decision flow — the agentic layer just adds another fundable path.",
   },
   {
     q: "Won't offering financing commoditise my high-ticket program?",
@@ -194,34 +204,51 @@ const HERO_CHIPS: Array<{
   delay: string;
   accent?: boolean;
 }> = [
-  { top: '-12%',    left:  '2%', label: 'INSTANT',      value: '10s soft-pull pre-qual', delay: '0s',   accent: true },
-  { top: '-12%',    right: '2%', label: 'MARKETPLACE',  value: '52 lenders parallel',    delay: '0.5s' },
-  { bottom: '-12%', left:  '2%', label: '0% PROMO',     value: 'for qualifying programs', delay: '1.0s' },
-  { bottom: '-12%', right: '2%', label: 'LENDER-DIRECT',value: 'no clawback risk',       delay: '1.5s' },
+  { top: '-12%',    left:  '2%', label: 'INSTANT',         value: '10s soft-pull pre-qual',  delay: '0s',   accent: true },
+  { top: '-12%',    right: '2%', label: 'MARKETPLACE',     value: '52 lenders · 5s SLA',     delay: '0.5s' },
+  { bottom: '-12%', left:  '2%', label: 'APR FROM 5.9%',   value: '12 to 60 month terms',    delay: '1.0s' },
+  { bottom: '-12%', right: '2%', label: 'MERCHANT-DIRECT', value: '48 to 72h payout',        delay: '1.5s' },
 ];
 
 /* ----------------------------------------------------------------------------
-   ROI Calculator
+   ROI Calculator — 4-stage funnel
    ---------------------------------------------------------------------------- */
 
 interface RoiInputs {
-  leadsPerMonth: number;
-  avgTicket: number;
-  closeRatePct: number;
+  leadsPerMonth: number;     // inbound leads / month
+  preQualPct: number;        // % that clear financial-data filter
+  showRatePct: number;       // % of cleared that actually show
+  closeRatePct: number;      // % of shows that close
+  avgTicket: number;         // avg program ticket $
 }
 
 function useRoi(inputs: RoiInputs) {
   return useMemo(() => {
-    // Recovered enrolment revenue per year. Financing-driven uplift on the
-    // qualified pipeline. Conservative scaling that caps at 85% of the
-    // lost pool so the ROI does not look like a pitch.
-    const lostPct = Math.min(0.85, (inputs.closeRatePct / 100) * 1.7 + 0.18);
-    const lostMonthly =
-      inputs.leadsPerMonth * lostPct * inputs.avgTicket * 0.27;
-    const annual = Math.round(lostMonthly * 12);
-    const monthlyEnrolments = Math.round(inputs.leadsPerMonth * lostPct * 0.27);
-    return { annual, monthlyEnrolments };
-  }, [inputs.leadsPerMonth, inputs.avgTicket, inputs.closeRatePct]);
+    const monthly =
+      inputs.leadsPerMonth *
+      (inputs.preQualPct / 100) *
+      (inputs.showRatePct / 100) *
+      (inputs.closeRatePct / 100);
+    const annualEnrolments = Math.round(monthly * 12);
+    const monthlyEnrolments = Math.round(monthly);
+    const annualRevenue = Math.round(annualEnrolments * inputs.avgTicket);
+    // closer hours saved per week: rejected leads that don't sit a 45-min discovery call
+    const skippedPerMonth =
+      inputs.leadsPerMonth * (1 - inputs.preQualPct / 100);
+    const closerHoursSavedWeekly = Math.round((skippedPerMonth * 0.75) / 4);
+    return {
+      monthlyEnrolments,
+      annualEnrolments,
+      annualRevenue,
+      closerHoursSavedWeekly,
+    };
+  }, [
+    inputs.leadsPerMonth,
+    inputs.preQualPct,
+    inputs.showRatePct,
+    inputs.closeRatePct,
+    inputs.avgTicket,
+  ]);
 }
 
 /* ----------------------------------------------------------------------------
@@ -232,13 +259,15 @@ export default function CoachPayLandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [openObjection, setOpenObjection] = useState<number | null>(0);
   const [roiInputs, setRoiInputs] = useState<RoiInputs>({
-    leadsPerMonth: 250,
+    leadsPerMonth: 140,
+    preQualPct: 45,
+    showRatePct: 70,
+    closeRatePct: 35,
     avgTicket: 14000,
-    closeRatePct: 18,
   });
   const roi = useRoi(roiInputs);
   const [glow, setGlow] = useState(false);
-  const lastRoi = useRef(roi.annual);
+  const lastRoi = useRef(roi.annualRevenue);
   const revealRoot = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -268,12 +297,12 @@ export default function CoachPayLandingPage() {
   }, []);
 
   useEffect(() => {
-    if (lastRoi.current === roi.annual) return;
-    lastRoi.current = roi.annual;
+    if (lastRoi.current === roi.annualRevenue) return;
+    lastRoi.current = roi.annualRevenue;
     setGlow(true);
     const t = setTimeout(() => setGlow(false), 700);
     return () => clearTimeout(t);
-  }, [roi.annual]);
+  }, [roi.annualRevenue]);
 
   const annualFormatted = useMemo(
     () =>
@@ -281,8 +310,8 @@ export default function CoachPayLandingPage() {
         style: 'currency',
         currency: 'USD',
         maximumFractionDigits: 0,
-      }).format(roi.annual),
-    [roi.annual],
+      }).format(roi.annualRevenue),
+    [roi.annualRevenue],
   );
 
   return (
@@ -398,7 +427,6 @@ export default function CoachPayLandingPage() {
             {/* RIGHT, financing offer card */}
             <div className="cp-hero-card-wrap">
               <div className="cp-hero-ring" aria-hidden />
-              <div className="cp-hero-ring-2" aria-hidden />
               <FloatingChips />
               <div className="cp-hero-card cp-glow-edge">
                 <div className="cp-card-head">
@@ -429,15 +457,15 @@ export default function CoachPayLandingPage() {
                   </div>
                   <div>
                     <div className="cp-card-k">term</div>
-                    <div className="cp-card-v">36 months</div>
+                    <div className="cp-card-v">48 months</div>
                   </div>
                   <div>
                     <div className="cp-card-k">est. monthly</div>
-                    <div className="cp-card-v">$760 / mo</div>
+                    <div className="cp-card-v">$612 / mo</div>
                   </div>
                   <div>
-                    <div className="cp-card-k">first payment</div>
-                    <div className="cp-card-v">deferred 90d</div>
+                    <div className="cp-card-k">APR</div>
+                    <div className="cp-card-v">from 5.9%</div>
                   </div>
                 </div>
 
@@ -451,13 +479,13 @@ export default function CoachPayLandingPage() {
                     <span className="cp-card-livebar-v">10 s</span>
                   </div>
                   <div className="cp-card-livebar-row">
-                    <span className="cp-card-livebar-k">disbursement</span>
-                    <span className="cp-card-livebar-v">lender direct</span>
+                    <span className="cp-card-livebar-k">payout</span>
+                    <span className="cp-card-livebar-v">merchant-direct · 48 to 72h</span>
                   </div>
                   <div className="cp-card-livebar-row">
                     <span className="cp-card-livebar-k">clawback risk</span>
                     <span className="cp-card-livebar-v cp-card-livebar-v--violet">
-                      none
+                      none on routine defaults
                     </span>
                   </div>
                 </div>
@@ -618,21 +646,21 @@ export default function CoachPayLandingPage() {
               </div>
               <h2 className="cp-h2">
                 <span className="cp-grad-text-violet">
-                  Approve every qualified prospect
+                  Multiple ranked offers in 10 seconds.
                 </span>{' '}
-                in 10 seconds. Paid in full on enrolment.
+                Merchant-direct payout, 48 to 72 hours.
               </h2>
               <p className="cp-h2-sub">
-                Every offer is a real loan from a chartered partner bank, terms
-                disclosed in a TILA box. Soft pull on the call, zero score
-                impact. 0% promo APR available for qualifying programs. The
-                lender disburses direct on e-contract signature. You are paid in
-                full. Underwriting tuned for high-ticket programs. No $99-course
-                caps, no 12-month-only ladder.
+                Loans from $5,000 to $50,000. APR from 5.9% for qualifying
+                clients. Terms from 12 to 60 months for lower monthly
+                repayments. 0% interest plans available for qualifying programs
+                (T&amp;Cs apply). 52 lenders quoted in parallel with a 5-second
+                SLA per round-trip. The lender disburses straight to your
+                business account — no intermediary holding funds.
               </p>
               <div className="cp-pillar-roi">
                 <span className="cp-pillar-roi-blip" />
-                Built for $5k to $50k programs
+                Loans from $5k to $50k · APR from 5.9% · 12 to 60 months
               </div>
             </div>
           </div>
@@ -642,24 +670,198 @@ export default function CoachPayLandingPage() {
           <div className="cp-pillar-grid reveal">
             <PillarFeature
               icon="bolt"
-              title="Soft-pull pre-qual"
-              body="Prospect enters last-4 SSN + DOB during the close. Approval likelihood and tier returned in under 10 seconds, zero credit impact. Closer pivots from price to monthly mid-Zoom."
+              title="Soft-pull pre-qual · 10 sec"
+              body="Prospect submits last-4 SSN + DOB during the close. Approval likelihood and tier returned in under 10 seconds, zero credit impact. Closer pivots from price to monthly while still on Zoom."
             />
             <PillarFeature
               icon="grid"
-              title="52-lender marketplace"
-              body="One application, 52 parallel lender quotes, 5-second SLA. Cross River, engine.tech, FinWise, Affirm, EazePay Direct. Best total-cost offer ranked first."
+              title="52 lenders · 5s SLA"
+              body="One application, 52 parallel lender quotes. Multiple ranked offers tailored to the client's situation — Cross River, engine.tech, FinWise, Affirm, EazePay Direct. Best total-cost offer ranked first."
             />
             <PillarFeature
               icon="zero"
-              title="0% promo APR"
-              body="Qualifying programs (verified mastermind, certification, cohort) unlock 0% promo APR for the prospect. Lender-subsidised. Costs you nothing. Adds a measurable lift on top of approval."
+              title="APR from 5.9% · 0% (T&Cs apply)"
+              body="$5,000 to $50,000 tickets. 12 to 60 month terms keep monthly repayments low. APR from 5.9% for qualifying clients. 0% interest plans available for qualifying programs (T&Cs apply)."
             />
             <PillarFeature
               icon="rocket"
-              title="Paid in full on enrolment"
-              body="Lender disburses tuition direct on e-contract signature. Lender carries the credit risk. No surprise clawbacks for routine defaults. Cash collected equals enrolments closed, 1:1."
+              title="Merchant-direct · 48 to 72h"
+              body="Lender disburses straight to your business account once the loan settles — no intermediary holding funds. Funds generally land within 48 to 72 hours. Lender carries the credit risk; no clawback on routine defaults."
             />
+          </div>
+        </div>
+      </section>
+
+      {/* ============== CARD STACKING SECONDARY PATH ============== */}
+      <section id="card-stacking" className="cp-cardstack">
+        <div className="cp-container">
+          <div className="cp-cardstack-grid reveal">
+            <div>
+              <div className="cp-eyebrow">
+                <span className="cp-eyebrow-dot" />
+                SECONDARY PATH · 800+ CARDS
+              </div>
+              <h2 className="cp-h2">
+                Card stacking ·{' '}
+                <span className="cp-grad-text-violet">
+                  access to 800+ cards
+                </span>{' '}
+                as a secondary path.
+              </h2>
+              <p className="cp-h2-sub">
+                If the primary lender marketplace doesn&rsquo;t approve the full
+                ticket, the card-stacking layer routes the client through 800+
+                credit card and BNPL options ranked by remaining credit
+                available, statement-cycle timing, and 0% promo windows. The
+                client can fund a $35,000 mastermind across one personal loan
+                plus two cards instead of being declined. Same instant-decision
+                flow — the agentic layer just adds another fundable path.
+              </p>
+              <div className="cp-cardstack-bullets">
+                <div className="cp-cardstack-bullet">
+                  <span className="cp-cardstack-bullet-dot" />
+                  Ranked by remaining credit · statement-cycle timing · 0% promo windows
+                </div>
+                <div className="cp-cardstack-bullet">
+                  <span className="cp-cardstack-bullet-dot" />
+                  Fans across multiple cards to fund the gap — same flow, more paths
+                </div>
+                <div className="cp-cardstack-bullet">
+                  <span className="cp-cardstack-bullet-dot" />
+                  Soft-pull only · zero credit impact until the client picks a path
+                </div>
+              </div>
+            </div>
+            <CardFan />
+          </div>
+        </div>
+      </section>
+
+      {/* ============== QUALIFIED BUYERS · DECISION TREE ============== */}
+      <section id="qualified" className="cp-qual">
+        <div className="cp-ambient-grid cp-ambient-grid--qual" />
+        <div className="cp-qual-glow" aria-hidden />
+        <div className="cp-container">
+          <div className="cp-section-head reveal">
+            <div className="cp-eyebrow cp-eyebrow--on-dark">
+              <span className="cp-eyebrow-dot" />
+              QUALIFIED BUYERS · NOT FORM FILLERS
+            </div>
+            <h2 className="cp-h2 cp-h2--on-dark">
+              Speak to{' '}
+              <span className="cp-grad-text-violet">qualified buyers.</span>{' '}
+              Not form fillers.
+            </h2>
+            <p className="cp-h2-sub cp-h2-sub--on-dark">
+              Every discovery call slot fills with a prospect the financial-data
+              filter already cleared. Coach time goes to buyers, not tire
+              kickers.
+            </p>
+          </div>
+
+          {/* Decision tree visual */}
+          <QualificationTree />
+
+          {/* Time math callout */}
+          <div className="cp-qual-math reveal">
+            <div className="cp-qual-math-head">
+              <div className="cp-eyebrow cp-eyebrow--on-dark">
+                <span className="cp-eyebrow-dot" />
+                TIME MATH · WHY THIS MATTERS
+              </div>
+              <h3 className="cp-h3">
+                A discovery call is 30 to 60 minutes of operator time. A filler
+                prospect that ghosts or can&rsquo;t afford the program is pure
+                waste.
+              </h3>
+              <p className="cp-qual-math-body">
+                Pre-qualification across multiple financial-data checkpoints —
+                credit, identity, cashflow, and optional asset signals — means
+                the prospect that lands in your calendar is already cleared.
+                Your closer talks to people who can pay; not people who came to
+                browse.
+              </p>
+            </div>
+            <div className="cp-qual-math-tiles">
+              <div className="cp-qual-math-tile">
+                <div className="cp-qual-math-tile-v">Discovery</div>
+                <div className="cp-qual-math-tile-l">calls / day · capped by closer hours</div>
+              </div>
+              <div className="cp-qual-math-tile">
+                <div className="cp-qual-math-tile-v">Closer hours</div>
+                <div className="cp-qual-math-tile-l">saved per week when fillers don&rsquo;t book</div>
+              </div>
+              <div className="cp-qual-math-tile">
+                <div className="cp-qual-math-tile-v">Funded</div>
+                <div className="cp-qual-math-tile-l">enrolments / month — what calendars actually convert</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pixel feedback loop callout */}
+          <div className="cp-qual-loop reveal">
+            <div className="cp-qual-loop-eyebrow">
+              <span className="cp-eyebrow-dot" />
+              PIXEL FEEDBACK LOOP · ECHO
+            </div>
+            <div className="cp-qual-loop-grid">
+              <div className="cp-qual-loop-step">
+                <div className="cp-qual-loop-step-n">01</div>
+                <div className="cp-qual-loop-step-t">Hold pixel events</div>
+                <div className="cp-qual-loop-step-b">
+                  ECHO holds pixel events until the prospect clears
+                  qualification — Meta and Google never see the form fillers.
+                </div>
+              </div>
+              <div className="cp-qual-loop-step">
+                <div className="cp-qual-loop-step-n">02</div>
+                <div className="cp-qual-loop-step-t">Fire weighted conversions</div>
+                <div className="cp-qual-loop-step-b">
+                  Cleared prospects fire as weighted conversions back to Meta
+                  and Google CAPI — the algorithms learn from buyers, not
+                  browsers.
+                </div>
+              </div>
+              <div className="cp-qual-loop-step">
+                <div className="cp-qual-loop-step-n">03</div>
+                <div className="cp-qual-loop-step-t">Retrain on funded enrolments</div>
+                <div className="cp-qual-loop-step-b">
+                  Funded enrolments uploaded as offline conversions. Ad spend
+                  gets more efficient month over month — same budget, more
+                  buyers.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============== SYNERGY CALLOUT ============== */}
+      <section className="cp-synergy">
+        <div className="cp-container">
+          <div className="cp-synergy-card reveal">
+            <div className="cp-synergy-eyebrow">
+              <span className="cp-eyebrow-dot" />
+              HOW THE LAYERS FIT
+            </div>
+            <h3 className="cp-synergy-h3">
+              The agentic layer is your{' '}
+              <span className="cp-grad-text-violet">financial filter.</span>{' '}
+              The lending waterfall is your{' '}
+              <span className="cp-grad-text-violet">closer.</span> The card
+              stack is your{' '}
+              <span className="cp-grad-text-violet">safety net.</span>
+            </h3>
+            <p className="cp-synergy-body">
+              Software agents pre-qualify every inbound prospect across multiple
+              financial-data checkpoints — soft-pull credit, identity, cashflow,
+              optional asset signals. Only the cleared prospects reach your
+              discovery-call calendar. The lending waterfall returns an instant
+              multi-offer decision on the call. When the primary loan doesn&rsquo;t
+              cover the full program, the card-stacking layer fans 800+ cards
+              across the gap. Combined, your closer time goes to buyers, not
+              form fillers.
+            </p>
           </div>
         </div>
       </section>
@@ -681,14 +883,14 @@ export default function CoachPayLandingPage() {
             </div>
             <h2 className="cp-h2 cp-h2--on-dark">
               <span className="cp-grad-text-violet">Seven agents</span> running
-              every approval and every dollar. 24/7.
+              every qualification and every approval. 24/7.
             </h2>
             <p className="cp-h2-sub cp-h2-sub--on-dark">
-              Each agent has a defined scope and a measurable output. They do
-              not replace your enrolment team. They replace the missed DMs, the
-              manual lead reviews, the &ldquo;I will send the contract
-              over&rdquo; delays, the 0% promo APR cliff disasters, and the
-              financing leakage on cold ads.
+              Software agents operating on financial data — they never contact
+              the prospect directly. Each agent has a defined scope and a
+              measurable output. They replace the manual lead reviews, the
+              copy-paste enrichment, the routing guesswork, and the financing
+              leakage on cold ads.
             </p>
           </div>
 
@@ -882,8 +1084,9 @@ export default function CoachPayLandingPage() {
 
           <div className="cp-agents-foot reveal">
             <span className="cp-agents-foot-dot" />
-            Every agent action is FCRA permissible-purpose-aware, TCPA-compliant
-            on outbound voice/SMS/DM, and logged to an immutable audit trail.
+            Software agents only — pre-qualification runs on financial data,
+            never outbound contact. FCRA permissible-purpose-aware. Every agent
+            action logged to an immutable audit trail.
           </div>
         </div>
       </section>
@@ -894,19 +1097,19 @@ export default function CoachPayLandingPage() {
           <div className="cp-section-head reveal">
             <div className="cp-eyebrow">
               <span className="cp-eyebrow-dot" />
-              YOUR ROI · YOUR NUMBERS
+              YOUR ROI · YOUR FUNNEL
             </div>
             <h2 className="cp-h2">
-              How much{' '}
+              Model the funnel with{' '}
               <span className="cp-grad-text-violet">
-                financed enrolment revenue
-              </span>{' '}
-              is &ldquo;I can&rsquo;t afford it&rdquo; costing you?
+                pre-qualification baked in.
+              </span>
             </h2>
             <p className="cp-h2-sub">
-              Plug in your real numbers. We will show you the recovered
-              enrolment revenue per year. The enrolments CoachPay closes by
-              giving every qualified prospect a yes-able monthly.
+              Five inputs across the four-stage funnel — inbound leads, the
+              financial-data filter pass rate, your show rate, your close rate
+              on shows, and your average ticket. The math runs against your
+              numbers.
             </p>
           </div>
 
@@ -914,7 +1117,7 @@ export default function CoachPayLandingPage() {
             <div className="cp-roi-grid">
               <div className="cp-roi-inputs">
                 <RoiSlider
-                  label="Discovery calls per month"
+                  label="Inbound leads / month"
                   value={roiInputs.leadsPerMonth}
                   min={20}
                   max={1000}
@@ -925,9 +1128,42 @@ export default function CoachPayLandingPage() {
                   }
                 />
                 <RoiSlider
+                  label="Pre-qualification pass %"
+                  value={roiInputs.preQualPct}
+                  min={10}
+                  max={90}
+                  step={1}
+                  format={(v) => `${v}%`}
+                  onChange={(v) =>
+                    setRoiInputs((s) => ({ ...s, preQualPct: v }))
+                  }
+                />
+                <RoiSlider
+                  label="Discovery call show rate %"
+                  value={roiInputs.showRatePct}
+                  min={30}
+                  max={95}
+                  step={1}
+                  format={(v) => `${v}%`}
+                  onChange={(v) =>
+                    setRoiInputs((s) => ({ ...s, showRatePct: v }))
+                  }
+                />
+                <RoiSlider
+                  label="Close rate on discovery %"
+                  value={roiInputs.closeRatePct}
+                  min={5}
+                  max={70}
+                  step={1}
+                  format={(v) => `${v}%`}
+                  onChange={(v) =>
+                    setRoiInputs((s) => ({ ...s, closeRatePct: v }))
+                  }
+                />
+                <RoiSlider
                   label="Average program ticket"
                   value={roiInputs.avgTicket}
-                  min={2000}
+                  min={5000}
                   max={50000}
                   step={500}
                   format={(v) =>
@@ -941,38 +1177,37 @@ export default function CoachPayLandingPage() {
                     setRoiInputs((s) => ({ ...s, avgTicket: v }))
                   }
                 />
-                <RoiSlider
-                  label="Current close rate"
-                  value={roiInputs.closeRatePct}
-                  min={2}
-                  max={50}
-                  step={1}
-                  format={(v) => `${v}%`}
-                  onChange={(v) =>
-                    setRoiInputs((s) => ({ ...s, closeRatePct: v }))
-                  }
-                />
               </div>
 
               <div className={`cp-roi-output ${glow ? 'cp-roi-output--glow' : ''}`}>
                 <div className="cp-roi-out-label">
-                  Recovered enrolment revenue / year
+                  Financing-driven tuition revenue / year
                 </div>
-                <div className="cp-roi-out-sub">financing-driven</div>
+                <div className="cp-roi-out-sub">illustrative · based on your inputs</div>
                 <div className="cp-roi-out-value">{annualFormatted}</div>
-                <div className="cp-roi-out-stats">
+                <div className="cp-roi-out-stats cp-roi-out-stats--3">
                   <div>
                     <div className="cp-roi-out-stat-v">
-                      ~{roi.monthlyEnrolments}
+                      {roi.monthlyEnrolments}
                     </div>
                     <div className="cp-roi-out-stat-l">
-                      enrolments / month closed via financing
+                      funded enrolments / month
                     </div>
                   </div>
                   <div>
-                    <div className="cp-roi-out-stat-v">$5k to $50k</div>
+                    <div className="cp-roi-out-stat-v">
+                      {roi.annualEnrolments}
+                    </div>
                     <div className="cp-roi-out-stat-l">
-                      ticket range supported
+                      funded enrolments / year
+                    </div>
+                  </div>
+                  <div>
+                    <div className="cp-roi-out-stat-v">
+                      {roi.closerHoursSavedWeekly}h
+                    </div>
+                    <div className="cp-roi-out-stat-l">
+                      closer hours saved / week
                     </div>
                   </div>
                 </div>
@@ -991,6 +1226,11 @@ export default function CoachPayLandingPage() {
                     />
                   </svg>
                 </a>
+                <div className="cp-roi-out-disclaimer">
+                  Outputs are illustrative based on your inputs. Actual
+                  outcomes vary by offer, niche, and market. Not a guarantee of
+                  returns.
+                </div>
               </div>
             </div>
           </div>
@@ -1118,8 +1358,8 @@ export default function CoachPayLandingPage() {
             <span className="cp-grad-text-violet">On the discovery call.</span>
           </h2>
           <p className="cp-final-sub reveal">
-            Five-minute signup. Sixty-second KYB. First funded enrolment inside
-            48 hours after onboarding clears.
+            Five-minute signup. Sixty-second KYB. Merchant-direct payout
+            generally lands within 48 to 72 hours of the loan settling.
           </p>
           <div className="cp-final-ctas reveal">
             <a href="/welcome" className="cp-btn cp-btn--violet cp-btn--xl">
@@ -1226,7 +1466,6 @@ function Waterfall({
   return (
     <div className="cp-waterfall reveal">
       <div className="cp-waterfall-svg-wrap">
-        <div className="cp-waterfall-beam" aria-hidden />
         <svg
           viewBox="0 0 1200 320"
           preserveAspectRatio="none"
@@ -1277,27 +1516,15 @@ function Waterfall({
             strokeDasharray="2 8"
           />
           {/* Traveling pulse that rides the arc node 01 → node 05 */}
-          <circle r="9" fill="url(#cp-pulse-grad)" className="cp-waterfall-pulse">
-            <animateMotion dur="6s" repeatCount="indefinite" rotate="auto" keyTimes="0;0.85;1" keyPoints="0;1;1" calcMode="linear">
+          <circle r="8" fill="url(#cp-pulse-grad)" className="cp-waterfall-pulse">
+            <animateMotion dur="8s" repeatCount="indefinite" rotate="auto" keyTimes="0;0.85;1" keyPoints="0;1;1" calcMode="linear">
               <mpath href="#cp-arc-path" />
             </animateMotion>
             <animate
               attributeName="opacity"
               values="0;1;1;1;0"
               keyTimes="0;0.05;0.5;0.85;1"
-              dur="6s"
-              repeatCount="indefinite"
-            />
-          </circle>
-          <circle r="3" fill="#fff" className="cp-waterfall-pulse">
-            <animateMotion dur="6s" repeatCount="indefinite" keyTimes="0;0.85;1" keyPoints="0;1;1" calcMode="linear">
-              <mpath href="#cp-arc-path" />
-            </animateMotion>
-            <animate
-              attributeName="opacity"
-              values="0;1;1;1;0"
-              keyTimes="0;0.05;0.5;0.85;1"
-              dur="6s"
+              dur="8s"
               repeatCount="indefinite"
             />
           </circle>
@@ -1370,17 +1597,17 @@ function FinancingMockup() {
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">Term</div>
-                  <div className="cp-fin-offer-v">36 mo</div>
+                  <div className="cp-fin-offer-v">48 mo</div>
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">Monthly</div>
                   <div className="cp-fin-offer-v cp-fin-offer-v--em">
-                    $760
+                    $612
                   </div>
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">APR</div>
-                  <div className="cp-fin-offer-v">7.99%</div>
+                  <div className="cp-fin-offer-v">5.9%</div>
                 </div>
               </div>
               <div className="cp-fin-offer-tag cp-fin-offer-tag--violet">
@@ -1397,15 +1624,15 @@ function FinancingMockup() {
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">Term</div>
-                  <div className="cp-fin-offer-v">48 mo</div>
+                  <div className="cp-fin-offer-v">60 mo</div>
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">Monthly</div>
-                  <div className="cp-fin-offer-v">$612</div>
+                  <div className="cp-fin-offer-v">$498</div>
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">APR</div>
-                  <div className="cp-fin-offer-v">9.49%</div>
+                  <div className="cp-fin-offer-v">7.49%</div>
                 </div>
               </div>
             </div>
@@ -1427,7 +1654,7 @@ function FinancingMockup() {
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">APR</div>
-                  <div className="cp-fin-offer-v">11.99%</div>
+                  <div className="cp-fin-offer-v">9.99%</div>
                 </div>
               </div>
             </div>
@@ -1439,7 +1666,10 @@ function FinancingMockup() {
               soft pull · 0 credit impact
             </span>
             <span className="cp-fin-offers-foot-pill">
-              90-day deferred first payment
+              merchant-direct payout · 48 to 72h
+            </span>
+            <span className="cp-fin-offers-foot-pill">
+              12 to 60 month terms
             </span>
           </div>
         </div>
@@ -1448,25 +1678,25 @@ function FinancingMockup() {
         <div className="cp-fin-side">
           <div className="cp-fin-promo">
             <div className="cp-fin-promo-bar" />
-            <div className="cp-fin-promo-eyebrow">FEATURED · QUALIFYING PROGRAM</div>
+            <div className="cp-fin-promo-eyebrow">FEATURED · QUALIFYING PROGRAMS</div>
             <div className="cp-fin-promo-title">
-              <span className="cp-grad-text-violet">0% APR</span>
+              <span className="cp-grad-text-violet">0% interest</span>
               <br />
               <span className="cp-fin-promo-sub">
-                first 12 months on Atlas Executive cohort
+                plans available for qualifying programs · T&amp;Cs apply
               </span>
             </div>
             <div className="cp-fin-promo-stat">
               <div>
-                <div className="cp-fin-promo-stat-v">Lift</div>
+                <div className="cp-fin-promo-stat-v">From 5.9%</div>
                 <div className="cp-fin-promo-stat-l">
-                  measurable add on top of approval
+                  APR for qualifying clients
                 </div>
               </div>
               <div>
-                <div className="cp-fin-promo-stat-v">$0</div>
+                <div className="cp-fin-promo-stat-v">12-60mo</div>
                 <div className="cp-fin-promo-stat-l">
-                  cost to you · lender-subsidised
+                  terms · lower monthly repayments
                 </div>
               </div>
             </div>
@@ -1497,6 +1727,170 @@ function FinancingMockup() {
               </span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+   QualificationTree
+   AUREAN-style decision tree. Vertical trunk + parallel financial-data
+   branch in the middle. SVG connectors with a slow traveling pulse.
+   ---------------------------------------------------------------------------- */
+function QualificationTree() {
+  return (
+    <div className="cp-qual-tree reveal">
+      <div className="cp-qual-tree-wrap">
+        <svg
+          className="cp-qual-tree-svg"
+          viewBox="0 0 880 720"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden
+        >
+          <defs>
+            <linearGradient id="cp-qual-line" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#A78BFA" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.85" />
+            </linearGradient>
+            <radialGradient id="cp-qual-pulse-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#fff" stopOpacity="1" />
+              <stop offset="40%" stopColor="#C4B5FD" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
+            </radialGradient>
+            <path id="cp-qual-path-1" d="M 440 60 L 440 140" />
+            <path id="cp-qual-path-2" d="M 440 200 L 440 280" />
+            <path id="cp-qual-path-3a" d="M 440 340 L 240 420" />
+            <path id="cp-qual-path-3b" d="M 440 340 L 440 420" />
+            <path id="cp-qual-path-3c" d="M 440 340 L 640 420" />
+            <path id="cp-qual-path-4a" d="M 240 480 L 440 540" />
+            <path id="cp-qual-path-4b" d="M 440 480 L 440 540" />
+            <path id="cp-qual-path-4c" d="M 640 480 L 440 540" />
+            <path id="cp-qual-path-5" d="M 440 600 L 440 680" />
+          </defs>
+
+          {/* Connector lines */}
+          <path d="M 440 60 L 440 140" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 440 200 L 440 280" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 440 340 L 240 420" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 440 340 L 440 420" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 440 340 L 640 420" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 240 480 L 440 540" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 440 480 L 440 540" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 640 480 L 440 540" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M 440 600 L 440 680" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+
+          {/* Single traveling pulse that wanders the trunk. Single rider
+              following the central path, randomization is implicit because
+              animation timing varies per branch */}
+          <circle r="6" fill="url(#cp-qual-pulse-grad)" className="cp-qual-pulse">
+            <animateMotion dur="7s" repeatCount="indefinite">
+              <mpath href="#cp-qual-path-1" />
+            </animateMotion>
+          </circle>
+          <circle r="6" fill="url(#cp-qual-pulse-grad)" className="cp-qual-pulse">
+            <animateMotion dur="7s" repeatCount="indefinite" begin="1s">
+              <mpath href="#cp-qual-path-2" />
+            </animateMotion>
+          </circle>
+          <circle r="5" fill="url(#cp-qual-pulse-grad)" className="cp-qual-pulse">
+            <animateMotion dur="7s" repeatCount="indefinite" begin="2s">
+              <mpath href="#cp-qual-path-3b" />
+            </animateMotion>
+          </circle>
+          <circle r="5" fill="url(#cp-qual-pulse-grad)" className="cp-qual-pulse">
+            <animateMotion dur="7s" repeatCount="indefinite" begin="4s">
+              <mpath href="#cp-qual-path-4b" />
+            </animateMotion>
+          </circle>
+          <circle r="6" fill="url(#cp-qual-pulse-grad)" className="cp-qual-pulse">
+            <animateMotion dur="7s" repeatCount="indefinite" begin="5s">
+              <mpath href="#cp-qual-path-5" />
+            </animateMotion>
+          </circle>
+        </svg>
+
+        {/* Glass-card nodes positioned to match the SVG */}
+        <QualNodeCard top={0}   left="50%" code="Inbound application" label="lead enters the funnel" type="route" />
+        <QualNodeCard top={140} left="50%" code="PRISM" label="intake · dynamic question order" type="agent" />
+        <QualNodeCard top={280} left="50%" code="VEGA" label="identity · address · business signal" type="agent" />
+        <QualNodeCard top={420} left="20%" code="FCRA soft pull" label="credit · 0 score impact" type="data" />
+        <QualNodeCard top={420} left="50%" code="Plaid" label="cashflow signal" type="data" />
+        <QualNodeCard top={420} left="80%" code="Persona" label="identity verification" type="data" />
+        <QualNodeCard top={540} left="50%" code="ORACLE" label="score · fundability tier" type="agent" />
+        <QualNodeCard top={680} left="50%" code="Qualified · book" label="→ discovery-call calendar" type="route" highlight />
+      </div>
+      <div className="cp-qual-tree-foot">
+        <span className="cp-qual-tree-foot-dot" />
+        Software agents only. Pre-qualification runs on financial data — never
+        outbound voice, SMS, or DM contact with the prospect.
+      </div>
+    </div>
+  );
+}
+
+function QualNodeCard({
+  top,
+  left,
+  code,
+  label,
+  type,
+  highlight,
+}: {
+  top: number;
+  left: string;
+  code: string;
+  label: string;
+  type: 'agent' | 'data' | 'asset' | 'route';
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`cp-qual-node cp-qual-node--${type}${highlight ? ' cp-qual-node--highlight' : ''}`}
+      style={{
+        top: `${(top / 720) * 100}%`,
+        left,
+      }}
+    >
+      <div className="cp-qual-node-code">{code}</div>
+      <div className="cp-qual-node-label">{label}</div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+   CardFan
+   Pure-CSS card fan illustration for the card-stacking section.
+   Primary lender card on top, 3 secondary card-stack cards fanning behind.
+   ---------------------------------------------------------------------------- */
+function CardFan() {
+  return (
+    <div className="cp-card-fan" aria-hidden>
+      <div className="cp-card-fan-glow" />
+      <div className="cp-card-fan-card cp-card-fan-card--3">
+        <div className="cp-card-fan-band" />
+        <div className="cp-card-fan-stripe" />
+        <div className="cp-card-fan-bnpl">card · BNPL</div>
+      </div>
+      <div className="cp-card-fan-card cp-card-fan-card--2">
+        <div className="cp-card-fan-band" />
+        <div className="cp-card-fan-stripe" />
+        <div className="cp-card-fan-bnpl">card · 0% promo</div>
+      </div>
+      <div className="cp-card-fan-card cp-card-fan-card--1">
+        <div className="cp-card-fan-band" />
+        <div className="cp-card-fan-stripe" />
+        <div className="cp-card-fan-bnpl">card · remaining credit</div>
+      </div>
+      <div className="cp-card-fan-card cp-card-fan-card--primary">
+        <div className="cp-card-fan-primary-eyebrow">
+          <span className="cp-card-fan-blip" />
+          PRIMARY LENDER
+        </div>
+        <div className="cp-card-fan-primary-amount">$25,000</div>
+        <div className="cp-card-fan-primary-sub">personal loan · 48 mo · 5.9% APR</div>
+        <div className="cp-card-fan-primary-foot">
+          <span className="cp-card-fan-primary-pill">+ card stack covers the gap</span>
         </div>
       </div>
     </div>
@@ -1922,17 +2316,17 @@ const STYLES = `
     margin-top: -260px;
     border-radius: 999px;
     transform-style: preserve-3d;
-    border: 1px solid rgba(167, 139, 250, 0.18);
+    border: 1px solid rgba(167, 139, 250, 0.14);
     background:
-      radial-gradient(ellipse at center, rgba(139, 92, 246, 0.18), rgba(16, 16, 35, 0.04) 70%),
-      linear-gradient(180deg, rgba(167, 139, 250, 0.06), rgba(255,255,255,0));
+      radial-gradient(ellipse at center, rgba(139, 92, 246, 0.14), rgba(16, 16, 35, 0.04) 70%),
+      linear-gradient(180deg, rgba(167, 139, 250, 0.04), rgba(255,255,255,0));
     box-shadow:
-      0 0 0 1px rgba(167, 139, 250, 0.06) inset,
+      0 0 0 1px rgba(167, 139, 250, 0.04) inset,
       0 30px 80px -20px rgba(0, 0, 0, 0.6);
     pointer-events: none;
     z-index: 1;
-    animation: cp-ring-spin 36s linear infinite;
-    opacity: 0.85;
+    animation: cp-ring-spin 72s linear infinite;
+    opacity: 0.7;
   }
   .cp-hero-ring::after {
     content: "";
@@ -1953,25 +2347,7 @@ const STYLES = `
     0%   { transform: rotateX(60deg) rotateZ(0deg); }
     100% { transform: rotateX(60deg) rotateZ(360deg); }
   }
-  .cp-hero-ring-2 {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 380px;
-    height: 380px;
-    margin-left: -190px;
-    margin-top: -190px;
-    border-radius: 999px;
-    border: 1px dashed rgba(167, 139, 250, 0.10);
-    pointer-events: none;
-    z-index: 1;
-    animation: cp-ring-spin-rev 48s linear infinite;
-    opacity: 0.7;
-  }
-  @keyframes cp-ring-spin-rev {
-    0%   { transform: rotateX(55deg) rotateZ(0deg); }
-    100% { transform: rotateX(55deg) rotateZ(-360deg); }
-  }
+  /* Hero secondary counter-rotating ring removed — single ring reads cleaner */
 
   /* Chip purple shadow breathing + scanline sweep on the LIVE chip */
   .cp-chip {
@@ -2043,65 +2419,18 @@ const STYLES = `
   }
   @media (max-width: 1024px) { .cp-waterfall-beam { display: none; } }
 
-  .cp-waterfall-orb {
-    will-change: box-shadow;
-    animation: cp-orb-breath 3.6s ease-in-out infinite;
-  }
-  .cp-waterfall-node:nth-child(1) .cp-waterfall-orb { animation-delay: 0s; }
-  .cp-waterfall-node:nth-child(2) .cp-waterfall-orb { animation-delay: 0.72s; }
-  .cp-waterfall-node:nth-child(3) .cp-waterfall-orb { animation-delay: 1.44s; }
-  .cp-waterfall-node:nth-child(4) .cp-waterfall-orb { animation-delay: 2.16s; }
-  .cp-waterfall-node:nth-child(5) .cp-waterfall-orb { animation-delay: 2.88s; }
-  @keyframes cp-orb-breath {
-    0%, 100% {
-      box-shadow:
-        0 10px 30px -8px rgba(0, 0, 0, 0.6),
-        0 0 0 0 rgba(167, 139, 250, 0);
-    }
-    50% {
-      box-shadow:
-        0 14px 36px -8px rgba(0, 0, 0, 0.7),
-        0 0 0 6px rgba(167, 139, 250, 0.14),
-        0 0 18px rgba(139, 92, 246, 0.35);
-    }
-  }
+  /* Waterfall orbs stay static — the traveling rider handles the motion */
 
-  /* Pillar 01 financing mockup + tick polling keyframes defined here;
-     positional .cp-fin-offer 3D transforms live alongside the original
-     rules further down so they don't get overridden. */
+  /* Pillar 01 financing tick polling — subtle wave, no bright pulse */
   @keyframes cp-tick-poll {
-    0%, 100% { background: linear-gradient(180deg, rgba(167, 139, 250, 0.4), rgba(139, 92, 246, 0.25)); }
-    50%      { background: linear-gradient(180deg, rgba(167, 139, 250, 0.85), rgba(139, 92, 246, 0.55)); box-shadow: 0 0 10px rgba(167, 139, 250, 0.45); }
+    0%, 100% { background: linear-gradient(180deg, rgba(167, 139, 250, 0.32), rgba(139, 92, 246, 0.2)); }
+    50%      { background: linear-gradient(180deg, rgba(167, 139, 250, 0.55), rgba(139, 92, 246, 0.35)); }
   }
-  /* stagger via nth-child so 52 ticks light up in a wave */
-  .cp-fin-marketplace-tick:nth-child(1)  { animation-delay: 0s, 0s; }
-  .cp-fin-marketplace-tick:nth-child(2)  { animation-delay: 0.07s, 0.06s; }
-  .cp-fin-marketplace-tick:nth-child(3)  { animation-delay: 0.14s, 0.12s; }
-  .cp-fin-marketplace-tick:nth-child(4)  { animation-delay: 0.21s, 0.18s; }
-  .cp-fin-marketplace-tick:nth-child(5)  { animation-delay: 0.28s, 0.24s; }
-  .cp-fin-marketplace-tick:nth-child(6)  { animation-delay: 0.35s, 0.30s; }
-  .cp-fin-marketplace-tick:nth-child(7)  { animation-delay: 0.42s, 0.36s; }
-  .cp-fin-marketplace-tick:nth-child(8)  { animation-delay: 0.49s, 0.42s; }
-  .cp-fin-marketplace-tick:nth-child(9)  { animation-delay: 0.56s, 0.48s; }
-  .cp-fin-marketplace-tick:nth-child(10) { animation-delay: 0.63s, 0.54s; }
-  .cp-fin-marketplace-tick:nth-child(11) { animation-delay: 0.70s, 0.60s; }
-  .cp-fin-marketplace-tick:nth-child(12) { animation-delay: 0.77s, 0.66s; }
-  .cp-fin-marketplace-tick:nth-child(13) { animation-delay: 0.84s, 0.72s; }
-  .cp-fin-marketplace-tick:nth-child(14) { animation-delay: 0.91s, 0.78s; }
-  .cp-fin-marketplace-tick:nth-child(15) { animation-delay: 0.98s, 0.84s; }
-  .cp-fin-marketplace-tick:nth-child(16) { animation-delay: 1.05s, 0.90s; }
-  .cp-fin-marketplace-tick:nth-child(17) { animation-delay: 1.12s, 0.96s; }
-  .cp-fin-marketplace-tick:nth-child(18) { animation-delay: 1.19s, 1.02s; }
-  .cp-fin-marketplace-tick:nth-child(19) { animation-delay: 1.26s, 1.08s; }
-  .cp-fin-marketplace-tick:nth-child(20) { animation-delay: 1.33s, 1.14s; }
-  .cp-fin-marketplace-tick:nth-child(21) { animation-delay: 1.40s, 1.20s; }
-  .cp-fin-marketplace-tick:nth-child(22) { animation-delay: 1.47s, 1.26s; }
-  .cp-fin-marketplace-tick:nth-child(23) { animation-delay: 1.54s, 1.32s; }
-  .cp-fin-marketplace-tick:nth-child(24) { animation-delay: 1.61s, 1.38s; }
-  .cp-fin-marketplace-tick:nth-child(25) { animation-delay: 1.68s, 1.44s; }
-  .cp-fin-marketplace-tick:nth-child(26) { animation-delay: 1.75s, 1.50s; }
-  .cp-fin-marketplace-tick:nth-child(n+27):nth-child(-n+39) { animation-delay: 1.85s, 1.60s; }
-  .cp-fin-marketplace-tick:nth-child(n+40):nth-child(-n+52) { animation-delay: 2.00s, 1.80s; }
+  /* simplified stagger — every 4th tick gets a small delay */
+  .cp-fin-marketplace-tick:nth-child(4n)   { animation-delay: 0.2s, 0.4s; }
+  .cp-fin-marketplace-tick:nth-child(4n+1) { animation-delay: 0.4s, 0.8s; }
+  .cp-fin-marketplace-tick:nth-child(4n+2) { animation-delay: 0.6s, 1.2s; }
+  .cp-fin-marketplace-tick:nth-child(4n+3) { animation-delay: 0.8s, 1.6s; }
 
   /* Agent cards — icon sway keyframes (hover/transform lives in original rule below) */
   .cp-agent-icon {
@@ -2119,8 +2448,8 @@ const STYLES = `
   .cp-agent:nth-child(6) .cp-agent-icon { animation-delay: 3.0s; }
   .cp-agent:nth-child(7) .cp-agent-icon { animation-delay: 3.6s; }
   @keyframes cp-icon-sway {
-    0%, 100% { transform: rotateY(-5deg) rotateX(2deg); }
-    50%      { transform: rotateY(5deg) rotateX(-2deg); }
+    0%, 100% { transform: rotateY(-2deg) rotateX(1deg); }
+    50%      { transform: rotateY(2deg) rotateX(-1deg); }
   }
 
   /* ECHO live stream — scrolling marquee */
@@ -2131,22 +2460,7 @@ const STYLES = `
     mask-image: linear-gradient(180deg, black 0%, black 78%, transparent 100%);
     -webkit-mask-image: linear-gradient(180deg, black 0%, black 78%, transparent 100%);
   }
-  .cp-agent-stream-rows::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.55), transparent);
-    animation: cp-stream-scan 4.4s linear infinite;
-    pointer-events: none;
-    z-index: 2;
-  }
-  @keyframes cp-stream-scan {
-    0%   { top: -2px; opacity: 0; }
-    8%   { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { top: 100%; opacity: 0; }
-  }
+  /* Scanline removed — drift handles the motion on its own */
   .cp-agent-stream-row {
     animation: cp-stream-drift 14s linear infinite;
   }
@@ -2167,23 +2481,23 @@ const STYLES = `
   .cp-stories-grid { perspective: 1400px; }
   .cp-agents-mosaic { perspective: 1600px; }
 
-  /* Final CTA — slow-rotating ring behind the headline */
+  /* Final CTA — small subtle ring behind headline */
   .cp-final-ring {
     position: absolute;
     left: 50%;
-    top: 38%;
-    width: 720px;
-    height: 720px;
-    margin-left: -360px;
-    margin-top: -360px;
+    top: 40%;
+    width: 360px;
+    height: 360px;
+    margin-left: -180px;
+    margin-top: -180px;
     border-radius: 999px;
-    border: 1px solid rgba(167, 139, 250, 0.14);
+    border: 1px solid rgba(167, 139, 250, 0.12);
     background:
-      radial-gradient(ellipse at center, rgba(139, 92, 246, 0.10), transparent 70%);
+      radial-gradient(ellipse at center, rgba(139, 92, 246, 0.08), transparent 70%);
     pointer-events: none;
     z-index: 0;
-    animation: cp-ring-spin 60s linear infinite;
-    opacity: 0.55;
+    animation: cp-ring-spin 110s linear infinite;
+    opacity: 0.5;
     filter: blur(0.3px);
   }
   .cp-final-ring::after {
@@ -2191,7 +2505,7 @@ const STYLES = `
     position: absolute;
     inset: 14%;
     border-radius: 999px;
-    border: 1px dashed rgba(167, 139, 250, 0.18);
+    border: 1px dashed rgba(167, 139, 250, 0.14);
   }
   .cp-final-ring::before {
     content: "";
@@ -2201,7 +2515,7 @@ const STYLES = `
     border: 1px solid rgba(167, 139, 250, 0.10);
   }
   @media (max-width: 768px) {
-    .cp-final-ring { width: 480px; height: 480px; margin-left: -240px; margin-top: -240px; }
+    .cp-final-ring { width: 260px; height: 260px; margin-left: -130px; margin-top: -130px; }
   }
 
   /* Glow-edge accent (AUREAN-style outer subtle gradient) */
@@ -3284,7 +3598,7 @@ const STYLES = `
   }
   @keyframes cp-tick {
     0%, 100% { transform: scaleY(1); }
-    50% { transform: scaleY(1.4); }
+    50% { transform: scaleY(1.15); }
   }
   .cp-fin-marketplace-foot {
     margin-top: 14px;
@@ -3770,6 +4084,20 @@ const STYLES = `
     padding-top: 22px;
     border-top: 1px solid var(--cp-hairline);
   }
+  .cp-roi-out-stats--3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 640px) {
+    .cp-roi-out-stats--3 { grid-template-columns: 1fr; }
+  }
+  .cp-roi-out-disclaimer {
+    position: relative;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--cp-hairline);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--cp-muted);
+    letter-spacing: -0.003em;
+  }
   .cp-roi-out-stat-v {
     font-size: 22px; font-weight: 700; color: var(--cp-text);
     font-variant-numeric: tabular-nums;
@@ -3909,6 +4237,497 @@ const STYLES = `
     transition: opacity 0.25s ease, max-height 0.45s ease, margin-top 0.25s ease, visibility 0s;
   }
 
+  /* ============== CARD STACKING ============== */
+  .cp-cardstack {
+    padding: 112px 0;
+    background:
+      radial-gradient(50% 40% at 90% 30%, rgba(58, 58, 106, 0.32), transparent 70%),
+      radial-gradient(30% 30% at 10% 80%, rgba(139, 92, 246, 0.12), transparent 70%),
+      var(--cp-bg);
+    border-top: 1px solid var(--cp-hairline);
+    border-bottom: 1px solid var(--cp-hairline);
+    position: relative;
+  }
+  .cp-cardstack-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  @media (min-width: 1024px) {
+    .cp-cardstack-grid { grid-template-columns: 1.1fr 0.9fr; gap: 72px; }
+  }
+  .cp-cardstack-bullets {
+    margin-top: 28px;
+    display: grid;
+    gap: 14px;
+  }
+  .cp-cardstack-bullet {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14.5px;
+    color: var(--cp-text-2);
+    line-height: 1.55;
+  }
+  .cp-cardstack-bullet-dot {
+    width: 8px; height: 8px;
+    border-radius: 999px;
+    background: var(--cp-violet);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.16);
+    margin-top: 7px;
+  }
+
+  /* Card fan illustration */
+  .cp-card-fan {
+    position: relative;
+    height: 360px;
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
+    transform-style: preserve-3d;
+  }
+  @media (max-width: 1023px) {
+    .cp-card-fan { max-width: 480px; margin: 0 auto; }
+  }
+  .cp-card-fan-glow {
+    position: absolute;
+    inset: 10% 8%;
+    border-radius: 30px;
+    background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.22), transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+  .cp-card-fan-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    height: 170px;
+    border-radius: 18px;
+    border: 1px solid var(--cp-hairline-2);
+    background:
+      linear-gradient(135deg, rgba(58, 40, 110, 0.5) 0%, rgba(35, 35, 63, 0.7) 50%, rgba(16, 16, 35, 0.85) 100%);
+    box-shadow:
+      0 24px 56px -22px rgba(0, 0, 0, 0.75),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transform-style: preserve-3d;
+    transform-origin: center bottom;
+    will-change: transform;
+    transition: transform 0.45s cubic-bezier(0.2,0.7,0.2,1), box-shadow 0.45s ease;
+  }
+  .cp-card-fan-card--3 {
+    transform: translate(-50%, -50%) translateX(-110px) rotate(-14deg) translateZ(-30px);
+    opacity: 0.7;
+    z-index: 1;
+  }
+  .cp-card-fan-card--2 {
+    transform: translate(-50%, -50%) translateX(-50px) rotate(-7deg) translateZ(-15px);
+    opacity: 0.85;
+    z-index: 2;
+  }
+  .cp-card-fan-card--1 {
+    transform: translate(-50%, -50%) translateX(40px) rotate(6deg) translateZ(0);
+    opacity: 0.92;
+    z-index: 3;
+  }
+  .cp-card-fan-card--primary {
+    width: 320px;
+    height: 200px;
+    transform: translate(-50%, -50%) translateZ(40px);
+    background:
+      linear-gradient(135deg, rgba(167, 139, 250, 0.18) 0%, rgba(58, 40, 110, 0.5) 60%, rgba(16, 16, 35, 0.9) 100%);
+    border-color: rgba(167, 139, 250, 0.36);
+    box-shadow:
+      0 36px 88px -28px rgba(0, 0, 0, 0.85),
+      0 24px 56px -16px rgba(139, 92, 246, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    padding: 22px;
+    z-index: 4;
+  }
+  .cp-card-fan:hover .cp-card-fan-card--3 {
+    transform: translate(-50%, -50%) translateX(-130px) rotate(-18deg) translateZ(-30px);
+  }
+  .cp-card-fan:hover .cp-card-fan-card--2 {
+    transform: translate(-50%, -50%) translateX(-65px) rotate(-10deg) translateZ(-15px);
+  }
+  .cp-card-fan:hover .cp-card-fan-card--1 {
+    transform: translate(-50%, -50%) translateX(55px) rotate(9deg) translateZ(0);
+  }
+  .cp-card-fan-band {
+    position: absolute;
+    left: 0; right: 0; top: 24px;
+    height: 28px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.6) 100%);
+  }
+  .cp-card-fan-stripe {
+    position: absolute;
+    left: 18px; bottom: 22px;
+    width: 64px; height: 32px;
+    border-radius: 6px;
+    background:
+      linear-gradient(135deg, rgba(255, 215, 100, 0.85) 0%, rgba(180, 140, 60, 0.7) 100%);
+    box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.5);
+  }
+  .cp-card-fan-bnpl {
+    position: absolute;
+    right: 16px; bottom: 18px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--cp-text-2);
+    font-weight: 600;
+  }
+  .cp-card-fan-primary-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cp-violet);
+    font-weight: 700;
+  }
+  .cp-card-fan-blip {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: var(--cp-violet);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.22);
+    animation: cp-throb-violet 2s ease-in-out infinite;
+  }
+  .cp-card-fan-primary-amount {
+    margin-top: 12px;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.022em;
+    background: linear-gradient(180deg, #fff 0%, #b9b9c7 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  .cp-card-fan-primary-sub {
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--cp-text-2);
+  }
+  .cp-card-fan-primary-foot {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--cp-hairline-2);
+  }
+  .cp-card-fan-primary-pill {
+    display: inline-flex; align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(167, 139, 250, 0.14);
+    color: var(--cp-violet);
+    border: 1px solid rgba(167, 139, 250, 0.32);
+  }
+
+  /* ============== QUALIFIED BUYERS · DECISION TREE ============== */
+  .cp-qual {
+    position: relative;
+    padding: 128px 0;
+    background:
+      radial-gradient(50% 40% at 50% 0%, rgba(58, 58, 106, 0.32), transparent 70%),
+      var(--cp-panel);
+    border-top: 1px solid var(--cp-hairline);
+    border-bottom: 1px solid var(--cp-hairline);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .cp-ambient-grid--qual {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  }
+  .cp-qual-glow {
+    position: absolute;
+    top: 20%; left: 50%;
+    width: 600px; height: 600px;
+    margin-left: -300px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.18), transparent 70%);
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cp-qual .cp-container { position: relative; z-index: 1; }
+
+  /* Tree wrap with perspective tilt */
+  .cp-qual-tree {
+    margin-top: 56px;
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
+  }
+  .cp-qual-tree-wrap {
+    position: relative;
+    max-width: 880px;
+    margin: 0 auto;
+    aspect-ratio: 880 / 720;
+    transform: rotateX(8deg);
+    transform-origin: 50% 60%;
+  }
+  @media (max-width: 768px) {
+    .cp-qual-tree-wrap { transform: none; aspect-ratio: 480 / 760; }
+  }
+  .cp-qual-tree-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  @media (max-width: 768px) {
+    .cp-qual-tree-svg { display: none; }
+  }
+  .cp-qual-pulse {
+    filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.85));
+  }
+
+  .cp-qual-node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 220px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(35,35,63,0.85) 0%, rgba(16,16,35,0.85) 100%);
+    border: 1px solid var(--cp-hairline-2);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 18px 50px -22px rgba(0, 0, 0, 0.6);
+    text-align: center;
+    transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+  @media (max-width: 768px) {
+    .cp-qual-node {
+      position: relative;
+      transform: none;
+      left: 0 !important; top: 0 !important;
+      width: 100%;
+      margin: 0 auto 12px auto;
+    }
+  }
+  .cp-qual-node:hover {
+    transform: translate(-50%, -50%) translateY(-2px);
+    border-color: rgba(167, 139, 250, 0.36);
+    box-shadow: 0 24px 60px -22px rgba(139, 92, 246, 0.3);
+  }
+  @media (max-width: 768px) {
+    .cp-qual-node:hover { transform: none; }
+  }
+  .cp-qual-node-code {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cp-text);
+    letter-spacing: -0.005em;
+  }
+  .cp-qual-node-label {
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--cp-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .cp-qual-node--agent .cp-qual-node-code {
+    background: linear-gradient(135deg, #C4B5FD 0%, #A78BFA 60%, #8B5CF6 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: 0.02em;
+  }
+  .cp-qual-node--data {
+    background: linear-gradient(180deg, rgba(20,20,38,0.85) 0%, rgba(10,10,20,0.85) 100%);
+    width: 180px;
+  }
+  .cp-qual-node--route {
+    background: linear-gradient(180deg, rgba(35,35,63,0.65) 0%, rgba(16,16,35,0.65) 100%);
+    width: 200px;
+  }
+  .cp-qual-node--highlight {
+    background: linear-gradient(180deg, rgba(58,40,110,0.6) 0%, rgba(35,35,63,0.8) 100%);
+    border-color: rgba(167, 139, 250, 0.42);
+    box-shadow:
+      0 24px 60px -18px rgba(139, 92, 246, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .cp-qual-node--highlight .cp-qual-node-code {
+    background: linear-gradient(135deg, #C4B5FD 0%, #A78BFA 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .cp-qual-tree-foot {
+    margin-top: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--cp-hairline);
+    color: var(--cp-text-2);
+    font-size: 12.5px;
+    letter-spacing: -0.005em;
+  }
+  .cp-qual-tree-foot-dot {
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: var(--cp-violet);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.22);
+    animation: cp-throb-violet 2.4s ease-in-out infinite;
+  }
+
+  /* Time math callout */
+  .cp-qual-math {
+    margin-top: 72px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 36px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(35,35,63,0.55) 0%, rgba(16,16,35,0.55) 100%);
+    border: 1px solid var(--cp-hairline-2);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 24px 70px -28px rgba(0, 0, 0, 0.55);
+  }
+  @media (min-width: 1024px) {
+    .cp-qual-math { grid-template-columns: 1.05fr 0.95fr; align-items: center; gap: 48px; }
+  }
+  .cp-qual-math-head .cp-h3 {
+    margin-top: 14px;
+    max-width: 520px;
+  }
+  .cp-qual-math-body {
+    margin-top: 14px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--cp-text-2);
+    max-width: 540px;
+  }
+  .cp-qual-math-tiles {
+    display: grid;
+    gap: 12px;
+  }
+  @media (min-width: 480px) {
+    .cp-qual-math-tiles { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .cp-qual-math-tiles { grid-template-columns: 1fr; }
+  }
+  .cp-qual-math-tile {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--cp-hairline);
+  }
+  .cp-qual-math-tile-v {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cp-text);
+    letter-spacing: -0.014em;
+  }
+  .cp-qual-math-tile-l {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--cp-muted);
+    line-height: 1.45;
+  }
+
+  /* Pixel feedback loop */
+  .cp-qual-loop {
+    margin-top: 48px;
+    padding: 36px;
+    border-radius: 24px;
+    background:
+      radial-gradient(40% 30% at 100% 0%, rgba(58, 58, 106, 0.32), transparent 70%),
+      linear-gradient(180deg, rgba(35,35,63,0.55) 0%, rgba(16,16,35,0.55) 100%);
+    border: 1px solid var(--cp-hairline-2);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 24px 70px -28px rgba(0, 0, 0, 0.55);
+  }
+  .cp-qual-loop-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+    color: var(--cp-text-2);
+    text-transform: uppercase;
+  }
+  .cp-qual-loop-grid {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  @media (min-width: 768px) {
+    .cp-qual-loop-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  .cp-qual-loop-step {
+    padding: 22px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--cp-hairline);
+  }
+  .cp-qual-loop-step-n {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(167, 139, 250, 0.14);
+    color: var(--cp-violet);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  .cp-qual-loop-step-t {
+    margin-top: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cp-text);
+    letter-spacing: -0.012em;
+  }
+  .cp-qual-loop-step-b {
+    margin-top: 8px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--cp-text-2);
+  }
+
+  /* ============== SYNERGY CALLOUT ============== */
+  .cp-synergy {
+    padding: 80px 0 32px 0;
+    background: var(--cp-bg);
+  }
+  .cp-synergy-card {
+    padding: 36px;
+    border-radius: 24px;
+    background:
+      radial-gradient(40% 50% at 100% 0%, rgba(58, 40, 110, 0.32), transparent 70%),
+      radial-gradient(30% 40% at 0% 100%, rgba(58, 58, 106, 0.22), transparent 70%),
+      linear-gradient(180deg, rgba(35,35,63,0.6) 0%, rgba(16,16,35,0.6) 100%);
+    border: 1px solid var(--cp-hairline-2);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 30px 80px -28px rgba(0, 0, 0, 0.6);
+  }
+  .cp-synergy-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.16em;
+    color: var(--cp-text-2);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .cp-synergy-h3 {
+    font-size: 30px;
+    line-height: 1.18;
+    letter-spacing: -0.018em;
+    font-weight: 700;
+    color: var(--cp-text);
+    max-width: 920px;
+  }
+  @media (max-width: 768px) {
+    .cp-synergy-h3 { font-size: 24px; }
+  }
+  .cp-synergy-body {
+    margin-top: 18px;
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--cp-text-2);
+    max-width: 880px;
+  }
+
   /* ============== FINAL CTA ============== */
   .cp-final {
     padding: 128px 0;
@@ -4036,7 +4855,7 @@ const STYLES = `
     .cp-fin-promo-title { font-size: 30px; }
     .cp-roi-out-value { font-size: 40px; }
     .cp-final-h2 { font-size: 30px; }
-    .cp-hero-ring, .cp-hero-ring-2, .cp-final-ring { display: none; }
+    .cp-hero-ring, .cp-final-ring { display: none; }
   }
 
   /* ============== PREFERS-REDUCED-MOTION ============== */
@@ -4051,9 +4870,7 @@ const STYLES = `
     .cp-chip,
     .cp-chip--violet,
     .cp-hero-ring,
-    .cp-hero-ring-2,
     .cp-final-ring,
-    .cp-waterfall-orb,
     .cp-agent-icon,
     .cp-fin-marketplace-tick,
     .cp-agent-stream-row,
@@ -4064,7 +4881,9 @@ const STYLES = `
     .cp-agent-icon-blip,
     .cp-agent-status-dot,
     .cp-agents-foot-dot,
-    .cp-final-dot {
+    .cp-final-dot,
+    .cp-qual-pulse,
+    .cp-card-fan-card {
       animation: none !important;
     }
     .cp-hero-card-wrap:hover .cp-hero-card,
@@ -4072,12 +4891,12 @@ const STYLES = `
     .cp-ticker-cell:hover,
     .cp-story-card:hover,
     .cp-fin-offer:hover,
-    .cp-fin-offer--best:hover {
+    .cp-fin-offer--best:hover,
+    .cp-qual-node:hover,
+    .cp-card-fan:hover .cp-card-fan-card {
       transform: none !important;
     }
     .cp-waterfall-pulse { display: none !important; }
-    .cp-waterfall-beam { animation: none !important; }
-    .cp-chip--violet::after,
-    .cp-agent-stream-rows::before { display: none !important; }
+    .cp-chip--violet::after { display: none !important; }
   }
 `;

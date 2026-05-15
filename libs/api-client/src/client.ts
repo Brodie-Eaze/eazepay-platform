@@ -6,7 +6,7 @@ import type {
   Offer,
   Problem,
   Repayment,
-} from './types';
+} from './types.js';
 
 /**
  * Lightweight, framework-free HTTP client. Used by every frontend

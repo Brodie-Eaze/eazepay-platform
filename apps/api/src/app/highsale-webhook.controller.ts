@@ -1,3 +1,26 @@
+/**
+ * Highsale snapshot ingestion — payload-at-rest encryption.
+ *
+ * MIGRATION NOTE (read before changing this file):
+ *   Pre-fix HighsaleSnapshot rows had `payloadCiphertext` filled with
+ *   `Buffer.from(JSON.stringify(payload)).toString('base64')` — that is
+ *   ENCODING, not encryption. Anyone with row access could decode it.
+ *   This file now seals the payload via PiiVaultService.sealOpaque with
+ *   AAD bound to the applicationId, producing a real envelope (per-row
+ *   DEK wrapped by a KEK held in the key manager / KMS).
+ *
+ *   Existing legacy rows WILL FAIL to decrypt — they were never encrypted,
+ *   just base64'd. The operator-side backfill plan is:
+ *     1. Stop emitting new legacy rows (this commit does that).
+ *     2. Run a one-shot backfill script that, for each row whose envelope
+ *        does not parse as our v1 JSON envelope, reads the base64 payload,
+ *        seals it via sealOpaque({ scope: 'highsale_snapshot', applicationId }),
+ *        and writes it back.
+ *     3. Until backfilled, any future "unmask" endpoint must try
+ *        openOpaque first and fall back to plain base64 decode for
+ *        legacy rows. There is no such reader today, so the fallback
+ *        lives in the backfill script, not in production code.
+ */
 import {
   Body,
   Controller,
@@ -12,6 +35,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import { Public } from '@eazepay/service-auth';
 import { NotFound, Unauthorized } from '@eazepay/shared-utils';
+import { PiiVaultService } from '@eazepay/service-user';
 import { z } from 'zod';
 import type { FastifyRequest } from 'fastify';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -35,9 +59,9 @@ const PayloadSchema = z.object({
   /** Snapshot validity window (per Highsale policy, ~14 days). */
   expiresAt: z.string().datetime(),
   /** Opaque financial payload — tradeline counts, income ranges, etc.
-   *  We base64-encode JSON.stringify(payload) into HighsaleSnapshot's
-   *  `payloadCiphertext` column for MVP. TODO: graduate to PiiVault with
-   *  applicationId-bound AAD before SOC 2 Type II. */
+   *  Envelope-encrypted via PiiVaultService.sealOpaque with AAD bound
+   *  to applicationId. The encoded string lands in HighsaleSnapshot's
+   *  `payloadCiphertext` column. */
   payload: z.record(z.unknown()),
 });
 
@@ -51,12 +75,23 @@ const PayloadSchema = z.object({
  *
  * Authenticity:
  *   Header `x-eazepay-signature: <hex>` MUST equal
- *   HMAC-SHA256(HIGHSALE_WEBHOOK_SECRET, rawBody).
- *   Constant-time compare; no secret = no requests served.
+ *   HMAC-SHA256(HIGHSALE_WEBHOOK_SECRET, `<ts>.<rawBody>`)
+ *   where `<ts>` is the Unix-seconds value of header
+ *   `x-eazepay-timestamp`. Constant-time compare; no secret = no
+ *   requests served.
+ *
+ * SEC-034 — replay window:
+ *   We reject when |now - ts| > 300 seconds so a captured webhook
+ *   can't be replayed once the window passes. The timestamp is baked
+ *   into the HMAC so the same envelope can't be re-signed without the
+ *   secret. Default-on in all environments; an operator can flip it
+ *   off via `WEBHOOK_REPLAY_WINDOW_ENFORCED=false` for a short
+ *   migration window if a partner needs time to adopt the header.
  *
  * Idempotency:
- *   `highsaleRef` is unique on HighsaleSnapshot. Replays upsert by ref,
- *   never duplicate.
+ *   `highsaleRef` is unique on HighsaleSnapshot. Replays inside the
+ *   ±5 minute window upsert by ref and never duplicate. Outside the
+ *   window the receiver refuses the request entirely.
  */
 @ApiTags('webhooks')
 @Public()
@@ -64,20 +99,24 @@ const PayloadSchema = z.object({
 export class HighsaleWebhookController {
   private readonly logger = new Logger(HighsaleWebhookController.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly piiVault: PiiVaultService,
+  ) {}
 
   @Post()
   @HttpCode(200)
   @ApiOperation({
     summary:
-      'Highsale soft-pull webhook. HMAC-SHA256 signature required; replays upsert by highsaleRef.',
+      'Highsale soft-pull webhook. HMAC-SHA256 signature required (timestamp baked in for SEC-034 replay protection); replays upsert by highsaleRef.',
   })
   async receive(
     @Headers('x-eazepay-signature') signature: string | undefined,
+    @Headers('x-eazepay-timestamp') timestamp: string | undefined,
     @Body() body: unknown,
     @Req() req: RawBodyRequest<FastifyRequest>,
   ): Promise<{ ok: true; snapshotId: string; creditTier: string }> {
-    this.verifySignature(signature, req.rawBody);
+    this.verifySignature(signature, timestamp, req.rawBody);
 
     const payload = PayloadSchema.parse(body);
 
@@ -93,13 +132,33 @@ export class HighsaleWebhookController {
       payload.inputsHash ??
       createHash('sha256').update(payload.applicationId).digest('hex');
 
-    // Base64(JSON.stringify(payload)) — MVP placeholder for envelope
-    // encryption. The orchestration engine never reads this; it reads
-    // `creditTier` (denormalised) and `ficoBand`. Plaintext details are
-    // accessed only via a JIT PII unmask path (future round).
-    const payloadCiphertext = Buffer.from(JSON.stringify(payload.payload)).toString('base64');
+    // Envelope-encrypt the financial payload at rest. Base64 alone was
+    // the prior MVP behaviour — base64 is NOT encryption, just encoding;
+    // anyone with row read access could decode it back to plaintext.
+    //
+    // AAD = { scope: 'highsale_snapshot', applicationId }. Authenticated
+    // Additional Data is mixed into the GCM tag at encrypt time and
+    // re-supplied at decrypt time; if anyone lifts this ciphertext out
+    // of application A's row and inserts it onto application B, the
+    // GCM tag check fails and decryption throws. That binding is what
+    // stops cross-application snapshot transplants.
+    //
+    // The orchestration engine never reads this column — it reads
+    // `creditTier` (denormalised on Application) and `ficoBand`.
+    // Plaintext details are accessed only via a JIT unmask path
+    // (future round) that must call PiiVaultService.openOpaque with
+    // the same AAD context.
+    const payloadJson = JSON.stringify(payload.payload);
+    const payloadCiphertext = await this.piiVault.sealOpaque(payloadJson, {
+      scope: 'highsale_snapshot',
+      applicationId: payload.applicationId,
+    });
+    // Fingerprint over plaintext bytes — lets the audit chain prove
+    // "this snapshot's payload is unchanged" without ever revealing the
+    // payload itself, and is stable across re-encryption (e.g. KEK
+    // rotation, which changes ciphertext but not plaintext).
     const payloadFingerprint = createHash('sha256')
-      .update(payloadCiphertext)
+      .update(payloadJson)
       .digest('hex');
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -172,6 +231,7 @@ export class HighsaleWebhookController {
 
   private verifySignature(
     signature: string | undefined,
+    timestamp: string | undefined,
     rawBody: Buffer | undefined,
   ): void {
     const secret = process.env['HIGHSALE_WEBHOOK_SECRET'];
@@ -182,7 +242,41 @@ export class HighsaleWebhookController {
     if (!signature || !rawBody) {
       throw Unauthorized({ code: 'missing_signature_or_body' });
     }
-    const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
+
+    // SEC-034 — replay window. Defaults to enforced; the operator can
+    // opt out via WEBHOOK_REPLAY_WINDOW_ENFORCED=false during a partner
+    // rollover (NOT a long-term posture).
+    const enforceReplay =
+      (process.env['WEBHOOK_REPLAY_WINDOW_ENFORCED'] ?? 'true').toLowerCase() !==
+      'false';
+
+    if (enforceReplay) {
+      if (!timestamp) {
+        throw Unauthorized({ code: 'missing_timestamp' });
+      }
+      const ts = Number(timestamp);
+      if (!Number.isFinite(ts) || ts <= 0) {
+        throw Unauthorized({ code: 'invalid_timestamp' });
+      }
+      // Window is 300 seconds (5 minutes) on either side of our clock —
+      // wide enough for normal clock skew + a slow retry from the
+      // provider, narrow enough that a leaked envelope is useless by
+      // the time an attacker discovers it. Capture-replay attacks
+      // beyond 5 minutes need to forge the HMAC, which they can't
+      // without the secret.
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (Math.abs(nowSec - ts) > 300) {
+        throw Unauthorized({ code: 'webhook_replay_window_exceeded' });
+      }
+    }
+
+    // The signed payload is `<ts>.<rawBody>` when enforcement is on, so
+    // a captured signature can't be re-applied to a fresh timestamp.
+    // When enforcement is off (rollover window), we sign rawBody alone
+    // for compatibility with legacy senders.
+    const signedPayload =
+      enforceReplay && timestamp ? `${timestamp}.${rawBody.toString('utf8')}` : rawBody;
+    const expected = createHmac('sha256', secret).update(signedPayload).digest('hex');
     let a: Buffer;
     let b: Buffer;
     try {

@@ -1,31 +1,31 @@
-export { cn } from './cn';
-export { Logo } from './Logo';
-export * from './Icon';
-export { Button } from './Button';
-export type { ButtonVariant, ButtonSize } from './Button';
-export { Input, Textarea, Select } from './Input';
-export { Card, CardHeader, CardBody, CardFooter } from './Card';
-export { StatusPill } from './StatusPill';
-export type { StatusTone } from './StatusPill';
-export { Banner } from './Banner';
-export type { BannerIntent } from './Banner';
-export { KpiCard } from './KpiCard';
-export { Sparkline, BarChart } from './Sparkline';
-export { DataTable } from './DataTable';
-export type { Column } from './DataTable';
-export { AppShell, PageHeader, PageBody } from './AppShell';
-export type { NavItem, NavGroup } from './AppShell';
-export { EmptyState } from './EmptyState';
-export { Skeleton } from './Skeleton';
-export { Tabs } from './Tabs';
-export { RouteTimeline } from './RouteTimeline';
-export type { RouteStep } from './RouteTimeline';
-export { DisclosurePanel } from './Disclosure';
-export { Money, Apr } from './Money';
-export { MaskedField, DataRow } from './MaskedField';
-export { CodeBlock, InlineCode } from './CodeBlock';
-export { Stepper } from './Stepper';
-export type { StepperItem } from './Stepper';
+export { cn } from './cn.js';
+export { Logo } from './Logo.js';
+export * from './Icon.js';
+export { Button } from './Button.js';
+export type { ButtonVariant, ButtonSize } from './Button.js';
+export { Input, Textarea, Select } from './Input.js';
+export { Card, CardHeader, CardBody, CardFooter } from './Card.js';
+export { StatusPill } from './StatusPill.js';
+export type { StatusTone } from './StatusPill.js';
+export { Banner } from './Banner.js';
+export type { BannerIntent } from './Banner.js';
+export { KpiCard } from './KpiCard.js';
+export { Sparkline, BarChart } from './Sparkline.js';
+export { DataTable } from './DataTable.js';
+export type { Column } from './DataTable.js';
+export { AppShell, PageHeader, PageBody } from './AppShell.js';
+export type { NavItem, NavGroup } from './AppShell.js';
+export { EmptyState } from './EmptyState.js';
+export { Skeleton } from './Skeleton.js';
+export { Tabs } from './Tabs.js';
+export { RouteTimeline } from './RouteTimeline.js';
+export type { RouteStep } from './RouteTimeline.js';
+export { DisclosurePanel } from './Disclosure.js';
+export { Money, Apr } from './Money.js';
+export { MaskedField, DataRow } from './MaskedField.js';
+export { CodeBlock, InlineCode } from './CodeBlock.js';
+export { Stepper } from './Stepper.js';
+export type { StepperItem } from './Stepper.js';
 
 /* Radix-backed primitives */
 export {
@@ -38,8 +38,8 @@ export {
   DropdownMenuGroup,
   DropdownMenuShortcut,
   DropdownMenuPortal,
-} from './DropdownMenu';
-export { Avatar, AvatarImage, AvatarFallback } from './Avatar';
+} from './DropdownMenu.js';
+export { Avatar, AvatarImage, AvatarFallback } from './Avatar.js';
 export {
   Dialog,
   DialogTrigger,
@@ -51,4 +51,4 @@ export {
   DialogBody,
   DialogClose,
   DialogPortal,
-} from './Dialog';
+} from './Dialog.js';

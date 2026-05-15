@@ -89,10 +89,55 @@ const BRANDS: BrandPreset[] = [
   },
 ];
 
+/**
+ * Validate the `?from=` redirect target before handing it to
+ * `router.push`. Without this, a phishing site can craft
+ * `/sign-in?from=https://evil.com` and we'd land the user on an
+ * attacker-controlled origin immediately after a successful login —
+ * the user sees their real auth flow, then their session URL bar swaps
+ * out from under them (SEC-008, "open redirect").
+ *
+ * Rules:
+ *   - Must be a non-empty string.
+ *   - Must start with a single `/` (relative path on this origin).
+ *   - Must NOT start with `//` — that's a protocol-relative URL
+ *     (`//evil.com/x`) which browsers happily follow off-origin.
+ *   - Must NOT contain `://` anywhere — defends against weird encodings
+ *     or path segments that smuggle a scheme through.
+ *
+ * Anything else collapses to `/`, the safe operating-system root.
+ *
+ * Middleware (`apps/partner-portal/middleware.ts`) applies the same
+ * rule when minting the `?from=` param. Defending here too means the
+ * page is safe even if a user lands on it via a hand-crafted link.
+ */
+function safeRedirect(raw: string | null | undefined): string {
+  if (!raw) return '/';
+  if (typeof raw !== 'string') return '/';
+  if (!raw.startsWith('/')) return '/';
+  if (raw.startsWith('//')) return '/';
+  if (raw.includes('://')) return '/';
+  return raw;
+}
+
+/**
+ * Whether the silent demo-cookie fallback is permitted on this client.
+ * Mirrors the server-side `DEMO_MODE_ENABLED` gate in
+ * `/api/auth/demo/route.ts` and the middleware trust check — even if
+ * those layers refuse, we also refuse here so a failed real-auth
+ * attempt in production never silently auto-promotes to a demo
+ * session. Demo workspaces remain reachable through the explicit
+ * "View demo" / role / brand tiles below the form.
+ */
+function clientDemoFallbackAllowed(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.NEXT_PUBLIC_DEMO_MODE_ENABLED === 'true';
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('from') || '/';
+  const redirectTo = safeRedirect(searchParams.get('from'));
 
   // Pre-filled for evaluator convenience — these aren't real
   // credentials, just the placeholders the Lovable site shows.
@@ -115,32 +160,30 @@ export default function SignInPage() {
         credentials: 'include',
       });
       if (!res.ok) {
-        // Fall through to a demo session when the real backend isn't
-        // wired — keeps the page usable while the BFF comes online.
-        const ok = await startDemo(activeRole);
-        if (!ok) {
-          const body = (await res.json().catch(() => ({}))) as { detail?: string; code?: string };
-          setError(
-            body.code === 'invalid_credentials'
-              ? 'Email or password is incorrect.'
-              : body.detail || 'Sign-in failed. Please try again.',
-          );
-          setSubmitting(false);
-          return;
-        }
+        // SEC-001: Do NOT fall through to a demo session on auth
+        // failure. Previously this branch silently minted an
+        // `eazepay_demo` cookie via /api/auth/demo with the
+        // currently-selected role preset (default 'admin'), which
+        // meant any visitor who typed garbage credentials was dropped
+        // into the operating system with admin-flavour permissions.
+        // Demo workspaces remain reachable below via the explicit
+        // role/brand tiles — those are deliberate user actions.
+        const body = (await res.json().catch(() => ({}))) as { detail?: string; code?: string };
+        setError(
+          body.code === 'invalid_credentials'
+            ? 'Email or password is incorrect.'
+            : body.detail || 'Sign-in failed. Please try again.',
+        );
+        setSubmitting(false);
+        return;
       }
       router.push(redirectTo);
       router.refresh();
     } catch {
-      // Network error — try the demo path so the user is never stuck.
-      const ok = await startDemo(activeRole);
-      if (ok) {
-        router.push(redirectTo);
-        router.refresh();
-      } else {
-        setError('Network error — check your connection and try again.');
-        setSubmitting(false);
-      }
+      // Network/transport error — surface it. Do not auto-promote to
+      // a demo session (see SEC-001 above).
+      setError('Network error — check your connection and try again.');
+      setSubmitting(false);
     }
   };
 
@@ -151,6 +194,12 @@ export default function SignInPage() {
       | 'all'
       | 'master',
   ): Promise<boolean> => {
+    // Client-side gate matching the server's DEMO_MODE_ENABLED check
+    // (see /app/api/auth/demo/route.ts). In production we refuse to
+    // even attempt the request unless the deployment has explicitly
+    // opted in — defence-in-depth against a stale build that still
+    // wires demo tiles into a hardened production environment.
+    if (!clientDemoFallbackAllowed()) return false;
     try {
       const r = await fetch('/api/auth/demo', {
         method: 'POST',

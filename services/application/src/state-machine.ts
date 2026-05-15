@@ -1,4 +1,4 @@
-import { setup, type AnyMachineSnapshot } from 'xstate';
+import { setup } from 'xstate';
 import type { ApplicationEvent, ApplicationStatus } from './application.types.js';
 
 /**
@@ -96,8 +96,6 @@ export const applicationMachine = setup({
     expired: { type: 'final' },
   },
 });
-
-export type ApplicationMachineSnapshot = AnyMachineSnapshot;
 
 /**
  * Pure transition validator. Returns the next status if the transition is

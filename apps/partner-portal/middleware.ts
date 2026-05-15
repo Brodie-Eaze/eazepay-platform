@@ -35,17 +35,42 @@ const isPublic = (pathname: string): boolean => {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 };
 
+/**
+ * In production, an `eazepay_demo` cookie is only accepted if the
+ * deployment explicitly enabled demo mode (`DEMO_MODE_ENABLED=true`).
+ * Otherwise an attacker who knows the cookie name could mint themselves
+ * a "demo" session by setting it client-side. Dev + preview always
+ * accept demo cookies to keep iteration fast.
+ *
+ * The cookie SETTER in /app/api/auth/demo/route.ts also enforces this —
+ * this middleware check is defence-in-depth in case an old cookie
+ * survives a production cutover, or someone forges one.
+ */
+function demoCookieTrusted(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.DEMO_MODE_ENABLED === 'true';
+}
+
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
-  const hasSession =
-    Boolean(req.cookies.get('eazepay_at')?.value) ||
-    Boolean(req.cookies.get('eazepay_demo')?.value);
+  const hasRealSession = Boolean(req.cookies.get('eazepay_at')?.value);
+  const hasDemoSession =
+    Boolean(req.cookies.get('eazepay_demo')?.value) && demoCookieTrusted();
+  const hasSession = hasRealSession || hasDemoSession;
 
   if (!hasSession && !isPublic(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = '/sign-in';
-    url.search = `?from=${encodeURIComponent(pathname + search)}`;
+    // Only round-trip relative paths through `from`. An absolute URL or
+    // a scheme-relative path here would let a phishing site craft a
+    // sign-in link that redirects to an attacker-controlled host after
+    // login. We re-validate at the form layer too.
+    const safeFrom =
+      pathname.startsWith('/') && !pathname.startsWith('//')
+        ? pathname + search
+        : '/';
+    url.search = `?from=${encodeURIComponent(safeFrom)}`;
     return NextResponse.redirect(url);
   }
 

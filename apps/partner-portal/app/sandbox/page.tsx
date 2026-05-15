@@ -1,3 +1,5 @@
+'use client';
+import { useState } from 'react';
 import {
   PageHeader,
   PageBody,
@@ -14,6 +16,11 @@ import {
 } from '@eazepay/ui/web';
 
 export default function SandboxPage() {
+  const [toast, setToast] = useState<string | null>(null);
+  function flash(m: string) {
+    setToast(m);
+    setTimeout(() => setToast(null), 3000);
+  }
   return (
     <>
       <PageHeader
@@ -39,8 +46,8 @@ export default function SandboxPage() {
               <DataRow label="Ineligible — state coverage" value={<span className="font-mono text-[12px]">applicant_test_ineligible_state_005</span>} />
               <DataRow label="Timeout — circuit breaker" value={<span className="font-mono text-[12px]">applicant_test_timeout_006</span>} />
               <div className="pt-2 flex gap-2">
-                <Button leadingIcon={<BoltIcon size={14} />}>Run all 6 scenarios</Button>
-                <Button variant="ghost">Generate webhook traffic</Button>
+                <Button leadingIcon={<BoltIcon size={14} />} onClick={() => flash('Running 6 sandbox scenarios — check the webhook log')}>Run all 6 scenarios</Button>
+                <Button variant="ghost" onClick={() => flash('20 synthetic webhook deliveries queued')}>Generate webhook traffic</Button>
               </div>
             </CardBody>
           </Card>
@@ -82,13 +89,18 @@ curl -X POST https://sandbox.eazepay.com/v1/partner/applications/{id}/respond \\
                 policy version. You get a bit-for-bit reproducible decision pack.
               </Banner>
               <div className="flex gap-2 pt-1">
-                <Button trailingIcon={<ArrowRightIcon size={14} />}>Replay a recent decision</Button>
-                <Button variant="ghost">Read the replay guide</Button>
+                <Button trailingIcon={<ArrowRightIcon size={14} />} onClick={() => flash('Pick a production decision from the audit log to replay')}>Replay a recent decision</Button>
+                <Button variant="ghost" onClick={() => flash('Opening replay guide at /docs')}>Read the replay guide</Button>
               </div>
             </CardBody>
           </Card>
         </div>
       </PageBody>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </>
   );
 }

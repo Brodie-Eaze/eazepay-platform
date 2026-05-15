@@ -7,6 +7,7 @@ import { TeamController } from './team.controller.js';
 import { TeamService } from './team.service.js';
 import { MarketplaceController } from './marketplace.controller.js';
 import { MarketplaceService } from './marketplace.service.js';
+import { AuditedReadInterceptor } from './interceptors/audited-read.interceptor.js';
 import { PRISMA } from './internal/tokens.js';
 
 export interface AdminModuleOptions {
@@ -26,6 +27,10 @@ export class AdminModule {
         AdminService,
         TeamService,
         MarketplaceService,
+        // SEC-018 — register the audited-read interceptor so
+        // @UseInterceptors(AuditedReadInterceptor) on the controller
+        // can resolve it from this module's DI scope.
+        AuditedReadInterceptor,
       ],
       exports: [AdminService, TeamService, MarketplaceService],
     };

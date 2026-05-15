@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
+import { findPartner, applicationsForPartner } from '../../../lib/master-data';
 import {
   PageBody,
   Card,
@@ -141,10 +142,51 @@ const STATUS_PILL: Record<Exclude<Status, 'All'>, string> = {
 
 const PAGE_SIZE = 10;
 const fmt = (n: number) => `$${n.toLocaleString('en-US')}`;
+const capitalize = (s: string) => (s.charAt(0).toUpperCase() + s.slice(1)) as 'Submitted' | 'Funded' | 'Approved' | 'Declined' | 'Submitted';
 
 export default function PartnerAccountPage() {
   const { partnerId } = useParams<{ partnerId: string }>();
-  const partner = PARTNERS[partnerId];
+  // Bridge the two id namespaces: legacy slug ('premier') and master id ('p_atlas').
+  // First try the local PARTNERS map; if that misses, synthesise a partner shell
+  // from the master roster + master applications. The control-panel always
+  // links here with the master id so this branch is the common path.
+  let partner: PartnerInfo | undefined = PARTNERS[partnerId];
+  if (!partner) {
+    const master = findPartner(partnerId);
+    if (master) {
+      const masterApps = applicationsForPartner(master.id);
+      const fakeApps: AppRow[] = masterApps.map((a, i) => ({
+        id: `FA-${master.id.slice(2).toUpperCase()}-${(i + 1).toString().padStart(3, '0')}`,
+        client: a.customer,
+        product:
+          a.product === 'med-pay' ? 'MedPay' : a.product === 'trade-pay' ? 'TradePay' : 'CoachPay',
+        amount: Math.round(a.amountCents / 100),
+        status: (a.status === 'in_review' ? 'Submitted' : capitalize(a.status)) as Exclude<Status, 'All'>,
+        date: a.date,
+        detail: {
+          loanTerm: a.product === 'trade-pay' ? '48 months' : a.product === 'med-pay' ? '36 months' : '24 months',
+          interestRate: a.status === 'funded' || a.status === 'approved' ? '8.4%' : '—',
+          creditScore: a.fico,
+          purpose:
+            a.product === 'med-pay'
+              ? 'Procedure financing'
+              : a.product === 'trade-pay'
+                ? 'Home improvement project'
+                : 'Coaching program',
+          dateSubmitted: a.date,
+        },
+      }));
+      partner = {
+        id: master.id,
+        name: master.legalName,
+        email: master.email,
+        phone: master.phone ?? '—',
+        industry: master.niche.charAt(0).toUpperCase() + master.niche.slice(1),
+        product: master.product,
+        apps: fakeApps,
+      };
+    }
+  }
   if (!partner) notFound();
 
   const [filter, setFilter] = useState<Status>('All');

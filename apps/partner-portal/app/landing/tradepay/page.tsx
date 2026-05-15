@@ -58,8 +58,8 @@ const WATERFALL: Stage[] = [
   {
     n: 2,
     stage: 'Brief',
-    title: 'Soft-pull pre-qual in <10s',
-    body: 'PRISM reshapes the apply flow on the rep iPad; ORACLE returns a fundability tier in under 10 seconds. Zero credit impact, zero phone tag.',
+    title: 'Agents pre-qualify on the financial data',
+    body: 'PRISM reshapes the apply flow on the rep iPad; ORACLE returns a fundability tier on the soft-pull financial data in under 10 seconds. Software agents qualify silently in the background, not on a phone call.',
     metric: '< 10s',
   },
   {
@@ -79,18 +79,38 @@ const WATERFALL: Stage[] = [
   {
     n: 5,
     stage: 'Funded',
-    title: 'Lender disburses direct',
-    body: 'Lender funds the project directly. No payment-rail switch, no processor change. Lender carries the credit risk end-to-end. You book the job and start the install.',
-    metric: 'Direct',
+    title: 'Lender disburses direct in 48 to 72 hours',
+    body: 'Lender disburses straight to your business account, no intermediary holding funds. Funds generally land within 48 to 72 hours of the loan settling. Lender carries the credit risk; no clawback on routine defaults.',
+    metric: '48 to 72hr',
   },
 ];
 
 const PILLAR_FINANCE_BULLETS = [
-  'Parallel lender marketplace · 52 lenders quote at the same instant',
-  '6 to 120 month terms · APR 5.99% to 29.99% · promo 0% APR for qualifying projects',
-  'Soft pull · zero credit impact · no obligation to accept',
-  'Lender disburses direct on signed install · lender carries credit risk',
+  'Loans $3,000 to $100,000 · APR from 5.9% for qualifying clients',
+  'Terms up to 72 months · lower monthly repayments at the kitchen table',
+  '0% interest plans available for qualifying programs (T&Cs apply)',
+  '52 lenders quoted in parallel at point of sale with a 5-second SLA per round-trip',
+  'Merchant-direct payout · funds generally land within 48 to 72 hours of settlement',
+  'Lender carries the credit risk · no clawback on routine defaults',
   'White-labeled · homeowner sees YOUR brand on the apply flow',
+];
+
+type RouteNode = {
+  id: string;
+  x: number;
+  y: number;
+  status: 'depot' | 'qualified' | 'unqualified';
+  label?: string;
+};
+
+const ESTIMATOR_ROUTES: RouteNode[] = [
+  { id: 'depot', x: 50, y: 50, status: 'depot', label: 'Depot' },
+  { id: 'n1', x: 22, y: 22, status: 'qualified', label: '$24k roof' },
+  { id: 'n2', x: 78, y: 28, status: 'qualified', label: '$18k HVAC' },
+  { id: 'n3', x: 86, y: 70, status: 'qualified', label: '$42k solar' },
+  { id: 'n4', x: 18, y: 76, status: 'qualified', label: '$9k siding' },
+  { id: 'n5', x: 38, y: 18, status: 'unqualified' },
+  { id: 'n6', x: 70, y: 86, status: 'unqualified' },
 ];
 
 type AgentIconKey = 'prism' | 'vega' | 'oracle' | 'helix' | 'nexus' | 'flux' | 'echo';
@@ -194,7 +214,7 @@ const AGENTS: Agent[] = [
     status: 'ONLINE',
     iconKey: 'nexus',
     description:
-      'NEXUS routes every qualified homeowner through a curated multi-lender marketplace, prime to subprime, $3k to $150k+. Soft pull only. It learns which lenders approve which buyer profiles, watches stip rates in real time, and reroutes around lenders that tighten overnight.',
+      'NEXUS routes every qualified homeowner through a curated multi-lender marketplace, prime to subprime, $3,000 to $100,000. Soft pull only. It learns which lenders approve which buyer profiles, watches stip rates in real time, and reroutes around lenders that tighten overnight.',
     stats: [
       { k: 'Lenders', v: '52' },
       { k: 'Pull type', v: 'Soft' },
@@ -213,7 +233,7 @@ const AGENTS: Agent[] = [
     description:
       'FLUX shepherds every approved deal from sign to fund. It chases stip documents, nudges the homeowner through e-sign, watches the lender funding queue, and reconciles every funded job back to the originating ad campaign.',
     stats: [
-      { k: 'Funded · 24h', v: '94.1%' },
+      { k: 'Funded in 48 to 72hr', v: '94.1%' },
       { k: 'Stip recovery', v: '+22%' },
     ],
     lastAction:
@@ -258,12 +278,12 @@ const CASE_STUDIES: CaseStudy[] = [
   },
   {
     quote:
-      "The agentic layer reshapes our apply flow in real time, scores every homeowner against our actual closed-won data, and routes the qualified ones to the right rep in under a second. We hired one fewer CSR, killed the $4k/mo answering service, and PRISM + HELIX alone close more jobs than two reps used to.",
+      "The agentic layer pre-qualifies every inbound application on the financial data (soft-pull credit, propensity, lender routing) before it ever hits a human. PRISM reshapes the apply flow in real time, ORACLE scores against our actual closed-won data, and HELIX routes the qualified homeowner to the right estimator in under a second. Our estimators only drive to jobs where the homeowner can actually afford the work.",
     name: 'Marisol Tran',
     role: 'GM · Pacific Solar Co. · San Francisco, CA',
     outcomes: [
-      { value: 'Lifted', label: 'Booking rate' },
-      { value: 'Cut', label: 'CSR + AS cost' },
+      { value: 'Filtered', label: 'Junk applications' },
+      { value: 'Lifted', label: 'Estimator hit rate' },
     ],
   },
   {
@@ -297,12 +317,24 @@ const OBJECTIONS: Objection[] = [
     a: "Those are single-lender or two-lender programs. TradePay is a parallel marketplace of 52 lenders. Every quote fires at the same instant, ranked by consumer-best monthly payment. You can keep your incumbent program AND run TradePay; most contractors stack us. One portal, one apply flow, one agentic layer behind it.",
   },
   {
+    q: 'What are the lending terms?',
+    a: "Loans run from $3,000 to $100,000, APR from 5.9% for qualifying clients, and terms up to 72 months for lower monthly repayments. 0% interest plans are available for qualifying programs (T&Cs apply). Every homeowner sees multiple lender offers personalized to their situation, ranked by consumer-best monthly payment.",
+  },
+  {
+    q: 'When and how do I get paid?',
+    a: "Merchant-direct. The lender disburses straight to your business account, no intermediary holding funds, no payment-rail switch. Funds generally land within 48 to 72 hours of the loan settling. The lender carries the credit risk and there is no clawback on routine defaults.",
+  },
+  {
     q: 'Will my margins drop? I hear horror stories about dealer fees.',
     a: "Dealer fees are transparent, configurable per product type, and set by the lender. On a $14k HVAC swap with a 6% dealer fee, you net $13.16k, and you close more deals because the homeowner sees a yes-able monthly payment on the doorstep. The math heavily favours running the financing. You can also pass the fee through on standard-rate plans.",
   },
   {
     q: "What about clawbacks if the homeowner defaults?",
-    a: "Lender carries the credit risk after the funds release. There are no contractor clawbacks on standard-rate plans. On promo 0% APR plans, clawback is limited to the promo discount, not the principal, and only if the homeowner fails to convert within the promo window.",
+    a: "Lender carries the credit risk after the funds release. There are no contractor clawbacks on routine defaults on standard-rate plans. On promo 0% APR plans, clawback is limited to the promo discount (not the principal) and only if the homeowner fails to convert within the promo window. T&Cs apply per lender program.",
+  },
+  {
+    q: 'How do the AUREAN agents work? Do they call my customers?',
+    a: "No. The seven agents (PRISM, VEGA, ORACLE, HELIX, NEXUS, FLUX, ECHO) are pre-qualification agents that work on the financial data in software: soft-pull credit, identity enrichment, propensity scoring, lender routing, and pixel attribution. They never make outbound calls, never voice-dial, never text-blast. They qualify silently in the background and surface the financially-qualified homeowners to your human sales, estimator, and dispatcher team.",
   },
   {
     q: 'How fast do you onboard a contractor?',
@@ -521,7 +553,7 @@ function Hero() {
             <div className="inline-flex items-center gap-2.5 tp-eyebrow-pill">
               <span className="tp-pill-dot" />
               <span className="tracking-[0.18em]">
-                FOR ROOFING · HVAC · SOLAR · REMODEL · EXTERIOR
+                FOR ROOFING, HVAC, SOLAR, REMODEL &amp; EXTERIOR
               </span>
             </div>
 
@@ -546,7 +578,7 @@ function Hero() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a href="/welcome" className="tp-btn-primary text-sm px-6 py-3.5">
+              <a href="/welcome" className="tp-btn-primary tp-cta-glow text-sm px-6 py-3.5">
                 Start TradePay signup
                 <IconArrowRight className="ml-1.5" />
               </a>
@@ -718,7 +750,7 @@ function HeroOfferCard() {
       {/* Footer with key data chip · single orange touch */}
       <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50/70">
         <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-600">
-          Lender carries credit risk
+          Merchant-direct · funds in 48 to 72hr to your account
         </div>
         <div className="tp-funded-chip">
           <span className="tp-funded-chip-dot" /> APPROVED
@@ -800,12 +832,13 @@ function ProblemSection() {
             <div className="space-y-4">
               <StatusQuoRow value="41%" label="Close rate on $10k+ system swaps" />
               <StatusQuoRow value="$220k" label="Annual jobs lost per crew to 'another quote'" />
-              <StatusQuoRow value="32%" label="After-hours emergency calls that miss" />
+              <StatusQuoRow value="68%" label="Inbound applications never pre-qualified before driveway" />
               <StatusQuoRow value="3 days" label="Wait time before homeowner hears back on financing" />
             </div>
             <div className="mt-7 pt-5 border-t border-slate-700/70 text-[12.5px] text-slate-400 leading-relaxed">
-              Three logins. Three apply flows. Three answering services. Every
-              missed pickup is a $18k job walking down the street.
+              Three logins. Three apply flows. Three rounds of lender phone-tag.
+              Every estimator slot burned on a homeowner who can&apos;t afford the
+              work is an $18k job walking down the street.
             </div>
           </div>
 
@@ -879,13 +912,14 @@ function WaterfallSection() {
           </h2>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
             Every TradePay deal moves through the same deterministic pipeline.
-            Soft-pull pre-qual at the door · the agentic layer qualifies the call ·
-            52 lenders quote in parallel · best offer wins · lender funds the
-            project direct. Every stage is logged, replayable, and instrumented.
+            Soft-pull pre-qual at the door. The agentic layer pre-qualifies on
+            the financial data. 52 lenders quote in parallel. Best offer wins.
+            Lender disburses merchant-direct within 48 to 72 hours. Every
+            stage is logged, replayable, and instrumented.
           </p>
         </div>
 
-        {/* Schematic flow · 3D control-panel tilt */}
+        {/* Schematic flow · flat blueprint */}
         <div className="mt-16 reveal tp-schematic-scene">
           <div className="tp-schematic-stage">
             <span className="tp-schematic-scanline" aria-hidden />
@@ -920,6 +954,14 @@ function WaterfallSection() {
     </section>
   );
 }
+
+const SCHEMATIC_CAPTIONS: Record<number, string> = {
+  1: 'Soft-pull pre-qual at the door',
+  2: 'Pre-call brief for the rep',
+  3: '52 lenders run in parallel',
+  4: 'Best offer wins',
+  5: 'Lender disburses direct',
+};
 
 function WaterfallSchematic() {
   /* A schematic-style horizontal flow with right-angle connectors,
@@ -1095,18 +1137,27 @@ function WaterfallSchematic() {
                 {s.stage}
               </text>
 
-              {/* Below-node label */}
-              <text
-                x={cx}
-                y={cy + 92}
-                textAnchor="middle"
-                fontFamily="inherit"
-                fontSize="11"
-                fill="#475569"
-                letterSpacing="0.5"
+              {/* Below-node label · foreignObject allows wrapping */}
+              <foreignObject
+                x={cx - 110}
+                y={cy + 76}
+                width="220"
+                height="44"
               >
-                {s.title.split(' ').slice(0, 4).join(' ')}
-              </text>
+                <div
+                  style={{
+                    fontFamily: 'inherit',
+                    fontSize: '11px',
+                    color: '#475569',
+                    letterSpacing: '0.04em',
+                    textAlign: 'center',
+                    lineHeight: 1.35,
+                    textWrap: 'balance',
+                  }}
+                >
+                  {SCHEMATIC_CAPTIONS[s.n] ?? s.title}
+                </div>
+              </foreignObject>
 
               {/* Above-node annotation tick */}
               <line
@@ -1175,8 +1226,456 @@ function PillarFinancing() {
             </div>
           </div>
         </div>
+
+        {/* Synergy callout · agentic filter × lending closer */}
+        <div className="mt-20 tp-synergy reveal">
+          <div className="tp-synergy-grid">
+            <div className="tp-synergy-side">
+              <div className="tp-synergy-eyebrow">
+                <span className="tp-synergy-eyebrow-dot" />
+                THE SYNERGY
+              </div>
+              <div className="tp-synergy-pair">
+                <div className="tp-synergy-half">
+                  <div className="tp-synergy-half-k">Agentic layer</div>
+                  <div className="tp-synergy-half-v">The financial filter</div>
+                </div>
+                <div className="tp-synergy-x">&times;</div>
+                <div className="tp-synergy-half">
+                  <div className="tp-synergy-half-k">Lending waterfall</div>
+                  <div className="tp-synergy-half-v">The closer</div>
+                </div>
+              </div>
+            </div>
+            <div className="tp-synergy-body">
+              <p>
+                <strong>
+                  The agentic layer is your financial filter. The lending
+                  waterfall is your closer.
+                </strong>
+              </p>
+              <p>
+                Software agents work silently on every inbound application
+                (soft-pull credit, identity enrichment, propensity scoring,
+                lender routing) and surface only the financially-qualified
+                homeowners to your sales floor. Your estimators only drive to
+                jobs where the homeowner can actually afford the work. The
+                lending waterfall returns an instant multi-offer decision at
+                the kitchen table. Combined, your team converts on the same
+                visit instead of chasing financing across three lenders for a
+                week.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quote the buyers · time + pixel + smart routing economics */}
+        <QuoteTheBuyersSection />
       </div>
     </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Quote the buyers · TradePay time economics                                  */
+/* -------------------------------------------------------------------------- */
+
+function QuoteTheBuyersSection() {
+  return (
+    <div className="mt-20 reveal" id="quote-buyers">
+      <div className="max-w-3xl">
+        <div className="tp-eyebrow">03A · QUOTE ECONOMICS</div>
+        <h3 className="mt-3 tp-h2 tp-grad-text">
+          Quote the buyers. Not the fillers.
+        </h3>
+        <p className="mt-5 text-lg text-slate-600 leading-relaxed">
+          Smart forms + smart routing + pre-qualification on the financial data
+          = every estimate slot fills with a homeowner who can actually pay.
+        </p>
+      </div>
+
+      {/* Three-card grid */}
+      <div className="mt-12 tp-quote-grid">
+        {/* CARD A · Estimator-time economics */}
+        <div className="tp-quote-card">
+          <div className="tp-quote-card-eyebrow">
+            <span className="tp-quote-card-dot" />
+            CARD A · ESTIMATOR-TIME ECONOMICS
+          </div>
+          <h4 className="tp-quote-card-h">
+            Every estimate slot is finite. Every truck-roll is real money.
+          </h4>
+          <p className="tp-quote-card-body">
+            A contractor&apos;s estimator slot is expensive: 90 minutes on site
+            plus 30 minutes driving each way is 2.5 hours per estimate. An
+            estimator running 4 jobs/day burns ~10 hours. Every estimate quoted
+            to a homeowner who can&apos;t afford the work is a real $ cost:
+            estimator hourly + truck-roll fuel + the opportunity cost of a job
+            that could close. Pre-qualification at the inquiry stage means the
+            estimator only drives to homes where financing is already lined up.
+          </p>
+
+          {/* Calendar grid · 3D control-panel tilt */}
+          <div className="tp-quote-calendar-scene">
+            <div className="tp-quote-calendar-stage">
+              <div className="tp-quote-calendar-head">
+                <span>Mon</span>
+                <span>Tue</span>
+                <span>Wed</span>
+                <span>Thu</span>
+                <span>Fri</span>
+              </div>
+              <div className="tp-quote-calendar-body">
+                {Array.from({ length: 20 }).map((_, i) => {
+                  // ~30% filler slots in pre-TradePay world
+                  const filler = [2, 6, 9, 13, 17].includes(i);
+                  return (
+                    <div
+                      key={i}
+                      className={`tp-quote-calendar-slot ${filler ? 'filler' : 'buyer'}`}
+                      title={filler ? "Filler · can't afford the work" : 'Funded buyer'}
+                      style={{ animationDelay: `${i * 0.06}s` }}
+                    >
+                      <span className="tp-quote-calendar-dot" />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="tp-quote-calendar-legend">
+                <span className="tp-quote-leg-buyer">
+                  <span className="tp-quote-leg-dot" />
+                  Funded buyer slot
+                </span>
+                <span className="tp-quote-leg-filler">
+                  <span className="tp-quote-leg-dot" />
+                  Filler (can&apos;t fund)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Hours recovered stat tile · floats */}
+          <div className="tp-quote-recovered">
+            <div className="tp-quote-recovered-k">Estimator hours recovered / week</div>
+            <div className="tp-quote-recovered-v">~12.5 hrs</div>
+            <div className="tp-quote-recovered-sub">
+              5 filler slots &times; 2.5 hours each, redirected to funded buyers.
+              Illustrative.
+            </div>
+          </div>
+        </div>
+
+        {/* CARD B · Pixel feedback loop (ECHO) */}
+        <div className="tp-quote-card tp-quote-card-pixel">
+          <div className="tp-quote-card-eyebrow">
+            <span className="tp-quote-card-dot" />
+            CARD B · PIXEL FEEDBACK LOOP (ECHO)
+          </div>
+          <h4 className="tp-quote-card-h">
+            Train your pixel on funded jobs, not form fills.
+          </h4>
+          <p className="tp-quote-card-body">
+            ECHO (the Attribution Agent) holds pixel events until a homeowner
+            clears financial qualification, then fires weighted conversions back
+            to Meta and Google via server-side CAPI. The ad platforms&apos;
+            algorithms retrain on what a <em>funded job</em> looks like. Ad
+            spend gets more efficient month over month: same budget, more
+            buyers. You get a real feedback loop on Page View &rarr; Lead &rarr;
+            Pre-qualified &rarr; Funded.
+          </p>
+
+          {/* Pixel feedback loop · 5 steps + animated traveling pulse */}
+          <div className="tp-pixel-loop-scene">
+            <svg
+              viewBox="0 0 380 240"
+              className="tp-pixel-loop-svg"
+              preserveAspectRatio="xMidYMid meet"
+              aria-hidden
+            >
+              <defs>
+                <linearGradient id="pxPath" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#475569" stopOpacity="0.45" />
+                  <stop offset="50%" stopColor="#0F172A" stopOpacity="0.55" />
+                  <stop offset="100%" stopColor="#475569" stopOpacity="0.45" />
+                </linearGradient>
+                <radialGradient id="pxPulse" cx="0.5" cy="0.5" r="0.5">
+                  <stop offset="0%" stopColor="#F97316" stopOpacity="1" />
+                  <stop offset="40%" stopColor="#F97316" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
+                </radialGradient>
+                <filter id="pxNodeGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#0F172A" floodOpacity="0.18" />
+                </filter>
+              </defs>
+
+              {/* Path through 5 stages · S-curve */}
+              <path
+                id="tpPixelPath"
+                d="M 36 60 L 132 60 L 132 120 L 248 120 L 248 60 L 344 60 L 344 180 L 36 180 L 36 60"
+                fill="none"
+                stroke="url(#pxPath)"
+                strokeWidth="1.8"
+                strokeDasharray="4 4"
+              />
+
+              {/* Animated pulse traveling along the path */}
+              <circle r="8" fill="url(#pxPulse)">
+                <animateMotion
+                  dur="6.5s"
+                  repeatCount="indefinite"
+                  rotate="auto"
+                >
+                  <mpath href="#tpPixelPath" />
+                </animateMotion>
+              </circle>
+
+              {/* 5 numbered stage nodes */}
+              {[
+                { x: 36, y: 60, n: '01', l: 'Ad spend → click' },
+                { x: 132, y: 120, n: '02', l: 'Form fill' },
+                { x: 248, y: 120, n: '03', l: 'Pre-qual' },
+                { x: 344, y: 60, n: '04', l: 'Funded job' },
+                { x: 180, y: 180, n: '05', l: 'CAPI signal' },
+              ].map((s, i) => (
+                <g key={i} filter="url(#pxNodeGlow)">
+                  <circle
+                    cx={s.x}
+                    cy={s.y}
+                    r="22"
+                    fill="#FFFFFF"
+                    stroke="#0F172A"
+                    strokeWidth="1.2"
+                  />
+                  <text
+                    x={s.x}
+                    y={s.y + 1}
+                    textAnchor="middle"
+                    fontFamily="inherit"
+                    fontSize="11"
+                    fontWeight="700"
+                    fill="#0F172A"
+                  >
+                    {s.n}
+                  </text>
+                  <text
+                    x={s.x}
+                    y={s.y + 38}
+                    textAnchor="middle"
+                    fontFamily="inherit"
+                    fontSize="9.5"
+                    fill="#475569"
+                    letterSpacing="0.5"
+                  >
+                    {s.l}
+                  </text>
+                </g>
+              ))}
+
+              {/* Loop-back arrow */}
+              <text
+                x="190"
+                y="220"
+                textAnchor="middle"
+                fontFamily="inherit"
+                fontSize="9"
+                fill="#94A3B8"
+                letterSpacing="2"
+              >
+                &uarr; RETRAIN &middot; CHEAPER NEXT CLICK
+              </text>
+            </svg>
+          </div>
+        </div>
+
+        {/* CARD C · Smart routing for funnel users */}
+        <div className="tp-quote-card tp-quote-card-routing">
+          <div className="tp-quote-card-eyebrow">
+            <span className="tp-quote-card-dot" />
+            CARD C · SMART ROUTING (PRISM + HELIX)
+          </div>
+          <h4 className="tp-quote-card-h">
+            Smart forms. Smart routing. For contractors running funnels.
+          </h4>
+          <p className="tp-quote-card-body">
+            For contractors running funnels, two pre-qualification agents
+            reshape the experience without ever touching a phone:
+          </p>
+          <ul className="tp-quote-routing-list">
+            <li>
+              <span className="tp-quote-routing-chip">PRISM</span>
+              <span>
+                Smart forms reshape question order based on partial answers.
+                High-intent leads skip qualifying questions and go
+                straight to the calendar slot.
+              </span>
+            </li>
+            <li>
+              <span className="tp-quote-routing-chip">HELIX</span>
+              <span>
+                Smart routing assigns the qualified homeowner to the right
+                estimator based on geography, capacity, and ticket-size match.
+              </span>
+            </li>
+            <li>
+              <span className="tp-quote-routing-chip">RESULT</span>
+              <span>
+                Less dispatcher time. Less estimator overload. Fewer abandoned
+                applications.
+              </span>
+            </li>
+          </ul>
+
+          {/* Stylized estimator-route map · 3D tilted SVG schematic */}
+          <div className="tp-route-map-scene">
+            <div className="tp-route-map-stage">
+              <svg viewBox="0 0 320 220" className="tp-route-map-svg" aria-hidden>
+                <defs>
+                  <pattern id="rmGrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#94A3B8" strokeWidth="0.4" opacity="0.4" />
+                  </pattern>
+                  <radialGradient id="rmQualGlow" cx="0.5" cy="0.5" r="0.5">
+                    <stop offset="0%" stopColor="#F97316" stopOpacity="0.6" />
+                    <stop offset="100%" stopColor="#F97316" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+
+                {/* Grid background · stylized "map" */}
+                <rect width="320" height="220" fill="url(#rmGrid)" />
+
+                {/* Roads · stylized gentle curves */}
+                <path
+                  d="M 0 110 Q 80 90 160 110 T 320 110"
+                  fill="none"
+                  stroke="#CBD5E1"
+                  strokeWidth="2"
+                  opacity="0.5"
+                />
+                <path
+                  d="M 160 0 Q 140 80 160 110 T 180 220"
+                  fill="none"
+                  stroke="#CBD5E1"
+                  strokeWidth="2"
+                  opacity="0.5"
+                />
+
+                {/* Route lines from depot to each node */}
+                {ESTIMATOR_ROUTES.filter((n) => n.status !== 'depot').map((n) => {
+                  const depot = ESTIMATOR_ROUTES[0]!;
+                  const x1 = (depot.x / 100) * 320;
+                  const y1 = (depot.y / 100) * 220;
+                  const x2 = (n.x / 100) * 320;
+                  const y2 = (n.y / 100) * 220;
+                  const qual = n.status === 'qualified';
+                  return (
+                    <line
+                      key={n.id}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      stroke={qual ? '#F97316' : '#94A3B8'}
+                      strokeWidth={qual ? 1.5 : 1}
+                      strokeDasharray={qual ? '' : '3 3'}
+                      opacity={qual ? 0.7 : 0.35}
+                    />
+                  );
+                })}
+
+                {/* Nodes */}
+                {ESTIMATOR_ROUTES.map((n) => {
+                  const cx = (n.x / 100) * 320;
+                  const cy = (n.y / 100) * 220;
+                  if (n.status === 'depot') {
+                    return (
+                      <g key={n.id}>
+                        <rect
+                          x={cx - 11}
+                          y={cy - 11}
+                          width="22"
+                          height="22"
+                          rx="4"
+                          fill="#0F172A"
+                          stroke="#FFFFFF"
+                          strokeWidth="1.5"
+                        />
+                        <text
+                          x={cx}
+                          y={cy + 3}
+                          textAnchor="middle"
+                          fontFamily="inherit"
+                          fontSize="9"
+                          fill="#F8FAFC"
+                          fontWeight="700"
+                          letterSpacing="0.5"
+                        >
+                          DEP
+                        </text>
+                        <text
+                          x={cx}
+                          y={cy + 26}
+                          textAnchor="middle"
+                          fontFamily="inherit"
+                          fontSize="8.5"
+                          fill="#475569"
+                          letterSpacing="1.5"
+                        >
+                          DEPOT
+                        </text>
+                      </g>
+                    );
+                  }
+                  const qual = n.status === 'qualified';
+                  return (
+                    <g key={n.id}>
+                      {qual && (
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r="18"
+                          fill="url(#rmQualGlow)"
+                          className="tp-route-map-pulse"
+                          style={{ animationDelay: `${parseInt(n.id.replace('n', ''), 10) * 0.4}s` }}
+                        />
+                      )}
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r="6"
+                        fill={qual ? '#F97316' : '#CBD5E1'}
+                        stroke="#FFFFFF"
+                        strokeWidth="1.5"
+                      />
+                      {n.label && (
+                        <text
+                          x={cx}
+                          y={cy - 12}
+                          textAnchor="middle"
+                          fontFamily="inherit"
+                          fontSize="8.5"
+                          fill={qual ? '#0F172A' : '#94A3B8'}
+                          fontWeight={qual ? 600 : 500}
+                          letterSpacing="0.3"
+                        >
+                          {n.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+              <div className="tp-route-map-legend">
+                <span className="tp-route-map-leg">
+                  <span className="tp-route-map-leg-dot qual" /> Qualified · estimator routed
+                </span>
+                <span className="tp-route-map-leg">
+                  <span className="tp-route-map-leg-dot unqual" /> Unqualified · pre-qual filtered
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1236,7 +1735,7 @@ function FinanceMockup() {
           <div className="flex items-center gap-2.5">
             <span className="tp-live-dot" />
             <span className="text-[11px] uppercase tracking-[0.22em] font-semibold text-slate-700">
-              MARKETPLACE · 52 LENDERS · PARALLEL QUOTE
+              MARKETPLACE · 52 LENDERS IN PARALLEL
             </span>
           </div>
           <span className="text-[10.5px] uppercase tracking-[0.18em] text-slate-500">
@@ -1255,7 +1754,7 @@ function FinanceMockup() {
                 $24,000
               </div>
               <div className="text-sm text-slate-500">
-                · Roof replacement · GAF Timberline HDZ
+                Roof replacement · GAF Timberline HDZ
               </div>
             </div>
           </div>
@@ -1397,10 +1896,10 @@ function FinanceMockup() {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-500 text-right">
-              Funds release
+              Funds release in 48 to 72hr
             </div>
             <div className="tp-funded-chip">
-              <span className="tp-funded-chip-dot" /> LENDER DIRECT
+              <span className="tp-funded-chip-dot" /> MERCHANT DIRECT
             </div>
           </div>
         </div>
@@ -1662,15 +2161,18 @@ function PillarAgents() {
         <div className="max-w-3xl reveal">
           <div className="tp-eyebrow-dark">04 · THE AGENTIC LAYER</div>
           <h2 className="mt-3 tp-h2 tp-grad-text-on-dark">
-            Seven autonomous agents running your contractor revenue stack · 24/7.
+            Seven pre-qualification agents running your contractor revenue stack · 24/7.
           </h2>
           <p className="mt-5 text-lg text-slate-300 leading-relaxed">
-            Every layer of TradePay is operated by a dedicated AI agent, from
-            form intake all the way through lender matching, funding orchestration,
-            and ad attribution. They don't replace your team. They replace the
-            spreadsheets, the manual lead reviews, the broker calls, the 3am
-            Slack threads. Each agent has a defined role, a defined scope, and
-            a measurable output.
+            Every layer of TradePay is operated by a dedicated pre-qualification
+            agent, from form intake all the way through lender matching, funding
+            orchestration, and ad attribution. They work on the{' '}
+            <span className="text-white font-semibold">financial data</span>{' '}
+            in software (soft-pull credit, identity enrichment, propensity
+            scoring, lender routing), not on the phone. They never make
+            outbound calls, never voice-dial, never text-blast. They qualify
+            silently in the background and surface the financially-qualified
+            homeowners to your human sales, estimator, and dispatcher team.
           </p>
         </div>
 
@@ -1720,8 +2222,9 @@ function PillarAgents() {
         <div className="mt-6 tp-agents-footer reveal">
           <span className="tp-agents-footer-dot" />
           <span>
-            Every agent action is FCRA permissible-purpose-aware, TCPA-compliant
-            on outbound voice/SMS, and logged to an immutable audit trail.
+            Agents work on the financial data, not on the phone. Every agent
+            action is FCRA permissible-purpose-aware and logged to an immutable
+            audit trail.
           </span>
         </div>
       </div>
@@ -1734,23 +2237,36 @@ function PillarAgents() {
 /* -------------------------------------------------------------------------- */
 
 function RoiSection() {
-  const [leads, setLeads] = useState(120);
-  const [ticket, setTicket] = useState(18000);
-  const [closeRate, setCloseRate] = useState(41);
+  // 4-stage funnel · inbound → pre-qual → show → close → funded
+  const [leads, setLeads] = useState(220);
+  const [preQualPct, setPreQualPct] = useState(55);
+  const [showRate, setShowRate] = useState(75);
+  const [closeRate, setCloseRate] = useState(50);
+  const [ticket, setTicket] = useState(24000);
 
-  // Illustrative model: applies a fixed lift factor to leads * ticket
-  // to surface a directional revenue figure. Not a guarantee.
-  const recovered = useMemo(() => {
-    const lift = 0.34; // illustrative lift factor (not a promised outcome)
-    const monthly = leads * lift * ticket;
-    return monthly * 12;
-  }, [leads, ticket]);
-
-  // For visual feedback, also show modelled close rate
-  const newCloseRate = useMemo(
-    () => Math.min(95, Math.round(closeRate + 34)),
-    [closeRate],
+  // Funnel math
+  const preQualified = useMemo(
+    () => Math.round((leads * preQualPct) / 100),
+    [leads, preQualPct],
   );
+  const shows = useMemo(
+    () => Math.round((preQualified * showRate) / 100),
+    [preQualified, showRate],
+  );
+  const fundedPerMonth = useMemo(
+    () => Math.round((shows * closeRate) / 100),
+    [shows, closeRate],
+  );
+  const fundedPerYear = useMemo(() => fundedPerMonth * 12, [fundedPerMonth]);
+  const annualRevenue = useMemo(
+    () => fundedPerYear * ticket,
+    [fundedPerYear, ticket],
+  );
+  // Skipped wasted estimates · 2.5 hrs each (90min onsite + 30min each way)
+  const estimatorHoursSavedPerMonth = useMemo(() => {
+    const skippedFillers = Math.round(leads * (1 - preQualPct / 100));
+    return Math.round(skippedFillers * 2.5);
+  }, [leads, preQualPct]);
 
   return (
     <section id="roi" className="relative py-28 border-t border-slate-200/70">
@@ -1760,13 +2276,14 @@ function RoiSection() {
         <div className="max-w-3xl reveal">
           <div className="tp-eyebrow">06 · YOUR NUMBERS</div>
           <h2 className="mt-3 tp-h2 tp-grad-text">
-            How many jobs are you losing to "I need to think about it"?
+            Model your funnel. End-to-end. Inbound to funded.
           </h2>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-            Plug in your real numbers. We'll model what recoverable job revenue
-            could look like when every homeowner sees a yes-able monthly
-            payment on the doorstep. Illustrative only; outcomes vary by crew,
-            ticket, vertical, and lender mix.
+            Plug in your real numbers across the four-stage funnel: inbound
+            leads &rarr; pre-qualified &rarr; estimate shows &rarr; closed
+            contracts. We model financing-driven revenue from the homeowners who
+            actually fund. Illustrative only; outcomes vary by crew, ticket,
+            vertical, season, and lender mix.
           </p>
         </div>
 
@@ -1774,109 +2291,150 @@ function RoiSection() {
           {/* Inputs */}
           <div className="lg:col-span-7 tp-roi-panel">
             <div className="text-[10.5px] uppercase tracking-[0.22em] text-slate-500 font-semibold mb-1">
-              Inputs
+              Funnel inputs
             </div>
             <div className="text-sm text-slate-500 mb-7">
               Defaults reflect a typical home-improvement contractor running 1 to 3 crews.
             </div>
 
             <RoiSlider
-              label="Leads / month"
+              label="Inbound leads / month"
               value={leads}
-              min={20}
-              max={500}
+              min={40}
+              max={800}
               step={10}
               format={(v) => v.toString()}
               onChange={setLeads}
             />
 
             <RoiSlider
-              label="Average ticket"
-              value={ticket}
-              min={3000}
-              max={60000}
-              step={500}
-              format={(v) => fmt(v)}
-              onChange={setTicket}
+              label="Pre-qual pass %"
+              value={preQualPct}
+              min={20}
+              max={90}
+              step={1}
+              format={(v) => `${v}%`}
+              onChange={setPreQualPct}
             />
 
             <RoiSlider
-              label="Current close rate"
+              label="Estimate show rate %"
+              value={showRate}
+              min={30}
+              max={95}
+              step={1}
+              format={(v) => `${v}%`}
+              onChange={setShowRate}
+            />
+
+            <RoiSlider
+              label="Close rate at estimate %"
               value={closeRate}
-              min={10}
-              max={75}
+              min={15}
+              max={85}
               step={1}
               format={(v) => `${v}%`}
               onChange={setCloseRate}
             />
 
-            <div className="mt-7 pt-5 border-t border-slate-200/70 grid grid-cols-3 gap-4 text-[11.5px]">
-              <div>
-                <div className="text-slate-500 uppercase tracking-[0.18em]">
-                  Today
-                </div>
-                <div className="mt-1 font-semibold text-slate-700 tabular-nums">
-                  {closeRate}% close
-                </div>
-              </div>
-              <div>
-                <div className="text-slate-500 uppercase tracking-[0.18em]">
-                  With TradePay
-                </div>
-                <div className="mt-1 font-semibold text-slate-900 tabular-nums">
-                  {newCloseRate}% close
-                </div>
-              </div>
-              <div>
-                <div className="text-slate-500 uppercase tracking-[0.18em]">
-                  Modelled lift
-                </div>
-                <div className="mt-1 font-semibold tp-roi-lift tabular-nums">
-                  Illustrative
-                </div>
-              </div>
+            <RoiSlider
+              label="Avg job ticket"
+              value={ticket}
+              min={3000}
+              max={100000}
+              step={500}
+              format={(v) => fmt(v)}
+              onChange={setTicket}
+            />
+
+            <div className="mt-7 pt-5 border-t border-slate-200/70 tp-roi-assump">
+              <span className="tp-roi-assump-k">Funnel math</span>
+              <span>
+                Funded jobs/mo = inbound &times; pre-qual% &times; show% &times;
+                close%. Ticket size sits inside the TradePay loan range ($3k to
+                $100k). Adjust each stage to match your real conversion.
+              </span>
             </div>
           </div>
 
           {/* Output */}
-          <div className="lg:col-span-5 tp-roi-output">
+          <div className="lg:col-span-5 tp-roi-output tp-roi-output-scene">
             <div className="text-[10.5px] uppercase tracking-[0.22em] text-slate-400 font-semibold">
-              Modelled job revenue · per year
+              Financing-driven revenue &middot; per year
             </div>
             <div className="mt-2 text-xs text-slate-400 leading-relaxed">
-              Illustrative · financing-driven doorstep close lift
+              Illustrative &middot; based on your funnel inputs
             </div>
 
-            <div className="mt-6 tp-roi-num tabular-nums">{fmt(recovered)}</div>
+            <div className="mt-6 tp-roi-num tp-roi-num-3d tabular-nums">
+              {fmt(annualRevenue)}
+            </div>
+
+            {/* Funnel narrative · animated traversal dots */}
+            <div className="mt-4 tp-roi-funnel">
+              <span className="tp-roi-funnel-stage">
+                <span className="tp-roi-funnel-dot" style={{ animationDelay: '0s' }} />
+                {leads} leads
+              </span>
+              <span className="tp-roi-funnel-arrow">&rarr;</span>
+              <span className="tp-roi-funnel-stage">
+                <span className="tp-roi-funnel-dot" style={{ animationDelay: '0.4s' }} />
+                {preQualified} pre-qual
+              </span>
+              <span className="tp-roi-funnel-arrow">&rarr;</span>
+              <span className="tp-roi-funnel-stage">
+                <span className="tp-roi-funnel-dot" style={{ animationDelay: '0.8s' }} />
+                {shows} shows
+              </span>
+              <span className="tp-roi-funnel-arrow">&rarr;</span>
+              <span className="tp-roi-funnel-stage tp-roi-funnel-stage-final">
+                <span className="tp-roi-funnel-dot" style={{ animationDelay: '1.2s' }} />
+                <strong>{fundedPerMonth} funded</strong>
+              </span>
+            </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div className="tp-roi-sub">
                 <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-400">
-                  Recovered jobs / mo
+                  Funded jobs / mo
                 </div>
                 <div className="text-lg font-semibold text-white tabular-nums mt-1">
-                  {Math.round(leads * 0.34)}
+                  {fundedPerMonth}
                 </div>
               </div>
               <div className="tp-roi-sub">
                 <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-400">
-                  Monthly revenue lift
+                  Funded jobs / yr
                 </div>
                 <div className="text-lg font-semibold text-white tabular-nums mt-1">
-                  {fmt(recovered / 12)}
+                  {fundedPerYear}
                 </div>
+              </div>
+            </div>
+
+            <div className="mt-3 tp-roi-substat">
+              <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-400">
+                Estimator hours saved / mo
+              </div>
+              <div className="text-base font-semibold text-white tabular-nums mt-1">
+                ~{estimatorHoursSavedPerMonth} hrs
+              </div>
+              <div className="text-[10.5px] text-slate-500 mt-0.5">
+                Skipped wasted estimates &times; 2.5 hrs each
               </div>
             </div>
 
             <a
               href="/welcome"
-              className="mt-7 tp-btn-primary-dark text-sm w-full justify-center"
+              className="mt-7 tp-btn-primary-dark text-sm w-full justify-center tp-cta-glow"
             >
               Start TradePay signup
               <IconArrowRight className="ml-1.5" />
             </a>
-            <div className="mt-3 text-[10.5px] uppercase tracking-[0.18em] text-slate-500 text-center">
-              Self-serve · 5-minute signup · soft pull only
+            <div className="mt-3 text-[10px] uppercase tracking-[0.18em] text-slate-500 text-center leading-relaxed">
+              Outputs are illustrative based on your inputs. Actual outcomes
+              vary by region, season, and product mix. Not a guarantee of
+              returns.
             </div>
           </div>
         </div>
@@ -2017,7 +2575,7 @@ function ObjectionsSection() {
     <section className="relative py-28 border-t border-slate-200/70">
       <div className="relative mx-auto max-w-5xl px-6">
         <div className="reveal">
-          <div className="tp-eyebrow">09 · OBJECTIONS · ANSWERED</div>
+          <div className="tp-eyebrow">09 · OBJECTIONS ANSWERED</div>
           <h2 className="mt-3 tp-h2 tp-grad-text">
             What contractors ask before they sign up.
           </h2>
@@ -2093,7 +2651,7 @@ function FinalCta() {
         </div>
 
         <div className="mt-10 text-[11px] font-medium uppercase tracking-[0.22em] text-slate-500">
-          Soft pull · zero credit impact · 52 lenders · instant decisions at the door
+          Soft pull, zero credit impact, instant decisions at the door across 52 lenders
         </div>
       </div>
     </section>
@@ -2637,6 +3195,8 @@ const CSS = `
 
   /* ====== Waterfall schematic ====== */
   .tp-schematic {
+    position: relative;
+    z-index: 1;
     background: #FFFFFF;
     border: 1px solid rgba(15,23,42,0.08);
     border-radius: 16px;
@@ -3510,30 +4070,12 @@ const CSS = `
     }
   }
 
-  /* Schematic flow · control-panel tilt + scan line */
+  /* Schematic flow · flat blueprint, no tilt (alignment must read clean) */
   .tp-schematic-scene {
-    perspective: 2400px;
-    perspective-origin: 50% 80%;
+    position: relative;
   }
   .tp-schematic-stage {
     position: relative;
-    transform-style: preserve-3d;
-    transform: rotateX(8deg);
-    transform-origin: 50% 100%;
-    transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
-    will-change: transform;
-  }
-  .tp-schematic-stage:hover {
-    transform: rotateX(4deg) translateY(-2px);
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .tp-schematic-stage {
-      animation: tpSchematicSway 16s ease-in-out infinite;
-    }
-  }
-  @keyframes tpSchematicSway {
-    0%, 100% { transform: rotateX(8deg) rotateZ(0deg); }
-    50%      { transform: rotateX(8deg) rotateZ(0.4deg); }
   }
   .tp-schematic-scanline {
     position: absolute;
@@ -3541,10 +4083,10 @@ const CSS = `
     right: 6%;
     top: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(15,23,42,0.45), transparent);
-    box-shadow: 0 0 14px rgba(249,115,22,0.18);
+    background: linear-gradient(90deg, transparent, rgba(15,23,42,0.35), transparent);
+    box-shadow: 0 0 14px rgba(249,115,22,0.14);
     pointer-events: none;
-    z-index: 1;
+    z-index: 0;
   }
   @media (prefers-reduced-motion: no-preference) {
     .tp-schematic-scanline {
@@ -3709,6 +4251,539 @@ const CSS = `
     .tp-eyebrow-pill { font-size: 9.5px; padding: 6px 10px; }
   }
 
+  /* ============================================================
+     SYNERGY CALLOUT
+     Mirrors MedPay's mp-synergy pattern with slate/orange palette.
+     ============================================================ */
+  .tp-synergy {
+    background:
+      radial-gradient(ellipse 60% 80% at 0% 50%, rgba(249,115,22,0.07), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(248,250,252,0.92) 100%);
+    border: 1px solid rgba(15,23,42,0.10);
+    border-radius: 24px;
+    padding: 34px 36px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,1) inset,
+      0 24px 60px -28px rgba(15,23,42,0.22);
+    position: relative;
+    overflow: hidden;
+  }
+  .tp-synergy::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at 0% 50%, black 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .tp-synergy-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  @media (max-width: 960px) {
+    .tp-synergy-grid { grid-template-columns: 1fr; gap: 24px; }
+  }
+  .tp-synergy-side {
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .tp-synergy-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 0.22em; font-weight: 700;
+    color: var(--tp-orange-deep);
+    text-transform: uppercase;
+  }
+  .tp-synergy-eyebrow-dot {
+    width: 8px; height: 8px; border-radius: 999px;
+    background: var(--tp-orange);
+    box-shadow: 0 0 0 2px rgba(249,115,22,0.18), 0 0 10px rgba(249,115,22,0.6);
+    animation: tpPulseOrange 2.4s ease-in-out infinite;
+  }
+  .tp-synergy-pair {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .tp-synergy-half {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(15,23,42,0.10);
+    box-shadow: 0 6px 14px -10px rgba(15,23,42,0.18);
+  }
+  .tp-synergy-half-k {
+    font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+    color: var(--tp-slate-500); text-transform: uppercase;
+  }
+  .tp-synergy-half-v {
+    margin-top: 4px;
+    font-size: 16px; font-weight: 700; color: var(--tp-slate-900);
+    letter-spacing: -0.01em;
+  }
+  .tp-synergy-x {
+    font-size: 22px; font-weight: 700; color: var(--tp-orange);
+    flex-shrink: 0;
+  }
+  .tp-synergy-body {
+    font-size: 15px; line-height: 1.65; color: var(--tp-slate-600);
+  }
+  .tp-synergy-body p { margin: 0 0 12px 0; }
+  .tp-synergy-body p:last-child { margin-bottom: 0; }
+  .tp-synergy-body strong { color: var(--tp-slate-900); }
+  @media (max-width: 768px) {
+    .tp-synergy { padding: 24px; }
+    .tp-synergy-pair { flex-direction: column; align-items: stretch; gap: 10px; }
+    .tp-synergy-x { text-align: center; }
+  }
+
+  /* ============================================================
+     QUOTE THE BUYERS · time + pixel + smart routing
+     ============================================================ */
+  .tp-quote-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 1024px) {
+    .tp-quote-grid { grid-template-columns: 1fr 1fr; }
+    .tp-quote-card-routing { grid-column: span 2; }
+  }
+  @media (max-width: 760px) {
+    .tp-quote-grid { grid-template-columns: 1fr; }
+    .tp-quote-card-routing { grid-column: span 1; }
+  }
+  .tp-quote-card {
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(15,23,42,0.10);
+    border-radius: 20px;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 18px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,1) inset,
+      0 22px 50px -28px rgba(15,23,42,0.20);
+    position: relative;
+    overflow: hidden;
+  }
+  .tp-quote-card-pixel {
+    background:
+      radial-gradient(ellipse 60% 60% at 100% 0%, rgba(249,115,22,0.08), transparent 60%),
+      rgba(255,255,255,0.96);
+  }
+  .tp-quote-card-routing {
+    background:
+      radial-gradient(ellipse 50% 50% at 0% 100%, rgba(15,23,42,0.05), transparent 60%),
+      rgba(255,255,255,0.96);
+  }
+  .tp-quote-card-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
+    color: var(--tp-slate-700);
+    text-transform: uppercase;
+  }
+  .tp-quote-card-dot {
+    width: 7px; height: 7px; border-radius: 999px;
+    background: var(--tp-orange);
+    box-shadow: 0 0 0 2px rgba(249,115,22,0.16), 0 0 8px rgba(249,115,22,0.5);
+  }
+  .tp-quote-card-h {
+    font-size: 20px; font-weight: 700; color: var(--tp-slate-900);
+    letter-spacing: -0.02em; line-height: 1.22;
+    margin: 0;
+  }
+  .tp-quote-card-body {
+    font-size: 13.5px; line-height: 1.65; color: var(--tp-slate-600);
+    margin: 0;
+  }
+  .tp-quote-card-body em {
+    color: var(--tp-orange-deep); font-style: normal; font-weight: 600;
+  }
+
+  /* Card A · calendar grid + 3D control-panel tilt */
+  .tp-quote-calendar-scene {
+    perspective: 1400px;
+    perspective-origin: 50% 80%;
+    margin-top: 8px;
+  }
+  .tp-quote-calendar-stage {
+    transform-style: preserve-3d;
+    transform: rotateX(8deg);
+    transform-origin: 50% 100%;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(248,250,252,0.7) 0%, rgba(255,255,255,0.7) 100%);
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow: 0 12px 28px -18px rgba(15,23,42,0.20);
+    transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+  }
+  .tp-quote-calendar-stage:hover {
+    transform: rotateX(4deg) translateY(-2px);
+  }
+  .tp-quote-calendar-head {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    font-size: 9.5px; letter-spacing: 0.16em; font-weight: 700;
+    color: var(--tp-slate-500);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .tp-quote-calendar-body {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .tp-quote-calendar-slot {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s ease;
+  }
+  .tp-quote-calendar-slot.buyer {
+    background: linear-gradient(135deg, rgba(15,23,42,0.10), rgba(15,23,42,0.05));
+    border: 1px solid rgba(15,23,42,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 4px -2px rgba(15,23,42,0.10);
+  }
+  .tp-quote-calendar-slot.buyer .tp-quote-calendar-dot {
+    background: var(--tp-orange);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.18), 0 0 6px rgba(249,115,22,0.5);
+  }
+  .tp-quote-calendar-slot.filler {
+    background: rgba(180, 180, 180, 0.06);
+    border: 1px dashed rgba(120, 120, 120, 0.32);
+  }
+  .tp-quote-calendar-slot.filler .tp-quote-calendar-dot {
+    background: rgba(120, 120, 120, 0.4);
+  }
+  .tp-quote-calendar-dot {
+    width: 6px; height: 6px; border-radius: 999px;
+  }
+  .tp-quote-calendar-legend {
+    margin-top: 12px;
+    display: flex; gap: 14px; flex-wrap: wrap;
+    font-size: 10.5px; color: var(--tp-slate-500);
+  }
+  .tp-quote-leg-buyer,
+  .tp-quote-leg-filler {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tp-quote-leg-dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 999px;
+  }
+  .tp-quote-leg-buyer .tp-quote-leg-dot {
+    background: var(--tp-orange);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.18);
+  }
+  .tp-quote-leg-filler .tp-quote-leg-dot {
+    background: rgba(120, 120, 120, 0.4);
+  }
+
+  /* Hours-recovered stat tile · float + subtle wobble */
+  .tp-quote-recovered {
+    margin-top: 6px;
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 16px 18px;
+    color: var(--tp-slate-200);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 18px 38px -22px rgba(15,23,42,0.45);
+    will-change: transform;
+  }
+  .tp-quote-recovered-k {
+    font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; font-weight: 600;
+    color: var(--tp-slate-400);
+  }
+  .tp-quote-recovered-v {
+    margin-top: 6px;
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #F8FAFC 0%, #FED7AA 60%, #F97316 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  .tp-quote-recovered-sub {
+    margin-top: 4px;
+    font-size: 10.5px; color: var(--tp-slate-500);
+    line-height: 1.5;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-quote-recovered {
+      animation: tpRecoveredFloat 7s ease-in-out infinite;
+    }
+  }
+  @keyframes tpRecoveredFloat {
+    0%, 100% { transform: translateY(0) rotateZ(0deg); }
+    50%      { transform: translateY(-4px) rotateZ(0.3deg); }
+  }
+
+  /* Card B · pixel feedback loop */
+  .tp-pixel-loop-scene {
+    margin-top: 6px;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(248,250,252,0.7) 0%, rgba(255,255,255,0.7) 100%);
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow: 0 12px 28px -18px rgba(15,23,42,0.18);
+  }
+  .tp-pixel-loop-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Card C · smart routing list + estimator route map */
+  .tp-quote-routing-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .tp-quote-routing-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 12px;
+    background: rgba(248,250,252,0.7);
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 10px;
+    font-size: 13px; line-height: 1.55;
+    color: var(--tp-slate-700);
+  }
+  .tp-quote-routing-chip {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 56px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--tp-slate-900);
+    color: var(--tp-slate-100);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em;
+  }
+
+  .tp-route-map-scene {
+    perspective: 1400px;
+    perspective-origin: 50% 80%;
+    margin-top: 6px;
+  }
+  .tp-route-map-stage {
+    transform-style: preserve-3d;
+    transform: rotateX(30deg);
+    transform-origin: 50% 100%;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(248,250,252,0.7) 0%, rgba(255,255,255,0.7) 100%);
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 18px 38px -20px rgba(15,23,42,0.30);
+    transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1);
+    will-change: transform;
+  }
+  .tp-route-map-stage:hover {
+    transform: rotateX(20deg) translateY(-3px);
+  }
+  .tp-route-map-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-route-map-pulse {
+      animation: tpRouteMapPulse 2.4s ease-in-out infinite;
+      transform-origin: center;
+    }
+  }
+  @keyframes tpRouteMapPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%      { opacity: 1; transform: scale(1.15); }
+  }
+  .tp-route-map-legend {
+    margin-top: 10px;
+    display: flex; gap: 14px; flex-wrap: wrap;
+    font-size: 10.5px; color: var(--tp-slate-500);
+  }
+  .tp-route-map-leg {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tp-route-map-leg-dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 999px;
+  }
+  .tp-route-map-leg-dot.qual {
+    background: var(--tp-orange);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.18);
+  }
+  .tp-route-map-leg-dot.unqual {
+    background: rgba(148, 163, 184, 0.6);
+    border: 1px dashed rgba(148, 163, 184, 0.9);
+  }
+
+  /* ============================================================
+     52-LENDER MARKETPLACE BAR · sequential lighting animation
+     Adds a perspective tilt + a left-to-right traveling tick highlight.
+     Wraps existing .tp-progress styling without breaking it.
+     ============================================================ */
+  .tp-progress {
+    perspective: 800px;
+    transform-style: preserve-3d;
+  }
+  .tp-progress::after {
+    content: "";
+    position: absolute;
+    left: 0; top: 0;
+    width: 14%; height: 100%;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(249,115,22,0.0) 10%,
+      rgba(249,115,22,0.65) 50%,
+      rgba(249,115,22,0.0) 90%,
+      transparent 100%);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+  .tp-progress { position: relative; overflow: visible; }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-progress::after {
+      animation: tpProgressRipple 3.6s ease-in-out infinite;
+    }
+  }
+  @keyframes tpProgressRipple {
+    0%   { left: -14%; opacity: 0; }
+    10%  { opacity: 1; }
+    80%  { opacity: 1; }
+    95%  { left: 100%; opacity: 0.4; }
+    100% { left: 100%; opacity: 0; }
+  }
+
+  /* ============================================================
+     ROI OUTPUT · 3D number depth + funnel narrative animation
+     ============================================================ */
+  .tp-roi-output-scene {
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+  }
+  .tp-roi-num-3d {
+    transform: translateZ(0);
+    text-shadow:
+      0 1px 0 rgba(249,115,22,0.18),
+      0 2px 12px rgba(249,115,22,0.22),
+      0 6px 24px rgba(249,115,22,0.10);
+    filter: drop-shadow(0 4px 12px rgba(249,115,22,0.12));
+  }
+  .tp-roi-funnel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    font-size: 12px;
+    color: var(--tp-slate-300);
+    line-height: 1.5;
+  }
+  .tp-roi-funnel-stage {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--tp-slate-300);
+    font-variant-numeric: tabular-nums;
+  }
+  .tp-roi-funnel-stage-final {
+    background: rgba(249,115,22,0.10);
+    border-color: rgba(249,115,22,0.30);
+    color: #FED7AA;
+  }
+  .tp-roi-funnel-stage-final strong {
+    color: #FFFFFF;
+  }
+  .tp-roi-funnel-arrow {
+    color: var(--tp-slate-500);
+    font-weight: 700;
+  }
+  .tp-roi-funnel-dot {
+    width: 5px; height: 5px; border-radius: 999px;
+    background: var(--tp-orange);
+    box-shadow: 0 0 6px rgba(249,115,22,0.6);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-roi-funnel-dot {
+      animation: tpFunnelDot 2.4s ease-in-out infinite;
+    }
+  }
+  @keyframes tpFunnelDot {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50%      { opacity: 1; transform: scale(1.15); }
+  }
+  .tp-roi-substat {
+    margin-top: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .tp-roi-assump {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 16px;
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--tp-slate-500);
+  }
+  .tp-roi-assump-k {
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--tp-slate-700);
+    font-size: 10.5px;
+  }
+  @media (max-width: 640px) {
+    .tp-roi-assump { grid-template-columns: 1fr; gap: 6px; }
+  }
+
+  /* ============================================================
+     STICKY / PRIMARY CTA GLOW · perpetual subtle orange shadow pulse
+     ============================================================ */
+  @media (prefers-reduced-motion: no-preference) {
+    .tp-cta-glow {
+      animation: tpCtaGlow 4s ease-in-out infinite;
+    }
+  }
+  @keyframes tpCtaGlow {
+    0%, 100% {
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.08) inset,
+        0 0 0 1px rgba(15,23,42,0.9),
+        0 12px 28px -10px rgba(15,23,42,0.55),
+        0 0 0 0 rgba(249,115,22,0.0),
+        0 0 16px rgba(249,115,22,0.10);
+    }
+    50% {
+      box-shadow:
+        0 1px 0 rgba(255,255,255,0.10) inset,
+        0 0 0 1px rgba(15,23,42,1),
+        0 16px 36px -12px rgba(15,23,42,0.65),
+        0 0 0 3px rgba(249,115,22,0.18),
+        0 0 28px rgba(249,115,22,0.32);
+    }
+  }
+
+  /* ============================================================
+     Responsive · "Quote the buyers" subsections
+     ============================================================ */
+  @media (max-width: 768px) {
+    .tp-synergy { padding: 22px; }
+    .tp-quote-card { padding: 22px; border-radius: 16px; }
+    .tp-quote-card-h { font-size: 17px; }
+    .tp-quote-recovered-v { font-size: 24px; }
+  }
+
   /* ====== Reduced motion · disable every animation and transform-on-hover lift ====== */
   @media (prefers-reduced-motion: reduce) {
     .tp-root *,
@@ -3719,12 +4794,16 @@ const CSS = `
     }
     .tp-hero-stage,
     .tp-finance-stage,
-    .tp-schematic-stage {
+    .tp-schematic-stage,
+    .tp-quote-calendar-stage,
+    .tp-route-map-stage {
       transform: none !important;
     }
     .tp-hero-stage:hover,
     .tp-finance-stage:hover,
     .tp-schematic-stage:hover,
+    .tp-quote-calendar-stage:hover,
+    .tp-route-map-stage:hover,
     .tp-offer-row-3d:hover,
     .tp-ticker-cell:hover,
     .tp-case-card-3d:hover {

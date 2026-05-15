@@ -37,8 +37,14 @@ export class ApplicationController {
   create(
     @CurrentUser() userId: UserId,
     @Body() dto: CreateApplicationDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent?: string,
   ): Promise<ApplicationSnapshot> {
-    return this.applications.create(userId, dto);
+    // SEC-026: forward IP + UA into the audit row's `after` payload
+    // so the risk service's velocity gate can actually count this
+    // application against the IP. Without this, the `path:['ipAddress']`
+    // jsonb lookup returns 0 rows every time and the gate is dead code.
+    return this.applications.create(userId, dto, { ipAddress, userAgent });
   }
 
   @Get()

@@ -232,6 +232,56 @@ export class PaymentService {
       });
     }
 
+    // SEC-036 — gate disbursement on a verified default bank account.
+    //
+    // Threat scenario:
+    //   Pre-fix, `disburseAndSchedule` called `provider.disburse` with
+    //   `destination: { kind: 'consumer_bank', userId }` and trusted
+    //   the provider to resolve the right destination. In production
+    //   that resolution depends on a real `PaymentMethod` row with
+    //   `isDefault=true, status='verified'`. If no such row exists —
+    //   because the consumer skipped the bank-link step, was offered
+    //   an instant approval, and finished the contract before linking
+    //   a destination — the provider call either fails opaquely
+    //   (waste + alarm noise) OR, with a misconfigured provider stub
+    //   in non-prod, succeeds against an unverified account that does
+    //   NOT belong to the consumer. Either way, money moves (or tries
+    //   to) without a regulator-defensible "where did this go and
+    //   why?" answer.
+    //
+    // Fix: hard-fail BEFORE the provider call when no verified default
+    // exists, AND attach the verified-account's `providerToken` to the
+    // destination so the provider has a fully-resolved instrument.
+    // Every reject also emits an audit row so a regulator can see WHY
+    // a funded loan stalled.
+    const defaultMethod = await this.prisma.paymentMethod.findFirst({
+      where: { userId: loan.userId, isDefault: true, status: 'verified' },
+      select: { id: true, providerToken: true, last4: true },
+    });
+    if (!defaultMethod) {
+      // Record the block so regulators see the rejection rather than
+      // an opaque "loan stuck at funding_pending" gap.
+      await this.prisma.auditOutbox.create({
+        data: {
+          actorType: 'service',
+          actorId: null,
+          action: 'payment.disbursement.blocked_no_verified_account',
+          targetType: 'Loan',
+          targetId: loan.id,
+          after: {
+            applicationId: loan.applicationId,
+            userId: loan.userId,
+            reason: 'no verified default PaymentMethod present',
+          },
+        },
+      });
+      throw Conflict({
+        code: 'no_verified_disbursement_account',
+        detail:
+          'consumer must add and verify a default bank account before disbursement',
+      });
+    }
+
     // Move application contracted → funding up-front so the state is
     // visible to anyone polling. The transition stays valid even if the
     // disburse call fails; a later retry resumes from this state.
@@ -258,11 +308,13 @@ export class PaymentService {
       loanId: loan.id,
       amountCents: loan.principalCents,
       destination: {
-        // Real destination is the consumer's verified bank account. For
-        // the dev mock, anything routes; for production, look up the
-        // PaymentMethod row + provider token here.
+        // SEC-036 — pass the verified PaymentMethod's providerToken so
+        // the provider routes funds to the exact, attested instrument.
+        // The userId stays for cross-checks the provider may run.
         kind: 'consumer_bank',
         userId: loan.userId,
+        paymentMethodId: defaultMethod.id,
+        providerToken: defaultMethod.providerToken,
       },
       metadata: { lenderOfRecord: loan.lenderOfRecord },
     });

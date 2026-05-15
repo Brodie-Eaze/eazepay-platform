@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -10,6 +10,7 @@ import {
   UsersIcon,
   DocIcon,
   ShieldIcon,
+  AlertIcon,
   type IconProps,
 } from '@eazepay/ui/web';
 
@@ -62,6 +63,21 @@ export interface BrandOnboardingConfig {
   backHref: string;
 }
 
+/** Invite-link prefill payload. When present, the wizard pre-fills the
+ * first step with whatever the operator typed into the invite modal +
+ * locks the brand. The token is forwarded on submit so the apply BFF
+ * can stamp `meta.invitedById` and mark the invite redeemed. */
+export interface BrandInviteContext {
+  token: string;
+  brand: string;
+  prefill: {
+    businessName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  };
+  invitedByLabel?: string;
+}
+
 interface State {
   // Business info
   legalName: string;
@@ -107,12 +123,28 @@ const EMPTY: State = {
   uploads: {},
 };
 
+function seedFromInvite(invite?: BrandInviteContext): State {
+  if (!invite) return EMPTY;
+  return {
+    ...EMPTY,
+    legalName: invite.prefill?.businessName ?? '',
+    ownerEmail: invite.prefill?.contactEmail ?? '',
+    ownerPhone: invite.prefill?.contactPhone ?? '',
+  };
+}
+
 const STEPS = ['Business Info', 'Owner Details', 'Documents', 'Review'] as const;
 
-export function BrandOnboardingWizard({ config }: { config: BrandOnboardingConfig }) {
+export function BrandOnboardingWizard({
+  config,
+  invite,
+}: {
+  config: BrandOnboardingConfig;
+  invite?: BrandInviteContext;
+}) {
   const router = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
-  const [state, setState] = useState<State>(EMPTY);
+  const [state, setState] = useState<State>(() => seedFromInvite(invite));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -163,7 +195,11 @@ export function BrandOnboardingWizard({ config }: { config: BrandOnboardingConfi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ ...state, brand: config.slug }),
+        body: JSON.stringify({
+          ...state,
+          brand: config.slug,
+          ...(invite?.token ? { inviteToken: invite.token } : {}),
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -201,6 +237,22 @@ export function BrandOnboardingWizard({ config }: { config: BrandOnboardingConfi
       </header>
 
       <div className="max-w-3xl mx-auto px-6 lg:px-10 py-10">
+        {invite && (
+          <div className="mb-6 flex items-start gap-3 rounded-lg border border-border bg-bg-elevated px-4 py-3">
+            <span className="mt-0.5 h-6 w-6 rounded-md bg-[#0d1530] text-white text-[10px] font-semibold uppercase tracking-wider flex items-center justify-center shrink-0">
+              {(invite.invitedByLabel ?? 'EZ').slice(0, 2).toUpperCase()}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-fg leading-tight">
+                Invited by {invite.invitedByLabel ?? 'an EazePay operator'}
+              </p>
+              <p className="text-[11px] text-fg-muted leading-snug mt-0.5">
+                Your account brand is set to {config.title.split(' ')[0]}. Some fields are
+                pre-filled from the invite. You can edit before submitting.
+              </p>
+            </div>
+          </div>
+        )}
         <p className="text-[11px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
           Business onboarding
         </p>
@@ -665,4 +717,156 @@ function SummaryCard({ label, rows }: { label: string; rows: Array<[string, stri
       </dl>
     </div>
   );
+}
+
+/* ─── Invite-aware wrapper ───────────────────────────────────────────
+ *
+ * Used by each `/onboarding/<brand>/page.tsx` to read the `invite`
+ * query param, resolve it via `/api/onboarding/invite/[token]`, and
+ * gate the wizard. Three render states:
+ *
+ *   1. No `?invite=` param → render the wizard cold.
+ *   2. Valid invite (active + brand matches the page) → wizard prefilled
+ *      with operator-typed values + locked brand.
+ *   3. Expired / redeemed / wrong-brand → fallback card with a clear
+ *      message and "Apply without an invite" link to the same page.
+ */
+
+/** Map config.slug → InviteBrand for the matcher. Kept inline here to
+ * avoid importing the server-only store on the client. */
+const INVITE_BRAND_BY_CONFIG_SLUG: Record<string, string> = {
+  'trade-pay': 'tradepay',
+  'med-pay': 'medpay',
+  'coach-pay': 'coachpay',
+};
+
+interface InvitePayload {
+  token: string;
+  brand: string;
+  prefill: { businessName?: string; contactEmail?: string; contactPhone?: string };
+  status: 'active' | 'expired' | 'redeemed';
+  invitedByEmail: string;
+}
+
+export function BrandOnboardingPage({ config }: { config: BrandOnboardingConfig }) {
+  const sp = useSearchParams();
+  const tokenParam = sp?.get('invite');
+  const [phase, setPhase] = useState<'idle' | 'loading' | 'ok' | 'invalid' | 'mismatch'>(
+    tokenParam ? 'loading' : 'idle',
+  );
+  const [invite, setInvite] = useState<InvitePayload | null>(null);
+
+  useEffect(() => {
+    if (!tokenParam) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/onboarding/invite/${tokenParam}`, {
+          credentials: 'include',
+        });
+        if (!res.ok) {
+          if (!cancelled) setPhase('invalid');
+          return;
+        }
+        const json = (await res.json()) as { invite: InvitePayload };
+        if (cancelled) return;
+        const expected = INVITE_BRAND_BY_CONFIG_SLUG[config.slug];
+        if (expected && json.invite.brand !== expected) {
+          setPhase('mismatch');
+          return;
+        }
+        if (json.invite.status !== 'active') {
+          setInvite(json.invite);
+          setPhase('invalid');
+          return;
+        }
+        setInvite(json.invite);
+        setPhase('ok');
+      } catch {
+        if (!cancelled) setPhase('invalid');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tokenParam, config.slug]);
+
+  if (phase === 'loading') {
+    return (
+      <main className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="text-[13px] text-fg-muted">Loading invite…</div>
+      </main>
+    );
+  }
+
+  if (phase === 'invalid' || phase === 'mismatch') {
+    const reason =
+      phase === 'mismatch'
+        ? 'This invite is for a different EazePay brand.'
+        : invite?.status === 'redeemed'
+          ? 'This invite has already been used to start an application.'
+          : invite?.status === 'expired'
+            ? 'This invite has expired.'
+            : 'This invite link is no longer valid.';
+    return (
+      <main className="min-h-screen bg-bg">
+        <div className="max-w-xl mx-auto px-6 lg:px-10 py-20">
+          <div className="rounded-xl border border-border bg-bg-elevated p-6">
+            <div className="flex items-start gap-3">
+              <span className="h-9 w-9 rounded-lg bg-bg-muted text-fg-secondary flex items-center justify-center shrink-0">
+                <AlertIcon size={16} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-[18px] font-semibold tracking-tight text-fg">
+                  Invite no longer valid
+                </h1>
+                <p className="text-[13px] text-fg-secondary mt-1.5 leading-relaxed">
+                  {reason} You can still apply directly below.
+                </p>
+                <div className="mt-4">
+                  <Link
+                    href={`/onboarding/${config.slug === 'med-pay' ? 'eaze-med-pay' : config.slug}`}
+                    className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-[#0d1530] text-white font-semibold text-[13px] hover:bg-[#1a2a52]"
+                  >
+                    Apply without an invite
+                    <ArrowRightIcon size={13} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <BrandOnboardingWizard
+      config={config}
+      invite={
+        invite
+          ? {
+              token: invite.token,
+              brand: invite.brand,
+              prefill: invite.prefill,
+              invitedByLabel: friendlyOperatorLabel(invite.invitedByEmail),
+            }
+          : undefined
+      }
+    />
+  );
+}
+
+function friendlyOperatorLabel(email: string): string {
+  /* Hand-rolled formatter — turn `brodie@amalafinance.com.au` into
+   * `Brodie at AmalaFinance`. Falls back to the raw email if we can't
+   * parse it. */
+  const at = email.indexOf('@');
+  if (at <= 0) return email;
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const firstName = local.split(/[._-]/)[0] ?? local;
+  const orgSlug = domain.split('.')[0] ?? domain;
+  const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+  return `${cap(firstName)} at ${cap(orgSlug)}`;
 }

@@ -91,6 +91,21 @@ export interface MarketplaceLenderRow {
   permittedStates: string[]; // empty = all
   globallyEnabled: boolean;
   syncedAt: string;
+  /**
+   * Optional status applied when a lender is wired in code (adapter
+   * scaffolded under `services/lender/src/adapters/`) but missing live
+   * API credentials. Renders as a non-clickable badge in the lender
+   * marketplace UI with a tooltip pointing at the adapter file an
+   * engineer will edit once credentials are signed. When undefined
+   * the row renders normally per `globallyEnabled`.
+   */
+  pendingIntegration?: {
+    note: string;
+    adapterFilePath: string;
+    /** Optional minimum-term hint that survives until live integration. */
+    minTermMonths?: number;
+    maxTermMonths?: number;
+  };
 }
 
 export const marketplaceLenders: MarketplaceLenderRow[] = [
@@ -218,6 +233,77 @@ export const marketplaceLenders: MarketplaceLenderRow[] = [
     permittedStates: [],
     globallyEnabled: true,
     syncedAt: '2026-05-04T06:00:00Z',
+  },
+  // ---------------------------------------------------------------
+  // Pending-integration lenders. Adapters live under
+  // services/lender/src/adapters/ and throw `pending_api_credentials`
+  // at quote() time. These rows surface in the marketplace UI with a
+  // "Pending integration" badge so ops can see what's in the pipeline.
+  // Append-only — coordinate with the operational-connectedness agent
+  // (other agent may also be touching this file).
+  // ---------------------------------------------------------------
+  {
+    id: 'ml_in_us_bank',
+    marketplaceId: 'mkt_in_house',
+    externalLenderId: 'usbank_PERSONAL_001',
+    legalName: 'U.S. Bank, National Association',
+    displayName: 'U.S. Bank',
+    servesTiers: ['prime_plus', 'prime'],
+    brands: ['tradepay', 'medpay', 'coachpay', 'direct'],
+    minAmountCents: 500_000,
+    maxAmountCents: 100_000_00,
+    minScore: 700,
+    permittedStates: [],
+    globallyEnabled: false,
+    syncedAt: '2026-05-15T00:00:00Z',
+    pendingIntegration: {
+      note: 'Pending integration. API received, awaiting credentials.',
+      adapterFilePath: 'services/lender/src/adapters/us-bank.adapter.ts',
+      minTermMonths: 24,
+      maxTermMonths: 84,
+    },
+  },
+  {
+    id: 'ml_in_engine_tech',
+    marketplaceId: 'mkt_engine_tech',
+    externalLenderId: 'enginetech_DIRECT_001',
+    legalName: 'Engine.Tech, Inc.',
+    displayName: 'Engine.Tech',
+    servesTiers: ['near_prime', 'sub_prime'],
+    brands: ['tradepay', 'medpay', 'coachpay', 'direct'],
+    minAmountCents: 100_000,
+    maxAmountCents: 50_000_00,
+    minScore: 580,
+    permittedStates: [],
+    globallyEnabled: false,
+    syncedAt: '2026-05-15T00:00:00Z',
+    pendingIntegration: {
+      note: 'Pending integration. API outreach in progress. Card-stacking friendly (multiple offers per applicant).',
+      adapterFilePath: 'services/lender/src/adapters/engine-tech.adapter.ts',
+      minTermMonths: 6,
+      maxTermMonths: 60,
+    },
+  },
+  {
+    id: 'ml_in_queen_street',
+    marketplaceId: 'mkt_in_house',
+    externalLenderId: 'queenstreet_PRIME_001',
+    legalName: 'Queen Street Capital LLC',
+    displayName: 'Queen Street Capital',
+    servesTiers: ['prime_plus'],
+    brands: ['tradepay', 'medpay', 'coachpay', 'direct'],
+    minAmountCents: 1_000_000,
+    maxAmountCents: 250_000_00,
+    minScore: 760,
+    permittedStates: [],
+    globallyEnabled: false,
+    syncedAt: '2026-05-15T00:00:00Z',
+    pendingIntegration: {
+      note: 'Pending integration. API outreach in progress. Prime-plus tier only.',
+      adapterFilePath: 'services/lender/src/adapters/queen-street.adapter.ts',
+      minTermMonths: 12,
+      maxTermMonths: 120,
+    },
   },
 ];
 

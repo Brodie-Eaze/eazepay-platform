@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminGuard, AdminOnly, CurrentUser } from '@eazepay/service-auth';
@@ -17,6 +18,8 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { AdminService } from './admin.service.js';
 import { ADVERSE_ACTION_REASON_CODES } from './reason-codes.js';
+import { AuditedRead } from './decorators/audited-read.decorator.js';
+import { AuditedReadInterceptor } from './interceptors/audited-read.interceptor.js';
 
 const ApplicationStatusEnum = z.enum([
   'draft',
@@ -158,11 +161,19 @@ class RegenerateAanDto extends createZodDto(RegenerateAanSchema) {}
 @ApiBearerAuth()
 @AdminOnly()
 @UseGuards(AdminGuard)
+// SEC-018 — every PII-adjacent admin GET below is annotated with
+// @AuditedRead(...). The interceptor reads that metadata and writes
+// an audit row to the same outbox table the mutation paths use,
+// closing the "who read this consumer's file on date X?" SOC 2 evidence
+// gap. Plain @Get reads without @AuditedRead remain silent — only the
+// PII-adjacent surface is audited.
+@UseInterceptors(AuditedReadInterceptor)
 @Controller('admin')
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
   @Get('applications')
+  @AuditedRead({ targetType: 'Application' })
   @ApiOperation({ summary: 'Application queue (filterable by status + risk recommendation)' })
   applicationQueue(
     // CurrentUser is required to identify the admin actor for downstream
@@ -179,6 +190,7 @@ export class AdminController {
   }
 
   @Get('applications/:id')
+  @AuditedRead({ targetType: 'Application', idParam: 'id' })
   @ApiOperation({ summary: 'Full admin view of one application (offers, routes, risk, flags)' })
   applicationDetail(
     @CurrentUser() _adminUserId: UserId,
@@ -188,6 +200,7 @@ export class AdminController {
   }
 
   @Get('audit-logs')
+  @AuditedRead({ targetType: 'AuditLog' })
   @ApiOperation({ summary: 'Audit log viewer (cursor-paginated, filterable)' })
   auditLogs(
     @CurrentUser() _adminUserId: UserId,
@@ -205,6 +218,7 @@ export class AdminController {
   }
 
   @Get('risk-flags')
+  @AuditedRead({ targetType: 'RiskFlag' })
   @ApiOperation({ summary: 'Open risk flags, optionally filtered by minimum severity' })
   riskFlags(
     @CurrentUser() _adminUserId: UserId,

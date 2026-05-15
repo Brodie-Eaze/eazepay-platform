@@ -24,6 +24,16 @@ import {
   type MarketplaceLenderRow,
 } from '../../../lib/marketplace-data';
 import { brandContent, brandTheme } from '../../../lib/apply-brands';
+import {
+  ECOA_FOOTER_NOTICE,
+  PARTICIPATING_LENDERS,
+  SOFT_PULL_CONSENT_TEXT,
+  captureConsent,
+  ensureApplicationId,
+  ensureSessionId,
+  sessionStillBound,
+} from '../../../lib/consumer-consent';
+import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
 
 /**
  * Consumer apply landing for `/apply/<brand>?ref=<partnerId>`.
@@ -88,18 +98,80 @@ export default function ApplyLandingPage() {
   const [tier, setTier] = useState<CreditTier>('prime');
   const [chosen, setChosen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [consentBusy, setConsentBusy] = useState(false);
+
+  // ────────────────────────────────────────────────────────────────
+  // Hardening item 5: session fingerprint binding.
+  //
+  // First render mints a per-tab sessionId + applicationId, mirrors
+  // the sessionId into a SameSite=Lax cookie, and stamps both into
+  // sessionStorage. Every subsequent step that posts (consent, intake
+  // submit) verifies sessionStillBound() so an attacker can't replay
+  // a captured POST under a fresh session — the cookie won't match.
+  // ────────────────────────────────────────────────────────────────
+  const [sessionId, setSessionId] = useState<string>('');
+  const [applicationId, setApplicationId] = useState<string>('');
+  useEffect(() => {
+    setSessionId(ensureSessionId());
+    setApplicationId(ensureApplicationId());
+  }, []);
+
+  // Hardening item 9: replaceState (not pushState) on every step
+  // change. The browser back button leaves the apply flow entirely
+  // rather than rewinding to an earlier step with stale form data.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.history.replaceState({ step }, '');
+  }, [step]);
+
+  // Hardening item 5 (enforcement). If the session cookie went
+  // missing mid-flow (privacy extension, browser restart, cookie
+  // banner reject), wipe intake state and force back to landing.
+  useEffect(() => {
+    if (!sessionId) return;
+    if (step === 'landing' || step === 'disclaimer') return;
+    if (!sessionStillBound()) {
+      setIntake(BLANK_INTAKE);
+      setStep('landing');
+    }
+  }, [step, sessionId]);
+
+  // Hardening item 10: idle timeout handler. Clears intake state +
+  // session before bouncing to landing. The IdleGuard component
+  // renders its own modal countdown UI.
+  const handleIdleExpire = () => {
+    setIntake(BLANK_INTAKE);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.clear();
+      document.cookie = 'eazepay_session=; Path=/; Max-Age=0; SameSite=Lax';
+    }
+    setStep('landing');
+  };
 
   const eligibleLenders = useMemo(
     () => filterLenders({ brand: b, partnerId: ref, tier, amountCents: cents(intake.amount) }),
     [b, ref, tier, intake.amount],
   );
 
-  const acceptDisclaimer = () => {
+  // Hardening item 1: consent capture. Before the consumer leaves the
+  // disclaimer step, capture the soft-pull authorization receipt:
+  // localStorage mirror + POST to /api/applications/consent which
+  // stamps server-side timestamp + IP + userAgent. The receipt is the
+  // legal artifact proving FCRA §604(a)(2) authorization.
+  const acceptDisclaimer = async () => {
     if (!consent) {
       setError('Tick the box to continue.');
       return;
     }
+    if (!applicationId || !sessionId) {
+      // Defensive: session hooks haven't hydrated yet. Wait a tick.
+      setError('Just a moment, securing your session.');
+      return;
+    }
     setError(null);
+    setConsentBusy(true);
+    await captureConsent({ applicationId, sessionId });
+    setConsentBusy(false);
     setStep('intake');
   };
   const startEngine = () => {
@@ -132,6 +204,9 @@ export default function ApplyLandingPage() {
 
   return (
     <div className="min-h-screen" style={{ background: `rgb(${theme.soft})` }}>
+      {/* Hardening item 10: idle timeout. */}
+      <ConsumerIdleGuard onExpire={handleIdleExpire} />
+
       {/* Header */}
       <header
         className="border-b"
@@ -203,6 +278,7 @@ export default function ApplyLandingPage() {
               onAccept={acceptDisclaimer}
               onBack={() => setStep('landing')}
               theme={theme}
+              consentBusy={consentBusy}
             />
           )}
           {step === 'intake' && (
@@ -235,6 +311,19 @@ export default function ApplyLandingPage() {
           )}
         </main>
       )}
+
+      {/* Hardening item 3: ECOA / Reg B fixed footer notice. Required
+          on every credit-related consumer-facing page so the consumer
+          can always reach the CRAs and understand their adverse-action
+          rights. */}
+      <footer
+        className="border-t bg-white"
+        style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}
+      >
+        <div className="max-w-3xl mx-auto px-6 lg:px-10 py-4 text-[11px] text-gray-600 leading-relaxed">
+          {ECOA_FOOTER_NOTICE}
+        </div>
+      </footer>
     </div>
   );
 }
@@ -566,6 +655,7 @@ function DisclaimerStep({
   onAccept,
   onBack,
   theme,
+  consentBusy,
 }: {
   content: ReturnType<typeof brandContent>;
   consent: boolean;
@@ -573,6 +663,7 @@ function DisclaimerStep({
   onAccept: () => void;
   onBack: () => void;
   theme: ReturnType<typeof brandTheme>;
+  consentBusy: boolean;
 }) {
   // 1:1 with eazepay.lovable.app/disclaimer:
   //   centred "Before We Begin" title + sub
@@ -626,6 +717,53 @@ function DisclaimerStep({
             status and available offers.
           </p>
         </div>
+
+        {/* Hardening item 2: explicit "what we collect / who we share with"
+            panel, in plain English. Collapsed by default so the page
+            doesn't get noisy, but always reachable on the same step the
+            consumer authorizes the soft-pull. */}
+        <details className="mt-4 rounded-lg border bg-gray-50 p-4" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}>
+          <summary className="cursor-pointer text-[13px] font-semibold text-gray-900">
+            What we collect, and who we share it with
+          </summary>
+          <div className="mt-3 text-[13px] text-gray-700 leading-relaxed space-y-3">
+            <div>
+              <div className="font-semibold text-gray-900">What we collect</div>
+              <ul className="mt-1 list-disc pl-5 space-y-1">
+                <li>Name, email, mobile phone</li>
+                <li>
+                  Requested amount and purpose of financing (typed verbatim, no
+                  compute on our side)
+                </li>
+                <li>
+                  Date of birth and Social Security Number on later steps if you
+                  proceed (last 4 stored visibly, full SSN encrypted via PiiVault)
+                </li>
+                <li>Your current address on later steps if you proceed</li>
+                <li>
+                  Bank routing number and last 4 of the account number on later
+                  steps (full account number encrypted)
+                </li>
+                <li>Device fingerprint and IP address for fraud prevention</li>
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">Who we share it with</div>
+              <ul className="mt-1 list-disc pl-5 space-y-1">
+                <li>Participating lenders in our network: {PARTICIPATING_LENDERS.join(', ')}</li>
+                <li>Highsale, our soft-pull credit aggregator</li>
+                <li>Identity and device fraud-prevention services</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        {/* Hardening item 1: the verbatim soft-pull consent text the
+            consumer is authorizing. This exact string is what the
+            audit chain records as the FCRA §604(a)(2) artifact. */}
+        <p className="mt-4 text-[13px] text-gray-700 leading-relaxed bg-amber-50 border border-amber-200 rounded-md p-3">
+          {SOFT_PULL_CONSENT_TEXT}
+        </p>
 
         <div className="my-5 border-t" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }} />
 
@@ -684,11 +822,11 @@ function DisclaimerStep({
         <button
           type="button"
           onClick={onAccept}
-          disabled={!consent}
+          disabled={!consent || consentBusy}
           className="h-11 px-7 rounded-lg text-white font-semibold text-[14px] inline-flex items-center gap-2 disabled:opacity-40 transition-opacity"
           style={{ background: `rgb(${theme.navy})` }}
         >
-          Continue
+          {consentBusy ? 'Recording consent...' : 'Continue'}
           <ArrowRightIcon size={14} />
         </button>
       </div>

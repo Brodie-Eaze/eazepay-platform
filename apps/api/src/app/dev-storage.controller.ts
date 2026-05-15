@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Headers,
@@ -17,6 +18,22 @@ import type { FastifyReply } from 'fastify';
 import { OBJECT_STORAGE } from '@eazepay/shared-utils';
 import { Inject } from '@nestjs/common';
 import type { ObjectStorage } from '@eazepay/shared-utils';
+
+// SEC-052 — filename sanitisation constants.
+//
+// Threat closed: pre-fix, the `fn` query param was echoed into the
+// `Content-Disposition: attachment; filename="..."` header with only
+// quote-stripping. An attacker can craft a filename containing CRLF
+// to inject extra response headers (HTTP response splitting), or a
+// 50 KB filename to balloon every download response. The dev-storage
+// route is local-only, but staging deploys often expose it on the
+// same host as the API so the surface is real.
+//
+// Fix: cap length at 200 chars and only allow a safe character set
+// (letters, digits, dot, underscore, hyphen). Anything else 400s
+// with a clear code so a client can surface "rename your file".
+const FILENAME_MAX_LEN = 200;
+const FILENAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 /**
  * DEV ONLY signed-read endpoint backing LocalFsObjectStorage's
@@ -57,13 +74,37 @@ export class DevStorageController {
     if (!(await this.storage.exists(bucket, key))) {
       throw NotFound({ code: 'object_not_found' });
     }
+    // SEC-052 — validate filename param before any header echo.
+    // Truncate to 200 chars (defence-in-depth in case the pattern
+    // misses a pathological case) then reject anything outside the
+    // safe character class. Bounded length stops response-header
+    // ballooning; restricted charset stops CRLF / quote injection
+    // into the Content-Disposition header.
+    let safeFilename: string | undefined;
+    if (filename !== undefined) {
+      const trimmed = filename.slice(0, FILENAME_MAX_LEN);
+      if (!FILENAME_PATTERN.test(trimmed)) {
+        // Use NestJS's built-in BadRequestException to avoid adding a
+        // new named import from @eazepay/shared-utils (which has a
+        // pre-existing module-resolution issue). The global
+        // ProblemExceptionFilter normalises HttpException into RFC7807
+        // shape, so the code over the wire is still
+        // `bad_request` / 400 with the detail below.
+        throw new BadRequestException({
+          code: 'invalid_filename',
+          message:
+            'filename may only contain letters, digits, dot, underscore, and hyphen (max 200 chars)',
+        });
+      }
+      safeFilename = trimmed;
+    }
     const bytes = await this.storage.get({ bucket, key });
     void reply
       .header('content-type', 'application/octet-stream')
       .header(
         'content-disposition',
-        filename
-          ? `attachment; filename="${filename.replace(/"/g, '')}"`
+        safeFilename
+          ? `attachment; filename="${safeFilename}"`
           : 'attachment',
       )
       .send(bytes);

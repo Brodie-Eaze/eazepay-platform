@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -8,7 +9,19 @@ import {
   InfoIcon,
   ClockIcon,
   ArrowRightIcon,
+  Button as _Button,
+  type ButtonVariant,
+  type ButtonSize,
 } from '@eazepay/ui/web';
+import { partners as MASTER_PARTNERS } from '../../lib/master-data';
+
+type ButtonProps = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  onClick?: () => void;
+  children?: React.ReactNode;
+};
+const Button: React.FC<ButtonProps> = (props) => <_Button {...(props as any)} />;
 
 /**
  * All Payouts — direct port of Lovable's `/admin/payouts` page.
@@ -34,22 +47,46 @@ interface PartnerPayoutRow {
   status: 'Pending payout' | 'Paid';
 }
 
-const SEED: PartnerPayoutRow[] = [
-  { partnerId: 'premier',    initials: 'PR', name: 'Premier Coaching Group', funded: 6, email: 'sarah@premiercoaching.com',  netDollars: 258_300, status: 'Pending payout' },
-  { partnerId: 'medfirst',   initials: 'ME', name: 'MedFirst Solutions',     funded: 3, email: 'james@medfirst.com',         netDollars: 175_500, status: 'Pending payout' },
-  { partnerId: 'tradeforce', initials: 'TR', name: 'TradeForce Pro',         funded: 2, email: 'mike@tradeforce.com',        netDollars: 99_000,  status: 'Pending payout' },
-  { partnerId: 'dental',     initials: 'DE', name: 'Dental Care Partners',   funded: 1, email: 'amy@dentalcarepartners.com', netDollars: 82_800,  status: 'Pending payout' },
-];
+// Source from canonical master roster so /control-panel cross-links land here.
+const SEED: PartnerPayoutRow[] = MASTER_PARTNERS.map((p, i) => ({
+  partnerId: p.id,
+  initials: p.initials,
+  name: p.legalName,
+  funded: p.fundedCount,
+  email: p.email,
+  netDollars: Math.round(p.netCents / 100),
+  status: i % 4 === 0 ? 'Paid' : 'Pending payout',
+}));
 
 const fmt = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
 export default function AllPayoutsPage() {
+  const [toast, setToast] = useState<string | null>(null);
+  const totalFunded = SEED.reduce((s, p) => s + p.netDollars, 0);
+  const pending = SEED.filter((p) => p.status === 'Pending payout');
+  const pendingTotal = pending.reduce((s, p) => s + p.netDollars, 0);
+  const paidTotal = totalFunded - pendingTotal;
+  const fees = Math.round(totalFunded * 0.1);
+  function flash(m: string) {
+    setToast(m);
+    setTimeout(() => setToast(null), 3000);
+  }
   return (
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Master' }]}
         title="All Payouts"
         description="View funded applications, fees, and payout schedules for each partner"
+        actions={
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => flash('Reconciliation export queued')}>
+              Export reconciliation
+            </Button>
+            <Button size="sm" variant="primary" onClick={() => flash(`Queued ${pending.length} partner payout${pending.length === 1 ? '' : 's'} for RTP delivery`)}>
+              Run payout batch
+            </Button>
+          </div>
+        }
       />
       <PageBody>
         <div className="rounded-lg border border-border bg-bg-muted px-4 py-3 mb-5 flex items-start gap-3">
@@ -61,17 +98,20 @@ export default function AllPayoutsPage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-          <Kpi label="Total Funded" value="$684K" />
-          <Kpi label="Total Fees" value="$68K" />
-          <Kpi label="Net Payouts" value="$616K" />
-          <Kpi label="Paid Out" value="$0K" />
+          <Kpi label="Total Funded" value={`$${Math.round(totalFunded / 1000)}K`} />
+          <Kpi label="Total Fees" value={`$${Math.round(fees / 1000)}K`} />
+          <Kpi label="Net Payouts" value={`$${Math.round((totalFunded - fees) / 1000)}K`} />
+          <Kpi label="Paid Out" value={`$${Math.round(paidTotal / 1000)}K`} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <button className="h-10 inline-flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg-secondary hover:bg-bg-muted">
+          <button onClick={() => flash('Month picker coming soon')} className="h-10 inline-flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg-secondary hover:bg-bg-muted">
             <ClockIcon size={14} />
             All Months
           </button>
+          <span className="text-[12px] text-fg-muted">
+            {SEED.length} partner{SEED.length === 1 ? '' : 's'} · {pending.length} pending payout{pending.length === 1 ? '' : 's'}
+          </span>
         </div>
 
         <Card>
@@ -112,6 +152,11 @@ export default function AllPayoutsPage() {
           </CardBody>
         </Card>
       </PageBody>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </>
   );
 }

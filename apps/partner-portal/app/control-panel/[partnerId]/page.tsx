@@ -1,0 +1,1160 @@
+'use client';
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useParams, notFound } from 'next/navigation';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardBody,
+  CardHeader,
+  Button as _Button,
+  StatusPill,
+  Money,
+  Tabs,
+  ArrowRightIcon,
+  CheckIcon,
+  XIcon,
+  AlertIcon,
+  ExternalIcon,
+  ClockIcon,
+  PhoneIcon,
+  SendIcon,
+  ShieldIcon,
+  type ButtonVariant,
+  type ButtonSize,
+  type StatusTone,
+} from '@eazepay/ui/web';
+
+/* Locally-typed Button wrapper to sidestep the codebase-wide
+ * upstream-Button JSX-children inference issue. */
+type ButtonProps = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  type?: 'button' | 'submit' | 'reset';
+  onClick?: () => void;
+  disabled?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+};
+const Button: React.FC<ButtonProps> = (props) => <_Button {...(props as any)} />;
+import { partners as MASTER_PARTNERS, type ProductBrand, type Niche, applications as MASTER_APPS } from '../../../lib/master-data';
+import {
+  marketplaces,
+  marketplaceLenders,
+  partnerAccessOverrides,
+  isLenderEnabledForPartner,
+} from '../../../lib/marketplace-data';
+
+/**
+ * Partner detail — Master operator's single-pane control surface for one
+ * partner. Seven tabs (Overview, Users & Roles, Applications, Payouts,
+ * Lender Access, Activity, Settings) — all editable with optimistic
+ * React state. Backend wiring lands later.
+ */
+
+type TabKey = 'overview' | 'users' | 'applications' | 'payouts' | 'lender' | 'activity' | 'settings';
+
+const TAB_ITEMS: Array<{ key: TabKey; label: string }> = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'users', label: 'Users & Roles' },
+  { key: 'applications', label: 'Applications' },
+  { key: 'payouts', label: 'Payouts' },
+  { key: 'lender', label: 'Lender Access' },
+  { key: 'activity', label: 'Activity' },
+  { key: 'settings', label: 'Settings' },
+];
+
+/* ----------------------------------------------------------------------- */
+/*  Deterministic per-partner seed data                                     */
+/* ----------------------------------------------------------------------- */
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function rand(seed: number): () => number {
+  let s = seed || 1;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+interface UserRow {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Owner' | 'Admin' | 'Operator' | 'Viewer';
+  lastLoginAt: string;
+}
+
+function seedUsers(partnerId: string, partnerEmail: string): UserRow[] {
+  const r = rand(hashStr(partnerId));
+  const firsts = ['Alex', 'Morgan', 'Casey', 'Jordan', 'Riley', 'Taylor', 'Sam', 'Drew', 'Quinn', 'Hayden'];
+  const lasts = ['Reed', 'Park', 'Singh', 'Walsh', 'Lopez', 'Chen', 'Khan', 'Cole', 'Hart', 'Brooks'];
+  const owner: UserRow = {
+    id: 'u_owner',
+    name: 'Operator (Owner)',
+    email: partnerEmail,
+    role: 'Owner',
+    lastLoginAt: '2026-05-14T09:12:00Z',
+  };
+  const extras = Math.floor(r() * 3) + 2;
+  const users: UserRow[] = [owner];
+  for (let i = 0; i < extras; i++) {
+    const f = firsts[Math.floor(r() * firsts.length)] ?? 'Alex';
+    const l = lasts[Math.floor(r() * lasts.length)] ?? 'Reed';
+    const role: UserRow['role'] = (['Admin', 'Operator', 'Viewer', 'Operator'] as const)[Math.floor(r() * 4)] ?? 'Operator';
+    users.push({
+      id: `u_${partnerId}_${i}`,
+      name: `${f} ${l}`,
+      email: `${f.toLowerCase()}.${l.toLowerCase()}@${partnerEmail.split('@')[1] ?? 'example.com'}`,
+      role,
+      lastLoginAt: new Date(Date.now() - Math.floor(r() * 1000 * 60 * 60 * 24 * 30)).toISOString(),
+    });
+  }
+  return users;
+}
+
+interface ActivityEvent {
+  ts: string;
+  kind: 'status' | 'user' | 'lender' | 'application' | 'payout' | 'note' | 'login';
+  text: string;
+  actor: string;
+}
+
+function seedActivity(partnerId: string): ActivityEvent[] {
+  const r = rand(hashStr(partnerId + 'activity'));
+  const out: ActivityEvent[] = [];
+  const templates: Array<Omit<ActivityEvent, 'ts'>> = [
+    { kind: 'status', text: 'Partner status changed: Pending → Approved', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'user', text: 'Invited new user as Operator', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'lender', text: 'Lender override added: SageHeal disabled — compliance review', actor: 'risk@eaze.internal' },
+    { kind: 'application', text: 'New application submitted — TradePay $19,500', actor: 'system' },
+    { kind: 'payout', text: 'Payout settled — $4,820.00 net', actor: 'system' },
+    { kind: 'note', text: 'Quarterly review note added by operator', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'login', text: 'User signed in from 73.2.18.4 (San Francisco)', actor: 'sarah.park@partner.com' },
+    { kind: 'application', text: 'Application a_004 transitioned: submitted → in_review', actor: 'system' },
+    { kind: 'lender', text: 'Marketplace sync completed — 36 lenders refreshed', actor: 'system' },
+    { kind: 'status', text: 'Brand assignment changed: MedPay → Multi-brand', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'user', text: 'Role changed: Operator → Admin', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'application', text: 'Application a_007 funded — $39,600', actor: 'system' },
+    { kind: 'note', text: 'KYB re-verified, expires 2027-01', actor: 'compliance@eaze.internal' },
+    { kind: 'payout', text: 'Payout scheduled for T+1 (2026-05-16)', actor: 'system' },
+    { kind: 'lender', text: 'Kestrel Trade Finance toggled OFF for this partner', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'login', text: 'Master operator viewed sensitive PII field (audited)', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'application', text: 'Application declined — DTI > 50%', actor: 'system' },
+    { kind: 'status', text: 'Commission rate adjusted: 1.4% → 1.6%', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'user', text: 'Removed user (Operator)', actor: 'brodie@amalafinance.com.au' },
+    { kind: 'note', text: 'AAN delivery confirmed for declined applicant', actor: 'system' },
+  ];
+  const now = Date.now();
+  for (let i = 0; i < 20; i++) {
+    const tpl = templates[Math.floor(r() * templates.length)] ?? templates[0]!;
+    out.push({
+      ...tpl,
+      ts: new Date(now - i * 1000 * 60 * 60 * Math.ceil(r() * 18) - Math.floor(r() * 1000 * 60 * 60 * 6)).toISOString(),
+    });
+  }
+  return out.sort((a, b) => (a.ts < b.ts ? 1 : -1));
+}
+
+interface ApplicationStub {
+  id: string;
+  customer: string;
+  product: string;
+  amount: number;
+  status: 'submitted' | 'approved' | 'funded' | 'declined' | 'in_review';
+  date: string;
+}
+function seedApplications(partnerId: string, partnerName: string): ApplicationStub[] {
+  // Pull from canonical master apps where the partner column matches; if none, synthesize.
+  const real = MASTER_APPS.filter((a) => a.partner.toLowerCase().includes(partnerName.split(' ')[0]!.toLowerCase()))
+    .slice(0, 5)
+    .map((a) => ({
+      id: a.id,
+      customer: a.customer,
+      product: a.product,
+      amount: a.amountCents,
+      status: a.status,
+      date: a.date,
+    }));
+  if (real.length >= 3) return real;
+  const r = rand(hashStr(partnerId + 'apps'));
+  const customers = ['Cassidy Wren', 'Tomas Ibarra', 'Priya Anand', 'Markus Hale', 'Avery Cho', 'Rosa Delgado'];
+  const products: ApplicationStub['product'][] = ['med-pay', 'trade-pay', 'coach-pay'];
+  const statuses: ApplicationStub['status'][] = ['submitted', 'approved', 'funded', 'declined', 'in_review'];
+  return Array.from({ length: 5 }, (_, i) => ({
+    id: 'a_synth_' + i,
+    customer: customers[Math.floor(r() * customers.length)] ?? 'Anonymous',
+    product: products[Math.floor(r() * products.length)] ?? 'med-pay',
+    amount: Math.floor(r() * 50000) * 100 + 500_000,
+    status: statuses[Math.floor(r() * statuses.length)] ?? 'submitted',
+    date: new Date(Date.now() - i * 86400000 * 3).toISOString().slice(0, 10),
+  }));
+}
+
+interface PayoutStub {
+  id: string;
+  date: string;
+  grossCents: number;
+  feeCents: number;
+  netCents: number;
+  status: 'pending' | 'settled' | 'paid';
+}
+function seedPayouts(partnerId: string): PayoutStub[] {
+  const r = rand(hashStr(partnerId + 'payouts'));
+  return Array.from({ length: 5 }, (_, i) => {
+    const gross = Math.floor(r() * 200000) * 100 + 200_000;
+    const fee = Math.floor(gross * 0.022);
+    return {
+      id: 'po_' + partnerId.slice(2) + '_' + i,
+      date: new Date(Date.now() - i * 86400000 * 7).toISOString().slice(0, 10),
+      grossCents: gross,
+      feeCents: fee,
+      netCents: gross - fee,
+      status: (['paid', 'settled', 'pending'] as const)[Math.min(i, 2)] ?? 'pending',
+    };
+  });
+}
+
+const brandTone: Record<ProductBrand, StatusTone> = {
+  MedPay: 'info',
+  TradePay: 'accent',
+  CoachPay: 'success',
+  'Multi-brand': 'neutral',
+};
+
+/* ----------------------------------------------------------------------- */
+/*  Page                                                                    */
+/* ----------------------------------------------------------------------- */
+
+export default function PartnerDetailPage() {
+  const params = useParams<{ partnerId: string }>();
+  const partnerId = params?.partnerId;
+  const base = MASTER_PARTNERS.find((p) => p.id === partnerId);
+  if (!base) return notFound();
+
+  const [tab, setTab] = useState<TabKey>('overview');
+  const [toast, setToast] = useState<string | null>(null);
+  const [partner, setPartner] = useState(() => ({
+    legalName: base.legalName,
+    contactName: 'Operator (Owner)',
+    email: base.email,
+    phone: base.phone ?? '',
+    website: 'https://' + base.email.split('@')[1],
+    addressLine: '500 Market St',
+    city: 'San Francisco',
+    state: 'CA',
+    zip: '94104',
+    ein: '00-' + (1000000 + hashStr(base.id) % 8999999),
+    structure: 'LLC',
+    yearFounded: 2018 + (hashStr(base.id) % 6),
+    monthlyRevenueRange: '$100K – $500K',
+    niche: base.niche,
+    status: 'Approved' as 'Approved' | 'Pending' | 'Suspended',
+    brand: base.product,
+    commissionPct: 1.6,
+    payoutSchedule: 'T+1' as 'T+1' | 'T+2' | 'Weekly',
+    notes: '',
+  }));
+
+  function flash(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  const headerStatusTone: StatusTone =
+    partner.status === 'Approved' ? 'success' : partner.status === 'Suspended' ? 'danger' : 'warning';
+
+  return (
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Master' },
+          { label: 'Control Panel', href: '/control-panel' },
+          { label: partner.legalName },
+        ]}
+        title={
+          <span className="inline-flex items-center gap-3">
+            <span className="size-9 rounded-full bg-bg-muted text-fg-secondary inline-flex items-center justify-center font-bold text-[13px]">
+              {base.initials}
+            </span>
+            {partner.legalName}
+            <StatusPill tone={headerStatusTone} dot>
+              {partner.status}
+            </StatusPill>
+            <StatusPill tone={brandTone[partner.brand]}>{partner.brand}</StatusPill>
+          </span>
+        }
+        description={`${partner.email} · ${partner.phone || 'no phone on file'} · partner id ${base.id}`}
+        actions={
+          <div className="flex items-center gap-2">
+            {partner.status !== 'Suspended' ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setPartner((p) => ({ ...p, status: 'Suspended' }));
+                  flash('Partner suspended');
+                }}
+              >
+                <AlertIcon size={12} /> Suspend
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setPartner((p) => ({ ...p, status: 'Approved' }));
+                  flash('Partner reactivated');
+                }}
+              >
+                <CheckIcon size={12} /> Reactivate
+              </Button>
+            )}
+            <Button size="sm" variant="secondary" onClick={() => flash('Impersonation token issued (audited)')}>
+              <ShieldIcon size={12} /> View as partner
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => flash(`Email drafted to ${partner.email}`)}>
+              <SendIcon size={12} /> Email
+            </Button>
+            {partner.phone && (
+              <Button size="sm" variant="secondary" onClick={() => flash(`Calling ${partner.phone}`)}>
+                <PhoneIcon size={12} /> Phone
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      <div className="px-7">
+        <Tabs items={TAB_ITEMS.map((t) => ({ key: t.key, label: t.label }))} active={tab} onChange={(k: string) => setTab(k as TabKey)} />
+      </div>
+
+      <PageBody>
+        {tab === 'overview' && <OverviewTab partner={partner} setPartner={setPartner} flash={flash} />}
+        {tab === 'users' && <UsersTab partnerId={base.id} email={base.email} flash={flash} />}
+        {tab === 'applications' && <ApplicationsTab partnerId={base.id} partnerName={base.legalName} />}
+        {tab === 'payouts' && <PayoutsTab partnerId={base.id} />}
+        {tab === 'lender' && <LenderAccessTab partnerId={base.id} flash={flash} />}
+        {tab === 'activity' && <ActivityTab partnerId={base.id} />}
+        {tab === 'settings' && <SettingsTab partner={partner} setPartner={setPartner} partnerId={base.id} flash={flash} />}
+      </PageBody>
+
+      {toast && <Toast message={toast} />}
+    </>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Overview                                                           */
+/* ----------------------------------------------------------------------- */
+
+function OverviewTab({
+  partner,
+  setPartner,
+  flash,
+}: {
+  partner: ReturnType<typeof useState<any>>[0];
+  setPartner: ReturnType<typeof useState<any>>[1];
+  flash: (m: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(partner);
+
+  function startEdit() {
+    setDraft(partner);
+    setEditing(true);
+  }
+  function save() {
+    setPartner(draft);
+    setEditing(false);
+    flash('Partner profile saved');
+  }
+  function cancel() {
+    setDraft(partner);
+    setEditing(false);
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title="Partner profile"
+        description="Master record. Updates here propagate to KYB, payouts, and partner-facing portal."
+        action={
+          editing ? (
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" onClick={cancel}>
+                Cancel
+              </Button>
+              <Button size="sm" variant="primary" onClick={save}>
+                Save changes
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="secondary" onClick={startEdit}>
+              Edit
+            </Button>
+          )
+        }
+      />
+      <CardBody>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          <ProfileField label="Legal name" value={draft.legalName} editing={editing} onChange={(v) => setDraft({ ...draft, legalName: v })} />
+          <ProfileField label="Contact name" value={draft.contactName} editing={editing} onChange={(v) => setDraft({ ...draft, contactName: v })} />
+          <ProfileField label="Email" value={draft.email} editing={editing} onChange={(v) => setDraft({ ...draft, email: v })} />
+          <ProfileField label="Phone" value={draft.phone} editing={editing} onChange={(v) => setDraft({ ...draft, phone: v })} />
+          <ProfileField label="Website" value={draft.website} editing={editing} onChange={(v) => setDraft({ ...draft, website: v })} />
+          <ProfileField label="EIN" value={draft.ein} editing={editing} onChange={(v) => setDraft({ ...draft, ein: v })} />
+          <ProfileField label="Address" value={draft.addressLine} editing={editing} onChange={(v) => setDraft({ ...draft, addressLine: v })} />
+          <div className="grid grid-cols-3 gap-3">
+            <ProfileField label="City" value={draft.city} editing={editing} onChange={(v) => setDraft({ ...draft, city: v })} />
+            <ProfileField label="State" value={draft.state} editing={editing} onChange={(v) => setDraft({ ...draft, state: v })} />
+            <ProfileField label="ZIP" value={draft.zip} editing={editing} onChange={(v) => setDraft({ ...draft, zip: v })} />
+          </div>
+          <ProfileField
+            label="Business structure"
+            value={draft.structure}
+            editing={editing}
+            onChange={(v) => setDraft({ ...draft, structure: v })}
+            options={['LLC', 'C-Corp', 'S-Corp', 'Sole Proprietor', 'Partnership']}
+          />
+          <ProfileField
+            label="Year founded"
+            value={String(draft.yearFounded)}
+            editing={editing}
+            onChange={(v) => setDraft({ ...draft, yearFounded: Number(v) || draft.yearFounded })}
+          />
+          <ProfileField
+            label="Monthly revenue range"
+            value={draft.monthlyRevenueRange}
+            editing={editing}
+            onChange={(v) => setDraft({ ...draft, monthlyRevenueRange: v })}
+            options={['< $10K', '$10K – $50K', '$50K – $100K', '$100K – $500K', '$500K – $1M', '$1M+']}
+          />
+          <ProfileField
+            label="Niche"
+            value={draft.niche}
+            editing={editing}
+            onChange={(v) => setDraft({ ...draft, niche: v as Niche })}
+            options={['medical', 'trades', 'coaching', 'dental', 'consumer']}
+          />
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function ProfileField({
+  label,
+  value,
+  editing,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  editing: boolean;
+  onChange: (v: string) => void;
+  options?: string[];
+}) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">{label}</p>
+      {editing ? (
+        options ? (
+          <select
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-1.5 w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+          >
+            {options.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-1.5 w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none focus:border-border-strong"
+          />
+        )
+      ) : (
+        <p className="mt-1.5 text-[13px] text-fg font-medium">{value || <span className="text-fg-muted">—</span>}</p>
+      )}
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Users & Roles                                                      */
+/* ----------------------------------------------------------------------- */
+
+function UsersTab({ partnerId, email, flash }: { partnerId: string; email: string; flash: (m: string) => void }) {
+  const [users, setUsers] = useState<UserRow[]>(() => seedUsers(partnerId, email));
+  const [showInvite, setShowInvite] = useState(false);
+  const [removeId, setRemoveId] = useState<string | null>(null);
+
+  function invite(u: { name: string; email: string; role: UserRow['role'] }) {
+    setUsers((prev) => [
+      ...prev,
+      {
+        id: 'u_new_' + Date.now().toString(36),
+        ...u,
+        lastLoginAt: '—',
+      },
+    ]);
+    setShowInvite(false);
+    flash(`User invited as ${u.role}`);
+  }
+  function changeRole(id: string, role: UserRow['role']) {
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)));
+    flash(`Role updated to ${role}`);
+  }
+  function confirmRemove() {
+    if (!removeId) return;
+    setUsers((prev) => prev.filter((u) => u.id !== removeId));
+    setRemoveId(null);
+    flash('User removed from partner');
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader
+          title={`Team members (${users.length})`}
+          description="Anyone with access to this partner's portal — Owners can add users; only Master can change Owners."
+          action={
+            <Button size="sm" variant="primary" onClick={() => setShowInvite(true)}>
+              + Add User
+            </Button>
+          }
+        />
+        <CardBody className="p-0">
+          <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+            <span className="col-span-4">Name</span>
+            <span className="col-span-4">Email</span>
+            <span className="col-span-2">Role</span>
+            <span className="col-span-1">Last login</span>
+            <span className="col-span-1 text-right">Actions</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {users.map((u) => (
+              <li key={u.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
+                <div className="col-span-4 font-medium text-fg">{u.name}</div>
+                <div className="col-span-4 text-fg-secondary truncate">{u.email}</div>
+                <div className="col-span-2">
+                  {u.role === 'Owner' ? (
+                    <StatusPill tone="accent">Owner</StatusPill>
+                  ) : (
+                    <select
+                      value={u.role}
+                      onChange={(e) => changeRole(u.id, e.target.value as UserRow['role'])}
+                      className="h-7 rounded-md border border-border bg-bg-elevated px-2 text-[11px] outline-none"
+                    >
+                      <option value="Admin">Admin</option>
+                      <option value="Operator">Operator</option>
+                      <option value="Viewer">Viewer</option>
+                    </select>
+                  )}
+                </div>
+                <div className="col-span-1 text-[11px] text-fg-muted">{formatRelative(u.lastLoginAt)}</div>
+                <div className="col-span-1 text-right">
+                  {u.role !== 'Owner' && (
+                    <button
+                      type="button"
+                      onClick={() => setRemoveId(u.id)}
+                      className="text-[11px] text-danger hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </CardBody>
+      </Card>
+
+      {showInvite && <InviteUserModal onClose={() => setShowInvite(false)} onAdd={invite} />}
+      {removeId && (
+        <ModalShell title="Remove user?" onClose={() => setRemoveId(null)}>
+          <p className="text-[13px] text-fg-secondary">
+            This will revoke {users.find((u) => u.id === removeId)?.name}&apos;s access to this partner immediately.
+            They will be signed out of any active sessions.
+          </p>
+          <div className="flex justify-end gap-2 pt-4 border-t border-border mt-4">
+            <Button size="sm" variant="secondary" onClick={() => setRemoveId(null)}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="danger" onClick={confirmRemove}>
+              Remove user
+            </Button>
+          </div>
+        </ModalShell>
+      )}
+    </>
+  );
+}
+
+function InviteUserModal({
+  onClose,
+  onAdd,
+}: {
+  onClose: () => void;
+  onAdd: (u: { name: string; email: string; role: UserRow['role'] }) => void;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<UserRow['role']>('Operator');
+  return (
+    <ModalShell title="Invite team member" onClose={onClose}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onAdd({ name, email, role });
+        }}
+        className="space-y-3"
+      >
+        <label className="block text-[12px] font-medium text-fg-secondary">
+          Full name
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+          />
+        </label>
+        <label className="block text-[12px] font-medium text-fg-secondary">
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+          />
+        </label>
+        <label className="block text-[12px] font-medium text-fg-secondary">
+          Role
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as UserRow['role'])}
+            className="mt-1.5 w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+          >
+            <option value="Admin">Admin — manage users + settings</option>
+            <option value="Operator">Operator — submit applications</option>
+            <option value="Viewer">Viewer — read-only</option>
+          </select>
+        </label>
+        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+          <Button size="sm" variant="secondary" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="primary" type="submit" disabled={!name || !email}>
+            Send invite
+          </Button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Applications                                                       */
+/* ----------------------------------------------------------------------- */
+
+function ApplicationsTab({ partnerId, partnerName }: { partnerId: string; partnerName: string }) {
+  const apps = useMemo(() => seedApplications(partnerId, partnerName), [partnerId, partnerName]);
+  return (
+    <Card>
+      <CardHeader
+        title="Recent applications"
+        description={`Last ${apps.length} applications submitted by this partner.`}
+        action={
+          <Link href={`/applications/${partnerId}`} className="text-[12px] text-accent hover:underline inline-flex items-center gap-1">
+            View all <ArrowRightIcon size={11} />
+          </Link>
+        }
+      />
+      <CardBody className="p-0">
+        <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+          <span className="col-span-3">ID</span>
+          <span className="col-span-3">Customer</span>
+          <span className="col-span-2">Product</span>
+          <span className="col-span-2 text-right">Amount</span>
+          <span className="col-span-1">Status</span>
+          <span className="col-span-1 text-right">Date</span>
+        </div>
+        <ul className="divide-y divide-border">
+          {apps.map((a) => (
+            <li key={a.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
+              <div className="col-span-3 font-mono text-fg-muted">{a.id}</div>
+              <div className="col-span-3 font-medium text-fg">{a.customer}</div>
+              <div className="col-span-2 text-fg-secondary font-mono text-[11px]">{a.product}</div>
+              <div className="col-span-2 text-right font-semibold tabular-nums">
+                <Money cents={a.amount} noFractions />
+              </div>
+              <div className="col-span-1">
+                <StatusPill
+                  tone={
+                    a.status === 'funded'
+                      ? 'success'
+                      : a.status === 'approved'
+                        ? 'info'
+                        : a.status === 'declined'
+                          ? 'danger'
+                          : 'neutral'
+                  }
+                >
+                  {a.status}
+                </StatusPill>
+              </div>
+              <div className="col-span-1 text-right text-[11px] text-fg-muted">{a.date}</div>
+            </li>
+          ))}
+        </ul>
+      </CardBody>
+    </Card>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Payouts                                                            */
+/* ----------------------------------------------------------------------- */
+
+function PayoutsTab({ partnerId }: { partnerId: string }) {
+  const payouts = useMemo(() => seedPayouts(partnerId), [partnerId]);
+  return (
+    <Card>
+      <CardHeader
+        title="Recent payouts"
+        description={`Last ${payouts.length} payout cycles. Full ledger lives in /payouts/${partnerId}.`}
+        action={
+          <Link href={`/payouts/${partnerId}`} className="text-[12px] text-accent hover:underline inline-flex items-center gap-1">
+            View ledger <ArrowRightIcon size={11} />
+          </Link>
+        }
+      />
+      <CardBody className="p-0">
+        <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+          <span className="col-span-3">Payout ID</span>
+          <span className="col-span-2">Date</span>
+          <span className="col-span-2 text-right">Gross</span>
+          <span className="col-span-2 text-right">Fee</span>
+          <span className="col-span-2 text-right">Net</span>
+          <span className="col-span-1">Status</span>
+        </div>
+        <ul className="divide-y divide-border">
+          {payouts.map((p) => (
+            <li key={p.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
+              <div className="col-span-3 font-mono text-fg-muted">{p.id}</div>
+              <div className="col-span-2 text-fg-secondary">{p.date}</div>
+              <div className="col-span-2 text-right tabular-nums">
+                <Money cents={p.grossCents} />
+              </div>
+              <div className="col-span-2 text-right tabular-nums text-fg-muted">
+                <Money cents={p.feeCents} />
+              </div>
+              <div className="col-span-2 text-right font-semibold tabular-nums">
+                <Money cents={p.netCents} />
+              </div>
+              <div className="col-span-1">
+                <StatusPill tone={p.status === 'paid' ? 'success' : p.status === 'settled' ? 'info' : 'warning'}>
+                  {p.status}
+                </StatusPill>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </CardBody>
+    </Card>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Lender Access                                                      */
+/* ----------------------------------------------------------------------- */
+
+function LenderAccessTab({ partnerId, flash }: { partnerId: string; flash: (m: string) => void }) {
+  const view = useMemo(() => {
+    return marketplaceLenders.map((l) => {
+      const mkt = marketplaces.find((m) => m.id === l.marketplaceId)!;
+      const eff = isLenderEnabledForPartner(partnerId, l, mkt);
+      const override = partnerAccessOverrides.find((o) => o.merchantId === partnerId && o.marketplaceLenderId === l.id);
+      return { lender: l, marketplace: mkt, effective: eff, override };
+    });
+  }, [partnerId]);
+
+  const enabled = view.filter((v) => v.effective.enabled).length;
+  const overridden = view.filter((v) => v.override).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatTile label="Lenders enabled" value={String(enabled)} hint={`of ${view.length} available`} tone="success" />
+        <StatTile label="Overrides" value={String(overridden)} hint="partner-specific" tone={overridden > 0 ? 'warning' : 'neutral'} />
+        <StatTile label="Marketplaces" value={String(marketplaces.length)} hint="active pools" />
+        <StatTile label="Sync freshness" value="4h ago" hint="last marketplace sync" />
+      </div>
+
+      <Card>
+        <CardHeader
+          title="Lender access matrix"
+          description="Effective access — combines global lender state, marketplace status, and partner-level overrides."
+          action={
+            <Link
+              href="/lender-marketplace/access"
+              className="inline-flex items-center gap-1 text-[12px] text-accent hover:underline"
+            >
+              Edit overrides <ExternalIcon size={11} />
+            </Link>
+          }
+        />
+        <CardBody className="p-0">
+          <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+            <span className="col-span-3">Lender</span>
+            <span className="col-span-3">Marketplace</span>
+            <span className="col-span-2">Tiers</span>
+            <span className="col-span-2">Source</span>
+            <span className="col-span-2 text-right">Effective</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {view.map((v) => (
+              <li key={v.lender.id} className="grid grid-cols-12 items-center px-5 py-2.5 text-[12px]">
+                <div className="col-span-3 font-medium text-fg truncate">{v.lender.displayName}</div>
+                <div className="col-span-3 text-fg-secondary truncate">{v.marketplace.displayName}</div>
+                <div className="col-span-2 text-[11px] text-fg-muted">{v.lender.servesTiers.length} tiers</div>
+                <div className="col-span-2 text-[11px]">
+                  {v.effective.via === 'override' ? (
+                    <span className="text-warning">Override</span>
+                  ) : v.effective.via === 'marketplace-paused' ? (
+                    <span className="text-fg-muted">Marketplace paused</span>
+                  ) : (
+                    <span className="text-fg-muted">Global</span>
+                  )}
+                </div>
+                <div className="col-span-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => flash('Override editor opens in /lender-marketplace/access')}
+                    className="inline-flex items-center gap-1.5 text-[11px]"
+                  >
+                    <span
+                      className={`size-4 rounded-full inline-flex items-center justify-center ${v.effective.enabled ? 'bg-success text-white' : 'bg-bg-muted text-fg-muted'}`}
+                    >
+                      {v.effective.enabled ? <CheckIcon size={9} /> : <XIcon size={9} />}
+                    </span>
+                    {v.effective.enabled ? 'Enabled' : 'Disabled'}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Activity                                                           */
+/* ----------------------------------------------------------------------- */
+
+function ActivityTab({ partnerId }: { partnerId: string }) {
+  const events = useMemo(() => seedActivity(partnerId), [partnerId]);
+  return (
+    <Card>
+      <CardHeader
+        title="Activity feed"
+        description="Last 20 audit-relevant events. Append-only; mirrored to the global audit log."
+      />
+      <CardBody>
+        <ol className="relative border-l border-border ml-2 space-y-3">
+          {events.map((e, i) => (
+            <li key={i} className="pl-4 relative">
+              <span className={`absolute -left-[5px] top-1.5 size-2.5 rounded-full ${eventDotColor(e.kind)}`} />
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[12px] text-fg">{e.text}</p>
+                  <p className="text-[10px] text-fg-muted mt-0.5">
+                    {e.actor} · <span className="capitalize">{e.kind}</span>
+                  </p>
+                </div>
+                <span className="text-[10px] text-fg-muted tabular-nums shrink-0 inline-flex items-center gap-1">
+                  <ClockIcon size={10} />
+                  {formatRelative(e.ts)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </CardBody>
+    </Card>
+  );
+}
+
+function eventDotColor(kind: ActivityEvent['kind']): string {
+  switch (kind) {
+    case 'status':
+      return 'bg-warning';
+    case 'user':
+      return 'bg-accent';
+    case 'lender':
+      return 'bg-info';
+    case 'application':
+      return 'bg-success';
+    case 'payout':
+      return 'bg-success';
+    case 'login':
+      return 'bg-fg-muted';
+    case 'note':
+    default:
+      return 'bg-fg-muted';
+  }
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Tab: Settings                                                           */
+/* ----------------------------------------------------------------------- */
+
+function SettingsTab({
+  partner,
+  setPartner,
+  partnerId,
+  flash,
+}: {
+  partner: any;
+  setPartner: any;
+  partnerId: string;
+  flash: (m: string) => void;
+}) {
+  const [draft, setDraft] = useState(partner);
+  const [showDelete, setShowDelete] = useState(false);
+
+  function save() {
+    setPartner(draft);
+    flash('Settings saved');
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader title="Operational settings" description="Status, brand assignment, commission, and payout cadence." />
+        <CardBody>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">Status</p>
+              <div className="mt-1.5 flex gap-1.5">
+                {(['Approved', 'Pending', 'Suspended'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setDraft({ ...draft, status: s })}
+                    className={`px-3 h-8 rounded-md text-[12px] font-medium border ${draft.status === s ? 'bg-fg text-white border-fg' : 'bg-bg-elevated text-fg-secondary border-border'}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">Brand assignment</p>
+              <select
+                value={draft.brand}
+                onChange={(e) => setDraft({ ...draft, brand: e.target.value as ProductBrand })}
+                className="mt-1.5 w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+              >
+                <option value="MedPay">MedPay</option>
+                <option value="TradePay">TradePay</option>
+                <option value="CoachPay">CoachPay</option>
+                <option value="Multi-brand">Multi-brand</option>
+              </select>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">Commission rate (%)</p>
+              <input
+                type="number"
+                step="0.05"
+                value={draft.commissionPct}
+                onChange={(e) => setDraft({ ...draft, commissionPct: Number(e.target.value) })}
+                className="mt-1.5 w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">Payout schedule</p>
+              <select
+                value={draft.payoutSchedule}
+                onChange={(e) => setDraft({ ...draft, payoutSchedule: e.target.value as 'T+1' | 'T+2' | 'Weekly' })}
+                className="mt-1.5 w-full h-9 rounded-md border border-border bg-bg-elevated px-3 text-[13px] outline-none"
+              >
+                <option value="T+1">T+1 (next business day)</option>
+                <option value="T+2">T+2</option>
+                <option value="Weekly">Weekly (every Friday)</option>
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">Operator notes</p>
+              <textarea
+                rows={3}
+                value={draft.notes}
+                onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
+                placeholder="Internal-only notes about this partner…"
+                className="mt-1.5 w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px] outline-none focus:border-border-strong"
+              />
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-border flex justify-end gap-2">
+            <Button size="sm" variant="secondary" onClick={() => setDraft(partner)}>
+              Reset
+            </Button>
+            <Button size="sm" variant="primary" onClick={save}>
+              Save settings
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="border-danger/30">
+        <CardHeader
+          title={<span className="text-danger">Danger zone</span>}
+          description="Irreversible actions for this partner — requires Master role + audit log entry."
+        />
+        <CardBody>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[13px] font-semibold text-fg">Delete partner</p>
+              <p className="text-[12px] text-fg-muted">
+                Removes partner profile, archives users, soft-deletes applications. Payout history retained for 7 years per AU
+                record-keeping rules.
+              </p>
+            </div>
+            <Button size="sm" variant="danger" onClick={() => setShowDelete(true)}>
+              Delete partner…
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
+      {showDelete && (
+        <ModalShell title="Delete partner?" onClose={() => setShowDelete(false)}>
+          <p className="text-[13px] text-fg-secondary">
+            Type <span className="font-mono font-bold text-danger">{partnerId}</span> to confirm deletion. This action is logged
+            to the master audit trail and cannot be undone from the UI.
+          </p>
+          <ConfirmDelete partnerId={partnerId} onCancel={() => setShowDelete(false)} onConfirm={() => {
+            setShowDelete(false);
+            flash('Delete request queued — pending dual-control approval');
+          }} />
+        </ModalShell>
+      )}
+    </div>
+  );
+}
+
+function ConfirmDelete({ partnerId, onCancel, onConfirm }: { partnerId: string; onCancel: () => void; onConfirm: () => void }) {
+  const [v, setV] = useState('');
+  return (
+    <div className="mt-4">
+      <input
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        placeholder={partnerId}
+        className="w-full h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] font-mono outline-none focus:border-danger"
+      />
+      <div className="flex justify-end gap-2 pt-4 border-t border-border mt-4">
+        <Button size="sm" variant="secondary" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button size="sm" variant="danger" disabled={v !== partnerId} onClick={onConfirm}>
+          Delete partner
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/*  Shared helpers                                                          */
+/* ----------------------------------------------------------------------- */
+
+function StatTile({
+  label,
+  value,
+  hint,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  tone?: StatusTone;
+}) {
+  const accent =
+    tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+  return (
+    <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
+      <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
+      <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${accent}`}>{value}</p>
+      {hint && <p className="text-[10px] text-fg-muted mt-1.5">{hint}</p>}
+    </div>
+  );
+}
+
+function formatRelative(iso: string): string {
+  if (!iso || iso === '—') return '—';
+  const d = new Date(iso).getTime();
+  const now = Date.now();
+  const diff = Math.max(0, now - d);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toISOString().slice(0, 10);
+}
+
+function ModalShell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close modal"
+      />
+      <div className="relative w-full max-w-md rounded-xl border border-border bg-bg-elevated shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h2 className="text-[15px] font-semibold text-fg">{title}</h2>
+          <button onClick={onClose} className="text-fg-muted hover:text-fg" aria-label="Close">
+            <XIcon size={16} />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg flex items-center gap-2">
+      <CheckIcon size={14} />
+      {message}
+    </div>
+  );
+}

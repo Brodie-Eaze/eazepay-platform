@@ -100,3 +100,200 @@ export const creditBands = [
   { name: 'Subprime',      range: '580–639', pct: 7 },
   { name: 'DeepSubprime',  range: '300–579', pct: 3 },
 ];
+
+/* ----------------------------------------------------------------------- */
+/*  Partner lookup helpers — DRY source-of-truth across pages              */
+/* ----------------------------------------------------------------------- */
+
+/**
+ * Lookup a partner by id OR by short-slug (premier / medfirst /
+ * tradeforce / dental). Reports + control-panel use the master ID
+ * (p_atlas), but the legacy applications/[partnerId] + payouts/[partnerId]
+ * routes used short slugs. This bridges both naming schemes so any cross
+ * link lands on the right partner.
+ */
+export function findPartner(idOrSlug: string): PartnerSummary | undefined {
+  const direct = partners.find((p) => p.id === idOrSlug);
+  if (direct) return direct;
+  const slugMap: Record<string, string> = {
+    premier: 'p_atlas',
+    medfirst: 'p_helio',
+    tradeforce: 'p_orion',
+    dental: 'p_meridian',
+    elite: 'p_kindred',
+    summit: 'p_summit',
+    riverside: 'p_riverside',
+    brio: 'p_brio',
+    demo: 'p_demo',
+  };
+  const target = slugMap[idOrSlug.toLowerCase()];
+  return target ? partners.find((p) => p.id === target) : undefined;
+}
+
+/**
+ * Filter the canonical master applications by partner. Used by reports,
+ * v/[brand]/insights, control-panel [partnerId], applications [partnerId]
+ * — all surfaces must see the SAME application set for a given partner.
+ */
+export function applicationsForPartner(partnerId: string): ApplicationRow[] {
+  const partner = findPartner(partnerId);
+  if (!partner) return [];
+  // The master fixture uses the partner's legal name in the row.partner
+  // string; match on the first significant word so the demo seed
+  // returns hits without making us re-key the fixture.
+  const firstWord = partner.legalName.split(' ')[0]!.toLowerCase();
+  return applications.filter((a) => a.partner.toLowerCase().includes(firstWord));
+}
+
+/** Standard payout schedule string used across payout pages. */
+export const PAYOUT_SCHEDULE = {
+  cadence: 'Twice monthly — 1st & 15th',
+  nextDates: ['2026-05-15', '2026-06-01'] as const,
+  rail: 'RTP via Cross River (same-day ACH fallback)',
+};
+
+/* ----------------------------------------------------------------------- */
+/*  Audit log seed — used by /audit and partner-detail Activity tab        */
+/* ----------------------------------------------------------------------- */
+
+export interface AuditEntry {
+  id: string;
+  ts: string; // ISO
+  actor: string;
+  actorEmail: string;
+  action: string;
+  target: string;
+  ip: string;
+  outcome: 'success' | 'failed' | 'warning';
+}
+
+export const auditLog: AuditEntry[] = [
+  { id: 'au_001', ts: '2026-05-14T22:18:00Z', actor: 'Brodie (Master)',  actorEmail: 'brodie@amalafinance.com.au', action: 'partner.suspend',         target: 'p_riverside',          ip: '203.0.113.41',  outcome: 'success' },
+  { id: 'au_002', ts: '2026-05-14T21:54:00Z', actor: 'System',           actorEmail: 'system@eazepay',             action: 'webhook.delivery_failed',  target: 'evergreen-prime',      ip: '10.0.0.1',      outcome: 'failed'  },
+  { id: 'au_003', ts: '2026-05-14T21:01:00Z', actor: 'Brodie (Master)',  actorEmail: 'brodie@amalafinance.com.au', action: 'lender.override.toggle',   target: 'SageHeal · p_helio',   ip: '203.0.113.41',  outcome: 'success' },
+  { id: 'au_004', ts: '2026-05-14T19:33:00Z', actor: 'Sarah Park',       actorEmail: 'sarah.park@partner.test',    action: 'application.submit',       target: 'a_034',                ip: '73.2.18.4',     outcome: 'success' },
+  { id: 'au_005', ts: '2026-05-14T18:42:00Z', actor: 'Risk Bot',         actorEmail: 'risk@eaze.internal',         action: 'application.decisioned',   target: 'a_034 to approved',    ip: '10.0.0.7',      outcome: 'success' },
+  { id: 'au_006', ts: '2026-05-14T17:11:00Z', actor: 'Brodie (Master)',  actorEmail: 'brodie@amalafinance.com.au', action: 'team.member.invite',       target: 'casey.reed@partner',   ip: '203.0.113.41',  outcome: 'success' },
+  { id: 'au_007', ts: '2026-05-14T16:00:00Z', actor: 'Brodie (Master)',  actorEmail: 'brodie@amalafinance.com.au', action: 'pii.view',                 target: 'a_023 SSN field',      ip: '203.0.113.41',  outcome: 'warning' },
+  { id: 'au_008', ts: '2026-05-14T14:48:00Z', actor: 'System',           actorEmail: 'system@eazepay',             action: 'payout.scheduled',         target: '$258,300 to p_atlas',  ip: '10.0.0.1',      outcome: 'success' },
+  { id: 'au_009', ts: '2026-05-14T13:09:00Z', actor: 'James Park',       actorEmail: 'james@medfirst.com',         action: 'user.login',               target: 'partner-portal',       ip: '64.207.4.12',   outcome: 'success' },
+  { id: 'au_010', ts: '2026-05-14T11:21:00Z', actor: 'Compliance Bot',   actorEmail: 'compliance@eaze.internal',   action: 'kyb.reverify',             target: 'p_orion',              ip: '10.0.0.9',      outcome: 'success' },
+  { id: 'au_011', ts: '2026-05-13T22:08:00Z', actor: 'Mike Henderson',   actorEmail: 'mike@tradeforce.com',        action: 'application.submit',       target: 'a_031',                ip: '108.171.130.45',outcome: 'success' },
+  { id: 'au_012', ts: '2026-05-13T19:55:00Z', actor: 'Risk Bot',         actorEmail: 'risk@eaze.internal',         action: 'application.decisioned',   target: 'a_031 to declined',    ip: '10.0.0.7',      outcome: 'success' },
+  { id: 'au_013', ts: '2026-05-13T18:22:00Z', actor: 'Brodie (Master)',  actorEmail: 'brodie@amalafinance.com.au', action: 'partner.commission.update',target: 'p_helio 1.4 to 1.6',   ip: '203.0.113.41',  outcome: 'success' },
+  { id: 'au_014', ts: '2026-05-13T16:04:00Z', actor: 'System',           actorEmail: 'system@eazepay',             action: 'marketplace.sync',         target: '36 lenders',           ip: '10.0.0.1',      outcome: 'success' },
+  { id: 'au_015', ts: '2026-05-13T14:12:00Z', actor: 'Brodie (Master)',  actorEmail: 'brodie@amalafinance.com.au', action: 'key.create',               target: 'ep_live (production)', ip: '203.0.113.41',  outcome: 'success' },
+];
+
+/* ----------------------------------------------------------------------- */
+/*  Legal & help seed                                                      */
+/* ----------------------------------------------------------------------- */
+
+export interface LegalDoc {
+  slug: string;
+  title: string;
+  effectiveDate: string;
+  version: string;
+  summary: string;
+  sections: Array<{ heading: string; body: string }>;
+}
+
+export const legalDocs: Record<string, LegalDoc> = {
+  terms: {
+    slug: 'terms',
+    title: 'Terms of Service',
+    effectiveDate: '2026-01-15',
+    version: '4.2',
+    summary:
+      'Terms governing your use of the EazePay Partner Portal and the products surfaced through it (MedPay, TradePay, CoachPay, EAZE Processing, DialerPay, EZ Check).',
+    sections: [
+      { heading: '1. Acceptance of terms', body: 'By creating an account, submitting an application, or accessing the portal you agree to these terms. Material changes will be notified in-product and by email at least 14 days before they take effect.' },
+      { heading: '2. Account eligibility', body: 'You must be a registered business entity in the United States with valid tax identification and a verified business bank account. Sole proprietors are accepted where applicable per program.' },
+      { heading: '3. Partner responsibilities', body: 'You agree to (a) submit complete and accurate applicant information, (b) comply with Regulation B, Z, TILA, and FCRA disclosures, (c) maintain SOC 2-aligned data handling for any applicant PII you store outside EazePay.' },
+      { heading: '4. Payouts & commissions', body: 'Commissions are paid twice monthly on the 1st and the 15th via RTP with same-day ACH fallback. Funds are net of platform fees, chargebacks, and any clawback for rescinded applications.' },
+      { heading: '5. Termination', body: 'Either party may terminate with 30 days written notice. EazePay may suspend immediately for fraud, AML, or material breach. Live applications continue to settle.' },
+    ],
+  },
+  privacy: {
+    slug: 'privacy',
+    title: 'Privacy Policy',
+    effectiveDate: '2026-01-15',
+    version: '3.8',
+    summary:
+      'How EazePay collects, uses, retains, and shares applicant and partner data across our consumer-direct and merchant-channel products.',
+    sections: [
+      { heading: '1. Data we collect', body: 'Applicant identity (name, SSN-last-4, DOB), employment and income, soft-pull credit (FCRA permissible purpose), device and browser fingerprint, partner referral tags.' },
+      { heading: '2. How we use it', body: 'To underwrite applications, route to compatible lenders, deliver decisioning artefacts (Truth-in-Lending, Adverse Action Notices), prevent fraud, and meet AML / OFAC obligations.' },
+      { heading: '3. Sharing', body: 'We share applicant data with lender partners only AFTER a hard inquiry consent. Service providers (Plaid, document storage, postal vendors) receive minimum-necessary data under DPA.' },
+      { heading: '4. Retention', body: 'Applicant data is retained for 7 years per AU/US record-keeping rules; declined applications are purged at 25 months unless required for audit or litigation hold.' },
+      { heading: '5. Your rights', body: 'You may request access, correction, or deletion at privacy@eazepay.com. We respond within 30 days. California, Virginia, and Colorado residents have additional rights under CCPA/CPRA, VCDPA, and CPA respectively.' },
+    ],
+  },
+  disclosures: {
+    slug: 'disclosures',
+    title: 'Lending Disclosures',
+    effectiveDate: '2026-02-01',
+    version: '2.4',
+    summary:
+      'Standardised disclosures that apply to every loan originated through EazePay, including APR ranges, fee schedules, and pre-qualification soft-pull notices.',
+    sections: [
+      { heading: '1. APR range', body: 'APR varies by lender, term, and applicant credit profile. Typical range: 7.99% to 35.99% APR. Origination fees: 0% to 6%. Late fees: capped per state statute.' },
+      { heading: '2. Soft-pull pre-qualification', body: 'Pre-qualification through EZ Check uses a soft credit pull which does NOT affect the applicant credit score. A hard inquiry is performed only after the applicant explicitly consents to a specific lender offer.' },
+      { heading: '3. State licensing', body: 'EazePay originates loans through licensed lender partners. State availability varies by product; see /legal/licenses for the current state-by-state matrix.' },
+      { heading: '4. Truth-in-Lending', body: 'Every approved offer ships with a TILA disclosure showing APR, finance charge, amount financed, total of payments, and payment schedule. Borrower must affirmatively accept before funding.' },
+      { heading: '5. Adverse Action', body: 'Declined applicants receive an Adverse Action Notice within 30 days listing the principal reasons for the decline, FCRA rights, and the consumer-reporting agency contact.' },
+    ],
+  },
+  licenses: {
+    slug: 'licenses',
+    title: 'State Licenses',
+    effectiveDate: '2026-04-01',
+    version: '5.1',
+    summary:
+      'EazePay-operated entities and the state licenses under which we (or our originating lender partners) extend credit.',
+    sections: [
+      { heading: '1. EazePay Finance LLC', body: 'NMLS #2086142. Holds Consumer Lending licenses in 41 states. California Financing Law license: 60DBO-87412.' },
+      { heading: '2. EazePay Servicing LLC', body: 'Loan servicer for partner-originated loans. Licensed in 38 states.' },
+      { heading: '3. Originating bank partners', body: 'Cross River Bank (FDIC #58410), WebBank (FDIC #34404), Capital Community Bank (FDIC #57614). State availability per-bank.' },
+      { heading: '4. NMLS Consumer Access', body: 'Verify any licensee at https://nmlsconsumeraccess.org. EazePay Finance LLC entry: ID 2086142.' },
+    ],
+  },
+  compliance: {
+    slug: 'compliance',
+    title: 'Compliance Framework',
+    effectiveDate: '2026-04-15',
+    version: '3.0',
+    summary:
+      'The regulatory and audit framework EazePay operates under, including SOC 2, AML/KYC, fair-lending, and consumer-protection controls.',
+    sections: [
+      { heading: '1. SOC 2 Type II', body: 'Annual audit by Schellman. Latest report: 2026-03-31. Available under NDA at compliance@eazepay.com.' },
+      { heading: '2. AML/BSA program', body: 'Risk-based CIP, OFAC screening on every applicant and lender, SAR filing per FinCEN, BSA officer reports quarterly to the board.' },
+      { heading: '3. Fair lending', body: 'Annual disparate-impact analysis by protected class. Override-tracking dashboard ships in the Insights view. ECOA training mandatory for all decisioning operators.' },
+      { heading: '4. Vendor management', body: 'All sub-processors under DPA + SOC 2 attestation. Annual vendor risk review; data-flow map at compliance@eazepay.com.' },
+      { heading: '5. Audit trail', body: 'Every state-changing action is recorded in an append-only audit chain (visible at /audit) with 7-year retention.' },
+    ],
+  },
+};
+
+/* ----------------------------------------------------------------------- */
+/*  Help & support seed                                                    */
+/* ----------------------------------------------------------------------- */
+
+export interface HelpArticle {
+  id: string;
+  title: string;
+  category: 'Getting started' | 'Applications' | 'Payouts' | 'Lenders' | 'Integrations' | 'Account';
+  summary: string;
+  readTime: string;
+}
+
+export const helpArticles: HelpArticle[] = [
+  { id: 'hp_001', title: 'Submit your first application',         category: 'Getting started', summary: 'Step-by-step walkthrough of submitting a finance application on behalf of a client.',                           readTime: '4 min' },
+  { id: 'hp_002', title: 'Why payouts are processed twice a month', category: 'Payouts',         summary: 'Settlement cadence, RTP rails, and how to read the payout reconciliation report.',                                readTime: '3 min' },
+  { id: 'hp_003', title: 'Reading the decisioning waterfall',     category: 'Applications',    summary: 'Understand why an application was approved by lender X rather than lender Y.',                                       readTime: '6 min' },
+  { id: 'hp_004', title: 'Enabling lender overrides for a partner', category: 'Lenders',         summary: 'How to temporarily disable a specific lender for a single partner without affecting other partners.',             readTime: '2 min' },
+  { id: 'hp_005', title: 'Connecting EZ Check to your CRM',       category: 'Integrations',    summary: 'Drop the EZ Check widget into HubSpot, Salesforce, or a custom landing page.',                                      readTime: '5 min' },
+  { id: 'hp_006', title: 'Two-factor authentication setup',       category: 'Account',         summary: 'Enable Authenticator-app 2FA on your operator account and recovery code best practice.',                            readTime: '3 min' },
+  { id: 'hp_007', title: 'Adverse Action Notice delivery',        category: 'Applications',    summary: 'When and how AANs are delivered to declined applicants, and what to tell a client who asks why.',                  readTime: '4 min' },
+  { id: 'hp_008', title: 'Reconciling a payout cycle',            category: 'Payouts',         summary: 'How to match the line-by-line settlement export against your accounting ledger.',                                   readTime: '7 min' },
+];

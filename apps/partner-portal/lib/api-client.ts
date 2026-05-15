@@ -11,9 +11,9 @@
  *   - throws a typed Error on non-2xx so TanStack Query treats it as
  *     `isError`
  *
- * Formatting helpers (`formatCurrency`, `formatDate`, `formatDateTime`,
- * `statusBadge`) are byte-identical to Lovable's so badge colours and
- * date strings match across both platforms.
+ * Formatting helpers (`formatCurrency`, `formatDate`, `statusBadge`)
+ * are byte-identical to Lovable's so badge colours and date strings
+ * match across both platforms.
  */
 
 import { useCallback } from 'react';
@@ -92,15 +92,6 @@ export function formatDate(iso: string | Date): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  });
-}
-
-export function formatDateTime(iso: string | Date): string {
-  return new Date(iso).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   });
 }
 

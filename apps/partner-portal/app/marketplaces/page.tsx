@@ -56,6 +56,11 @@ const BRAND_KEYS: Array<'tradepay' | 'medpay' | 'coachpay'> = [
 export default function MarketplacesPage() {
   const [rows, setRows] = useState<Marketplace[]>(MARKETPLACES);
   const [editing, setEditing] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const flash = (m: string) => {
+    setToast(m);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const toggleGlobal = (id: string) => {
     setRows((s) =>
@@ -106,7 +111,7 @@ export default function MarketplacesPage() {
                 Public hub
               </Button>
             </Link>
-            <Button size="sm">Add marketplace</Button>
+            <Button size="sm" onClick={() => flash('Marketplace onboarding wizard opening')}>Add marketplace</Button>
           </div>
         }
         meta={
@@ -138,6 +143,7 @@ export default function MarketplacesPage() {
               onToggleGlobal={() => toggleGlobal(m.id)}
               onToggleBrand={(b) => toggleBrand(m.id, b)}
               onExpand={() => setEditing(editing === m.id ? null : m.id)}
+              flash={flash}
             />
           ))}
         </div>
@@ -277,6 +283,11 @@ export default function MarketplacesPage() {
           </CardBody>
         </Card>
       </PageBody>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </>
   );
 }
@@ -287,12 +298,14 @@ function MarketplaceCard({
   onToggleGlobal,
   onToggleBrand,
   onExpand,
+  flash,
 }: {
   m: Marketplace;
   expanded: boolean;
   onToggleGlobal: () => void;
   onToggleBrand: (brand: (typeof BRAND_KEYS)[number]) => void;
   onExpand: () => void;
+  flash: (msg: string) => void;
 }) {
   return (
     <Card>
@@ -442,13 +455,13 @@ function MarketplaceCard({
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-              <Button size="sm" variant="ghost">
+              <Button size="sm" variant="ghost" onClick={() => flash(`${m.displayName} probe completed — 12ms`)}>
                 Test connection
               </Button>
-              <Button size="sm" variant="secondary">
+              <Button size="sm" variant="secondary" onClick={() => flash(`${m.displayName} keys rotated`)}>
                 Rotate keys
               </Button>
-              <Button size="sm">Save changes</Button>
+              <Button size="sm" onClick={() => flash(`${m.displayName} settings saved`)}>Save changes</Button>
             </div>
           </div>
         )}

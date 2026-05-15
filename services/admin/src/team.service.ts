@@ -117,9 +117,28 @@ export class TeamService {
    * by the existing NotificationGateway in a follow-on round — the row is
    * the durable artefact this method guarantees.
    *
-   * Idempotency: an existing User with the same email is reactivated +
-   * re-roled rather than duplicated. We never return 409 for "already
-   * invited" — UX-wise, re-sending the invite is what the operator wants.
+   * SEC-007 — silent privilege escalation hardening.
+   *
+   * Previously this flow happily mutated an existing User row when the
+   * invited email was already on file: it flipped `isAdmin: true`, set
+   * `platformRole` to whatever the inviter chose, and called it a
+   * "reinvite". That meant any admin who knew a consumer's email could
+   * promote them to staff WITHOUT THEIR CONSENT — a single API call from
+   * a compromised or rogue admin account turned a consumer into a peer.
+   *
+   * The new contract:
+   *   1. If the email maps to an existing User, REJECT with 409. The
+   *      caller is told to use the dedicated update / role-change flow
+   *      (a separate endpoint with explicit "promote existing user"
+   *      semantics — TBD; out of scope for this patch).
+   *   2. Re-invites of an already-invited staff member ARE supported:
+   *      we detect the existing-but-already-staff case and allow the
+   *      operator to resend the invitation without changing their role.
+   *      This is the legitimate idempotency case the old code conflated
+   *      with the dangerous one.
+   *   3. We emit an audit row for the rejected attempt too — these are
+   *      exactly the events a SOC investigator wants to see if an
+   *      account is later compromised.
    */
   async invite(actorUserId: UserId, input: InviteInput): Promise<{ member: TeamMember }> {
     const email = input.email.trim().toLowerCase();
@@ -130,35 +149,116 @@ export class TeamService {
       const existing = await tx.user.findUnique({ where: { email } });
       const now = new Date();
 
-      const user = existing
-        ? await tx.user.update({
-            where: { id: existing.id },
+      if (existing) {
+        // Case A: existing row is already a staff member (platformRole set
+        // and not closed). This is a legitimate "resend the invite"
+        // operation — same role, same audit-trail position. We do NOT
+        // change platformRole or isAdmin here; only refresh the invite
+        // metadata so the operator can see the latest invite event. If
+        // the operator wants to CHANGE the role, they use update().
+        const isExistingStaff =
+          existing.platformRole != null && existing.status !== 'closed';
+
+        if (!isExistingStaff) {
+          // Case B: existing row is a consumer OR a closed/removed account.
+          // Refuse to silently promote — this was the SEC-007 vector.
+          // Write an audit row so attempts to escalate are visible even
+          // though we rejected the operation. `targetId` points at the
+          // existing User so investigators can correlate by user. The
+          // role the attacker tried to grant is captured in `after`.
+          await tx.auditOutbox.create({
             data: {
-              platformRole: input.role,
-              isAdmin: true, // mirror legacy guard
-              displayName: input.displayName ?? existing.displayName ?? null,
-              status: existing.status === 'closed' ? 'pending_verification' : existing.status,
-              invitedAt: existing.invitedAt ?? now,
-              invitedById: existing.invitedById ?? actorUserId,
-            },
-          })
-        : await tx.user.create({
-            data: {
-              email,
-              displayName: input.displayName ?? null,
-              status: 'pending_verification',
-              platformRole: input.role,
-              isAdmin: true, // legacy mirror; team invites are always staff
-              invitedAt: now,
-              invitedById: actorUserId,
+              actorType: 'admin',
+              actorId: actorUserId,
+              action: 'admin.team.invite_rejected_existing_user',
+              targetType: 'User',
+              targetId: existing.id,
+              before: {
+                platformRole: existing.platformRole,
+                status: existing.status,
+                isAdmin: existing.isAdmin,
+              },
+              after: {
+                attemptedRole: input.role,
+                attemptedDisplayName: input.displayName ?? null,
+              },
             },
           });
+          throw Conflict({
+            code: 'user_already_exists',
+            detail:
+              'A user account already exists for this email. Use the team update flow to change an existing staff member\'s role, or contact the user out-of-band before granting staff access.',
+          });
+        }
+
+        // Case A continued — refresh invite breadcrumbs only. No role
+        // mutation, no isAdmin mutation. displayName is allowed to
+        // update because it's purely cosmetic and the operator may be
+        // correcting a typo.
+        const user = await tx.user.update({
+          where: { id: existing.id },
+          data: {
+            displayName: input.displayName ?? existing.displayName ?? null,
+            invitedAt: existing.invitedAt ?? now,
+            invitedById: existing.invitedById ?? actorUserId,
+          },
+        });
+
+        await tx.auditOutbox.create({
+          data: {
+            actorType: 'admin',
+            actorId: actorUserId,
+            action: 'admin.team.reinvited',
+            targetType: 'User',
+            targetId: user.id,
+            before: {
+              role: existing.platformRole,
+              displayName: existing.displayName,
+            },
+            after: {
+              role: user.platformRole,
+              displayName: user.displayName,
+              // Note: role intentionally NOT changed even if input.role
+              // differs from existing.platformRole. Role changes require
+              // the explicit update() flow.
+              requestedRole: input.role,
+            },
+          },
+        });
+
+        return {
+          member: {
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName,
+            role: user.platformRole!,
+            status: fromDbStatus(user.status),
+            lastSignInAt: user.lastSeenAt?.toISOString() ?? null,
+            invitedBy: user.invitedById,
+            invitedAt: (user.invitedAt ?? user.createdAt).toISOString(),
+          },
+        };
+      }
+
+      // Case C: brand-new email — the only path that creates staff. This
+      // is the original happy path.
+      const user = await tx.user.create({
+        data: {
+          email,
+          displayName: input.displayName ?? null,
+          status: 'pending_verification',
+          platformRole: input.role,
+          isAdmin: true, // legacy mirror; team invites are always staff
+          invitedAt: now,
+          invitedById: actorUserId,
+        },
+      });
 
       await tx.auditOutbox.create({
         data: {
           actorType: 'admin',
           actorId: actorUserId,
-          action: existing ? 'admin.team.reinvited' : 'admin.team.invited',
+          action: 'admin.team.invited',
           targetType: 'User',
           targetId: user.id,
           after: { email, role: input.role, displayName: input.displayName ?? null },

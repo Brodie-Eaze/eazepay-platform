@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import {
+  redeemInvite,
+  getInvite,
+  BRAND_FROM_CONFIG_SLUG,
+} from '../../../../../lib/invites-store';
 
 /**
  * Brand onboarding — BFF proxy.
@@ -49,6 +54,7 @@ const BodySchema = z.object({
   ownerDob: z.string().min(1),
   ownerOwnershipPct: z.string().min(1),
   uploads: z.record(z.string()).default({}),
+  inviteToken: z.string().min(1).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -84,6 +90,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  /* Resolve any invite first — if present, we'll stamp the resulting
+   * application with `meta.invitedById` so the master pipeline can
+   * filter "Your invites". We don't fail the application if the invite
+   * is stale; we just skip the meta tag + don't redeem. */
+  let invitedById: string | undefined;
+  let inviteIsValid = false;
+  if (parsed.data.inviteToken) {
+    const invite = await getInvite(parsed.data.inviteToken);
+    const expectedBrand = BRAND_FROM_CONFIG_SLUG[parsed.data.brand];
+    if (
+      invite &&
+      invite.status === 'active' &&
+      expectedBrand &&
+      invite.brand === expectedBrand
+    ) {
+      invitedById = invite.invitedById;
+      inviteIsValid = true;
+    }
+  }
+
   const token = req.cookies.get('eazepay_at')?.value;
   if (token) {
     try {
@@ -93,23 +119,37 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ provider, surface: parsed.data.brand, ...parsed.data }),
+        body: JSON.stringify({
+          provider,
+          surface: parsed.data.brand,
+          ...parsed.data,
+          meta: invitedById ? { invitedById, inviteToken: parsed.data.inviteToken } : undefined,
+        }),
       });
       if (!res.ok) {
         return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });
       }
-      return NextResponse.json(await res.json());
+      const json = (await res.json()) as { applicationId?: string };
+      if (inviteIsValid && parsed.data.inviteToken) {
+        await redeemInvite(parsed.data.inviteToken, json.applicationId ?? `app_${Date.now().toString(36)}`);
+      }
+      return NextResponse.json(json);
     } catch {
       // Fall through to the synthetic 202.
     }
   }
 
+  const applicationId = `app_${parsed.data.brand}_${Date.now().toString(36)}`;
+  if (inviteIsValid && parsed.data.inviteToken) {
+    await redeemInvite(parsed.data.inviteToken, applicationId);
+  }
   return NextResponse.json(
     {
       ok: true,
-      applicationId: `app_${parsed.data.brand}_${Date.now().toString(36)}`,
+      applicationId,
       brand: parsed.data.brand,
       provider,
+      meta: invitedById ? { invitedById, inviteToken: parsed.data.inviteToken } : undefined,
     },
     { status: 202 },
   );

@@ -256,7 +256,7 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
                   retains credit-policy ownership in form and substance, and we surface that in disclosures
                   + audit artifacts.
                 </p>
-                <Link href="#" className="flex items-center gap-1.5 text-accent text-[13px] mt-2">
+                <Link href="/legal/licenses" className="flex items-center gap-1.5 text-accent text-[13px] mt-2">
                   Read the bank-partner whitepaper <ArrowRightIcon size={12} />
                 </Link>
               </CardBody>
@@ -266,14 +266,14 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
               <CardHeader title="Compliance docs" />
               <CardBody className="space-y-2 text-[13px]">
                 {[
-                  ['SOC 2 Type II report (Q1 2026)', 'Available under NDA'],
-                  ['ECOA fair-lending policy', 'PDF · v2026.05'],
-                  ['SR 11-7 model risk policy', 'PDF · v2026.04'],
-                  ['Incident response runbook', 'PDF · v2026.03'],
-                  ['BSA/AML program', 'PDF · v2026.04'],
-                  ['Adverse Action notice templates', 'EN + ES'],
-                ].map(([k, v]) => (
-                  <Link key={k} href="#" className="flex items-start gap-2 hover:bg-bg-muted/40 -mx-1 px-1 py-1 rounded">
+                  ['SOC 2 Type II report (Q1 2026)', 'Available under NDA', '/legal/compliance'],
+                  ['ECOA fair-lending policy', 'PDF · v2026.05', '/legal/compliance'],
+                  ['SR 11-7 model risk policy', 'PDF · v2026.04', '/legal/compliance'],
+                  ['Incident response runbook', 'PDF · v2026.03', '/legal/compliance'],
+                  ['BSA/AML program', 'PDF · v2026.04', '/legal/compliance'],
+                  ['Adverse Action notice templates', 'EN + ES', '/legal/disclosures'],
+                ].map(([k, v, href]) => (
+                  <Link key={k} href={href} className="flex items-start gap-2 hover:bg-bg-muted/40 -mx-1 px-1 py-1 rounded">
                     <ShieldIcon size={14} className="text-fg-muted mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <div className="font-medium">{k}</div>

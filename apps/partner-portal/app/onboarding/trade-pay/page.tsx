@@ -1,15 +1,19 @@
 'use client';
 import { BankIcon } from '@eazepay/ui/web';
-import { BrandOnboardingWizard } from '../../../components/brand-onboarding/BrandOnboardingWizard';
+import { BrandOnboardingPage } from '../../../components/brand-onboarding/BrandOnboardingWizard';
 
 /**
  * TradePay — Apply. Direct port of the Lovable `/onboarding/trade-pay`
  * flow. 6 documents (contractor license, bond + insurance, trade
  * cert, bank statements, W-9, voided check).
+ *
+ * Wrapped in `BrandOnboardingPage` so a `?invite=<token>` query param
+ * is resolved against `/api/onboarding/invite/[token]` and used to
+ * pre-fill / lock the brand wizard.
  */
 export default function TradePayOnboardingPage() {
   return (
-    <BrandOnboardingWizard
+    <BrandOnboardingPage
       config={{
         slug: 'trade-pay',
         title: 'TradePay — Apply',

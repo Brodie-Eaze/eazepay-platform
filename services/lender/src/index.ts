@@ -4,3 +4,6 @@ export * from './lender-registry.service.js';
 export * from './lender.module.js';
 export * from './adapters/buzzpay.adapter.js';
 export * from './adapters/mock-prime.adapter.js';
+export * from './adapters/us-bank.adapter.js';
+export * from './adapters/engine-tech.adapter.js';
+export * from './adapters/queen-street.adapter.js';

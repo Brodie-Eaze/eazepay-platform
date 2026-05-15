@@ -68,6 +68,7 @@ const leaderboard = partners
   .sort((a, b) => b.netCents - a.netCents)
   .map((p, i) => ({
     rank: i + 1,
+    partnerId: p.id,
     name: p.legalName,
     funded: p.netCents,
     apps: 47 - i * 8,
@@ -145,7 +146,11 @@ export default function CommandCenter() {
               {leaderboard.map((row) => {
                 const pct = (row.funded / maxFunded) * 100;
                 return (
-                  <li key={row.rank} className="grid grid-cols-12 items-center gap-4 px-5 py-4">
+                  <li key={row.rank}>
+                    <Link
+                      href={`/control-panel/${row.partnerId}`}
+                      className="grid grid-cols-12 items-center gap-4 px-5 py-4 hover:bg-bg-muted/30"
+                    >
                     {/* Rank */}
                     <div className="col-span-1 flex items-center gap-2 text-[13px]">
                       {row.rank === 1 ? (
@@ -175,6 +180,7 @@ export default function CommandCenter() {
                     <Stat n={row.apps} label="Apps" className="col-span-1" />
                     <Stat n={row.fundedCount} label="Funded" className="col-span-1" />
                     <Stat n={`${row.approval}%`} label="Approval" className="col-span-2" />
+                    </Link>
                   </li>
                 );
               })}

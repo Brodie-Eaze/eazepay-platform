@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import {
   PageHeader,
   PageBody,
@@ -16,7 +17,10 @@ import {
 } from '@eazepay/ui/web';
 import { apiKeys, type ApiKey } from '../../lib/mock-data';
 
-const columns: Column<ApiKey>[] = [
+const buildColumns = (
+  onRotate: (id: string) => void,
+  onRevoke: (id: string) => void,
+): Column<ApiKey>[] => [
   {
     key: 'name',
     header: 'Name',
@@ -65,12 +69,12 @@ const columns: Column<ApiKey>[] = [
     key: 'actions',
     header: '',
     align: 'right',
-    cell: () => (
+    cell: (k) => (
       <div className="flex items-center gap-2 justify-end">
-        <Button size="sm" variant="ghost">
+        <Button size="sm" variant="ghost" onClick={() => onRotate(k.id)}>
           Rotate
         </Button>
-        <Button size="sm" variant="ghost" className="text-danger">
+        <Button size="sm" variant="ghost" className="text-danger" onClick={() => onRevoke(k.id)}>
           Revoke
         </Button>
       </div>
@@ -79,13 +83,37 @@ const columns: Column<ApiKey>[] = [
 ];
 
 export default function ApiKeysPage() {
+  const [rows, setRows] = useState<ApiKey[]>(apiKeys);
+  const [toast, setToast] = useState<string | null>(null);
+  function flash(m: string) {
+    setToast(m);
+    setTimeout(() => setToast(null), 3000);
+  }
+  function rotate(id: string) {
+    setRows((prev) => prev.map((k) => (k.id === id ? { ...k, prefix: k.prefix.replace(/_[a-zA-Z0-9]+/, '_' + Math.random().toString(36).slice(2, 7)), lastUsedAt: null } : k)));
+    flash('Key rotated — old key disabled in 60s grace window');
+  }
+  function revoke(id: string) {
+    setRows((prev) => prev.map((k) => (k.id === id ? { ...k, revoked: true } : k)));
+    flash('Key revoked — immediate effect, audit logged');
+  }
+  function generate() {
+    const env: ApiKey['env'] = 'sandbox';
+    const id = 'key_new_' + Date.now().toString(36);
+    setRows((prev) => [
+      { id, name: 'New sandbox key', prefix: `ep_test_${id.slice(-6)}...`, env, scopes: ['applications:read'], createdAt: new Date().toISOString(), lastUsedAt: null, revoked: false },
+      ...prev,
+    ]);
+    flash('New sandbox key created — copy secret immediately, only shown once');
+  }
+  const columns = buildColumns(rotate, revoke);
   return (
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Partner Portal', href: '/' }, { label: 'API keys' }]}
         title="API keys"
         description="Server-to-server credentials for EazePay's lender adapter API. Keys are HMAC-signed and bound to scopes; secrets are only shown at creation."
-        actions={<Button leadingIcon={<KeyIcon size={16} />}>Generate key</Button>}
+        actions={<Button leadingIcon={<KeyIcon size={16} />} onClick={generate}>Generate key</Button>}
       />
       <PageBody>
         <Banner intent="warning" className="mb-4" title="Treat live keys like production secrets">
@@ -93,7 +121,7 @@ export default function ApiKeysPage() {
           days. All requests are logged to your audit chain with IP, scope, and replay-protection nonce.
         </Banner>
 
-        <DataTable columns={columns} rows={apiKeys} rowKey={(k) => k.id} className="mb-6" />
+        <DataTable columns={columns} rows={rows} rowKey={(k) => k.id} className="mb-6" />
 
         <Card>
           <CardHeader title="Authentication reference" description="HMAC-SHA256 of the request body using your shared secret, with timestamp + nonce to prevent replay." />
@@ -120,6 +148,11 @@ curl -X POST https://api.eazepay.com/v1/partner/applications/app_4nqLkR2vTjW/res
           </CardBody>
         </Card>
       </PageBody>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </>
   );
 }

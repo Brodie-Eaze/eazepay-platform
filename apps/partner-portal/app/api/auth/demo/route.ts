@@ -9,10 +9,28 @@ import { z } from 'zod';
  * with a banner so demo users can never mistake the workspace for
  * production.
  *
+ * **Production gate:** Demo mode is a sales / onboarding surface, not
+ * a production sign-in path. In production we refuse to mint the
+ * cookie unless `DEMO_MODE_ENABLED=true` is set explicitly. This
+ * prevents an attacker who guesses the cookie name from minting
+ * themselves a free read-only session on a live deployment.
+ *
  * The preset acts as a brand filter: the topbar brand switcher
  * remembers the choice, the data layer filters to that brand, and
  * write actions are disabled.
  */
+
+/**
+ * Whether demo mode is allowed at all. In dev + preview environments
+ * we default to allowed; in production the operator must opt-in by
+ * setting `DEMO_MODE_ENABLED=true`. This is read at request time (not
+ * cached at module init) so a Railway env flip takes effect on the
+ * next request without redeploy.
+ */
+function isDemoModeAllowed(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.DEMO_MODE_ENABLED === 'true';
+}
 
 /**
  * Two preset families:
@@ -39,6 +57,19 @@ const BodySchema = z.object({
 const DEMO_TTL_SECONDS = 60 * 60; // 1h
 
 export async function POST(req: NextRequest) {
+  if (!isDemoModeAllowed()) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Forbidden',
+        status: 403,
+        code: 'demo_mode_disabled',
+        detail: 'Demo workspaces are not enabled on this deployment.',
+      },
+      { status: 403 },
+    );
+  }
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {

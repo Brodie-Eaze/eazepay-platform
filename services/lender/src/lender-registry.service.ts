@@ -63,6 +63,70 @@ const SEEDS: Seed[] = [
       },
     ],
   },
+  // Scaffold lenders below — adapters throw `pending_api_credentials`
+  // at quote() time until env keys are configured. They are still
+  // seeded into the DB so the orchestrator can resolve adapterKey
+  // and the operator can flip `enabled` on the Lender row once
+  // credentials land. Priority is set high (= bottom of the
+  // waterfall) so they don't displace working lenders during the
+  // pending-integration window.
+  {
+    adapterKey: 'us_bank',
+    legalName: 'U.S. Bank, National Association',
+    lenderOfRecord: 'U.S. Bank, National Association',
+    tier: 'prime',
+    priority: 200,
+    products: [
+      {
+        productKey: 'us_bank_personal',
+        name: 'U.S. Bank Personal Loan',
+        category: 'personal',
+        minAmountCents: 500_000n,
+        maxAmountCents: 10_000_000n,
+        minTermMonths: 24,
+        maxTermMonths: 84,
+        permittedStates: [],
+      },
+    ],
+  },
+  {
+    adapterKey: 'engine_tech',
+    legalName: 'Engine.Tech, Inc.',
+    lenderOfRecord: 'Engine.Tech, Inc.',
+    tier: 'near_prime',
+    priority: 210,
+    products: [
+      {
+        productKey: 'engine_tech_personal',
+        name: 'Engine.Tech Personal',
+        category: 'personal',
+        minAmountCents: 100_000n,
+        maxAmountCents: 5_000_000n,
+        minTermMonths: 6,
+        maxTermMonths: 60,
+        permittedStates: [],
+      },
+    ],
+  },
+  {
+    adapterKey: 'queen_street',
+    legalName: 'Queen Street Capital LLC',
+    lenderOfRecord: 'Queen Street Capital LLC',
+    tier: 'prime',
+    priority: 220,
+    products: [
+      {
+        productKey: 'queen_street_personal',
+        name: 'Queen Street Personal',
+        category: 'personal',
+        minAmountCents: 1_000_000n,
+        maxAmountCents: 25_000_000n,
+        minTermMonths: 12,
+        maxTermMonths: 120,
+        permittedStates: [],
+      },
+    ],
+  },
 ];
 
 @Injectable()

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, useSearchParams, notFound } from 'next/navigation';
 import {
   PageHeader,
   PageBody,
@@ -27,6 +27,7 @@ import {
   declineReasonDistribution,
   ficoBandApproval,
 } from '../../../../lib/mock-data';
+import { findPartner, applicationsForPartner } from '../../../../lib/master-data';
 import {
   marketplaceLenders,
   marketplaces,
@@ -690,6 +691,14 @@ function heatShade(v: number | null | undefined, min: number, max: number): stri
 
 export default function BrandInsightsPage() {
   const { brand: brandSlug } = useParams<{ brand: string }>();
+  const searchParams = useSearchParams();
+  const partnerIdParam = searchParams?.get('partnerId') ?? null;
+  // Resolve to the canonical master partner (handles slug bridging too).
+  // When present, this turns the insights page into a partner-scoped
+  // view — same drill the master `/control-panel/[partnerId]` applications
+  // tab shows, so the cross-link from /reports lands consistently.
+  const partnerCtx = partnerIdParam ? findPartner(partnerIdParam) ?? null : null;
+  const partnerApps = partnerCtx ? applicationsForPartner(partnerCtx.id) : [];
   const brandCode = BRAND_ORDER.find((b) => BRANDS[b].slug === brandSlug) as BrandCode | undefined;
   if (!brandCode || brandCode === 'direct') notFound();
   const brand = brandCode as Exclude<BrandCode, 'direct'>;
@@ -946,6 +955,40 @@ export default function BrandInsightsPage() {
         }
       />
       <PageBody>
+        {partnerCtx && (
+          <div className="mb-4 rounded-lg border border-border bg-bg-elevated px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="size-9 rounded-full bg-bg-muted text-fg flex items-center justify-center font-semibold text-[12px] shrink-0">
+                {partnerCtx.initials}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
+                  Partner-scoped view
+                </p>
+                <p className="text-[13px] font-semibold text-fg truncate">
+                  {partnerCtx.legalName}{' '}
+                  <span className="font-normal text-fg-muted">
+                    · {partnerApps.length} application{partnerApps.length === 1 ? '' : 's'} on this brand
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href={`/control-panel/${partnerCtx.id}`}
+                className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
+              >
+                Open partner control page
+              </Link>
+              <Link
+                href={`/v/${brandSlug}/insights`}
+                className="h-8 px-3 rounded-md border border-border bg-bg-elevated text-[11px] font-medium text-fg-secondary hover:bg-bg-muted inline-flex items-center"
+              >
+                Clear filter
+              </Link>
+            </div>
+          </div>
+        )}
         <Banner intent="info" className="mb-5">
           The fair-lending monitoring engine evaluates disparate impact + equalised odds on each
           decisioned {spec.name} cohort weekly. Quarterly written review is exported to your

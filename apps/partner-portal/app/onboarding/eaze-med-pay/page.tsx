@@ -1,16 +1,20 @@
 'use client';
 import { HeartPulseIcon } from '@eazepay/ui/web';
-import { BrandOnboardingWizard } from '../../../components/brand-onboarding/BrandOnboardingWizard';
+import { BrandOnboardingPage } from '../../../components/brand-onboarding/BrandOnboardingWizard';
 
 /**
  * MedPay — Apply. Direct port of the Lovable `/onboarding/med-pay`
  * flow. 6 documents (provider license, DEA, malpractice, NPI, bank
  * statements, W-9). Note: we don't ingest PHI here — only the
  * provider's licensing + financial documents.
+ *
+ * Wrapped in `BrandOnboardingPage` so a `?invite=<token>` query param
+ * is resolved against `/api/onboarding/invite/[token]` and used to
+ * pre-fill / lock the brand wizard.
  */
 export default function MedPayOnboardingPage() {
   return (
-    <BrandOnboardingWizard
+    <BrandOnboardingPage
       config={{
         slug: 'med-pay',
         title: 'MedPay — Apply',

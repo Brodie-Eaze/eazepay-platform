@@ -1,0 +1,61 @@
+-- SEC-026 / scale: GIN index on `audit_outbox.after` (jsonb).
+--
+-- ============================================================
+-- OPERATOR ACTION REQUIRED — DO NOT RUN VIA `prisma migrate deploy`
+-- INSIDE A NORMAL TRANSACTION. RUN MANUALLY IN A LOW-TRAFFIC
+-- WINDOW WITH `psql` ATTACHED TO THE PRIMARY.
+-- ============================================================
+--
+-- Why this migration is special:
+--   `CREATE INDEX CONCURRENTLY` cannot run inside a transaction
+--   block. Prisma's `migrate deploy` wraps every migration in a
+--   transaction. If this file is fed through that path, Postgres
+--   will reject with `25001` ("CREATE INDEX CONCURRENTLY cannot
+--   run inside a transaction block") and the migration will be
+--   marked failed, blocking subsequent migrations.
+--
+--   To deploy:
+--     1. Apply prior migrations via `prisma migrate deploy` as
+--        usual (this directory must be temporarily moved aside
+--        or the `--schema` flag pointed at a copy of schema.prisma
+--        with this migration excluded).
+--     2. Open psql on the primary in a low-traffic window.
+--     3. Paste the CREATE INDEX statement below.
+--     4. Verify with `\d+ audit_outbox` that the index exists.
+--     5. Mark the migration as applied:
+--        INSERT INTO _prisma_migrations
+--          (id, checksum, finished_at, migration_name, logs,
+--           rolled_back_at, started_at, applied_steps_count)
+--        VALUES (
+--          gen_random_uuid(),
+--          '<sha256 of this file>',
+--          NOW(), '20260515120100_audit_outbox_after_gin',
+--          NULL, NULL, NOW(), 1
+--        );
+--
+-- Why a GIN index on `after jsonb_path_ops`:
+--   The risk service (services/risk/src/risk.service.ts) queries
+--     auditOutbox.count({
+--       action: 'application.created',
+--       after: { path: ['ipAddress'], equals: input.ipAddress },
+--       occurredAt: { gte: since },
+--     })
+--   to compute IP velocity in a 24h window. Without a GIN index
+--   that supports `@>` containment on the `after` column, the
+--   planner falls back to a Seq Scan of `audit_outbox`. At 10x
+--   load that table is ~10M rows; the velocity query is on the
+--   submit hot path. Each application submission would do a full
+--   scan, which is a textbook scale hot-spot.
+--
+--   `jsonb_path_ops` (vs default `jsonb_ops`) is the right opclass
+--   because we only need `@>` and `@@` operators — path_ops
+--   produces a smaller index (~25% the size) and is faster for
+--   containment lookups, which is exactly what the IP velocity
+--   query is doing under the hood.
+--
+-- Rollback:
+--   DROP INDEX CONCURRENTLY "audit_outbox_after_gin";
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "audit_outbox_after_gin"
+  ON "audit_outbox"
+  USING GIN ("after" jsonb_path_ops);

@@ -38,17 +38,17 @@ const TICKER: Array<{ value: string; label: string; delta: string }> = [
 ];
 
 const STATUS_QUO: Array<{ stat: string; label: string }> = [
-  { stat: '38%', label: 'Same-day close on implant consults (industry avg.)' },
-  { stat: '$1.4M', label: 'Annual case acceptance lost per 3-chair practice' },
-  { stat: '54%', label: 'Inbound applications that never get pre-qualified' },
-  { stat: '2 to 4 wks', label: 'Avg. time from consult to deposit' },
+  { stat: '38%', label: 'Same-day close (industry avg.)' },
+  { stat: '$1.4M', label: 'Case acceptance lost / yr (3-chair)' },
+  { stat: '54%', label: 'Inbound never pre-qualified' },
+  { stat: '2-4 wks', label: 'Consult → deposit' },
 ];
 
 const WITH_MEDPAY: Array<{ stat: string; label: string }> = [
-  { stat: 'At-chair', label: 'Higher close on implant consults when financing is presented at consult' },
-  { stat: '+$840k', label: 'Avg. case acceptance recovered (3-chair, year 1)' },
-  { stat: '52 lenders', label: 'Marketplace waterfall, soft pull only · real-lender approvals' },
-  { stat: 'Same-day', label: 'Consult → approval → funded · lender-direct disburse' },
+  { stat: 'Higher', label: 'Same-day close when financing is at-chair' },
+  { stat: 'Same-day', label: 'Consult → approval → funded' },
+  { stat: '52 lenders', label: 'Soft-pull marketplace · parallel quote' },
+  { stat: 'Direct', label: 'Lender disburses merchant-direct · 48-72hr' },
 ];
 
 const STAGES: Array<{ n: string; stage: string; title: string; body: string; metric: string }> = [
@@ -89,18 +89,18 @@ const STAGES: Array<{ n: string; stage: string; title: string; body: string; met
   },
 ];
 
-const OFFERS: Array<{ lender: string; term: string; monthly: string; apr: string; total: string; recommended?: boolean; note?: string }> = [
+const OFFERS: Array<{ label: string; term: string; monthly: string; apr: string; total: string; recommended?: boolean; note?: string }> = [
   {
-    lender: 'Cross River Bank',
+    label: 'Best · lowest total cost',
     term: '48 mo',
     monthly: '$250',
     apr: '6.9%',
     total: '$12,000',
     recommended: true,
-    note: 'Lowest total cost · soft pull only',
+    note: 'Soft pull only · lender confirmed at e-sign',
   },
-  { lender: 'FinWise Personal', term: '36 mo', monthly: '$338', apr: '8.9%', total: '$12,168' },
-  { lender: 'HSP Medical 0% Promo', term: '12 mo', monthly: '$1,000', apr: '0% promo', total: '$12,000', note: 'Deferred interest · pay-in-full' },
+  { label: 'Personal · 36 mo', term: '36 mo', monthly: '$338', apr: '8.9%', total: '$12,168', note: 'Soft pull only' },
+  { label: '0% Promo · 12 mo', term: '12 mo', monthly: '$1,000', apr: '0% promo', total: '$12,000', note: 'Deferred interest · pay-in-full · T&Cs apply' },
 ];
 
 type AgentStatus = 'ONLINE' | 'LEARNING';
@@ -297,7 +297,7 @@ const INTEGRATIONS: string[] = [
 const OBJECTIONS: Array<{ q: string; a: string }> = [
   {
     q: 'Will offering finance turn my practice into a CareCredit-style operation?',
-    a: 'No. MedPay is white-glove, brand-aware, and routed via your unique apply link. Patients see YOUR brand on the apply flow, not a third-party logo. The lender name only appears once on the offer card per FCRA disclosure rules. CareCredit feels like a credit-card pitch; MedPay feels like a feature of your practice.',
+    a: 'No. MedPay is a high-touch, premium patient experience. The patient sees an instant decision, three best-fit offers ranked by total cost, and a clean accept-and-go flow. The lender name only appears at e-sign per FCRA disclosure rules. CareCredit feels like a credit-card pitch; MedPay feels like a feature of your practice.',
   },
   {
     q: 'What happens if the patient defaults? Do I get clawed back?',
@@ -488,29 +488,31 @@ export default function MedPayLandingPage(): JSX.Element {
   useReveal();
   const scrolled = useScrolled();
 
-  // ROI calculator state — 4-stage funnel
-  const [leads, setLeads] = useState<number>(180);          // pre-qualified leads / month
-  const [showRate, setShowRate] = useState<number>(65);     // % of pre-qual leads that show up
-  const [closeRate, setCloseRate] = useState<number>(40);   // % of shows that say yes to treatment
+  // ROI calculator state — 5-input funnel
+  const [leads, setLeads] = useState<number>(180);          // inbound leads / month
+  const [qualifiedRate, setQualifiedRate] = useState<number>(50); // % of inbound that qualify
+  const [closeRate, setCloseRate] = useState<number>(45);   // % of qualifieds → yes-to-treatment
   const [fundedRate, setFundedRate] = useState<number>(70); // % of closes that fund via MedPay
   const [ticket, setTicket] = useState<number>(8000);       // avg ticket $
 
-  // Funded patients = leads × show% × close% × funded%
-  const fundedPerMonth = Math.round(
-    leads * (showRate / 100) * (closeRate / 100) * (fundedRate / 100)
+  // WITH MedPay: leads × qualified% × close% × funded%
+  const withFundedPerMonth = Math.round(
+    leads * (qualifiedRate / 100) * (closeRate / 100) * (fundedRate / 100)
   );
-  const fundedPerYear = fundedPerMonth * 12;
-  const recoveredAnnual = fundedPerYear * ticket;
-  const fundedMonthlyRevenue = fundedPerMonth * ticket;
+  const withFundedPerYear = withFundedPerMonth * 12;
+  const withRevenueAnnual = withFundedPerYear * ticket;
 
-  // Illustrative baseline: a typical no-MedPay funded-rate is ~35% due to financing friction.
-  // We frame the "lift" as illustrative — NOT a guarantee.
-  const BASELINE_FUNDED_RATE = 35; // %
-  const baselineFundedPerYear = Math.round(
-    leads * (showRate / 100) * (closeRate / 100) * (BASELINE_FUNDED_RATE / 100) * 12
+  // WITHOUT MedPay: industry baseline ~18% close rate (no pre-qual + no instant decision).
+  // No financing step — the close rate IS the funnel since there's no "fund" gate.
+  const WITHOUT_CLOSE_RATE = 18; // %
+  const withoutFundedPerMonth = Math.round(
+    leads * (qualifiedRate / 100) * (WITHOUT_CLOSE_RATE / 100)
   );
-  const baselineRevenueAnnual = baselineFundedPerYear * ticket;
-  const upliftAnnual = Math.max(0, recoveredAnnual - baselineRevenueAnnual);
+  const withoutFundedPerYear = withoutFundedPerMonth * 12;
+  const withoutRevenueAnnual = withoutFundedPerYear * ticket;
+
+  const deltaRevenue = Math.max(0, withRevenueAnnual - withoutRevenueAnnual);
+  const deltaPatients = Math.max(0, withFundedPerYear - withoutFundedPerYear);
 
   // Objections accordion state
   const [openIdx, setOpenIdx] = useState<number>(0);
@@ -1112,10 +1114,10 @@ export default function MedPayLandingPage(): JSX.Element {
                     'Loans $3,000 to $50,000 · soft pull at the chair · zero credit impact',
                     'APR from 5.9% for qualifying clients · terms up to 60 months',
                     '0% interest plans available for qualifying programs · T&Cs apply',
-                    'Instant decision · multiple ranked offers tailored to the patient',
+                    'Instant decision · three best-fit offers ranked by total cost',
                     'Merchant-direct payout · funds land generally within 48 to 72 hours',
                     'Lender carries the credit risk · no clawback on routine defaults',
-                    'White-labelled flow · patients see your brand, not the lender',
+                    'Premium patient experience · clean accept-and-go flow',
                     '52 lenders quoted in parallel · 5-second SLA per round-trip',
                   ].map((b, i) => (
                     <li key={i}>
@@ -1149,7 +1151,7 @@ export default function MedPayLandingPage(): JSX.Element {
                   <div className="mock-body">
                     <div className="mock-greet">Welcome, M. Alvarez · approved for $12,000</div>
                     <div className="mock-sub">
-                      We pulled 52 lender quotes in parallel. Here are your three best offers, ranked by total cost.
+                      52 lenders quoted in parallel. Your three best offers, ranked by total cost.
                     </div>
 
                     {/* waterfall mini-bar */}
@@ -1173,7 +1175,7 @@ export default function MedPayLandingPage(): JSX.Element {
                                   <Icon.Star /> Best
                                 </span>
                               )}
-                              {o.lender}
+                              <span className="mock-offer-label">{o.label}</span>
                             </div>
                             <div className="mock-offer-note">{o.note ?? `${o.term} · ${o.apr}`}</div>
                           </div>
@@ -1195,19 +1197,8 @@ export default function MedPayLandingPage(): JSX.Element {
                     </div>
 
                     <div className="mock-foot">
-                      Disclosure: soft credit pull only · 0 impact to score · lender shown is the on-disbursement
-                      financier. Final terms confirmed at e-sign.
+                      Soft credit pull only · 0 impact to score · final terms and lender confirmed at e-sign.
                     </div>
-                  </div>
-                </div>
-
-                {/* side micro-stat */}
-                <div className="mock-side-stat">
-                  <div className="mock-side-num">52</div>
-                  <div className="mock-side-lab">
-                    lenders quoted
-                    <br />
-                    in parallel
                   </div>
                 </div>
               </div>
@@ -1222,6 +1213,10 @@ export default function MedPayLandingPage(): JSX.Element {
                   <Icon.Hub />
                   THE SYNERGY
                 </div>
+                <h3 className="mp-synergy-h">
+                  <span className="grad-teal">Your financial filter.</span>{' '}
+                  <span className="grad-teal-deep">Your closer.</span>
+                </h3>
                 <div className="mp-synergy-pair">
                   <div className="mp-synergy-half">
                     <div className="mp-synergy-half-k">Agentic layer</div>
@@ -1236,14 +1231,11 @@ export default function MedPayLandingPage(): JSX.Element {
               </div>
               <div className="mp-synergy-body">
                 <p>
-                  <strong>The agentic layer is your financial filter. The lending waterfall is your closer.</strong>
-                </p>
-                <p>
                   Software agents work silently on every inbound application &mdash; soft-pull credit, identity
                   enrichment, propensity scoring &mdash; and surface only the financially-qualified prospects
-                  to your front desk. Your team&apos;s consult slots fill up with patients who can actually
-                  afford treatment. The lending waterfall returns an instant multi-offer decision at the chair.
-                  Combined, your team converts on the same visit instead of chasing payment plans over two weeks.
+                  to your front desk. Your consult slots fill up with patients who can actually afford treatment.
+                  The lending waterfall then returns an instant multi-offer decision at the chair. Your team
+                  converts on the same visit instead of chasing payment plans over two weeks.
                 </p>
               </div>
             </div>
@@ -1252,10 +1244,10 @@ export default function MedPayLandingPage(): JSX.Element {
           {/* ============== CALENDAR QUALITY + PIXEL FEEDBACK LOOP ============== */}
           <div className="mp-calendar reveal" id="calendar-quality">
             <div className="mp-calendar-head">
-              <div className="mp-section-tag" style={{ marginBottom: 18 }}>04A &middot; CALENDAR QUALITY</div>
+              <div className="mp-section-tag" style={{ marginBottom: 14 }}>04A &middot; CALENDAR QUALITY</div>
               <h3 className="mp-calendar-h">
-                <span className="grad-teal">Fill your calendar with buyers,</span>{' '}
-                <span className="grad-teal-deep">not fillers.</span>
+                <span className="grad-teal">Fill your calendar with buyers.</span>{' '}
+                <span className="grad-teal-deep">Not fillers.</span>
               </h3>
               <p className="mp-calendar-sub">
                 Your pixel learns what a funded patient looks like.
@@ -1352,181 +1344,187 @@ export default function MedPayLandingPage(): JSX.Element {
       {/* ============================== ROI CALCULATOR ============================== */}
       <section className="mp-roi" id="roi">
         <div className="mp-container">
-          <div className="mp-section-head reveal" style={{ maxWidth: '820px' }}>
+          <div className="mp-section-head reveal" style={{ maxWidth: '720px' }}>
             <div className="mp-section-tag">05 · YOUR NUMBERS</div>
             <h2 className="mp-h2">
-              <span className="grad-teal">Recovered case acceptance,</span>
-              <br />
-              <span className="grad-teal-deep">funnel-modelled on your numbers.</span>
+              <span className="grad-teal">What MedPay would do</span>{' '}
+              <span className="grad-teal-deep">for your practice.</span>
             </h2>
             <p className="mp-section-body">
-              Plug in your real funnel — pre-qualified leads, show rate, close rate, funded rate, avg ticket.
-              We&apos;ll model the financing-driven revenue from the patients who actually fund through MedPay.
-              Outputs are illustrative, not a guarantee of results.
+              Drop in your funnel. We model what you&apos;d recover with MedPay vs. without. Illustrative
+              based on your inputs &mdash; not a guarantee of returns.
             </p>
           </div>
 
-          <div className="mp-roi-grid reveal">
-            {/* LEFT: 5 sliders */}
-            <div className="mp-roi-card">
-              <div className="mp-roi-row">
-                <label htmlFor="roi-leads" className="mp-roi-label">
-                  <span>Pre-qualified leads / month</span>
-                  <span className="mp-roi-val">{leads}</span>
-                </label>
-                <input
-                  id="roi-leads"
-                  type="range"
-                  min={20}
-                  max={1000}
-                  step={5}
-                  value={leads}
-                  onChange={(e) => setLeads(Number(e.target.value))}
-                  className="mp-slider"
-                />
-                <div className="mp-slider-scale">
-                  <span>20</span>
-                  <span>1,000</span>
+          <div className="mp-roi-card-wrap reveal">
+            <div className="mp-roi-grid">
+              {/* LEFT: 5 dense sliders */}
+              <div className="mp-roi-inputs">
+                <div className="mp-roi-inputs-head">
+                  <span className="mp-roi-eyebrow-light">YOUR FUNNEL</span>
+                  <span className="mp-roi-inputs-meta">5 inputs · live</span>
+                </div>
+
+                <div className="mp-roi-row">
+                  <div className="mp-roi-label">
+                    <span>Inbound leads / month</span>
+                    <span className="mp-roi-val">{leads}</span>
+                  </div>
+                  <input
+                    id="roi-leads"
+                    type="range"
+                    min={20}
+                    max={1000}
+                    step={5}
+                    value={leads}
+                    onChange={(e) => setLeads(Number(e.target.value))}
+                    className="mp-slider"
+                  />
+                  <div className="mp-slider-scale">
+                    <span>20</span>
+                    <span>1,000</span>
+                  </div>
+                </div>
+
+                <div className="mp-roi-row">
+                  <div className="mp-roi-label">
+                    <span>Qualified lead %</span>
+                    <span className="mp-roi-val">{qualifiedRate}%</span>
+                  </div>
+                  <input
+                    id="roi-qual"
+                    type="range"
+                    min={10}
+                    max={90}
+                    step={1}
+                    value={qualifiedRate}
+                    onChange={(e) => setQualifiedRate(Number(e.target.value))}
+                    className="mp-slider"
+                  />
+                  <div className="mp-slider-scale">
+                    <span>10%</span>
+                    <span>90%</span>
+                  </div>
+                </div>
+
+                <div className="mp-roi-row">
+                  <div className="mp-roi-label">
+                    <span>Close rate (qualifieds &rarr; yes)</span>
+                    <span className="mp-roi-val">{closeRate}%</span>
+                  </div>
+                  <input
+                    id="roi-close"
+                    type="range"
+                    min={5}
+                    max={90}
+                    step={1}
+                    value={closeRate}
+                    onChange={(e) => setCloseRate(Number(e.target.value))}
+                    className="mp-slider"
+                  />
+                  <div className="mp-slider-scale">
+                    <span>5%</span>
+                    <span>90%</span>
+                  </div>
+                </div>
+
+                <div className="mp-roi-row">
+                  <div className="mp-roi-label">
+                    <span>Funded rate (closes &rarr; accept finance)</span>
+                    <span className="mp-roi-val">{fundedRate}%</span>
+                  </div>
+                  <input
+                    id="roi-funded"
+                    type="range"
+                    min={10}
+                    max={95}
+                    step={1}
+                    value={fundedRate}
+                    onChange={(e) => setFundedRate(Number(e.target.value))}
+                    className="mp-slider"
+                  />
+                  <div className="mp-slider-scale">
+                    <span>10%</span>
+                    <span>95%</span>
+                  </div>
+                </div>
+
+                <div className="mp-roi-row">
+                  <div className="mp-roi-label">
+                    <span>Avg treatment ticket</span>
+                    <span className="mp-roi-val">{fmtUsd(ticket)}</span>
+                  </div>
+                  <input
+                    id="roi-ticket"
+                    type="range"
+                    min={3000}
+                    max={50000}
+                    step={500}
+                    value={ticket}
+                    onChange={(e) => setTicket(Number(e.target.value))}
+                    className="mp-slider"
+                  />
+                  <div className="mp-slider-scale">
+                    <span>$3,000</span>
+                    <span>$50,000</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="mp-roi-row">
-                <label htmlFor="roi-show" className="mp-roi-label">
-                  <span>Show rate</span>
-                  <span className="mp-roi-val">{showRate}%</span>
-                </label>
-                <input
-                  id="roi-show"
-                  type="range"
-                  min={20}
-                  max={95}
-                  step={1}
-                  value={showRate}
-                  onChange={(e) => setShowRate(Number(e.target.value))}
-                  className="mp-slider"
-                />
-                <div className="mp-slider-scale">
-                  <span>20%</span>
-                  <span>95%</span>
+              {/* RIGHT: 2-up Without / With + delta */}
+              <div className="mp-roi-outputs">
+                <div className="mp-roi-outputs-head">
+                  <span className="mp-roi-eyebrow-light">ANNUAL OUTPUT</span>
+                  <span className="mp-roi-inputs-meta">illustrative</span>
                 </div>
-              </div>
 
-              <div className="mp-roi-row">
-                <label htmlFor="roi-close" className="mp-roi-label">
-                  <span>Close rate (shows &rarr; yes-to-treatment)</span>
-                  <span className="mp-roi-val">{closeRate}%</span>
-                </label>
-                <input
-                  id="roi-close"
-                  type="range"
-                  min={5}
-                  max={90}
-                  step={1}
-                  value={closeRate}
-                  onChange={(e) => setCloseRate(Number(e.target.value))}
-                  className="mp-slider"
-                />
-                <div className="mp-slider-scale">
-                  <span>5%</span>
-                  <span>90%</span>
+                <div className="mp-roi-compare">
+                  <div className="mp-roi-compare-card without">
+                    <div className="mp-roi-compare-eyebrow">WITHOUT MEDPAY</div>
+                    <div className="mp-roi-compare-meta">{WITHOUT_CLOSE_RATE}% close baseline</div>
+                    <div className="mp-roi-compare-block">
+                      <div className="mp-roi-compare-num">{fmtUsd(withoutRevenueAnnual)}</div>
+                      <div className="mp-roi-compare-lab">recovered revenue / yr</div>
+                    </div>
+                    <div className="mp-roi-compare-block">
+                      <div className="mp-roi-compare-num sm">{withoutFundedPerYear.toLocaleString('en-US')}</div>
+                      <div className="mp-roi-compare-lab">funded patients / yr</div>
+                    </div>
+                  </div>
+
+                  <div className="mp-roi-compare-card with">
+                    <div className="mp-roi-compare-eyebrow accent">WITH MEDPAY</div>
+                    <div className="mp-roi-compare-meta">your input rates</div>
+                    <div className="mp-roi-compare-block">
+                      <div className="mp-roi-compare-num accent">{fmtUsd(withRevenueAnnual)}</div>
+                      <div className="mp-roi-compare-lab">recovered revenue / yr</div>
+                    </div>
+                    <div className="mp-roi-compare-block">
+                      <div className="mp-roi-compare-num sm accent">{withFundedPerYear.toLocaleString('en-US')}</div>
+                      <div className="mp-roi-compare-lab">funded patients / yr</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="mp-roi-row">
-                <label htmlFor="roi-funded" className="mp-roi-label">
-                  <span>Funded rate (closes &rarr; accept finance)</span>
-                  <span className="mp-roi-val">{fundedRate}%</span>
-                </label>
-                <input
-                  id="roi-funded"
-                  type="range"
-                  min={10}
-                  max={95}
-                  step={1}
-                  value={fundedRate}
-                  onChange={(e) => setFundedRate(Number(e.target.value))}
-                  className="mp-slider"
-                />
-                <div className="mp-slider-scale">
-                  <span>10%</span>
-                  <span>95%</span>
+                <div className="mp-roi-delta">
+                  <div className="mp-roi-delta-main">
+                    <span className="mp-roi-delta-tag">DELTA</span>
+                    <span className="mp-roi-delta-val">+ {fmtUsd(deltaRevenue)} / year</span>
+                  </div>
+                  <div className="mp-roi-delta-sub">+ {deltaPatients.toLocaleString('en-US')} funded patients / year</div>
                 </div>
-              </div>
 
-              <div className="mp-roi-row">
-                <label htmlFor="roi-ticket" className="mp-roi-label">
-                  <span>Avg treatment ticket</span>
-                  <span className="mp-roi-val">{fmtUsd(ticket)}</span>
-                </label>
-                <input
-                  id="roi-ticket"
-                  type="range"
-                  min={3000}
-                  max={50000}
-                  step={500}
-                  value={ticket}
-                  onChange={(e) => setTicket(Number(e.target.value))}
-                  className="mp-slider"
-                />
-                <div className="mp-slider-scale">
-                  <span>$3,000</span>
-                  <span>$50,000</span>
-                </div>
-              </div>
-
-              <div className="mp-roi-assump">
-                <span className="mp-roi-assump-k">Funnel</span>
-                <span>
-                  Funded patients/mo = leads &times; show% &times; close% &times; funded%. Sits inside the
-                  MedPay loan range ($3k&ndash;$50k). Adjust each stage to match your real conversion.
-                </span>
+                <a href="/welcome" className="btn-primary-teal mp-roi-cta">
+                  Lock in this number
+                  <Icon.Arrow />
+                </a>
               </div>
             </div>
 
-            {/* RIGHT: output */}
-            <div className="mp-roi-out">
-              <div className="mp-roi-eyebrow">FINANCING-DRIVEN REVENUE · ANNUAL</div>
-              <div className="mp-roi-bignum">
-                {fmtUsd(recoveredAnnual)}
-                <span className="mp-roi-trailing">/ year</span>
-              </div>
-              <div className="mp-roi-sub">
-                Funnel: {leads} pre-qualified leads/mo &rarr; {Math.round(leads * (showRate / 100))} shows &rarr;{' '}
-                {Math.round(leads * (showRate / 100) * (closeRate / 100))} closes &rarr;{' '}
-                <strong>{fundedPerMonth} funded patients/mo</strong> at {fmtUsd(ticket)} avg ticket.
-              </div>
-
-              <div className="mp-roi-grid-mini">
-                <div>
-                  <div className="mp-roi-mini-num">{fundedPerMonth.toLocaleString('en-US')}</div>
-                  <div className="mp-roi-mini-lab">funded / month</div>
-                </div>
-                <div>
-                  <div className="mp-roi-mini-num">{fundedPerYear.toLocaleString('en-US')}</div>
-                  <div className="mp-roi-mini-lab">funded / year</div>
-                </div>
-                <div>
-                  <div className="mp-roi-mini-num">{fmtUsd(fundedMonthlyRevenue)}</div>
-                  <div className="mp-roi-mini-lab">funded $ / month</div>
-                </div>
-              </div>
-
-              {upliftAnnual > 0 && (
-                <div className="mp-roi-uplift-row">
-                  <div className="mp-roi-uplift-k">Illustrative uplift vs. {BASELINE_FUNDED_RATE}% funded-rate baseline</div>
-                  <div className="mp-roi-uplift-v">+{fmtUsd(upliftAnnual)} / year</div>
-                </div>
-              )}
-
-              <a href="/welcome" className="btn-primary-teal lg full">
-                Lock in this number
-                <Icon.Arrow />
-              </a>
-              <div className="mp-roi-foot">
-                Outputs are illustrative based on your inputs. Actual outcomes vary by practice, geography,
-                and patient mix. Not a guarantee of returns. Loans $3,000&ndash;$50,000; APR from 5.9% for
-                qualifying clients; terms up to 60 months; 0% interest plans available, T&amp;Cs apply.
-              </div>
+            <div className="mp-roi-foot">
+              Illustrative based on your inputs. Actual outcomes vary by practice, geography, and patient mix.
+              Not a guarantee of returns. Loans $3,000&ndash;$50,000; APR from 5.9%; terms up to 60 months; 0%
+              interest plans available (T&amp;Cs apply).
             </div>
           </div>
         </div>
@@ -1668,7 +1666,7 @@ export default function MedPayLandingPage(): JSX.Element {
               </a>
             </div>
             <div className="mp-final-foot">
-              No credit card · 5-minute setup · white-glove migration if you have a current finance partner.
+              No credit card · 5-minute setup · hands-on migration if you have a current finance partner.
             </div>
           </div>
         </div>
@@ -1863,19 +1861,19 @@ const CSS = `
 }
 
 /* ============== HERO ============== */
-.mp-hero { position: relative; padding: 160px 0 100px; }
+.mp-hero { position: relative; padding: 140px 0 64px; }
 .mp-hero-grid {
   display: grid;
   grid-template-columns: 1.05fr 1fr;
-  gap: 60px;
+  gap: 48px;
   align-items: center;
   position: relative;
 }
 .mp-eyebrow-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 999px;
-  font-size: 11px; letter-spacing: 0.14em; font-weight: 600;
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 600;
   color: var(--mp-teal);
   background: rgba(255,255,255,0.7);
   border: 1px solid var(--mp-line-strong);
@@ -1892,9 +1890,9 @@ const CSS = `
   50% { box-shadow: 0 0 0 8px rgba(34, 184, 160, 0.06); }
 }
 .mp-h1 {
-  margin-top: 24px;
-  font-size: 72px;
-  line-height: 1.02;
+  margin-top: 20px;
+  font-size: 64px;
+  line-height: 1.04;
   letter-spacing: -0.025em;
   font-weight: 700;
 }
@@ -1911,8 +1909,8 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .mp-hero-sub {
-  margin-top: 24px;
-  font-size: 18px;
+  margin-top: 18px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--mp-ink-2);
   max-width: 560px;
@@ -1920,31 +1918,31 @@ const CSS = `
 .mp-hero-sub strong { color: var(--mp-teal); font-weight: 700; }
 .mp-hero-sub em { color: var(--mp-ink); font-style: italic; }
 .mp-hero-ctas {
-  margin-top: 32px;
-  display: flex; flex-wrap: wrap; gap: 12px;
+  margin-top: 24px;
+  display: flex; flex-wrap: wrap; gap: 10px;
 }
 .mp-hero-strip {
-  margin-top: 40px;
+  margin-top: 28px;
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background: var(--mp-line);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--mp-line);
 }
 .mp-hero-strip > div {
   background: rgba(255,255,255,0.85);
-  padding: 14px 14px;
+  padding: 12px 12px;
 }
 .strip-val {
-  font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+  font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   color: var(--mp-ink);
 }
 .strip-unit { color: var(--mp-mute); font-size: 0.7em; margin-left: 2px; }
 .strip-label {
-  margin-top: 4px;
-  font-size: 11px; letter-spacing: 0.10em;
+  margin-top: 3px;
+  font-size: 10px; letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--mp-mute);
   display: flex; align-items: center; gap: 8px;
@@ -1992,8 +1990,8 @@ const CSS = `
   position: absolute;
   top: 4%; left: 2%; right: 42%;
   z-index: 5;
-  border-radius: 22px;
-  padding: 20px;
+  border-radius: 20px;
+  padding: 18px;
 }
 .mp-offer-head { display: flex; align-items: center; justify-content: space-between; }
 .mp-offer-tag {
@@ -2010,29 +2008,29 @@ const CSS = `
   font-variant-numeric: tabular-nums;
 }
 .mp-offer-title {
-  margin-top: 16px;
-  font-size: 14px; font-weight: 600; color: var(--mp-mute);
+  margin-top: 12px;
+  font-size: 13px; font-weight: 600; color: var(--mp-mute);
   letter-spacing: -0.01em;
 }
 .mp-offer-amount {
   margin-top: 4px;
-  font-size: 48px; font-weight: 700;
+  font-size: 44px; font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
 }
 .mp-offer-amount-sub {
-  font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
   color: var(--mp-teal);
   text-transform: uppercase;
 }
 .mp-offer-row {
-  margin-top: 22px;
+  margin-top: 18px;
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  padding-top: 18px;
+  gap: 12px;
+  padding-top: 14px;
   border-top: 1px solid var(--mp-line);
 }
 .mp-offer-row-k {
@@ -2040,14 +2038,14 @@ const CSS = `
   text-transform: uppercase; color: var(--mp-mute);
 }
 .mp-offer-row-v {
-  margin-top: 4px;
-  font-size: 18px; font-weight: 700; color: var(--mp-ink);
+  margin-top: 3px;
+  font-size: 16px; font-weight: 700; color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
 }
-.mp-offer-row-v.sm { font-size: 13px; font-weight: 600; }
+.mp-offer-row-v.sm { font-size: 12px; font-weight: 600; }
 .mp-offer-row-v .dim { color: var(--mp-mute); font-weight: 500; font-size: 0.7em; margin-left: 4px; }
 
-.mp-offer-bar { margin-top: 22px; }
+.mp-offer-bar { margin-top: 18px; }
 .mp-offer-bar-track {
   height: 6px; border-radius: 999px;
   background: rgba(14, 124, 102, 0.08);
@@ -2085,21 +2083,21 @@ const CSS = `
   transform: translateY(-50%);
 }
 .mp-offer-cta {
-  margin-top: 22px;
+  margin-top: 18px;
   width: 100%;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 14px;
+  padding: 12px;
   border-radius: 12px;
   background: linear-gradient(180deg, var(--mp-teal-2) 0%, var(--mp-teal) 100%);
   color: #fff;
-  font-weight: 600; font-size: 14px;
+  font-weight: 600; font-size: 13px;
   border: none;
   box-shadow: 0 10px 30px -10px rgba(14,124,102,0.55);
 }
 .mp-offer-foot {
-  margin-top: 14px;
+  margin-top: 12px;
   display: flex; justify-content: space-between;
-  font-size: 11px; color: var(--mp-mute);
+  font-size: 10px; color: var(--mp-mute);
 }
 .mp-offer-foot span { display: inline-flex; align-items: center; gap: 6px; }
 
@@ -2161,35 +2159,35 @@ const CSS = `
 
 /* ============== TICKER ============== */
 .mp-ticker {
-  margin-top: 96px;
+  margin-top: 56px;
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 1px;
   background: var(--mp-line);
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--mp-line);
   box-shadow: 0 20px 60px -30px rgba(14,124,102,0.25);
 }
 .mp-ticker-cell {
   background: rgba(255,255,255,0.92);
-  padding: 22px 24px;
+  padding: 18px 20px;
 }
 .mp-ticker-val {
-  font-size: 36px; font-weight: 700;
+  font-size: 28px; font-weight: 700;
   letter-spacing: -0.025em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .mp-ticker-lab {
-  margin-top: 8px;
-  font-size: 12px; letter-spacing: 0.10em; font-weight: 600;
+  margin-top: 6px;
+  font-size: 11px; letter-spacing: 0.10em; font-weight: 600;
   text-transform: uppercase; color: var(--mp-mute);
 }
 .mp-ticker-delta {
-  margin-top: 12px;
+  margin-top: 8px;
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--mp-teal);
+  font-size: 10px; color: var(--mp-teal);
 }
 .delta-dot {
   width: 5px; height: 5px; border-radius: 999px;
@@ -2197,25 +2195,25 @@ const CSS = `
 }
 
 /* ============== SECTION HEAD ============== */
-.mp-section-head { margin-bottom: 60px; }
+.mp-section-head { margin-bottom: 36px; }
 .mp-section-tag {
-  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .mp-section-tag.dark { color: var(--mp-teal-2); }
 .mp-section-tag.muted-tag { color: var(--mp-mute); }
 .mp-h2 {
-  font-size: 48px; line-height: 1.08;
-  letter-spacing: -0.025em; font-weight: 700;
+  font-size: 32px; line-height: 1.12;
+  letter-spacing: -0.022em; font-weight: 700;
 }
 .mp-h2.light { color: #fff; }
 .mp-h2.left { text-align: left; }
 .mp-h2.light em { font-style: italic; color: #B5E6DC; font-weight: 600; }
 .mp-section-body {
-  margin-top: 20px;
-  font-size: 17px; line-height: 1.65;
+  margin-top: 14px;
+  font-size: 14px; line-height: 1.6;
   color: var(--mp-ink-2);
 }
 .mp-section-body.light { color: #B5E6DC; }
@@ -2224,7 +2222,7 @@ const CSS = `
 .mp-problem {
   background: var(--mp-deep);
   color: #fff;
-  padding: 110px 0;
+  padding: 64px 0;
   position: relative;
   overflow: hidden;
 }
@@ -2238,14 +2236,14 @@ const CSS = `
   pointer-events: none;
 }
 .mp-compare {
-  margin-top: 60px;
+  margin-top: 36px;
   display: grid; grid-template-columns: 1fr auto 1fr;
-  gap: 28px;
+  gap: 20px;
   align-items: stretch;
 }
 .mp-compare-card {
-  border-radius: 22px;
-  padding: 34px;
+  border-radius: 18px;
+  padding: 24px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   display: flex; flex-direction: column;
@@ -2256,42 +2254,43 @@ const CSS = `
   box-shadow: 0 30px 80px -30px rgba(34, 184, 160, 0.45);
 }
 .mp-compare-eyebrow {
-  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
   color: var(--mp-teal-2);
   text-transform: uppercase;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 .mp-compare-eyebrow.muted { color: rgba(255,255,255,0.45); }
 .mp-compare-list {
   list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 18px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 .mp-compare-list li {
   display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 18px;
+  grid-template-columns: 110px 1fr;
+  gap: 14px;
   align-items: baseline;
-  padding-bottom: 18px;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.mp-compare-list li:last-child { border-bottom: none; padding-bottom: 0; }
+.mp-compare-list li:last-child { border-bottom: none; padding-bottom: 4px; }
 .mp-compare-stat {
-  font-size: 28px; font-weight: 700; letter-spacing: -0.025em;
+  font-size: 26px; font-weight: 700; letter-spacing: -0.022em;
   color: #fff;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  text-align: left;
 }
-.mp-compare-stat.muted { color: rgba(255,255,255,0.50); }
+.mp-compare-stat.muted { color: rgba(255,255,255,0.55); }
 .mp-compare-label {
-  font-size: 14px; line-height: 1.45;
-  color: rgba(255,255,255,0.65);
+  font-size: 12px; line-height: 1.45;
+  color: rgba(255,255,255,0.68);
 }
 .mp-compare-label.light { color: #C4ECDF; }
 .mp-compare-foot {
-  margin-top: 24px;
-  padding-top: 20px;
+  margin-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,0.10);
-  font-size: 12px; letter-spacing: 0.12em; font-weight: 600;
+  font-size: 10px; letter-spacing: 0.12em; font-weight: 600;
   text-transform: uppercase;
   color: rgba(255,255,255,0.55);
 }
@@ -2299,12 +2298,12 @@ const CSS = `
 .mp-compare-foot.light { color: var(--mp-teal-2); }
 .mp-compare-divider {
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
   text-transform: uppercase;
   color: rgba(255,255,255,0.4);
 }
 .mp-compare-divider span {
-  width: 44px; height: 44px;
+  width: 36px; height: 36px;
   border-radius: 999px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.10);
@@ -2312,13 +2311,13 @@ const CSS = `
 }
 
 @media (max-width: 960px) {
-  .mp-compare { grid-template-columns: 1fr; }
+  .mp-compare { grid-template-columns: 1fr; gap: 14px; }
   .mp-compare-divider span { transform: rotate(90deg); }
 }
 
 /* ============== WATERFALL ============== */
-.mp-waterfall { padding: 110px 0; position: relative; }
-.mp-waterfall-diagram { position: relative; min-height: 380px; }
+.mp-waterfall { padding: 64px 0; position: relative; }
+.mp-waterfall-diagram { position: relative; min-height: 340px; }
 .mp-waterfall-svg {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
@@ -2337,56 +2336,56 @@ const CSS = `
 .mp-stages-row {
   position: relative;
   display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 24px;
-  padding-top: 40px;
+  gap: 16px;
+  padding-top: 28px;
 }
 .mp-stage-node { display: flex; flex-direction: column; align-items: center; }
 .mp-stage-num {
-  width: 48px; height: 48px; border-radius: 14px;
+  width: 40px; height: 40px; border-radius: 12px;
   background: linear-gradient(135deg, var(--mp-teal-2), var(--mp-teal));
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 17px;
+  font-weight: 700; font-size: 14px;
   letter-spacing: -0.01em;
   box-shadow: 0 12px 30px -8px rgba(14, 124, 102, 0.50);
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   z-index: 2;
 }
 .mp-stage-card {
   background: rgba(255,255,255,0.92);
   border: 1px solid var(--mp-line);
-  border-radius: 16px;
-  padding: 18px;
+  border-radius: 14px;
+  padding: 14px;
   text-align: center;
   width: 100%;
   box-shadow: 0 14px 36px -16px rgba(14, 124, 102, 0.22);
   backdrop-filter: blur(8px);
 }
 .mp-stage-stage {
-  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  font-size: 10px; letter-spacing: 0.16em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
 }
 .mp-stage-title {
-  margin-top: 6px;
-  font-size: 15px; font-weight: 700;
+  margin-top: 4px;
+  font-size: 13px; font-weight: 700;
   color: var(--mp-ink);
   letter-spacing: -0.01em;
   line-height: 1.25;
 }
 .mp-stage-metric {
-  margin-top: 10px;
-  font-size: 11px; letter-spacing: 0.14em; font-weight: 700;
+  margin-top: 8px;
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: rgba(34, 184, 160, 0.10);
   border-radius: 999px;
   display: inline-block;
 }
 .mp-stage-body {
-  margin-top: 12px;
-  font-size: 12px; line-height: 1.5;
+  margin-top: 10px;
+  font-size: 11px; line-height: 1.5;
   color: var(--mp-mute);
   text-align: left;
 }
@@ -2400,20 +2399,20 @@ const CSS = `
 }
 
 /* ============== PILLARS ============== */
-.mp-pillars { padding: 110px 0; position: relative; }
+.mp-pillars { padding: 64px 0; position: relative; }
 
 .mp-pillar {
   position: relative;
   background: rgba(255,255,255,0.7);
   border: 1px solid var(--mp-line);
-  border-radius: 28px;
-  padding: 48px;
+  border-radius: 24px;
+  padding: 36px;
   box-shadow: 0 28px 80px -40px rgba(14, 124, 102, 0.30);
   backdrop-filter: blur(8px);
   overflow: hidden;
 }
 .mp-pillar.dominant {
-  padding: 60px;
+  padding: 40px;
   background:
     radial-gradient(ellipse 60% 60% at 80% 20%, rgba(34, 184, 160, 0.10), transparent 60%),
     linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(247,253,252,0.85) 100%);
@@ -2422,16 +2421,16 @@ const CSS = `
 .mp-pillar-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 40px;
+  gap: 28px;
 }
 .mp-pillar-grid.dominant-grid {
   grid-template-columns: 1.05fr 1.15fr;
-  gap: 56px;
+  gap: 40px;
   align-items: center;
 }
 @media (max-width: 1023px) {
   .mp-pillar-grid.dominant-grid { grid-template-columns: 1fr; }
-  .mp-pillar.dominant { padding: 36px; }
+  .mp-pillar.dominant { padding: 28px; }
 }
 
 .mp-pillar-badge {
@@ -2461,33 +2460,33 @@ const CSS = `
 .mp-pillar-tag.muted { color: var(--mp-mute); background: rgba(14, 124, 102, 0.06); border-color: var(--mp-line); }
 
 .mp-pillar-title {
-  margin-top: 22px;
-  font-size: 34px; font-weight: 700;
-  letter-spacing: -0.025em; line-height: 1.12;
+  margin-top: 16px;
+  font-size: 26px; font-weight: 700;
+  letter-spacing: -0.022em; line-height: 1.18;
   color: var(--mp-ink);
 }
 .mp-pillar-title.small {
-  font-size: 22px;
-  line-height: 1.18;
+  font-size: 19px;
+  line-height: 1.22;
 }
 .mp-pillar-title .num-tone { color: var(--mp-teal); }
 .mp-pillar-body {
-  margin-top: 18px;
-  font-size: 16px; line-height: 1.65;
+  margin-top: 12px;
+  font-size: 14px; line-height: 1.6;
   color: var(--mp-ink-2);
   max-width: 560px;
 }
-.mp-pillar-body.small { font-size: 14px; line-height: 1.6; }
+.mp-pillar-body.small { font-size: 13px; line-height: 1.55; }
 
 .mp-pillar-bullets {
-  margin-top: 24px;
+  margin-top: 18px;
   list-style: none; padding: 0;
-  display: flex; flex-direction: column; gap: 12px;
+  display: flex; flex-direction: column; gap: 9px;
 }
-.mp-pillar-bullets.small li { font-size: 13px; gap: 10px; }
+.mp-pillar-bullets.small li { font-size: 12px; gap: 10px; }
 .mp-pillar-bullets li {
-  display: flex; align-items: flex-start; gap: 12px;
-  font-size: 14px; line-height: 1.5; color: var(--mp-ink-2);
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; line-height: 1.5; color: var(--mp-ink-2);
 }
 .mp-bullet-tick {
   flex-shrink: 0;
@@ -2499,20 +2498,20 @@ const CSS = `
 }
 
 .mp-pillar-roi {
-  margin-top: 28px;
+  margin-top: 22px;
   display: inline-flex; align-items: center; gap: 10px;
-  padding: 10px 16px;
-  border-radius: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
   background: linear-gradient(180deg, rgba(34, 184, 160, 0.10) 0%, rgba(14, 124, 102, 0.06) 100%);
   border: 1px solid rgba(34, 184, 160, 0.32);
   color: var(--mp-teal);
-  font-weight: 700; font-size: 13px;
+  font-weight: 700; font-size: 12px;
   letter-spacing: 0.01em;
 }
 .mp-pillar-roi.muted {
   background: rgba(14, 124, 102, 0.06);
   border-color: var(--mp-line-strong);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 /* DOMINANT MOCKUP: offer comparison */
@@ -2550,22 +2549,22 @@ const CSS = `
   text-transform: uppercase; letter-spacing: 0.12em;
   font-weight: 700;
 }
-.mock-body { padding: 24px; }
+.mock-body { padding: 20px; }
 .mock-greet {
-  font-size: 19px; font-weight: 700;
+  font-size: 16px; font-weight: 700;
   color: var(--mp-ink);
   letter-spacing: -0.01em;
 }
 .mock-sub {
-  margin-top: 6px;
-  font-size: 13px; color: var(--mp-mute);
+  margin-top: 4px;
+  font-size: 12px; color: var(--mp-mute);
   line-height: 1.5;
 }
 
 .mock-waterfall {
-  margin-top: 20px;
-  padding: 14px;
-  border-radius: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
   background: rgba(14, 124, 102, 0.04);
   border: 1px solid var(--mp-line);
 }
@@ -2591,12 +2590,12 @@ const CSS = `
   letter-spacing: 0.04em;
 }
 
-.mock-offers { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.mock-offers { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 .mock-offer {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 16px 18px;
+  padding: 12px 14px;
   border: 1px solid var(--mp-line);
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff;
   transition: all .15s ease;
 }
@@ -2606,42 +2605,46 @@ const CSS = `
   box-shadow: 0 12px 30px -10px rgba(14, 124, 102, 0.22);
 }
 .mock-offer-lender {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700;
   color: var(--mp-ink);
+}
+.mock-offer-label {
+  font-weight: 700;
+  letter-spacing: -0.005em;
 }
 .mock-best {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; letter-spacing: 0.10em; font-weight: 700;
+  font-size: 9px; letter-spacing: 0.10em; font-weight: 700;
   color: var(--mp-teal);
-  padding: 3px 8px; border-radius: 6px;
+  padding: 2px 7px; border-radius: 5px;
   background: rgba(34, 184, 160, 0.16);
 }
 .mock-offer-note {
-  margin-top: 4px;
-  font-size: 12px; color: var(--mp-mute);
+  margin-top: 3px;
+  font-size: 11px; color: var(--mp-mute);
 }
 .mock-offer-monthly {
-  font-size: 22px; font-weight: 700; letter-spacing: -0.025em;
+  font-size: 18px; font-weight: 700; letter-spacing: -0.022em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
 }
 .mock-offer-monthly .dim { color: var(--mp-mute); font-size: 0.6em; font-weight: 500; margin-left: 2px; }
 .mock-offer-meta {
   margin-top: 2px;
-  font-size: 11px; color: var(--mp-mute);
+  font-size: 10px; color: var(--mp-mute);
   text-align: right;
 }
 
 .mock-cta-row {
-  margin-top: 20px;
+  margin-top: 14px;
   display: grid; grid-template-columns: 1.4fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 .mock-cta-primary, .mock-cta-ghost {
-  padding: 13px;
-  border-radius: 11px;
-  font-weight: 700; font-size: 13px;
+  padding: 11px;
+  border-radius: 10px;
+  font-weight: 700; font-size: 12px;
   border: none;
 }
 .mock-cta-primary {
@@ -2654,31 +2657,9 @@ const CSS = `
   border: 1px solid var(--mp-line-strong);
 }
 .mock-foot {
-  margin-top: 14px;
+  margin-top: 10px;
   font-size: 10px; line-height: 1.5;
   color: var(--mp-mute);
-}
-
-.mock-side-stat {
-  position: absolute;
-  top: -16px; right: -18px;
-  background: var(--mp-deep);
-  color: #fff;
-  border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: 0 18px 40px -16px rgba(6, 44, 41, 0.5);
-  z-index: 3;
-  min-width: 140px;
-}
-.mock-side-num {
-  font-size: 28px; font-weight: 800; letter-spacing: -0.025em;
-  background: linear-gradient(135deg, var(--mp-teal-2), #B5E6DC);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.mock-side-lab {
-  margin-top: 4px;
-  font-size: 10px; color: rgba(255,255,255,0.7);
-  letter-spacing: 0.04em; line-height: 1.4;
 }
 
 /* ============== ROI ============== */

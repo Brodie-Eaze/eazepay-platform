@@ -1,0 +1,10 @@
+# SEC-050. Disallow indexing of authenticated, API, and operator
+# surfaces so leaked URLs never appear in search results. Public
+# marketing pages remain crawlable by default. Update this list
+# whenever a new operator/admin path is added.
+User-agent: *
+Disallow: /api/
+Disallow: /v/
+Disallow: /admin/
+Disallow: /control-panel/
+Disallow: /reports/

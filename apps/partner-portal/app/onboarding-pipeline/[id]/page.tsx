@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import {
@@ -56,6 +56,8 @@ import {
 
 const ago = seedAgo;
 
+const OPERATOR_EMAIL = 'brodie@amalafinance.com.au';
+
 const checkTone = (s: CheckState): 'success' | 'warning' | 'neutral' | 'info' =>
   s === 'pass'
     ? 'success'
@@ -67,11 +69,51 @@ const checkTone = (s: CheckState): 'success' | 'warning' | 'neutral' | 'info' =>
           ? 'warning'
           : 'neutral';
 
+/** Pulls the operator's invite list and checks whether the business
+ * on this page was opened from one of them (by contact email match).
+ * Cheap, runs once. Returns null while loading so the badge doesn't
+ * flicker in. */
+function useInvitedByOperator(contactEmail: string): boolean | null {
+  const [invited, setInvited] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/onboarding/invite?invitedByEmail=${encodeURIComponent(OPERATOR_EMAIL)}`,
+          { credentials: 'include' },
+        );
+        if (!res.ok) {
+          if (!cancelled) setInvited(false);
+          return;
+        }
+        const json = (await res.json()) as {
+          invites: Array<{ prefill?: { contactEmail?: string } }>;
+        };
+        if (cancelled) return;
+        const match = json.invites?.some(
+          (i) =>
+            i.prefill?.contactEmail &&
+            i.prefill.contactEmail.toLowerCase() === contactEmail.toLowerCase(),
+        );
+        setInvited(!!match);
+      } catch {
+        if (!cancelled) setInvited(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [contactEmail]);
+  return invited;
+}
+
 export default function OnboardingBusinessDetail() {
   const { id } = useParams<{ id: string }>();
   const seed = useMemo(() => ONBOARDING_BUSINESSES.find((b) => b.id === id), [id]);
   if (!seed) notFound();
   const biz = seed!;
+  const invitedByOperator = useInvitedByOperator(biz.primaryContact.email);
 
   return (
     <>
@@ -104,6 +146,11 @@ export default function OnboardingBusinessDetail() {
                 {BRANDS[br].name}
               </StatusPill>
             ))}
+            {invitedByOperator && (
+              <StatusPill tone="info" dot>
+                Your invite
+              </StatusPill>
+            )}
             <StatusPill tone="neutral">Last activity {ago(biz.lastActivityAt)}</StatusPill>
           </>
         }

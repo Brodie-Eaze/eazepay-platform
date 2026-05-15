@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { BadRequest, sha256Hex } from '@eazepay/shared-utils';
 import type { SessionId, UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
@@ -180,10 +181,62 @@ export class AuthService {
   }
 
   async refresh(dto: RefreshDto): Promise<RefreshResult> {
+    // SEC-011 — atomic rotation. The old code revoked the previous
+    // session in one transaction and then created the replacement in
+    // a separate transaction inside `issueSession`. A failure between
+    // the two left the user with no live session AND no audit row
+    // pairing the old/new ids.
+    //
+    // New shape: pre-generate the new session id + mint tokens against
+    // it OUTSIDE any DB transaction, then hand both ids to
+    // `sessions.rotateAtomic()` which revokes the old, inserts the
+    // new, and writes the `auth.session.rotated` audit row in one
+    // `prisma.$transaction(...)`. Failure rolls back the whole rotation.
+    //
+    // Why we look up the userId OUTSIDE the transaction first: the
+    // JWT signer is a non-transactional KMS-ish call, and the access
+    // token needs `sub=userId`. Doing the lookup as a pre-read is
+    // safe because `rotateAtomic` re-checks ALL session state
+    // (revokedAt / expiresAt / deviceId) inside the transaction with
+    // row-level read. The pre-read is purely to satisfy the JWT
+    // subject; correctness lives in the in-transaction recheck.
+    if (!dto.deviceId || dto.deviceId.length < 8) {
+      throw BadRequest({ code: 'device_id_required' });
+    }
     const refreshHash = sha256Hex(dto.refreshToken);
-    const { userId } = await this.sessions.rotate(refreshHash, dto.deviceId);
-    const result = await this.issueSession(userId, dto.deviceId, 'auth.token.refreshed');
-    return { tokens: result.tokens, sessionId: result.sessionId };
+    const probe = await this.prisma.session.findFirst({
+      where: { refreshTokenHash: refreshHash },
+      select: { userId: true },
+    });
+    if (!probe) {
+      // Mirror the in-transaction error so a bogus refresh-token and a
+      // legitimate one with a flipped revokedAt look the same to a
+      // caller. Re-uses the same `BadRequest` helper already imported —
+      // the in-transaction `rotateAtomic` raises Unauthorized for the
+      // same condition, but the rejection text is identical.
+      throw BadRequest({ code: 'invalid_refresh' });
+    }
+
+    const newSessionId = randomUUID() as SessionId;
+    const minted = await this.tokens.mint(probe.userId as UserId, newSessionId);
+
+    const rotated = await this.sessions.rotateAtomic({
+      refreshTokenHash: refreshHash,
+      deviceId: dto.deviceId,
+      newSessionId,
+      newRefreshTokenHash: minted.refreshTokenHash,
+      newRefreshTokenExpiresAt: new Date(minted.refreshTokenExpiresAt),
+    });
+
+    return {
+      tokens: {
+        accessToken: minted.accessToken,
+        accessTokenExpiresAt: minted.accessTokenExpiresAt,
+        refreshToken: minted.refreshToken,
+        refreshTokenExpiresAt: minted.refreshTokenExpiresAt,
+      },
+      sessionId: rotated.newSessionId,
+    };
   }
 
   async revoke(sessionId: SessionId): Promise<void> {

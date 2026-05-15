@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuditDrainService } from './audit-drain.service.js';
 import { AUDIT_SINK } from './ports/audit-sink.port.js';
 import { LocalFsAuditSink } from './adapters/local-fs-audit-sink.adapter.js';
-import { PRISMA } from './internal/tokens.js';
+import { AUDIT_DRAIN_CRON_OPTIONS, PRISMA } from './internal/tokens.js';
 
 export interface AuditModuleOptions {
   prismaToken: symbol | string | (abstract new (...args: never[]) => PrismaClient);
@@ -11,7 +11,13 @@ export interface AuditModuleOptions {
   sink: 'local-fs' | 'dynamodb';
   /** Root dir for the local-fs sink. */
   localFsRoot?: string;
-  /** Whether the drain cron runs in this process (single-replica only). */
+  /** Umbrella leader gate — set by the caller from `env.CRON_LEADER`.
+   *  When false on a replica, NO cron in this process fires, even if
+   *  `drainEnabled` is true. Multi-replica safety lives here. */
+  cronLeader: boolean;
+  /** Per-cron kill-switch. False disables the drain even when this
+   *  process is the leader. Both flags must be true for the drain to
+   *  fire. */
   drainEnabled: boolean;
   isDevelopment: boolean;
 }
@@ -38,12 +44,25 @@ export class AuditModule {
     };
 
     const providers: Provider[] = [prisma, sink];
-    if (options.drainEnabled) providers.push(AuditDrainService);
+    // Provider-registration gate: drain class is only instantiated when
+    // BOTH flags are true. The handler-entry check inside the service
+    // is defense in depth on top of this.
+    const cronShouldRun = options.cronLeader && options.drainEnabled;
+    if (cronShouldRun) {
+      providers.push({
+        provide: AUDIT_DRAIN_CRON_OPTIONS,
+        useValue: {
+          cronLeader: options.cronLeader,
+          drainEnabled: options.drainEnabled,
+        },
+      });
+      providers.push(AuditDrainService);
+    }
 
     return {
       module: AuditModule,
       providers,
-      exports: [AUDIT_SINK, ...(options.drainEnabled ? [AuditDrainService] : [])],
+      exports: [AUDIT_SINK, ...(cronShouldRun ? [AuditDrainService] : [])],
     };
   }
 }

@@ -4,14 +4,80 @@ import { NextResponse } from 'next/server';
  * Shared helpers for the public lender-facing `/api/v1/*` endpoints.
  *
  * Production routes signed traffic through HMAC-SHA256 with a
- * per-lender shared secret. In demo mode we still validate signature
- * headers when present so a lender can run their integration tests end
- * to end, but we don't reject unsigned requests — we annotate the
- * response with `_meta.signature_status` so the lender sees how their
- * key is being interpreted.
+ * per-lender shared secret. In demo / preview mode we still validate
+ * signature headers when present so a lender can run their integration
+ * tests end to end, but we don't reject unsigned requests — we annotate
+ * the response with `_meta.signature_status` so the lender sees how
+ * their key is being interpreted.
+ *
+ * SECURITY (SEC-003 hardening): In production, unsigned requests are
+ * REJECTED. The `verifySignature()` helper returns `status: 'skipped'`
+ * when no signature headers are present; callers MUST consult
+ * `signatureRequired()` and refuse 'skipped' alongside 'invalid' /
+ * 'missing' when running in prod. Attack scenario being closed: a
+ * lender (or anyone who can reach /api/v1/lenders/{id}/quote) drops the
+ * HMAC headers entirely and receives a 200 with real offer data,
+ * bypassing the per-lender shared-secret check that's the only thing
+ * gating these endpoints. The `requireSignatureCheck()` helper below
+ * is the single source of truth for the env-gated reject decision.
  */
 
 const MOCK_SECRET = 'demo_shared_secret_replace_in_prod';
+
+/**
+ * In production, HMAC signatures are MANDATORY — unsigned ('skipped')
+ * requests must be rejected the same way 'invalid' / 'missing' are.
+ * Outside prod (dev, preview, test) we keep the lenient default so
+ * local demo flows and integration-partner sandboxes keep working
+ * without secret-management overhead.
+ *
+ * Override with `REQUIRE_HMAC=true` if you need to force-enable the
+ * strict policy in a non-prod environment (e.g. a security-review
+ * staging box).
+ */
+export function signatureRequired(): boolean {
+  return (
+    process.env.NODE_ENV === 'production' || process.env.REQUIRE_HMAC === 'true'
+  );
+}
+
+/**
+ * Single source of truth for "should this request be rejected on the
+ * basis of its signature check?". Returns a non-null `problem`-style
+ * payload to throw straight into a 401 response when the answer is
+ * yes, or null when the request may proceed.
+ *
+ * Centralising this here means we cannot accidentally diverge across
+ * the lender / webhook / future route handlers — every caller funnels
+ * through the same gate and the same env override.
+ */
+export function requireSignatureCheck(
+  sigCheck: { status: 'valid' | 'missing' | 'invalid' | 'skipped'; reason?: string },
+  instance: string,
+):
+  | null
+  | { title: string; status: number; code: string; detail: string; instance: string } {
+  if (sigCheck.status === 'invalid' || sigCheck.status === 'missing') {
+    return {
+      title: 'Unauthorized',
+      status: 401,
+      code: `signature_${sigCheck.status}`,
+      detail: sigCheck.reason ?? 'HMAC signature failed.',
+      instance,
+    };
+  }
+  if (sigCheck.status === 'skipped' && signatureRequired()) {
+    return {
+      title: 'Unauthorized',
+      status: 401,
+      code: 'signature_required',
+      detail:
+        'HMAC signature headers (X-EazePay-Timestamp · X-EazePay-Nonce · X-EazePay-Signature) are mandatory in this environment.',
+      instance,
+    };
+  }
+  return null;
+}
 
 export interface ProblemDetails {
   type?: string;
@@ -82,9 +148,38 @@ export async function verifySignature(args: {
     const hex = [...new Uint8Array(sigBuf)]
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
-    return hex === signature
-      ? { status: 'valid' }
-      : { status: 'invalid', reason: 'Signature did not match the computed HMAC-SHA256 over timestamp.nonce.body.' };
+    // SEC-028 — constant-time comparison.
+    //
+    // Threat closed: the previous hex===signature check short-circuits
+    // on the first differing byte. A network-adjacent attacker can
+    // repeatedly call the endpoint with varying signatures and measure
+    // response time to recover the correct signature one byte at a
+    // time (microsecond-scale timing oracle; well-established attack
+    // class — see "Lucky 13", HMAC-style timing attacks). The Edge
+    // runtime has no node:crypto.timingSafeEqual, so we hand-roll the
+    // constant-time check: encode both strings, XOR every byte, OR
+    // the differences into one accumulator. Length difference returns
+    // early because the lengths are public (and hex strings are a
+    // fixed 64 chars anyway).
+    const aBuf = new TextEncoder().encode(hex);
+    const bBuf = new TextEncoder().encode(signature);
+    if (aBuf.length !== bBuf.length) {
+      return {
+        status: 'invalid',
+        reason: 'Signature did not match the computed HMAC-SHA256 over timestamp.nonce.body.',
+      };
+    }
+    let diff = 0;
+    for (let i = 0; i < aBuf.length; i++) {
+      diff |= aBuf[i]! ^ bBuf[i]!;
+    }
+    if (diff !== 0) {
+      return {
+        status: 'invalid',
+        reason: 'Signature did not match the computed HMAC-SHA256 over timestamp.nonce.body.',
+      };
+    }
+    return { status: 'valid' };
   } catch (e) {
     return { status: 'invalid', reason: 'Signature verification crashed.' };
   }

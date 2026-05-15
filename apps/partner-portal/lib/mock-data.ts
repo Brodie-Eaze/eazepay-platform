@@ -8,8 +8,6 @@
  * wired through the BFF. Until then, this file is the single source so
  * every screen is consistent.
  */
-import type { RouteStep } from '@eazepay/ui/web';
-
 export const partnerOrg = {
   id: 'lender_crossriver_evergreen',
   legalName: 'Evergreen Prime Finance',
@@ -170,21 +168,7 @@ export const applications: RoutedApplication[] = [
   },
 ];
 
-export const overviewKpis = {
-  routedToday: 47,
-  routedTodayDelta: { value: '+12%', direction: 'up' as const, isGood: true },
-  approvalRate7d: 0.612,
-  approvalRateDelta: { value: '+2.1pp', direction: 'up' as const, isGood: true },
-  avgLatencyP95Ms: 742,
-  latencyDelta: { value: '-43ms', direction: 'down' as const, isGood: true },
-  fundedMtdCents: 4_872_140_00, // $4.87M
-  fundedMtdDelta: { value: '+18%', direction: 'up' as const, isGood: true },
-};
-
 // 30-day daily series
-export const routed30d = [
-  21, 24, 18, 22, 27, 31, 28, 24, 19, 26, 33, 38, 35, 29, 31, 36, 41, 39, 42, 38, 33, 36, 41, 45, 48, 44, 49, 47, 51, 47,
-];
 export const approval30d = [
   0.55, 0.57, 0.54, 0.58, 0.59, 0.6, 0.61, 0.58, 0.56, 0.59, 0.62, 0.61, 0.6, 0.59, 0.61, 0.63, 0.62, 0.6, 0.61, 0.62,
   0.6, 0.61, 0.62, 0.63, 0.62, 0.61, 0.62, 0.61, 0.62, 0.612,
@@ -284,43 +268,6 @@ export const ficoBandApproval = [
   { label: '780+', value: 0.94 },
 ];
 
-// Route inspector seed for an example application detail view
-export const exampleRouteSteps: RouteStep[] = [
-  {
-    tier: 'Tier 0 — Internal',
-    productName: 'BuzzPay Home Improvement (TrueTopia)',
-    lenderName: 'BuzzPay',
-    outcome: 'ineligible',
-    latencyMs: 184,
-    reasonCode: 'capacity_full_vintage',
-    reasonDetail:
-      'BuzzPay 2026-Q2 home-improvement vintage at 96% of allocated capital; new bookings paused under risk-policy guardrail.',
-    at: '2026-05-04T18:41:58Z',
-    blurred: false,
-  },
-  {
-    tier: 'Tier 1 — Prime',
-    productName: 'Evergreen Home Improvement (Prime)',
-    lenderName: 'Evergreen Prime',
-    outcome: 'approved',
-    latencyMs: 612,
-    reasonCode: 'approved_within_policy',
-    reasonDetail:
-      'FICO 762, DTI 28.4%, income verified via Plaid, stability 4.2 yr, no delinquency. APR set at floor + 200 bps based on cashflow score.',
-    at: '2026-05-04T18:42:00Z',
-    blurred: false,
-  },
-  {
-    tier: 'Tier 1 — Prime',
-    productName: 'Sterling Direct Home',
-    lenderName: 'Sterling',
-    outcome: 'pending',
-    blurred: true,
-    at: '2026-05-04T18:42:00Z',
-    reasonDetail: 'Not visible — competing lender in same tier (privacy-by-default).',
-  },
-];
-
 // Webhook delivery sample
 export interface WebhookDelivery {
   id: string;
@@ -400,25 +347,3 @@ export const apiKeys: ApiKey[] = [
   },
 ];
 
-// Format helpers
-export const fmtDate = (iso: string) => {
-  const d = new Date(iso);
-  const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: sameYear ? undefined : 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-};
-
-export const fmtCategory = (c: RoutedApplication['category']) =>
-  ({
-    home_improvement: 'Home improvement',
-    auto: 'Auto',
-    medical: 'Medical',
-    retail: 'Retail',
-    personal: 'Personal',
-    consolidation: 'Consolidation',
-  })[c];

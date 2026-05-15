@@ -836,14 +836,21 @@ export class AdminService {
         where: { id: req.subjectId },
       });
       if (!bo) throw NotFound({ code: 'subject_profile_not_found' });
+      // SEC-019: BO PII now sealed with per-beneficial-owner AAD
+      // (`pii:bo:<boId>:v2`). The vault.openForBo helper auto-routes
+      // v1 (legacy merchant-bound AAD) and v2 (per-BO AAD) rows by
+      // inspecting `schemaVersion`. This closes the ciphertext-swap
+      // hole where one BO's blob could be transplanted onto another
+      // BO row under the same merchant without the GCM tag check
+      // catching it.
       subjectKey = bo.merchantId as unknown as UserId;
-      fullPii = (await this.vault.open(subjectKey, {
+      fullPii = await this.vault.openForBo(bo.id, bo.merchantId, {
         ciphertext: bo.piiCiphertext,
         nonce: bo.piiNonce,
         dataKeyCiphertext: bo.dataKeyCiphertext,
         kekId: bo.kekId,
         schemaVersion: bo.piiSchemaVersion,
-      })) as unknown as PiiV1;
+      });
     }
 
     // Project only the fields the request authorised.

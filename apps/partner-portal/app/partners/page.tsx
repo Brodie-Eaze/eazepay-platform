@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import {
   PageHeader,
   PageBody,
@@ -7,7 +8,27 @@ import {
   CardBody,
   SearchIcon,
   ChevronDownIcon,
+  ArrowRightIcon,
+  ExternalIcon,
 } from '@eazepay/ui/web';
+import { partners as MASTER_PARTNERS } from '../../lib/master-data';
+
+/**
+ * Match a partners-page row back to a master roster partner by email
+ * domain or first significant word of the legal name. Falls back to the
+ * first master partner so the "Open control page" CTA never 404s.
+ */
+function matchMasterId(name: string, email: string): string {
+  const lowerName = name.toLowerCase();
+  const lowerEmail = email.toLowerCase();
+  for (const mp of MASTER_PARTNERS) {
+    const firstWord = mp.legalName.split(' ')[0]!.toLowerCase();
+    if (lowerName.includes(firstWord) || lowerEmail.includes(firstWord)) return mp.id;
+    const domain = mp.email.split('@')[1]?.split('.')[0]?.toLowerCase();
+    if (domain && lowerEmail.includes(domain)) return mp.id;
+  }
+  return MASTER_PARTNERS[0]?.id ?? 'p_atlas';
+}
 
 /**
  * Partner Directory — direct port of Lovable's `/admin/partners` page,
@@ -252,6 +273,32 @@ function PartnerDetailPanel({ p }: { p: PartnerDetail }) {
             </span>
           ))}
         </div>
+      </div>
+      <div className="md:col-span-3 pt-2 flex flex-wrap gap-2 border-t border-border mt-3">
+        <Link
+          href={`/control-panel/${matchMasterId(p.name, p.email)}`}
+          className="h-9 px-3 rounded-md bg-fg text-white text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-fg/90"
+        >
+          Open control page <ArrowRightIcon size={11} />
+        </Link>
+        <Link
+          href="/applications"
+          className="h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted inline-flex items-center gap-1.5"
+        >
+          View applications <ExternalIcon size={11} />
+        </Link>
+        <Link
+          href="/payouts"
+          className="h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted inline-flex items-center gap-1.5"
+        >
+          View payouts <ExternalIcon size={11} />
+        </Link>
+        <a
+          href={`mailto:${p.email}`}
+          className="h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted inline-flex items-center gap-1.5"
+        >
+          Email partner
+        </a>
       </div>
     </div>
   );

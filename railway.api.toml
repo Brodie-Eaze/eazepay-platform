@@ -1,0 +1,37 @@
+# Railway service configuration for the EazePay API (@eazepay/api).
+#
+# Separate Railway service from the partner-portal (railway.toml at the
+# repo root). The API is a NestJS process on Fastify that serves every
+# public + authenticated REST route under /v1, signs and dispatches
+# outbound webhooks, and runs scheduled cron jobs on whichever replica
+# has CRON_LEADER=true. Splitting it into its own service lets the
+# operator:
+#
+#   • scale API replicas independently of the partner-portal renderer
+#   • set CRON_LEADER=true on exactly one replica without touching the
+#     others (a single leader prevents duplicate cron dispatches)
+#   • upgrade the API and the portal on independent cadences
+#   • set Railway memory / CPU limits per workload
+#
+# Deploy command (after `railway link` to the eazepay-api service):
+#   railway up
+#
+# The Dockerfile.api builds the compiled NestJS bundle; Railway sets
+# $PORT at runtime and the container binds 0.0.0.0:$PORT.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.api"
+
+[deploy]
+# Run `node apps/api/dist/main.js` (the API's compiled entry point  - 
+# also the Dockerfile CMD; we set it here so it's visible in the
+# Railway deploy UI).
+startCommand = "node apps/api/dist/main.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+# Liveness probe. Returns { status: 'ok' } once the API is accepting
+# connections. See apps/api/src/health/health.controller.ts and the
+# global prefix set in apps/api/src/main.ts (`app.setGlobalPrefix('v1')`).
+healthcheckPath = "/v1/health/live"
+healthcheckTimeout = 30

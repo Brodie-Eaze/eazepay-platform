@@ -37,7 +37,30 @@ export class ApplicationService {
     @Optional() @Inject(WEBHOOK_PUBLISHER) private readonly webhooks?: WebhookPublisher,
   ) {}
 
-  async create(userId: UserId, dto: CreateApplicationDto): Promise<ApplicationSnapshot> {
+  /**
+   * Create a draft Application.
+   *
+   * SEC-026 (IP velocity): `requestCtx.ipAddress` and `userAgent`, when
+   * provided by the caller, are written into the `application.created`
+   * audit row's `after` payload AND into the top-level `ip_address` /
+   * `user_agent` columns of `audit_outbox`. The risk service's
+   * application-velocity check (services/risk/src/risk.service.ts)
+   * counts `application.created` rows where `after.ipAddress` matches
+   * the submitter's IP in a rolling window — without this fix the
+   * count is always zero (the field was never written) and the
+   * velocity gate is effectively dead code.
+   *
+   * Callers MUST pass the controller's request IP + UA. Callers that
+   * don't have a request context (e.g. backfill scripts) may omit
+   * `requestCtx` — the audit row will still be written but the
+   * velocity check won't see those rows. That's intentional: a
+   * script-initiated application has no meaningful IP signal.
+   */
+  async create(
+    userId: UserId,
+    dto: CreateApplicationDto,
+    requestCtx: { ipAddress?: string; userAgent?: string } = {},
+  ): Promise<ApplicationSnapshot> {
     if (dto.channel !== 'consumer_direct' && !dto.merchantId) {
       throw BadRequest({
         code: 'merchant_required',
@@ -70,7 +93,9 @@ export class ApplicationService {
           action: 'application.created',
           targetType: 'Application',
           targetId: app.id,
-          after: this.auditPayload(app),
+          after: this.auditPayload(app, requestCtx),
+          ipAddress: requestCtx.ipAddress ?? null,
+          userAgent: requestCtx.userAgent ?? null,
         },
       });
       return this.toSnapshot(app);
@@ -414,21 +439,52 @@ export class ApplicationService {
 
       // Create the Loan. Lender-of-record is snapshotted now and
       // immutable thereafter — that's the audit anchor for who issued.
-      const loan = await tx.loan.create({
-        data: {
-          applicationId: app.id,
-          offerId: offer.id,
-          userId: app.userId,
-          lenderOfRecord: offer.lenderOfRecord,
-          lenderProductId: offer.lenderProductId,
-          principalCents: offer.amountCents,
-          termMonths: offer.termMonths,
-          aprBps: offer.aprBps,
-          totalRepayableCents: offer.totalRepayableCents,
-          status: 'funding_pending',
-        },
-        select: { id: true },
-      });
+      //
+      // SEC-038 / scale: `loans.offer_id` carries a UNIQUE constraint
+      // (`loans_offer_id_key`, see init migration). If
+      // `completeContractSigned` is called twice in parallel for the
+      // same offer — for example a webhook retry racing the
+      // controller's own call — both transactions enter here past the
+      // application-status idempotency guard (the second sees status
+      // still 'accepted' at READ time). The DB then rejects the second
+      // insert with Prisma error P2002. We swallow that as the
+      // idempotent path and re-load the existing Loan row, rather than
+      // surfacing a 409 to a webhook that already accepted the event.
+      let loan: { id: string };
+      try {
+        loan = await tx.loan.create({
+          data: {
+            applicationId: app.id,
+            offerId: offer.id,
+            userId: app.userId,
+            lenderOfRecord: offer.lenderOfRecord,
+            lenderProductId: offer.lenderProductId,
+            principalCents: offer.amountCents,
+            termMonths: offer.termMonths,
+            aprBps: offer.aprBps,
+            totalRepayableCents: offer.totalRepayableCents,
+            status: 'funding_pending',
+          },
+          select: { id: true },
+        });
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          (err as { code?: string }).code === 'P2002'
+        ) {
+          this.logger.warn(
+            { applicationId: app.id, offerId: offer.id },
+            'loan_already_exists_idempotent — concurrent CONTRACT_SIGNED collapsed by UNIQUE(offer_id)',
+          );
+          const existing = await tx.loan.findUniqueOrThrow({
+            where: { offerId: offer.id },
+            select: { id: true },
+          });
+          loan = existing;
+        } else {
+          throw err;
+        }
+      }
 
       await tx.auditOutbox.create({
         data: {
@@ -580,14 +636,17 @@ export class ApplicationService {
     };
   }
 
-  private auditPayload(a: {
-    category: ApplicationSnapshot['category'];
-    requestedAmountCents: bigint;
-    termMonths: number;
-    status: ApplicationStatus;
-    channel: ApplicationSnapshot['channel'];
-    merchantId: string | null;
-  }): object {
+  private auditPayload(
+    a: {
+      category: ApplicationSnapshot['category'];
+      requestedAmountCents: bigint;
+      termMonths: number;
+      status: ApplicationStatus;
+      channel: ApplicationSnapshot['channel'];
+      merchantId: string | null;
+    },
+    requestCtx: { ipAddress?: string; userAgent?: string } = {},
+  ): object {
     return {
       category: a.category,
       requestedAmountCents: a.requestedAmountCents.toString(),
@@ -595,6 +654,13 @@ export class ApplicationService {
       status: a.status,
       channel: a.channel,
       merchantId: a.merchantId,
+      // SEC-026: surfaced into `after` so the risk service's IP
+      // velocity query (which uses Prisma's `path:['ipAddress']`
+      // containment lookup) can find a value to count. `undefined`
+      // keys are stripped by the Prisma JSON serializer, so omitting
+      // the IP for script-initiated calls is safe.
+      ...(requestCtx.ipAddress ? { ipAddress: requestCtx.ipAddress } : {}),
+      ...(requestCtx.userAgent ? { userAgent: requestCtx.userAgent } : {}),
     };
   }
 }

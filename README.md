@@ -173,7 +173,7 @@ Each service is a `@eazepay/service-*` NestJS module composed into `apps/api`. T
 | `merchant` | KYB + beneficial owners + application links + brand membership |
 | `application` | Application lifecycle state machine (XState v5) — `services/application/src/state-machine.ts` |
 | `orchestration` | Lender waterfall + decisioning + risk gate. The brain. NEXUS lives here. |
-| `lender` | LenderAdapter port + BuzzPay adapter + external lender mocks + registry |
+| `lender` | LenderAdapter port + 4 production adapters (BuzzPay, US Bank, Engine.Tech, Queen Street) + mock-prime adapter + registry |
 | `payment` | Disbursement + repayment scheduling + daily collection cron. FLUX lives here. |
 | `notification` | Multi-channel dispatch (push / email / SMS / in-app) + in-app inbox |
 | `compliance-doc` | Adverse Action Notice renderer + Document store (retention-tagged) |

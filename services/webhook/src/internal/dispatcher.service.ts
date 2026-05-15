@@ -1,8 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaClient } from '@prisma/client';
-import { createHmac, randomUUID } from 'node:crypto';
-import { PRISMA } from './tokens.js';
+import { randomUUID } from 'node:crypto';
+import { PiiVaultService } from '@eazepay/service-user';
+import {
+  DISPATCHER_CRON_OPTIONS,
+  type DispatcherCronOptions,
+  PRISMA,
+} from './tokens.js';
+import { computeSignature, webhookSecretAadContext } from './webhook-signing.js';
 
 const BATCH_SIZE = 50;
 const MAX_ATTEMPTS = 12; // 12 attempts * exponential backoff ≈ 24h
@@ -38,12 +44,31 @@ const CIRCUIT_BREAK_THRESHOLD = 20; // consecutive failures → endpoint paused
 export class WebhookDispatcher {
   private readonly logger = new Logger(WebhookDispatcher.name);
 
-  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    private readonly vault: PiiVaultService,
+    @Inject(DISPATCHER_CRON_OPTIONS) private readonly options: DispatcherCronOptions,
+  ) {}
 
   // Every minute. Tight enough that latency is reasonable, sparse
   // enough that we don't hammer the DB on a quiet system.
+  //
+  // Handler-entry guard. Two flags, both must be true:
+  //  - cronLeader: only the elected leader replica should run timed
+  //    crons. Other replicas would do duplicate DB work and clutter
+  //    metrics — the row-claim transactions bound correctness, not
+  //    cost.
+  //  - dispatcherEnabled: per-cron kill-switch so an operator can
+  //    pause webhook delivery during an incident without disabling
+  //    audit drain / collection.
+  // Both gates are also enforced at provider-registration time in
+  // {@link WebhookModule.forRoot} — this is defense in depth so a
+  // hot-reloaded config (or a future runtime toggle) can't accidentally
+  // fire the cron.
   @Cron(CronExpression.EVERY_MINUTE)
   async runMinute(): Promise<void> {
+    if (!this.options.cronLeader) return;
+    if (!this.options.dispatcherEnabled) return;
     await this.drain();
   }
 
@@ -81,7 +106,12 @@ export class WebhookDispatcher {
 
   private async attempt(
     d: NonNullable<Awaited<ReturnType<typeof this.prisma.webhookDelivery.findFirst>>> & {
-      endpoint: { url: string; secretHash: string; id: string; consecutiveFailures: number };
+      endpoint: {
+        url: string;
+        secretCiphertext: string | null;
+        id: string;
+        consecutiveFailures: number;
+      };
     },
   ): Promise<{ terminal: boolean; delivered: boolean }> {
     const attempts = d.attempts + 1;
@@ -96,20 +126,55 @@ export class WebhookDispatcher {
       createdAt: d.createdAt.toISOString(),
     });
 
-    // We don't have the raw secret (we stored hash). We CAN'T sign with
-    // the hash because the merchant verifies against the raw secret. To
-    // make this work without secret leakage, the dispatcher resolves
-    // the secret from a separate KMS-backed store keyed by endpointId.
-    //
-    // For MVP without KMS wired, we accept that webhook signing is
-    // deferred to the production secrets path: this dispatcher posts
-    // unsigned and records the deferral, surfaces the warning in
-    // logs + audit, and the production deploy plugs in a SecretResolver
-    // (see KEY_MANAGER pattern in services/user). The merchant-facing
-    // contract documents that signature verification will land at GA.
-    const signaturePlaceholder = createHmac('sha256', d.endpoint.secretHash)
-      .update(`${timestamp}.${bodyJson}`)
-      .digest('hex');
+    // Unmigrated row: the secret was only stored as a SHA-256 hash before
+    // the encrypted-secret column was added. We have no way to recover
+    // the raw secret, so we can't produce a verifiable signature. Fail
+    // the delivery loudly — the failure counts toward the consecutive-
+    // failure circuit breaker, which auto-pauses the endpoint after 20
+    // failures and prompts the merchant to call POST /rotate-secret.
+    // Rotation re-seals the new raw secret into `secretCiphertext` and
+    // delivery resumes on the next cron tick.
+    if (!d.endpoint.secretCiphertext) {
+      this.logger.warn(
+        `webhook endpoint ${d.endpoint.id} has no secretCiphertext (pre-migration row) — failing delivery ${d.id} until merchant rotates`,
+      );
+      return this.recordOutcome(
+        d,
+        attempts,
+        null,
+        'endpoint_secret_unmigrated_rotate_required',
+      );
+    }
+
+    // Decrypt the raw secret. AAD is bound to the endpoint id, so a
+    // ciphertext lifted from one endpoint's row into another's would
+    // fail the GCM auth tag check rather than silently produce a
+    // wrong-secret signature.
+    let secret: string;
+    try {
+      const plaintext = await this.vault.openOpaque(
+        d.endpoint.secretCiphertext,
+        webhookSecretAadContext(d.endpoint.id),
+      );
+      secret = plaintext.toString('utf8');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown_error';
+      this.logger.error(
+        `webhook endpoint ${d.endpoint.id} secret decrypt failed: ${msg}`,
+      );
+      return this.recordOutcome(
+        d,
+        attempts,
+        null,
+        `endpoint_secret_decrypt_failed: ${msg}`,
+      );
+    }
+
+    // HMAC-SHA256 over `<timestamp>.<bodyJson>` with the RAW secret —
+    // the same shape merchants verify against (see the Highsale inbound
+    // verifier in apps/api for the parity pattern). Header name matches
+    // the public contract; the merchant compares with timingSafeEqual.
+    const signature = computeSignature(secret, timestamp, bodyJson);
 
     let statusCode: number | null = null;
     let lastError: string | null = null;
@@ -126,7 +191,7 @@ export class WebhookDispatcher {
             'x-eazepay-event-id': d.eventId,
             'x-eazepay-event-type': d.eventType,
             'x-eazepay-timestamp': String(timestamp),
-            'x-eazepay-signature-placeholder': `sha256=${signaturePlaceholder}`,
+            'x-eazepay-signature': `sha256=${signature}`,
             'user-agent': 'EazePay-Webhooks/1.0',
           },
           signal: ctrl.signal,

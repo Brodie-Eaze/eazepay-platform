@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import {
@@ -9,6 +10,7 @@ import {
   InfoIcon,
   SendIcon,
 } from '@eazepay/ui/web';
+import { findPartner, applicationsForPartner, PAYOUT_SCHEDULE } from '../../../lib/master-data';
 
 /**
  * Partner Payouts — direct port of Lovable's "click a partner from
@@ -89,15 +91,65 @@ const fmt = (n: number) => `$${n.toLocaleString('en-US')}`;
 
 export default function PartnerPayoutsPage() {
   const { partnerId } = useParams<{ partnerId: string }>();
-  const p = PARTNERS[partnerId];
+  // Same id-bridging dance as /applications/[partnerId]: support both
+  // the legacy slug ('premier') and the master id ('p_atlas') so links
+  // from /control-panel land here on the right partner.
+  let p: PartnerPayout | undefined = PARTNERS[partnerId];
+  if (!p) {
+    const master = findPartner(partnerId);
+    if (master) {
+      const masterApps = applicationsForPartner(master.id).filter(
+        (a) => a.status === 'funded' || a.status === 'approved',
+      );
+      const rows: PayoutRow[] = masterApps.map((a, i) => {
+        const amount = Math.round(a.amountCents / 100);
+        const fee = Math.round(amount * 0.10);
+        const productLabel = a.product === 'med-pay' ? 'MedPay' : a.product === 'trade-pay' ? 'TradePay' : 'CoachPay';
+        return {
+          id: `FA-${master.id.slice(2).toUpperCase()}-${(i + 1).toString().padStart(3, '0')}`,
+          client: a.customer,
+          product: productLabel,
+          loanAmount: amount,
+          fee,
+          netPayout: amount - fee,
+          funded: a.date,
+          status: a.status === 'funded' ? 'Paid' : 'Pending',
+        };
+      });
+      p = {
+        name: master.legalName,
+        email: master.email,
+        phone: master.phone ?? '—',
+        industry: master.niche.charAt(0).toUpperCase() + master.niche.slice(1),
+        rows,
+      };
+    }
+  }
   if (!p) notFound();
 
-  const totalFunded = p!.rows.reduce((s, r) => s + r.loanAmount, 0);
-  const totalFees = p!.rows.reduce((s, r) => s + r.fee, 0);
-  const netPayout = p!.rows.reduce((s, r) => s + r.netPayout, 0);
-  const paidOut = p!.rows.filter((r) => r.status === 'Paid').reduce((s, r) => s + r.netPayout, 0);
+  // Modest local UI state: toast for the "Send All to Accounts" CTA and a
+  // tracker of rows marked Paid this session so the visible totals shift
+  // immediately when the operator triggers the send.
+  // We declare these here (after the early return) and TS picks them up
+  // because the early-return uses `notFound()` which throws.
+  const [toast, setToast] = useState<string | null>(null);
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+
+  const adjustedRows = p!.rows.map((r) => (sentIds.has(r.id) ? { ...r, status: 'Paid' as const } : r));
+
+  const totalFunded = adjustedRows.reduce((s, r) => s + r.loanAmount, 0);
+  const totalFees = adjustedRows.reduce((s, r) => s + r.fee, 0);
+  const netPayout = adjustedRows.reduce((s, r) => s + r.netPayout, 0);
+  const paidOut = adjustedRows.filter((r) => r.status === 'Paid').reduce((s, r) => s + r.netPayout, 0);
   const pending = netPayout - paidOut;
-  const pendingCount = p!.rows.filter((r) => r.status === 'Pending').length;
+  const pendingCount = adjustedRows.filter((r) => r.status === 'Pending').length;
+
+  function sendAll() {
+    const ids = new Set(adjustedRows.filter((r) => r.status === 'Pending').map((r) => r.id));
+    setSentIds((prev) => new Set([...prev, ...ids]));
+    setToast(`Queued ${ids.size} payout${ids.size === 1 ? '' : 's'} for RTP delivery`);
+    setTimeout(() => setToast(null), 3000);
+  }
 
   return (
     <div className="px-8 py-6">
@@ -118,9 +170,9 @@ export default function PartnerPayoutsPage() {
             ✉ {p!.email} &nbsp; · &nbsp; ☎ {p!.phone} &nbsp; · &nbsp; {p!.industry}
           </p>
         </div>
-        <Button size="md">
+        <Button size="md" onClick={sendAll} disabled={pendingCount === 0}>
           <SendIcon size={14} />
-          Send All to Accounts
+          {pendingCount === 0 ? 'All payouts sent' : `Send All to Accounts (${pendingCount})`}
         </Button>
       </div>
 
@@ -148,7 +200,7 @@ export default function PartnerPayoutsPage() {
           <CardBody className="p-0">
             <div className="px-5 py-3 border-b border-border flex items-center justify-between">
               <h2 className="text-[14px] font-semibold text-fg">
-                Funded Applications ({p!.rows.length})
+                Funded Applications ({adjustedRows.length})
               </h2>
               <span className="text-[12px] font-semibold text-fg-secondary">
                 {pendingCount} pending · {fmt(pending)} to pay
@@ -165,7 +217,7 @@ export default function PartnerPayoutsPage() {
               <span className="col-span-1">Status</span>
             </div>
             <ul className="divide-y divide-border">
-              {p!.rows.map((r) => (
+              {adjustedRows.map((r) => (
                 <li key={r.id} className="grid grid-cols-12 px-5 py-3 items-center text-[13px]">
                   <span className="col-span-2 font-mono text-fg-secondary">{r.id}</span>
                   <span className="col-span-2 font-medium text-fg truncate">{r.client}</span>
@@ -185,6 +237,12 @@ export default function PartnerPayoutsPage() {
           </CardBody>
         </Card>
       </PageBody>
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

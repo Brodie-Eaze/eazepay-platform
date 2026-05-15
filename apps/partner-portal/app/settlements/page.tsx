@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import {
   PageHeader,
   PageBody,
@@ -53,13 +54,35 @@ const columns: Column<Settlement>[] = [
 ];
 
 export default function SettlementsPage() {
+  const [toast, setToast] = useState<string | null>(null);
+  function flash(m: string) {
+    setToast(m);
+    setTimeout(() => setToast(null), 3000);
+  }
+  function exportRecon() {
+    if (typeof window !== 'undefined') {
+      try {
+        const tsv = ['period\tgross_cents\tfee_cents\tnet_cents\tstatus\tpaid_at', ...settlements.map((s) => `${s.period}\t${s.grossCents}\t${s.servicingFeeCents}\t${s.netCents}\t${s.status}\t${s.paidAt}`)].join('\n');
+        const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `settlements-${new Date().toISOString().slice(0, 10)}.tsv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        /* fall through */
+      }
+    }
+    flash(`Exported ${settlements.length} settlement period${settlements.length === 1 ? '' : 's'}`);
+  }
   return (
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Partner Portal', href: '/' }, { label: 'Funding & settlements' }]}
         title="Funding & settlements"
         description="Weekly net settlement to your operating account. Reconciled against the loan tape line-by-line; full breakdown on each row."
-        actions={<Button>Export reconciliation</Button>}
+        actions={<Button onClick={exportRecon}>Export reconciliation</Button>}
       />
       <PageBody>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -76,6 +99,11 @@ export default function SettlementsPage() {
 
         <DataTable columns={columns} rows={settlements} rowKey={(s) => s.id} />
       </PageBody>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </>
   );
 }

@@ -1,5 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { idFor, problem, SAMPLE_LENDERS, verifySignature, withMeta } from '../../../../../../lib/api-v1/shared';
+import {
+  idFor,
+  problem,
+  requireSignatureCheck,
+  SAMPLE_LENDERS,
+  verifySignature,
+  withMeta,
+} from '../../../../../../lib/api-v1/shared';
 
 /**
  * Inbound lender webhook — `POST /api/v1/webhooks/lenders/[lender]`.
@@ -28,14 +35,17 @@ export async function POST(req: NextRequest, ctx: { params: { lender: string } }
     signature: req.headers.get('x-eazepay-signature'),
     body: bodyText,
   });
-  if (sigCheck.status === 'invalid' || sigCheck.status === 'missing') {
-    return problem({
-      title: 'Unauthorized',
-      status: 401,
-      code: `signature_${sigCheck.status}`,
-      detail: sigCheck.reason ?? 'HMAC signature failed.',
-      instance: `/api/v1/webhooks/lenders/${ctx.params.lender}`,
-    });
+  // SEC-003: in prod (or REQUIRE_HMAC=true) a 'skipped' result — i.e.
+  // no signature headers at all — is rejected the same as 'invalid' /
+  // 'missing'. Without this gate, anyone can POST fake lender status
+  // updates (loan.funded, application.decisioned, etc.) and we'd
+  // ingest them as authentic.
+  const sigReject = requireSignatureCheck(
+    sigCheck,
+    `/api/v1/webhooks/lenders/${ctx.params.lender}`,
+  );
+  if (sigReject) {
+    return problem(sigReject);
   }
 
   let event: { event_type?: string; loan_id?: string; offer_id?: string } = {};

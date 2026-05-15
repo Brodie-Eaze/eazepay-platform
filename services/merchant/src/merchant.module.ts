@@ -2,7 +2,10 @@ import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { MerchantController } from './merchant.controller.js';
 import { MerchantService } from './merchant.service.js';
-import { PRISMA } from './internal/tokens.js';
+import {
+  MERCHANT_REGISTRATION_REQUIRES_ADMIN,
+  PRISMA,
+} from './internal/tokens.js';
 import { KYB_PROVIDER } from './ports/kyb-provider.port.js';
 import { MockKybAdapter } from './adapters/mock-kyb.adapter.js';
 
@@ -32,10 +35,18 @@ export class MerchantModule {
       },
     };
 
+    // SEC-017 — outside development, `POST /v1/merchants` requires the
+    // caller be a platform admin. Development leaves the gate off so
+    // existing seed scripts and the local demo flow keep working.
+    const registrationGate: Provider = {
+      provide: MERCHANT_REGISTRATION_REQUIRES_ADMIN,
+      useValue: !options.isDevelopment,
+    };
+
     return {
       module: MerchantModule,
       controllers: [MerchantController],
-      providers: [prisma, kyb, MerchantService],
+      providers: [prisma, kyb, registrationGate, MerchantService],
       exports: [MerchantService],
     };
   }

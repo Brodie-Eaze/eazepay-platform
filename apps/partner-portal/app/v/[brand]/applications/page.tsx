@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import {
   PageHeader,
@@ -8,6 +8,7 @@ import {
   KpiCard,
   Button,
   StatusPill,
+  type StatusTone,
   Input,
   Select,
   DataTable,
@@ -18,6 +19,69 @@ import {
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../../lib/master-data';
+
+/* ─── Live-tracking shapes — mirror the BFF status route response.
+ * Duplicated locally rather than importing from the server-only store
+ * so the client bundle stays slim. */
+type LiveStatus =
+  | 'invite_sent'
+  | 'form_started'
+  | 'consent_captured'
+  | 'soft_pull_initiated'
+  | 'soft_pull_returned'
+  | 'orchestration_running'
+  | 'offers_available'
+  | 'offer_accepted'
+  | 'contract_signed'
+  | 'funded';
+
+const LIVE_STATUS_LABEL: Record<LiveStatus, string> = {
+  invite_sent: 'Invite sent',
+  form_started: 'Form started',
+  consent_captured: 'Consent captured',
+  soft_pull_initiated: 'Soft pull',
+  soft_pull_returned: 'Soft pull back',
+  orchestration_running: 'Routing',
+  offers_available: 'Offers ready',
+  offer_accepted: 'Offer accepted',
+  contract_signed: 'Contract signed',
+  funded: 'Funded',
+};
+
+const LIVE_STATUS_TONE: Record<LiveStatus, StatusTone> = {
+  invite_sent: 'neutral',
+  form_started: 'info',
+  consent_captured: 'info',
+  soft_pull_initiated: 'warning',
+  soft_pull_returned: 'warning',
+  orchestration_running: 'warning',
+  offers_available: 'success',
+  offer_accepted: 'success',
+  contract_signed: 'success',
+  funded: 'success',
+};
+
+interface ConsumerInviteRow {
+  token: string;
+  applicationId: string | null;
+  salespersonEmail: string;
+}
+
+/* Demo salesperson — same constant the send-link page uses for the
+ * "Show only my invites" chip until Clerk lands. */
+const DEMO_SALESPERSON_EMAIL = 'sales@partner.test';
+
+function timeAgoShort(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return 'just now';
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
 
 const slugToBrand = (slug: string): BrandCode | null => BRAND_ORDER.find((c) => BRANDS[c].slug === slug) ?? null;
 
@@ -48,9 +112,69 @@ export default function VerticalApplicationsPage() {
 
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('all');
+  const [toast, setToast] = useState<string | null>(null);
+  const [onlyMyInvites, setOnlyMyInvites] = useState(false);
+
+  /* Pull invites the current salesperson minted for this brand — used
+   * by the "Show only my invites" chip + to know which applications
+   * to show live-tracking pulses for. */
+  const consumerBrandSlug = brand === 'direct' ? null : brand;
+  const [myInvites, setMyInvites] = useState<ConsumerInviteRow[]>([]);
+  useEffect(() => {
+    if (!consumerBrandSlug) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/v/${consumerBrandSlug}/consumer-invites?salespersonEmail=${encodeURIComponent(DEMO_SALESPERSON_EMAIL)}`,
+          { credentials: 'include' },
+        );
+        if (!res.ok) return;
+        const body = (await res.json()) as { invites: ConsumerInviteRow[] };
+        if (!cancelled) setMyInvites(body.invites ?? []);
+      } catch {
+        /* ignore — list stays empty */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [consumerBrandSlug]);
+
+  /* Set of applicationIds that the current salesperson invited. */
+  const myAppIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const inv of myInvites) if (inv.applicationId) s.add(inv.applicationId);
+    return s;
+  }, [myInvites]);
+
+  /* Poll live status for every application visible in the table.
+   * Capped at the brand's filtered roster so we don't fan out across
+   * the whole canonical seed. */
+  const [liveStatusById, setLiveStatusById] = useState<Record<string, { status: LiveStatus; lastUpdatedAt: string }>>({});
+  const [liveStatusError, setLiveStatusError] = useState(false);
+  function exportCsv() {
+    if (typeof window !== 'undefined') {
+      try {
+        const csv = ['id,customer,partner,amount_cents,fico,lender,status,date', ...rows.map((a) => [a.id, a.customer, a.partner.replace(/,/g, ''), a.amountCents, a.fico, a.lender, a.status, a.date].join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${spec.slug}-applications-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        /* fall-through */
+      }
+    }
+    setToast(`Exported ${rows.length} rows`);
+    setTimeout(() => setToast(null), 3000);
+  }
 
   const filtered = rows.filter((a) => {
     if (tab !== 'all' && a.status !== tab) return false;
+    if (onlyMyInvites && !myAppIds.has(a.id)) return false;
     if (query) {
       const q = query.toLowerCase();
       return (
@@ -63,6 +187,52 @@ export default function VerticalApplicationsPage() {
     return true;
   });
 
+  /* Live-status polling — visible rows only, every 15s. Errors are
+   * surfaced once (banner row above the table) instead of console-spam. */
+  useEffect(() => {
+    if (!consumerBrandSlug) return;
+    const targets = filtered.map((a) => a.id);
+    if (targets.length === 0) return;
+    let cancelled = false;
+    const tick = async () => {
+      const updates: Record<string, { status: LiveStatus; lastUpdatedAt: string }> = {};
+      let hadError = false;
+      await Promise.all(
+        targets.map(async (id) => {
+          try {
+            const res = await fetch(
+              `/api/v/${consumerBrandSlug}/applications/${encodeURIComponent(id)}/status`,
+              { credentials: 'include' },
+            );
+            if (!res.ok) {
+              hadError = true;
+              return;
+            }
+            const body = (await res.json()) as { status: LiveStatus; lastUpdatedAt: string };
+            updates[id] = { status: body.status, lastUpdatedAt: body.lastUpdatedAt };
+          } catch {
+            hadError = true;
+          }
+        }),
+      );
+      if (cancelled) return;
+      if (Object.keys(updates).length) {
+        setLiveStatusById((prev) => ({ ...prev, ...updates }));
+      }
+      setLiveStatusError(hadError && Object.keys(updates).length === 0);
+    };
+    void tick();
+    const interval = window.setInterval(tick, 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+    /* Re-arm when the filtered roster changes (eg. user toggles tabs);
+     * we depend on the id list rather than the array ref so the effect
+     * isn't reborn on every keystroke. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consumerBrandSlug, filtered.map((a) => a.id).join(',')]);
+
   const tabs = [
     { key: 'all', label: 'All', count: rows.length },
     { key: 'funded', label: 'Funded', count: rows.filter((a) => a.status === 'funded').length },
@@ -73,9 +243,18 @@ export default function VerticalApplicationsPage() {
 
   const columns: Column<ApplicationRow>[] = [
     { key: 'customer', header: 'Customer', cell: (a) => (
-      <div>
-        <div className="font-medium">{a.customer}</div>
-        <div className="text-[12px] text-fg-muted">{a.customerEmail}</div>
+      <div className="flex items-center gap-2">
+        {myAppIds.has(a.id) && (
+          <span
+            className="size-1.5 rounded-full bg-info animate-pulse shrink-0"
+            aria-label="Your invite"
+            title="You sent this consumer the financing link"
+          />
+        )}
+        <div>
+          <div className="font-medium">{a.customer}</div>
+          <div className="text-[12px] text-fg-muted">{a.customerEmail}</div>
+        </div>
       </div>
     )},
     { key: 'partner', header: 'Partner', cell: (a) => <span className="text-[13px]">{a.partner}</span> },
@@ -83,6 +262,28 @@ export default function VerticalApplicationsPage() {
     { key: 'fico', header: 'Credit', align: 'right', cell: (a) => <span className="tabular-nums">{a.fico}</span> },
     { key: 'lender', header: 'Lender', cell: (a) => <span className="text-[13px]">{a.lender}</span> },
     { key: 'status', header: 'Status', cell: (a) => statusPill(a.status) },
+    {
+      key: 'live',
+      header: 'Live tracking',
+      cell: (a) => {
+        const live = liveStatusById[a.id];
+        if (!live) {
+          return (
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-fg-muted">
+              <span className="size-1.5 rounded-full bg-bg-muted" aria-hidden />
+              waiting
+            </span>
+          );
+        }
+        return (
+          <div className="flex items-center gap-2">
+            <span className="size-1.5 rounded-full bg-info animate-pulse shrink-0" aria-hidden />
+            <StatusPill tone={LIVE_STATUS_TONE[live.status]}>{LIVE_STATUS_LABEL[live.status]}</StatusPill>
+            <span className="text-[10px] font-mono text-fg-muted shrink-0">{timeAgoShort(live.lastUpdatedAt)}</span>
+          </div>
+        );
+      },
+    },
     { key: 'date', header: 'Date', align: 'right', cell: (a) => <span className="text-[12px] text-fg-muted tabular-nums">{a.date}</span> },
   ];
 
@@ -92,7 +293,7 @@ export default function VerticalApplicationsPage() {
         breadcrumbs={[{ label: 'Master', href: '/' }, { label: spec.name, href: `/v/${spec.slug}` }, { label: 'Applications' }]}
         title={`${spec.name} applications`}
         description={`Every consumer application routed to or originated from ${spec.name} this month.`}
-        actions={<Button>Export CSV</Button>}
+        actions={<Button onClick={exportCsv}>Export CSV</Button>}
         meta={<><StatusPill tone="accent">{spec.name}</StatusPill><StatusPill tone="neutral">{rows.length} total</StatusPill></>}
       />
       <PageBody>
@@ -123,6 +324,28 @@ export default function VerticalApplicationsPage() {
               ]}
             />
           </div>
+          <div className="mt-3 flex items-center justify-between flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setOnlyMyInvites((v) => !v)}
+              className={
+                'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ' +
+                (onlyMyInvites
+                  ? 'bg-accent-soft text-accent border-accent/30'
+                  : 'bg-bg-elevated text-fg-secondary border-border hover:border-border-strong')
+              }
+              aria-pressed={onlyMyInvites}
+            >
+              <span className={'size-1.5 rounded-full ' + (onlyMyInvites ? 'bg-accent' : 'bg-fg-muted')} />
+              Show only my invites
+              <span className="text-fg-muted font-mono">({myAppIds.size})</span>
+            </button>
+            {liveStatusError && (
+              <p className="text-[11px] text-warning font-medium">
+                Live updates paused. Refresh the page to retry.
+              </p>
+            )}
+          </div>
         </Card>
 
         <Tabs items={tabs} active={tab} onChange={setTab} className="mb-3" />
@@ -137,6 +360,11 @@ export default function VerticalApplicationsPage() {
           />
         </Card>
       </PageBody>
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">
+          {toast}
+        </div>
+      )}
     </>
   );
 }

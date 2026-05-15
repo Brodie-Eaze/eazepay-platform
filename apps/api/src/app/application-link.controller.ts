@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
+  Ip,
   Param,
   Post,
 } from '@nestjs/common';
@@ -73,20 +75,28 @@ export class ApplicationLinkController {
     @Param('slug') slug: string,
     @Param('token') token: string,
     @Body() dto: RedeemDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent?: string,
   ): Promise<unknown> {
     // 1. Re-validate the link freshly. We re-read inside the same call to
     //    catch races where it was consumed between context() and redeem().
     const ctx = await this.merchants.getLinkContext(slug, token);
 
     // 2. Create the draft Application bound to the merchant + channel.
-    const app = await this.applications.create(userId, {
-      channel: 'merchant_link',
-      merchantId: ctx.merchantId,
-      category: dto.category ?? 'personal',
-      requestedAmountCents: dto.requestedAmountCents,
-      termMonths: dto.termMonths,
-      purposeDetail: dto.purposeDetail,
-    } as never);
+    //    SEC-026: forward IP + UA so the risk service's velocity gate
+    //    has a value to count against.
+    const app = await this.applications.create(
+      userId,
+      {
+        channel: 'merchant_link',
+        merchantId: ctx.merchantId,
+        category: dto.category ?? 'personal',
+        requestedAmountCents: dto.requestedAmountCents,
+        termMonths: dto.termMonths,
+        purposeDetail: dto.purposeDetail,
+      } as never,
+      { ipAddress, userAgent },
+    );
 
     // 3. Mark link consumed; if this fails (race), the draft Application
     //    is left in place — the consumer can submit it; the merchant just

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   offerFor,
   problem,
+  requireSignatureCheck,
   SAMPLE_LENDERS,
   verifySignature,
   withMeta,
@@ -63,14 +64,16 @@ export async function POST(req: NextRequest, ctx: { params: { lenderId: string }
     signature: req.headers.get('x-eazepay-signature'),
     body: bodyText,
   });
-  if (sigCheck.status === 'invalid' || sigCheck.status === 'missing') {
-    return problem({
-      title: 'Unauthorized',
-      status: 401,
-      code: `signature_${sigCheck.status}`,
-      detail: sigCheck.reason ?? 'HMAC signature failed.',
-      instance: `/api/v1/lenders/${ctx.params.lenderId}/quote`,
-    });
+  // SEC-003: in prod (or REQUIRE_HMAC=true) a 'skipped' result — i.e.
+  // no signature headers at all — is rejected the same as 'invalid' /
+  // 'missing'. Without this gate, an unauthenticated caller can hit
+  // this endpoint and receive a real offer payload.
+  const sigReject = requireSignatureCheck(
+    sigCheck,
+    `/api/v1/lenders/${ctx.params.lenderId}/quote`,
+  );
+  if (sigReject) {
+    return problem(sigReject);
   }
 
   let raw: unknown = null;

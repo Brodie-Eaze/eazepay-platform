@@ -1,0 +1,22 @@
+# Consumer-web crawl policy.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# /apply/* URLs are unauthenticated but contain a per-consumer token
+# the partner sent the consumer in a link. If a search engine indexes
+# one of those URLs, a sibling consumer (or worse, an attacker) can
+# discover and replay it. We block all crawlers from /apply/* even
+# though the tokens are opaque, because:
+#
+#   1. Cached snippets in Google can leak partial form state if a
+#      consumer reloaded mid-flow (the URL itself stays clean but
+#      preview text might not).
+#   2. SEO discovery of a per-consumer link is never desired.
+#   3. A misconfigured share button or referrer header could expose
+#      the URL to a third party that DOES index it.
+#
+# Marketing landings (/, /medpay, /tradepay, /coachpay) remain
+# crawlable so SEO + Google AdWords compliance scans still work.
+User-agent: *
+Disallow: /apply/
+Disallow: /api/

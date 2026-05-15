@@ -10,6 +10,7 @@ import {
   ClockIcon,
   SearchIcon,
 } from '@eazepay/ui/web';
+import { partners as MASTER_PARTNERS, applicationsForPartner } from '../../lib/master-data';
 
 /**
  * Finance Applications — direct port of Lovable's `/admin/applications`.
@@ -33,15 +34,28 @@ interface PartnerAppsRow {
   niche: string;
 }
 
-const SEED: PartnerAppsRow[] = [
-  { partnerId: 'premier',    initials: 'PR', name: 'Premier Coaching Group', apps: 12, email: 'sarah@premiercoaching.com',  niche: 'Coaching' },
-  { partnerId: 'medfirst',   initials: 'ME', name: 'MedFirst Solutions',     apps: 8,  email: 'james@medfirst.com',         niche: 'Medical' },
-  { partnerId: 'tradeforce', initials: 'TR', name: 'TradeForce Pro',         apps: 6,  email: 'mike@tradeforce.com',        niche: 'Trades' },
-  { partnerId: 'dental',     initials: 'DE', name: 'Dental Care Partners',   apps: 4,  email: 'amy@dentalcarepartners.com', niche: 'Dental' },
-];
+// Build the partner list off the canonical master roster so any link
+// out of /control-panel lands here on a matching id.
+const SEED: PartnerAppsRow[] = MASTER_PARTNERS.map((p) => {
+  const apps = applicationsForPartner(p.id);
+  // synthesise a plausible apps count when the master fixture is light
+  const count = apps.length > 0 ? apps.length + Math.floor(p.fundedCount / 2) : Math.max(2, Math.floor(p.fundedCount * 1.4));
+  return {
+    partnerId: p.id,
+    initials: p.initials,
+    name: p.legalName,
+    apps: count,
+    email: p.email,
+    niche: p.niche.charAt(0).toUpperCase() + p.niche.slice(1),
+  };
+});
+
+const MONTH_OPTIONS = ['All Months', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Dec 2025'] as const;
 
 export default function FinanceApplicationsPage() {
   const [search, setSearch] = useState('');
+  const [month, setMonth] = useState<(typeof MONTH_OPTIONS)[number]>('All Months');
+  const [monthOpen, setMonthOpen] = useState(false);
 
   const filtered = useMemo(
     () =>
@@ -63,10 +77,10 @@ export default function FinanceApplicationsPage() {
       />
       <PageBody>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-          <Kpi label="Total Apps" value="30" />
-          <Kpi label="Funded" value="11" />
-          <Kpi label="Approved" value="7" />
-          <Kpi label="Declined" value="3" />
+          <Kpi label="Total Apps" value={String(SEED.reduce((s, p) => s + p.apps, 0))} />
+          <Kpi label="Funded" value={String(Math.round(SEED.reduce((s, p) => s + p.apps, 0) * 0.38))} />
+          <Kpi label="Approved" value={String(Math.round(SEED.reduce((s, p) => s + p.apps, 0) * 0.21))} />
+          <Kpi label="Declined" value={String(Math.round(SEED.reduce((s, p) => s + p.apps, 0) * 0.09))} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -79,10 +93,36 @@ export default function FinanceApplicationsPage() {
               className="flex-1 bg-transparent outline-none text-[13px] text-fg placeholder:text-fg-muted/80"
             />
           </div>
-          <button className="h-10 inline-flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg-secondary hover:bg-bg-muted">
-            <ClockIcon size={14} />
-            All Months
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMonthOpen((v) => !v)}
+              className="h-10 inline-flex items-center gap-2 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg-secondary hover:bg-bg-muted"
+            >
+              <ClockIcon size={14} />
+              {month}
+            </button>
+            {monthOpen && (
+              <>
+                <button type="button" className="fixed inset-0 z-10" aria-label="Close" onClick={() => setMonthOpen(false)} />
+                <div className="absolute right-0 top-11 z-20 w-44 rounded-lg border border-border bg-bg-elevated shadow-lg overflow-hidden">
+                  {MONTH_OPTIONS.map((o) => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => {
+                        setMonth(o);
+                        setMonthOpen(false);
+                      }}
+                      className={'block w-full text-left px-3 py-2 text-[12px] hover:bg-bg-muted ' + (o === month ? 'bg-bg-muted text-fg font-semibold' : 'text-fg-secondary')}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         <Card>

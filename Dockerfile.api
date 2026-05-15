@@ -1,0 +1,107 @@
+# syntax=docker/dockerfile:1.6
+#
+# EazePay API (@eazepay/api) - production image for Railway.
+#
+# Three-stage build:
+#   1. deps     - install pnpm workspace deps with the lockfile
+#   2. builder  - produce the NestJS compiled output (tsc → dist/)
+#   3. runner   - minimal runtime image that runs `node dist/main.js`
+#
+# Why a separate Dockerfile from the partner-portal image: the API is
+# a long-running NestJS process on Fastify (HTTP + cron worker when
+# CRON_LEADER=true), not a Next.js renderer. It needs its own service
+# in Railway so the operator can scale API replicas independently of
+# the partner-portal renderer and can set CRON_LEADER on exactly one
+# API replica without affecting the portal.
+#
+# Mirrors the partner-portal Dockerfile layout exactly so anyone who
+# has read the other one will be at home here.
+
+# ─────────────────────────────────────────────────────────────────────
+# 1. deps - install pnpm + workspace dependencies
+# ─────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
+WORKDIR /repo
+
+RUN apk add --no-cache libc6-compat openssl \
+  && corepack enable \
+  && corepack prepare pnpm@9.12.0 --activate
+
+# Copy only the files needed for a deterministic install.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/api/package.json apps/api/
+COPY libs ./libs
+COPY services ./services
+
+# Install workspace deps. We use --frozen-lockfile so Railway builds
+# fail loud if package.json + lockfile drift.
+RUN pnpm install --frozen-lockfile --filter=@eazepay/api...
+
+# ─────────────────────────────────────────────────────────────────────
+# 2. builder - produce the NestJS compiled output
+# ─────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /repo
+
+RUN apk add --no-cache libc6-compat openssl \
+  && corepack enable \
+  && corepack prepare pnpm@9.12.0 --activate
+
+# Bring in the installed node_modules + the full repo source.
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /repo/libs ./libs
+COPY --from=deps /repo/services ./services
+COPY . .
+
+ENV NODE_ENV=production
+
+# Prisma client must be generated before tsc - the API imports types
+# from @prisma/client. Generated artefacts land in apps/api/node_modules.
+RUN pnpm --filter @eazepay/api prisma:generate
+
+# Compile TypeScript → dist/. The build script is `tsc -p tsconfig.json`
+# and writes apps/api/dist with main.js as the entry point.
+RUN pnpm --filter @eazepay/api build
+
+# ─────────────────────────────────────────────────────────────────────
+# 3. runner - minimal runtime
+# ─────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+RUN apk add --no-cache openssl
+
+ENV NODE_ENV=production
+# Railway sets $PORT automatically. The API binds 0.0.0.0:$PORT at
+# bootstrap (see apps/api/src/main.ts). Default to 3300 if missing so
+# local docker-run works without a port-mapping override.
+ENV PORT=3300
+ENV HOST=0.0.0.0
+
+# Non-root user (security best practice).
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser  --system --uid 1001 nestjs
+
+# Copy the compiled output, the API's own node_modules (Prisma engines
+# included), the workspace-linked node_modules at the repo root, the
+# libs/ and services/ sources (the dist/ files import from them), and
+# the Prisma schema (Prisma client reads schema.prisma at runtime to
+# resolve migration ids).
+COPY --from=builder --chown=nestjs:nodejs /repo/apps/api/dist ./apps/api/dist
+COPY --from=builder --chown=nestjs:nodejs /repo/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder --chown=nestjs:nodejs /repo/apps/api/package.json ./apps/api/package.json
+COPY --from=builder --chown=nestjs:nodejs /repo/apps/api/prisma ./apps/api/prisma
+COPY --from=builder --chown=nestjs:nodejs /repo/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /repo/libs ./libs
+COPY --from=builder --chown=nestjs:nodejs /repo/services ./services
+COPY --from=builder --chown=nestjs:nodejs /repo/package.json ./package.json
+COPY --from=builder --chown=nestjs:nodejs /repo/pnpm-workspace.yaml ./pnpm-workspace.yaml
+
+USER nestjs
+EXPOSE 3300
+
+# Health checks at /v1/health/live and /v1/health/ready
+# (see apps/api/src/health/health.controller.ts; the global prefix v1
+# is set in apps/api/src/main.ts via app.setGlobalPrefix('v1')).
+CMD ["node", "apps/api/dist/main.js"]

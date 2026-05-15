@@ -1,16 +1,20 @@
 'use client';
 import { CrownIcon } from '@eazepay/ui/web';
-import { BrandOnboardingWizard } from '../../../components/brand-onboarding/BrandOnboardingWizard';
+import { BrandOnboardingPage } from '../../../components/brand-onboarding/BrandOnboardingWizard';
 
 /**
  * CoachPay — Apply. Direct port of the Lovable `/onboarding/coach-pay`
  * flow. 5 documents (coaching cert, business license, insurance,
  * bank statements, W-9). Submits to the EAZE orchestration backend
  * via the brand-onboarding BFF proxy.
+ *
+ * Wrapped in `BrandOnboardingPage` so a `?invite=<token>` query param
+ * is resolved against `/api/onboarding/invite/[token]` and used to
+ * pre-fill / lock the brand wizard.
  */
 export default function CoachPayOnboardingPage() {
   return (
-    <BrandOnboardingWizard
+    <BrandOnboardingPage
       config={{
         slug: 'coach-pay',
         title: 'CoachPay — Apply',

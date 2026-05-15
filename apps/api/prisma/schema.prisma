@@ -1205,10 +1205,19 @@ model WebhookEndpoint {
   merchantId String                 @db.Uuid @map("merchant_id")
   /// Public destination URL. https-only enforced at controller level.
   url        String
-  /// SECRET — SHA-256 hash of the per-endpoint signing secret. The raw
-  /// value is returned at creation time and never again. Rotation is a
-  /// separate POST that returns a new secret + invalidates the old hash.
+  /// SECRET — SHA-256 hash of the per-endpoint signing secret. Retained
+  /// for fingerprint display in the dashboard and for back-compat with
+  /// rows created before `secretCiphertext` was added. Rotation issues a
+  /// fresh raw value + invalidates the old hash.
   secretHash String                 @map("secret_hash")
+  /// SECRET — AES-256-GCM envelope of the raw signing secret, packed via
+  /// `PiiVaultService.sealOpaque` with AAD bound to this row's id. The
+  /// outbound dispatcher decrypts this at delivery time to compute the
+  /// `x-eazepay-signature` HMAC. Nullable so rows created pre-migration
+  /// keep working; the dispatcher fails those deliveries with a
+  /// `endpoint_secret_unmigrated_rotate_required` error, which trips the
+  /// circuit-breaker after 20 failures and prompts the merchant to rotate.
+  secretCiphertext String?           @map("secret_ciphertext")
   /// Subscribed event types. Matched as exact strings against the
   /// publish call's event name.
   events     String[]               @default([])

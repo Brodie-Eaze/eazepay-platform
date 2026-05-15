@@ -39,7 +39,7 @@ const BLANK_FORM = {
 };
 
 type LenderRow = MarketplaceLenderRow & {
-  status?: 'active' | 'inactive' | 'disabled';
+  status?: 'active' | 'inactive' | 'disabled' | 'pending';
   integrationType?: string;
   apiBaseUrl?: string | null;
   applicationsCount?: number;
@@ -67,10 +67,14 @@ export default function LendersPage() {
           products: l.brands,
           enabled: l.globallyEnabled,
           createdAt: l.syncedAt,
-          status: (l.globallyEnabled ? 'active' : 'inactive') as 'active' | 'inactive' | 'disabled',
+          status: (l.pendingIntegration
+            ? 'pending'
+            : l.globallyEnabled
+              ? 'active'
+              : 'inactive') as 'active' | 'inactive' | 'disabled' | 'pending',
           integrationType: 'API',
           apiBaseUrl: null,
-          applicationsCount: Math.max(0, 24 - i * 3),
+          applicationsCount: l.pendingIntegration ? 0 : Math.max(0, 24 - i * 3),
         })) as LenderRow[];
       }
     },
@@ -276,7 +280,16 @@ export default function LendersPage() {
             ) : (
               <ul className="divide-y divide-border">
                 {lenders.map((l) => {
-                  const status = l.status ?? (l.enabled ? 'active' : 'inactive');
+                  const status =
+                    l.status ??
+                    (l.pendingIntegration ? 'pending' : l.enabled ? 'active' : 'inactive');
+                  const pending = l.pendingIntegration;
+                  const badgeClass = pending
+                    ? 'bg-bg-muted text-fg-secondary border border-border'
+                    : statusBadge(status);
+                  const badgeTooltip = pending
+                    ? `${pending.note} Edit ${pending.adapterFilePath} to wire credentials.`
+                    : undefined;
                   return (
                     <li
                       key={l.id}
@@ -291,11 +304,10 @@ export default function LendersPage() {
                       <div className="col-span-2 text-[12px] text-fg-secondary">{l.integrationType ?? 'API'}</div>
                       <div className="col-span-2">
                         <span
-                          className={
-                            'text-[11px] px-2 py-0.5 rounded-full font-medium ' + statusBadge(status)
-                          }
+                          className={'text-[11px] px-2 py-0.5 rounded-full font-medium ' + badgeClass}
+                          title={badgeTooltip}
                         >
-                          {status.toUpperCase()}
+                          {pending ? 'PENDING INTEGRATION' : status.toUpperCase()}
                         </span>
                       </div>
                       <div className="col-span-2 text-right text-[13px] font-semibold text-fg tabular-nums">

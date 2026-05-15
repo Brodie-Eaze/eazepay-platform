@@ -1,11 +1,43 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { NotFound, BadRequest } from '@eazepay/shared-utils';
+import { NotFound, BadRequest, Forbidden } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
 import { PiiVaultService } from './internal/pii-vault.service.js';
 import { KYC_PROVIDER, type KycProvider } from './ports/kyc-provider.port.js';
 import type { PiiV1 } from './pii.types.js';
+
+/**
+ * SEC-023 — masked PII shape returned by GET /v1/me by default.
+ *
+ * The mask follows a "show enough to confirm the right account is
+ * loaded, hide everything else" rule:
+ *   - legalName.first stays (it's effectively a display name); `last`
+ *     becomes the first initial only, `middle`/`suffix` drop entirely.
+ *   - dateOfBirth keeps the year so the consumer can verify "yes, this
+ *     is my account", but day + month are blanked.
+ *   - ssnLast4 collapses to '***' — surfacing even four digits of an
+ *     SSN to a stolen JWT is unnecessary risk.
+ *   - address.line1/line2 hide entirely (they're identifying); zip
+ *     truncates to the first three chars (US ZIP3 is non-identifying
+ *     and still useful for "is this the right state?" verification);
+ *     city + state stay (low sensitivity, recognisable).
+ *
+ * Plaintext is only returned when the caller passes `?reveal=full`
+ * AND has a fresh OTP step-up — see `assertFreshStepUp`.
+ */
+export interface PiiV1Masked {
+  legalName: { first: string; last: string };
+  dateOfBirth: string;
+  ssnLast4: '***' | null;
+  address: {
+    line1: string;
+    line2: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+}
 
 export interface MeResponse {
   userId: UserId;
@@ -18,12 +50,24 @@ export interface MeResponse {
     sanctions: string;
     completedAt: string | null;
   };
-  profile: PiiV1 | null;
+  /** Either the masked subset (default) or full plaintext PII (only
+   *  when reveal=full AND step-up satisfied). Null when no profile
+   *  exists. */
+  profile: PiiV1 | PiiV1Masked | null;
+  /** Discriminator so the client knows whether to prompt for step-up
+   *  before showing edit forms. */
+  profileVisibility: 'masked' | 'full' | 'absent';
 }
 
 export interface StartKycResponse {
   outcome: 'pending' | 'approved' | 'manual_review' | 'rejected' | 'expired';
   providerRef: string;
+}
+
+interface GetMeOptions {
+  /** 'masked' (default) returns the safe subset; 'full' returns
+   *  plaintext but requires a fresh OTP step-up. */
+  reveal: 'masked' | 'full';
 }
 
 @Injectable()
@@ -36,22 +80,46 @@ export class UserService {
     @Inject(KYC_PROVIDER) private readonly kyc: KycProvider,
   ) {}
 
-  async getMe(userId: UserId): Promise<MeResponse> {
+  async getMe(
+    userId: UserId,
+    options: GetMeOptions = { reveal: 'masked' },
+  ): Promise<MeResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { consumerProfile: true },
     });
     if (!user) throw NotFound({ code: 'user_not_found' });
 
-    let profile: PiiV1 | null = null;
+    let profile: PiiV1 | PiiV1Masked | null = null;
+    let visibility: 'masked' | 'full' | 'absent' = 'absent';
     if (user.consumerProfile) {
-      profile = await this.vault.open(userId, {
+      const full = await this.vault.open(userId, {
         ciphertext: user.consumerProfile.piiCiphertext,
         nonce: user.consumerProfile.piiNonce,
         dataKeyCiphertext: user.consumerProfile.dataKeyCiphertext,
         kekId: user.consumerProfile.kekId,
         schemaVersion: user.consumerProfile.piiSchemaVersion,
       });
+      if (options.reveal === 'full') {
+        // SEC-023 — plaintext requires a fresh OTP step-up. Until the
+        // step-up wiring lands (see otp.service.ts `purpose: 'step_up'`
+        // mechanism), we deliberately fail closed: any caller asking
+        // for `?reveal=full` gets a 403 with a machine-readable code
+        // so the consumer-web app can drive the step-up flow. This
+        // closes the "stolen JWT == one-shot PII dump" hole NOW; the
+        // legitimate reveal path lands in a follow-up.
+        //
+        // TODO(SEC-023 follow-up): accept a `x-step-up-challenge` or
+        // session-flag check from otp.service that confirms the user
+        // completed a `purpose: 'reveal_profile'` OTP within the last
+        // 5 minutes, then return `full` instead of throwing.
+        await this.assertFreshStepUp(userId);
+        profile = full;
+        visibility = 'full';
+      } else {
+        profile = mask(full);
+        visibility = 'masked';
+      }
     }
 
     return {
@@ -68,7 +136,30 @@ export class UserService {
           user.consumerProfile?.kycCompletedAt?.toISOString() ?? null,
       },
       profile,
+      profileVisibility: visibility,
     };
+  }
+
+  /**
+   * SEC-023 — step-up gate for plaintext PII reveal.
+   *
+   * Until the actual step-up handshake is plumbed end-to-end (the
+   * controller would accept a step-up challenge id and this service
+   * would call OtpService.verifyAndConsume with purpose='step_up'),
+   * we fail closed. This is an explicit safety choice: better to
+   * 403 every reveal=full call than to silently return plaintext on
+   * a stale guard.
+   *
+   * The error code is machine-readable so the consumer-web app can
+   * recognise it and start the step-up dance instead of showing a
+   * generic "access denied" toast.
+   */
+  private async assertFreshStepUp(_userId: UserId): Promise<void> {
+    throw Forbidden({
+      code: 'step_up_required',
+      detail:
+        'Plaintext profile reveal requires a fresh OTP step-up. Complete the step-up flow and retry within 5 minutes.',
+    });
   }
 
   /**
@@ -197,4 +288,54 @@ export class UserService {
 
     return { outcome: status.outcome, providerRef: result.providerRef };
   }
+}
+
+/**
+ * SEC-023 — produce the masked view of a ConsumerProfile.
+ *
+ * The shape mirrors PiiV1 closely so client code that already binds
+ * to `profile.legalName.first` keeps working; only the *values* shrink.
+ * Anything we can't safely shrink (an empty `last`) is rendered as the
+ * empty string rather than `null` so the type contract stays simple
+ * for downstream consumers.
+ */
+function mask(full: PiiV1): PiiV1Masked {
+  // Defensive narrowing: the upstream PiiV1 zod inference depends on
+  // `UsStateSchema` / `UsZipSchema` imports that are currently broken
+  // in @eazepay/shared-types, so the inferred field types fall back to
+  // `unknown`. Coerce to string locally — at runtime these are always
+  // strings (the seal/open path round-trips JSON), and once the
+  // shared-types import is repaired this narrowing becomes a no-op.
+  const addr = full.address as {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    zip: string;
+  };
+  const name = full.legalName as {
+    first: string;
+    middle?: string;
+    last: string;
+    suffix?: string;
+  };
+  const dob = String(full.dateOfBirth ?? '');
+  const lastInitial = name.last ? `${name.last[0]}.` : '';
+  const year = dob.slice(0, 4);
+  const zip3 = (addr.zip ?? '').slice(0, 3);
+  return {
+    legalName: {
+      first: name.first,
+      last: lastInitial,
+    },
+    dateOfBirth: `${year}-**-**`,
+    ssnLast4: full.ssnLast4 ? '***' : null,
+    address: {
+      line1: '***',
+      line2: '***',
+      city: addr.city,
+      state: addr.state,
+      zip: zip3,
+    },
+  };
 }
