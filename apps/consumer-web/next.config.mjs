@@ -2,6 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@eazepay/ui'],
+  // Resolve `.js` specifiers in workspace lib barrels back to their
+  // `.ts` sources (NodeNext tsc requires the `.js`; webpack can't find
+  // the on-disk `.ts` without this alias). Mirrors partner-portal.
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      '.js': ['.ts', '.tsx', '.js'],
+      '.jsx': ['.tsx', '.jsx'],
+    };
+    return config;
+  },
   // ────────────────────────────────────────────────────────────────────
   // Security headers (consumer-web). Mirrors partner-portal SEC-006 but
   // tightened further because the consumer-web surface accepts SSN,

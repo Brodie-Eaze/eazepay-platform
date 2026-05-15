@@ -2,6 +2,22 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@eazepay/ui'],
+  // Resolve `.js` specifiers in workspace lib barrels back to their `.ts`
+  // sources. TypeScript with `moduleResolution: NodeNext` requires the
+  // explicit `.js` extension on relative ESM imports (`./brands.js`); the
+  // tsc + Node ESM toolchains accept that natively, but webpack 5 does
+  // not — without this alias, the partner-portal build trips on
+  // "Can't resolve './brands.js'" because the on-disk file is `brands.ts`.
+  // Mapping `.js` → `[.ts, .tsx, .js]` keeps both toolchains happy
+  // without forking the source.
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      '.js': ['.ts', '.tsx', '.js'],
+      '.jsx': ['.tsx', '.jsx'],
+    };
+    return config;
+  },
   // Pre-existing TS/ESLint errors in unrelated files (legacy auth + api routes)
   // would otherwise fail the Railway production build. Skip at build time;
   // typecheck still runs locally via `npx tsc --noEmit`.
