@@ -1,11 +1,73 @@
 # EazePay CTO Architecture & Execution Blueprint
 
-**Status:** Foundation document, pre-build
+**Status:** Built and deployed. `partner-portal` is in production at https://eazepay-platform-production.up.railway.app. Backend services (13 active in `services/`, 6 reserved) are implemented as a modular monolith composed in `apps/api`. Mobile and ancillary web apps are scaffolded, run locally, and target a future deploy. **This foundation document remains the single source of architectural truth; deltas from it must be documented per ADR in [`adr/`](adr/).**
 **Author role:** Acting CTO / Principal Architect
-**Date:** 2026-05-02
+**Date:** 2026-05-02 (foundation) · last status refresh 2026-05-15
 **Primary jurisdiction:** United States only. Federal regime: BSA/USA PATRIOT Act (FinCEN), OFAC sanctions, TILA/Reg Z, ECOA/Reg B, FCRA, GLBA + Safeguards Rule, EFTA/Reg E, UDAAP (CFPB), MLA, SCRA, E-SIGN/UETA. State regime: state-by-state consumer lending licensing OR bank-partner model (Cross River / WebBank / Celtic Bank / FinWise) with True Lender doctrine + Madden risk addressed. Privacy: GLBA federal floor + CCPA/CPRA (CA), CDPA (VA), CPA (CO), CTDPA (CT), UCPA (UT), and the broader state privacy patchwork. Architecture is portable to other regions, but every concrete provider, rail, and disclosure in this document is US-spec.
 
 > **Reading note.** This document is written to survive scrutiny from a Series A CTO, a CFPB exam team, a bank-partner compliance officer, a state regulator, an external SOC 2 auditor, and a sceptical lender partner's risk team simultaneously. It is a blueprint, not a pitch.
+
+---
+
+## What is built today (2026-05-15)
+
+A delta layer on top of the original foundation document. Everything below this section reflects the original blueprint — read it for the "why". This section reflects the "what's actually in the repo right now".
+
+### Deployed
+- **`apps/partner-portal`** is live on Railway at https://eazepay-platform-production.up.railway.app. It hosts every public-facing surface AND the authenticated portals on one Next.js service.
+  - Public: `/landing/{medpay,tradepay,coachpay}`, `/apply/{brand}`, `/lenders`, `/lenders/[id]`, `/docs`, `/sign-in`, `/welcome`.
+  - Brand-scoped merchant portals: `/v/{brand}/{applications,insights,settlements,transactions,send-link,submit,team,settings,api-keys,integrations}`.
+  - Master operator: `/`, `/insights`, `/partners`, `/applications`, `/lender-marketplace`, `/lender-marketplace/access`, `/marketplaces`, `/control-panel`, `/onboarding-pipeline`, `/approvals`, `/payouts`, `/reports`, `/events`, `/dead-letter`, `/webhooks`, `/admin`, `/eaze-ai`.
+  - Build path: repo-root `Dockerfile` (3-stage standalone) + `railway.toml`. See [`/RAILWAY_DEPLOY.md`](../RAILWAY_DEPLOY.md).
+
+### Implemented (in repo, not deployed)
+- **`apps/api`** — NestJS BFF + public API, composes every `@eazepay/service-*` module. Runs locally on `:3000`, Swagger at `/docs`.
+- **`apps/workers`** — BullMQ background processes (collection, audit drain, webhook retry).
+- **`apps/webhooks`** — inbound webhook receiver (`:3010`), kept separate for blast-radius isolation.
+- **`apps/consumer-web`** (`:3001`), **`apps/merchant-dashboard`** (`:3002`), **`apps/admin-console`** (`:3003`), **`apps/developer-portal`** (`:3005`) — Next.js sibling surfaces, run locally.
+- **`apps/consumer-mobile`** — React Native (Expo). EAS Build target.
+- **13 active services**: `auth`, `user`, `merchant`, `application`, `orchestration`, `lender`, `payment`, `notification`, `compliance-doc`, `risk`, `audit`, `webhook`, `admin`. Each is a NestJS module with its own README.
+- **6 reserved services**: `analytics`, `compliance`, `decision`, `document`, `featureflag`, `integration` — folders + READMEs only, reserved for extraction.
+- **4 active libs**: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS` registry), `shared-utils` (Problem details, AES-GCM + envelope encryption, ObjectStorage port + LocalFs adapter, idempotency decorator), `api-client` (framework-free fetch client), `ui` (tokens + web component library).
+- **3 reserved libs**: `feature-flags-sdk`, `observability`, `testing` — directories with workspace entries only.
+- **Infra**: Terraform modules + per-env composition in `infra/terraform/` — composed, not applied. Railway is today's deploy target.
+- **Docs**: this blueprint, 17 ADRs, runbooks (local-development, incident-response), BFF contract, INDEX.
+
+### Agentic decisioning layer (added since the foundation document)
+
+Seven named software agents wrap the orchestration engine. Each is a discrete service with a typed contract, an "ONLINE/DEGRADED/OFFLINE" health state, and a streaming last-action log surfaced in the operator console. Pattern modelled on AUREAN AI's named-agent architecture — explicit, observable, instrumented.
+
+| # | Agent | Role | Where it lives |
+|---|---|---|---|
+| 01 | **PRISM** | Intake Agent — reshapes apply-form question order based on partial answers; learns which sequences convert per traffic source | `services/application` + apply-flow client |
+| 02 | **VEGA** | Enrichment Agent — orchestrates 12 enrichment providers in parallel, fallback + dedupe | `services/orchestration` |
+| 03 | **ORACLE** | Scoring Agent — calibrated propensity model trained on closed-won outcomes, nightly retrain on dispositions | `services/risk` + `services/orchestration` |
+| 04 | **HELIX** | Routing Agent — matches qualified leads to right rep, capacity-aware, learns rep-tier fit | `services/admin` + `services/orchestration` |
+| 05 | **NEXUS** | Lender Marketplace Agent — 52-lender parallel waterfall, prime → subprime, soft pull only, real-time stip-rate awareness | `services/orchestration` + `services/lender` |
+| 06 | **FLUX** | Funding Agent — disbursement orchestration, retries, reconciliation back to ad campaigns. (Previously labelled "Payment Agent" — the platform does not process payments; FLUX orchestrates the lender → merchant funds path.) | `services/payment` |
+| 07 | **ECHO** | Attribution Agent — holds pixel events until lead clears qualification, fires weighted conversions to Meta + Google CAPI, uploads closed-won as offline conversions | `services/webhook` + `services/notification` |
+
+The agent layer is the operator-facing abstraction over the underlying services. It is visible in three places:
+- **Public landing pages** — `apps/partner-portal/app/landing/{medpay,tradepay,coachpay}/page.tsx` — marketing view of what each agent does, with live "last action" cards.
+- **Operator insights** — `apps/partner-portal/app/insights/page.tsx` (cross-brand) and `apps/partner-portal/app/v/[brand]/insights/page.tsx` (brand-scoped) — institutional decisioning dashboard with per-agent health, throughput, drift, and audit-grade history.
+- **Underlying services** — split across `orchestration`, `risk`, `lender`, `payment`, `application`, `admin`, `webhook`, `notification`.
+
+The fair-routing default ([ADR-0013](adr/0013-fair-routing-default.md)) sits inside NEXUS; the immutable audit outbox ([ADR-0011](adr/0011-immutable-audit-via-outbox.md)) backs the streaming last-action log; the JIT PII unmask ([ADR-0017](adr/0017-jit-pii-unmask.md)) governs what operators see in HELIX's queue.
+
+### Three brand verticals
+All three are first-class on `BrandCode` in `libs/shared-types/src/brands.ts` and carried on Merchant, LenderProduct, LenderConnection, and Application rows:
+
+- **MedPay** — dental / medical / vet / fertility / cosmetic. $1.5k – $50k tickets.
+- **TradePay** — roofing / HVAC / solar / home-improvement / contractor. $3k – $150k tickets.
+- **CoachPay** — high-ticket coaches / consultants / course creators / certifications / masterminds. $5k – $50k programs.
+
+All three share the same orchestration engine, the same 52-lender marketplace, the same bank-partner originated structure, and the same compliance posture (FCRA / ECOA / TILA / Reg B + E). What differs per brand: landing copy, apply prompts, merchant portal navigation, lender mix (some lenders prefer one vertical), and ECHO's attribution weighting.
+
+### What this platform is NOT
+
+- **Not a payment processor.** No card rails, no MDR/interchange capture, no merchant acquiring. Section 12 / 13 / §15 of this document originally drew from the broader "embedded finance + payments" framing — the executed product is the financing + orchestration half only. FLUX (the funding agent) handles lender → merchant disbursement, not consumer card payments.
+- **Not a single lender.** BuzzPay is one of 52 in the marketplace; routing default is fair, not revenue-optimal ([ADR-0013](adr/0013-fair-routing-default.md)).
+- **Not a referral broker.** EazePay is the system of record for the application, the offer set, the e-contract event, the disbursement instruction, and the post-funding consumer relationship. The bank-partner / lender is the true lender of record on every approved loan.
 
 ---
 
@@ -13,7 +75,7 @@
 
 EazePay is being built as embedded financial infrastructure that unifies payments and finance at point of checkout, plus a consumer-direct surface for self-originated finance applications. There are two adjacent but distinct revenue surfaces — consumer (retail borrower) and merchant (acquiring + finance distribution). EazePay also wraps a private-equity-backed in-house lender product — **BuzzPay**, built by the TrueTopia team — inside a multi-lender orchestration layer, similar in shape to Skeps or ChargeAfter.
 
-The blueprint below is the foundation we build before any code is written. It locks scope, regulatory posture, domain model, repo topology, and Claude Code build sequence so the team (and Claude Code) can execute deterministically across mobile, web, backend, infra, and design.
+The blueprint below is the foundation that was built before code was written. It locked scope, regulatory posture, domain model, repo topology, and the Claude Code build sequence so the team could execute deterministically across mobile, web, backend, infra, and design. The "What is built today" section above captures the delta between this blueprint and the executed product as of 2026-05-15.
 
 ---
 
@@ -433,30 +495,38 @@ State: React Query + Zustand. Navigation: React Navigation. Forms: React Hook Fo
 
 ### 10.4 Service decomposition (modular monolith → services)
 
-At MVP, single deployable NestJS app with internal module boundaries enforced by Nx project graph:
+Single deployable NestJS app (`apps/api`) with internal module boundaries enforced by Nx project graph. As of 2026-05-15, 13 of 19 service slots are implemented; 6 remain reserved for extraction.
+
+**Active (13)** — implementation in `src/`, composed into `apps/api`:
 
 ```
-auth          — registration, login, OTP, sessions, MFA, device binding
-user          — consumer profiles, PII vault, consents
-merchant      — merchants, businesses, beneficial owners, team
-application   — application lifecycle, state machine
-orchestration — lender routing, waterfall, offer aggregation
-decision      — rules engine, affordability, risk score
-lender        — lender registry, lender adapters, partner portal API
-payment       — disbursement, repayment, settlement
-notification  — push/email/SMS/in-app
-document      — uploads, OCR, e-sign integration
-compliance    — KYC/KYB orchestration, sanctions, SMR queue
-risk          — fraud signals, velocity, device, link analysis
-audit         — append-only event sink + query API
-admin         — ops console BFF
-analytics     — event ingestion + warehouse export
-webhook       — outbound webhook delivery + retry
-integration   — third-party adapters (registry pattern)
-featureflag   — flag service (LaunchDarkly or self-hosted Unleash)
+auth            — registration, login, OTP, sessions, MFA, device binding
+user            — consumer profiles, PII vault, consents
+merchant        — merchants, businesses, beneficial owners, brand membership
+application     — application lifecycle, XState v5 state machine
+orchestration   — lender routing, waterfall, offer aggregation (NEXUS lives here)
+lender          — lender registry, lender adapters (BuzzPay + external mocks)
+payment         — disbursement, repayment, collection cron (FLUX lives here)
+notification    — push/email/SMS/in-app dispatch + in-app inbox
+compliance-doc  — Adverse Action Notice renderer + Document store
+risk            — fraud signals, velocity, device, composite scoring (feeds ORACLE)
+audit           — AuditOutbox drain → hash-chained immutable sink
+webhook         — outbound merchant webhooks + dispatcher cron
+admin           — admin queue + decline override + JIT PII unmask + ops console BFF
 ```
 
-Each module exposes a typed in-process interface today; each can be extracted to its own service tomorrow without contract change. Boundaries enforced by ESLint rules + module dependency graph.
+**Reserved (6)** — folder + README only, reserved for extraction:
+
+```
+analytics       — reporting aggregations on a read replica (cohort / funnel / cohort-revenue)
+compliance      — standalone FCRA/ECOA/TILA enforcement (today inline in application + orchestration)
+decision        — standalone rules engine + affordability (today inside orchestration + risk)
+document        — generic document store / KYC artifacts (today inside compliance-doc)
+featureflag     — server-side flag evaluation (sibling to feature-flags-sdk lib)
+integration     — external system integration registry (currently inline per service)
+```
+
+Each module exposes a typed in-process interface today; each can be extracted to its own service tomorrow without contract change. Boundaries enforced by ESLint rules + Nx module dependency graph ([ADR-0010](adr/0010-modular-monolith-with-extraction-paths.md)).
 
 ### 10.5 Cloud topology (AWS, US — `us-east-1` primary, `us-west-2` DR)
 
@@ -497,48 +567,76 @@ VPC: 3 AZ in `us-east-1`, mirror in `us-west-2` for DR (warm-standby Aurora Glob
 ### 11.1 Repos
 
 #### `eazepay/platform` (monorepo, Nx + pnpm)
+
+This is the executed topology — see the root [`README.md`](../README.md) for the full URL taxonomy of `partner-portal`, port assignments, and per-app responsibilities.
+
 ```
-apps/
-  consumer-mobile/       # React Native
-  consumer-web/          # Next.js
-  merchant-dashboard/    # Next.js
-  admin-console/         # Next.js
-  partner-portal/        # Next.js
-  developer-portal/      # Next.js (Mintlify or custom)
-  api/                   # NestJS public API + BFFs
-  workers/               # Background jobs (BullMQ on Redis)
-  webhooks/              # Inbound webhook receiver
-services/                # Internal NestJS modules (extracted later if needed)
-  auth/
-  user/
-  merchant/
-  application/
-  orchestration/
-  decision/
-  lender/
-  payment/
-  notification/
-  document/
-  compliance/
-  risk/
-  audit/
-  analytics/
-  webhook/
-  integration/
-  featureflag/
-libs/
-  shared-types/          # Zod schemas + generated TS
-  shared-utils/
-  api-client/            # generated from OpenAPI
-  ui/                    # design system React + RN bindings (consumed from eazepay/design-system package)
-  feature-flags-sdk/
-  observability/
-  testing/
+apps/                              # 9 boundary processes
+  api/                             # NestJS BFF + public API (:3000)
+  partner-portal/                  # Next.js — main deployed app (:3004, Railway)
+                                   #   hosts landings, apply flows, lender hub,
+                                   #   brand-scoped merchant portals, master operator
+  consumer-web/                    # Next.js consumer apply (:3001)
+  merchant-dashboard/              # Next.js merchant portal (:3002)
+  admin-console/                   # Next.js internal ops + compliance (:3003)
+  developer-portal/                # Next.js lender dev hub (:3005, reserved)
+  consumer-mobile/                 # React Native (Expo), iOS + Android
+  workers/                         # BullMQ background jobs (Redis-backed)
+  webhooks/                        # Inbound webhook receiver (:3010)
+services/                          # 19 NestJS module packages, modular monolith
+  # Active (13) — implementation in src/
+  auth/                            # Cognito + custom session/device layer
+  user/                            # ConsumerProfile + PII vault (envelope encryption)
+  merchant/                        # KYB + beneficial owners + application links
+  application/                     # Lifecycle state machine (XState v5)
+  orchestration/                   # Lender waterfall + decisioning + risk gate (NEXUS lives here)
+  lender/                          # LenderAdapter port + adapter registry
+  payment/                         # Disbursement + repayment + collection cron (FLUX lives here)
+  notification/                    # Multi-channel dispatch + in-app inbox
+  compliance-doc/                  # Adverse Action Notice renderer + Document store
+  risk/                            # Composite risk scoring + RiskFlag taxonomy
+  audit/                           # AuditOutbox drain → hash-chained immutable sink
+  webhook/                         # Outbound merchant webhooks + dispatcher cron
+  admin/                           # Admin queue + decline override + JIT PII unmask
+  # Reserved (6) — folder + README, no src/ yet
+  analytics/                       # Reporting aggregations on read replica
+  compliance/                      # Standalone FCRA/ECOA/TILA enforcement (today inline)
+  decision/                        # Standalone decisioning engine (today inside orchestration)
+  document/                        # Generic document store / KYC artifacts
+  featureflag/                     # Server-side flag evaluation
+  integration/                     # External system integration registry
+libs/                              # 7 shared packages
+  # With code (4)
+  shared-types/                    # Money (BigInt cents), branded IDs, Zod primitives, BRANDS
+  shared-utils/                    # RFC 7807 Problem, AES-GCM + envelope encryption,
+                                   #   ObjectStorage port, ULID, idempotency decorator
+  api-client/                      # Framework-free fetch client + TokenStore
+  ui/                              # Tokens + Tailwind preset + web component lib
+                                   #   (@eazepay/ui/web; native bindings stubbed)
+  # Reserved (3)
+  feature-flags-sdk/               # Client-side flag hook
+  observability/                   # Pino + OTel setup helpers
+  testing/                         # Shared fixtures + test utilities
 tools/
-  generators/            # Nx generators for new services/components
-  scripts/
-docs/                    # Architecture decision records (ADRs), runbooks
-.github/workflows/       # CI
+  generators/                      # Nx generators (reserved)
+  scripts/                         # Repo scripts (reserved)
+docs/
+  ARCHITECTURE.md                  # This document
+  INDEX.md                         # Docs navigation
+  bff-contract.md                  # BFF / API contract
+  adr/                             # 17 ADRs + template (0001 → 0017)
+  runbooks/                        # local-development, incident-response
+infra/
+  terraform/modules/               # network, aurora, ecs-service, kms, s3-bucket,
+                                   #   cloudfront-waf, redis
+  terraform/envs/                  # dev / staging / prod (composed, not applied)
+  runbooks/                        # terraform-bootstrap
+.github/workflows/                 # CI
+Dockerfile                         # partner-portal 3-stage standalone build
+railway.toml                       # Railway deploy config
+docker-compose.yml                 # Local Postgres + Redis
+nx.json · pnpm-workspace.yaml · tsconfig.base.json · package.json
+README · HANDOFF · CONTRIBUTING · CHANGELOG · LICENSE · SECURITY · RAILWAY_DEPLOY
 ```
 
 **Why monorepo:** shared types between FE/BE, atomic cross-cutting changes, single CI policy, single security baseline. **Why Nx:** project graph, affected-builds, code generators, opinionated scaling.

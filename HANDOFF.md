@@ -5,26 +5,42 @@ A 1-page orientation. Skim this first, then drop into
 
 ## What this is
 
-EazePay is embedded financial infrastructure that unifies payments
-and finance at checkout. A consumer + merchant ecosystem with an
-internal lender (BuzzPay, by TrueTopia) wrapped behind a multi-lender
-orchestration layer. Today's repo is scaffold-grade — end-to-end
-flows work in dev with mock provider adapters; production wiring,
-the bank-partner contract, and licenses are the remaining critical
-path.
+EazePay is a **multi-vertical embedded financing marketplace** — not
+a payment processor. Three consumer-facing brand verticals
+(**MedPay** dental/medical/vet/cosmetic, **TradePay** roofing/HVAC/
+solar/home-improvement, **CoachPay** high-ticket coaches/consultants/
+course creators) route every application through a **52-lender
+parallel waterfall** wrapped in a **7-agent decisioning layer**
+(PRISM intake · VEGA enrichment · ORACLE scoring · HELIX routing ·
+NEXUS lender marketplace · FLUX funding · ECHO attribution).
+Bank-partner originated (Cross River / WebBank / Celtic / FinWise),
+FCRA / ECOA / TILA / Reg B + E compliant, US-only. The bank/lender
+disburses direct to the merchant on e-sign — EazePay does not hold
+the loan, does not service repayments, does not carry routine-default
+risk.
+
+Today's status: **`apps/partner-portal` is live on Railway** at
+https://eazepay-platform-production.up.railway.app — it hosts every
+public-facing surface (landings, apply flows, lender hub, docs)
+**and** the authenticated portals (master operator, brand-scoped
+merchant views) on one Next.js service. The backend (13 active
+service modules in `services/`, 6 reserved) is implemented and runs
+locally; ECS-Fargate / Vercel / EAS deploy is the target for the
+rest. Bank-partner contract + state-license footprint remain the
+critical commercial path, not a code problem.
 
 ## Repo layout
 
 | Top-level | What lives there |
 |---|---|
-| `apps/` | 9 user-facing or boundary processes (API, workers, webhooks receiver, 5 Next.js apps, 1 Expo app). Each has its own `README.md`. |
-| `services/` | 19 `@eazepay/service-*` packages — modular-monolith business logic (auth, user, merchant, application, orchestration, lender, payment, notification, risk, audit, webhook, admin, compliance-doc, plus 6 placeholders). Each has its own `README.md`. |
-| `libs/` | 7 shared packages: `shared-types`, `shared-utils`, `ui`, `api-client`, `feature-flags-sdk`, `observability`, `testing`. |
-| `docs/` | `ARCHITECTURE.md` (the CTO blueprint, ~1500 lines), `bff-contract.md`, 18 ADRs, runbooks. |
-| `infra/` | Terraform modules + per-env compositions for dev / staging / prod. |
-| `tools/` | NX generators + repo scripts. |
+| `apps/` | 9 boundary processes — `api` (NestJS BFF, :3000), `partner-portal` (Next.js, :3004, deployed to Railway), `consumer-web` (:3001), `merchant-dashboard` (:3002), `admin-console` (:3003), `developer-portal` (:3005), `consumer-mobile` (Expo), `workers` (BullMQ), `webhooks` (NestJS, :3010). Each has its own `README.md`. |
+| `services/` | 19 `@eazepay/service-*` packages — modular-monolith business logic. **13 active**: auth, user, merchant, application, orchestration, lender, payment, notification, compliance-doc, risk, audit, webhook, admin. **6 reserved** (folder + README, no `src/`): analytics, compliance, decision, document, featureflag, integration. |
+| `libs/` | 7 shared packages — **4 with code**: `shared-types` (Money/BigInt cents, branded IDs, `BRANDS`), `shared-utils` (Problem details, envelope encryption, idempotency), `api-client` (framework-free fetch + typed client), `ui` (tokens + Tailwind preset + web component lib). **3 reserved**: `feature-flags-sdk`, `observability`, `testing`. |
+| `docs/` | `ARCHITECTURE.md` (CTO blueprint, ~1300 lines), `INDEX.md` (docs navigation), `bff-contract.md`, 17 ADRs + template, runbooks (local-development, incident-response). |
+| `infra/` | Terraform modules + per-env compositions for dev / staging / prod (composed, not applied — Railway is today's deploy target). |
+| `tools/` | Nx generators + repo scripts (reserved). |
 
-It's an NX + pnpm workspaces monorepo. Node 20+, ESM-only,
+It's an Nx + pnpm workspaces monorepo. Node 20+, ESM-only,
 TypeScript everywhere.
 
 ## Quick start
