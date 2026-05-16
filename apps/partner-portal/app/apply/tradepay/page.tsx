@@ -548,13 +548,26 @@ function LandingStep({ onApply }: { onApply: () => void }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// TradePay payment estimator. Simple amortization at a representative
-// APR. Disclosed as illustrative.
+// TradePay payment estimator. Amortization across a real-world APR
+// ramp tied to credit tier — Excellent → Building. Disclosed as
+// illustrative so a contractor demoing the calc at the quote
+// doesn't set false expectations against a homeowner whose real
+// pre-qual lands in a higher tier.
 // ─────────────────────────────────────────────────────────────────────
+const TP_TIERS = [
+  { key: 'excellent', label: 'Excellent', sub: '720+ FICO', apr: 0.059 },
+  { key: 'good', label: 'Good', sub: '660–719', apr: 0.099 },
+  { key: 'fair', label: 'Fair', sub: '600–659', apr: 0.149 },
+  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.199 },
+] as const;
+type TpTier = (typeof TP_TIERS)[number]['key'];
+
 function TradePayCalculator({ onApply }: { onApply: () => void }) {
   const [amount, setAmount] = useState(24000);
-  const [term, setTerm] = useState<36 | 48 | 60 | 72 | 84>(60);
-  const APR = 0.0849;
+  const [term, setTerm] = useState<12 | 24 | 36 | 48 | 60 | 72 | 84>(60);
+  const [tier, setTier] = useState<TpTier>('good');
+  const activeTier = TP_TIERS.find((t) => t.key === tier)!;
+  const APR = activeTier.apr;
   const r = APR / 12;
   const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -term)));
   const totalPaid = monthly * term;
@@ -590,7 +603,7 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
             <strong>{term} months</strong>
           </div>
           <div className="tp-calc-terms">
-            {([36, 48, 60, 72, 84] as const).map((t) => (
+            {([12, 24, 36, 48, 60, 72, 84] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -605,6 +618,32 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
         </div>
       </div>
 
+      <div className="tp-calc-field tp-calc-field--full tp-calc-tier-field">
+        <div className="tp-calc-label">
+          <span>Credit profile</span>
+          <strong>
+            {activeTier.label} · from {(APR * 100).toFixed(1)}%
+          </strong>
+        </div>
+        <div className="tp-calc-tier-row" role="radiogroup" aria-label="Credit profile">
+          {TP_TIERS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="radio"
+              aria-checked={t.key === tier}
+              className={`tp-calc-tier ${t.key === tier ? 'is-active' : ''}`}
+              onClick={() => setTier(t.key)}
+            >
+              <span className="tp-calc-tier-label">{t.label}</span>
+              <span className="tp-calc-tier-sub">
+                {t.sub} · {(t.apr * 100).toFixed(1)}%
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="tp-calc-result">
         <div className="tp-calc-result-main">
           <div className="tp-calc-result-k">Est. monthly</div>
@@ -615,8 +654,8 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
         </div>
         <div className="tp-calc-result-side">
           <div>
-            <div className="tp-calc-result-k">APR (representative)</div>
-            <div className="tp-calc-result-vs">8.49%</div>
+            <div className="tp-calc-result-k">APR · {activeTier.label.toLowerCase()}</div>
+            <div className="tp-calc-result-vs">{(APR * 100).toFixed(1)}%</div>
           </div>
           <div>
             <div className="tp-calc-result-k">Total interest</div>
@@ -630,8 +669,9 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
         <ArrowRightIcon size={14} />
       </button>
       <p className="tp-calc-disc">
-        Illustrative only. Your actual APR, term, and monthly payment are determined by your
-        pre-qualified offers and credit profile. Soft pull only — zero impact to your score.
+        Illustrative — based on a representative {activeTier.label.toLowerCase()} credit profile (
+        {activeTier.sub}). Soft pull only; your actual APR, term, and monthly payment are set by
+        your pre-qualified offers.
       </p>
     </div>
   );
@@ -2272,6 +2312,57 @@ const TRADEPAY_APPLY_CSS = `
   border-color: transparent;
   box-shadow: 0 6px 14px rgba(249, 115, 22, 0.3);
 }
+
+/* Credit-tier picker — full-width row of 4 chips, slate+orange accent. */
+.tradepay-root .tp-calc-tier-field {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+}
+.tradepay-root .tp-calc-field--full { grid-column: 1 / -1; }
+.tradepay-root .tp-calc-tier-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.tradepay-root .tp-calc-tier {
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #334155;
+  text-align: center;
+  transition: all 160ms ease;
+  cursor: pointer;
+  min-height: 56px;
+}
+.tradepay-root .tp-calc-tier:hover {
+  background: rgba(249, 115, 22, 0.06);
+  border-color: rgba(249, 115, 22, 0.22);
+}
+.tradepay-root .tp-calc-tier.is-active {
+  background: linear-gradient(135deg, #0f172a, #ea580c);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.3);
+}
+.tradepay-root .tp-calc-tier-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.tradepay-root .tp-calc-tier-sub {
+  display: block;
+  font-size: 10.5px;
+  opacity: 0.7;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.tradepay-root .tp-calc-tier.is-active .tp-calc-tier-sub { opacity: 0.95; }
+@media (max-width: 540px) {
+  .tradepay-root .tp-calc-tier-row { grid-template-columns: repeat(2, 1fr); }
+}
+
 .tradepay-root .tp-calc-result {
   margin-top: 24px;
   padding: 20px 22px;
