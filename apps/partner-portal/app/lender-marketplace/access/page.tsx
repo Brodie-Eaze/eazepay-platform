@@ -27,7 +27,6 @@ import {
   type CreditTier,
   type PartnerAccessOverride,
 } from '../../../lib/marketplace-data';
-import { BRANDS } from '@eazepay/shared-types';
 import { partners as partnerList } from '../../../lib/master-data';
 
 type AccessStatus = { enabled: boolean; via: 'global' | 'override' | 'marketplace-paused' };
@@ -52,8 +51,27 @@ export default function AccessMatrixPage() {
 
   const partner = partnerList.find((p) => p.id === selectedPartnerId)!;
 
+  /**
+   * Map the selected partner's `product` to the lender catalog's brand
+   * code. MedPay / TradePay / CoachPay partners only see lenders that
+   * serve their vertical (or are brand-agnostic via `brands: []`).
+   * Multi-brand / consumer / direct partners see every lender.
+   */
+  const partnerBrandCode = useMemo(() => {
+    const p = partner.product.toLowerCase();
+    if (p === 'medpay') return 'medpay' as const;
+    if (p === 'tradepay') return 'tradepay' as const;
+    if (p === 'coachpay') return 'coachpay' as const;
+    return null;
+  }, [partner.product]);
+
   const lenderRows = useMemo(() => {
     let list = marketplaceLenders;
+    // 1) Scope the catalog to the selected partner's vertical so picking
+    //    a different partner actually changes the table.
+    if (partnerBrandCode) {
+      list = list.filter((l) => l.brands.length === 0 || l.brands.includes(partnerBrandCode));
+    }
     if (marketplaceFilter) list = list.filter((l) => l.marketplaceId === marketplaceFilter);
     if (query) {
       const q = query.toLowerCase();
@@ -65,7 +83,7 @@ export default function AccessMatrixPage() {
       );
     }
     return list;
-  }, [marketplaceFilter, query]);
+  }, [marketplaceFilter, query, partnerBrandCode]);
 
   const accessFor = (lenderId: string): AccessStatus => {
     const lender = marketplaceLenders.find((l) => l.id === lenderId)!;
@@ -122,35 +140,16 @@ export default function AccessMatrixPage() {
       key: 'tiers',
       header: 'Tiers',
       cell: (l) => (
-        <div className="flex flex-wrap gap-1">
-          {l.servesTiers.map((t) => (
-            <TierPill key={t} tier={t} />
-          ))}
+        // Single-line tier list. If the lender serves all 4 tiers we
+        // collapse to one "All tiers" pill so the row stays tight.
+        <div className="flex items-center gap-1 whitespace-nowrap">
+          {l.servesTiers.length >= 4 ? (
+            <StatusPill tone="neutral">All tiers</StatusPill>
+          ) : (
+            l.servesTiers.map((t) => <TierPill key={t} tier={t} />)
+          )}
         </div>
       ),
-    },
-    {
-      key: 'brands',
-      header: 'Brands',
-      cell: (l) =>
-        l.brands.length === 0 ? (
-          <span className="text-[12px] text-fg-muted">All</span>
-        ) : (
-          <div className="flex flex-wrap gap-1">
-            {l.brands.map((b) => (
-              <span
-                key={b}
-                className="text-[11px] inline-flex items-center gap-1 rounded-full bg-bg-muted px-1.5 py-0.5"
-              >
-                <span
-                  className="size-1.5 rounded-full"
-                  style={{ background: BRANDS[b].accentHex }}
-                />
-                {BRANDS[b].name}
-              </span>
-            ))}
-          </div>
-        ),
     },
     {
       key: 'envelope',
@@ -297,9 +296,9 @@ export default function AccessMatrixPage() {
               }
               description={
                 <span>
-                  <strong>{effectiveEnabledForPartner}</strong> of {lenderRows.length} lenders
-                  effectively enabled · <strong>{explicitOverridesForPartner}</strong> explicit
-                  override
+                  Showing lenders that serve <strong>{partner.product}</strong> ·{' '}
+                  <strong>{effectiveEnabledForPartner}</strong> of {lenderRows.length} effectively
+                  enabled · <strong>{explicitOverridesForPartner}</strong> explicit override
                   {explicitOverridesForPartner === 1 ? '' : 's'} for this partner
                 </span>
               }
