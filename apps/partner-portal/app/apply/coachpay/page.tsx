@@ -540,13 +540,26 @@ function LandingStep({ onApply }: { onApply: () => void }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// CoachPay payment estimator. Simple amortization at a representative
-// APR. Disclosed as illustrative.
+// CoachPay payment estimator. Amortization across a real-world APR
+// ramp tied to credit tier — Excellent → Building. Disclosed as
+// illustrative so a coach demoing the calc on a strategy call doesn't
+// set false expectations against a prospect whose real pre-qual lands
+// in a higher tier.
 // ─────────────────────────────────────────────────────────────────────
+const CP_TIERS = [
+  { key: 'excellent', label: 'Excellent', sub: '720+ FICO', apr: 0.059 },
+  { key: 'good', label: 'Good', sub: '660–719', apr: 0.099 },
+  { key: 'fair', label: 'Fair', sub: '600–659', apr: 0.149 },
+  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.199 },
+] as const;
+type CpTier = (typeof CP_TIERS)[number]['key'];
+
 function CoachPayCalculator({ onApply }: { onApply: () => void }) {
   const [amount, setAmount] = useState(14000);
-  const [term, setTerm] = useState<24 | 36 | 48 | 60>(36);
-  const APR = 0.059;
+  const [term, setTerm] = useState<12 | 24 | 36 | 48 | 60>(36);
+  const [tier, setTier] = useState<CpTier>('good');
+  const activeTier = CP_TIERS.find((t) => t.key === tier)!;
+  const APR = activeTier.apr;
   const r = APR / 12;
   const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -term)));
   const totalPaid = monthly * term;
@@ -582,7 +595,7 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
             <strong>{term} months</strong>
           </div>
           <div className="cp-calc-terms">
-            {([24, 36, 48, 60] as const).map((t) => (
+            {([12, 24, 36, 48, 60] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -597,6 +610,35 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
         </div>
       </div>
 
+      {/* Credit-tier picker — drives APR so the estimator reflects the
+          prospect's actual tier instead of always quoting the "from
+          5.9%" floor. */}
+      <div className="cp-calc-field cp-calc-field--full cp-calc-tier-field">
+        <div className="cp-calc-label">
+          <span>Credit profile</span>
+          <strong>
+            {activeTier.label} · from {(APR * 100).toFixed(1)}%
+          </strong>
+        </div>
+        <div className="cp-calc-tier-row" role="radiogroup" aria-label="Credit profile">
+          {CP_TIERS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="radio"
+              aria-checked={t.key === tier}
+              className={`cp-calc-tier ${t.key === tier ? 'is-active' : ''}`}
+              onClick={() => setTier(t.key)}
+            >
+              <span className="cp-calc-tier-label">{t.label}</span>
+              <span className="cp-calc-tier-sub">
+                {t.sub} · {(t.apr * 100).toFixed(1)}%
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="cp-calc-result">
         <div className="cp-calc-result-main">
           <div className="cp-calc-result-k">Est. monthly</div>
@@ -607,8 +649,8 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
         </div>
         <div className="cp-calc-result-side">
           <div>
-            <div className="cp-calc-result-k">APR (representative)</div>
-            <div className="cp-calc-result-vs">5.9%</div>
+            <div className="cp-calc-result-k">APR · {activeTier.label.toLowerCase()}</div>
+            <div className="cp-calc-result-vs">{(APR * 100).toFixed(1)}%</div>
           </div>
           <div>
             <div className="cp-calc-result-k">Total interest</div>
@@ -626,8 +668,9 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
         <ArrowRightIcon size={14} />
       </button>
       <p className="cp-calc-disc">
-        Illustrative only. Your actual APR, term, and monthly payment are determined by your
-        pre-qualified offers and credit profile. Soft pull only — zero impact to your score.
+        Illustrative — based on a representative {activeTier.label.toLowerCase()} credit profile (
+        {activeTier.sub}). Soft pull only; your actual APR, term, and monthly payment are set by
+        your pre-qualified offers.
       </p>
     </div>
   );
@@ -2179,6 +2222,57 @@ const COACHPAY_APPLY_CSS = `
   border-color: transparent;
   box-shadow: 0 6px 14px rgba(124, 58, 237, 0.4);
 }
+
+/* Credit-tier picker — full-width row of 4 chips. Each chip carries a
+   tier label + FICO band + APR so the prospect understands what
+   they're selecting. Active chip uses the same violet gradient as the
+   term chips for visual continuity. */
+.cp-calc-tier-field {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+}
+.cp-calc-field--full { grid-column: 1 / -1; }
+.cp-calc-tier-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.cp-calc-tier {
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  color: #f5f3ff;
+  text-align: center;
+  transition: all 160ms ease;
+  cursor: pointer;
+  min-height: 56px;
+}
+.cp-calc-tier:hover { background: rgba(124, 58, 237, 0.16); }
+.cp-calc-tier.is-active {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.4);
+}
+.cp-calc-tier-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.cp-calc-tier-sub {
+  display: block;
+  font-size: 10.5px;
+  opacity: 0.7;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.cp-calc-tier.is-active .cp-calc-tier-sub { opacity: 0.9; }
+@media (max-width: 540px) {
+  .cp-calc-tier-row { grid-template-columns: repeat(2, 1fr); }
+}
+
 .cp-calc-result {
   margin-top: 24px;
   padding: 20px 22px;

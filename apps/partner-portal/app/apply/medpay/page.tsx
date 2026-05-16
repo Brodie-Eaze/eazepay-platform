@@ -524,14 +524,26 @@ function LandingStep({ onApply }: { onApply: () => void }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// MedPay payment estimator — small, simple amortization calc. Inputs
-// are an amount slider and a term selector; output is the monthly
-// payment at a representative APR. Disclosed as illustrative.
+// MedPay payment estimator. Amortization across a real-world APR ramp
+// tied to credit tier — Excellent → Building. Disclosed as illustrative
+// so a practice demoing the calc in-chair doesn't set false
+// expectations against a patient whose real pre-qual lands in a
+// higher tier.
 // ─────────────────────────────────────────────────────────────────────
+const MP_TIERS = [
+  { key: 'excellent', label: 'Excellent', sub: '720+ FICO', apr: 0.059 },
+  { key: 'good', label: 'Good', sub: '660–719', apr: 0.099 },
+  { key: 'fair', label: 'Fair', sub: '600–659', apr: 0.149 },
+  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.199 },
+] as const;
+type MpTier = (typeof MP_TIERS)[number]['key'];
+
 function MedPayCalculator({ onApply }: { onApply: () => void }) {
   const [amount, setAmount] = useState(12000);
-  const [term, setTerm] = useState<24 | 36 | 48 | 60 | 72>(48);
-  const APR = 0.079; // 7.9% representative
+  const [term, setTerm] = useState<12 | 24 | 36 | 48 | 60>(48);
+  const [tier, setTier] = useState<MpTier>('good');
+  const activeTier = MP_TIERS.find((t) => t.key === tier)!;
+  const APR = activeTier.apr;
   const r = APR / 12;
   const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -term)));
   const totalPaid = monthly * term;
@@ -567,7 +579,7 @@ function MedPayCalculator({ onApply }: { onApply: () => void }) {
             <strong>{term} months</strong>
           </div>
           <div className="mp-calc-terms">
-            {([24, 36, 48, 60, 72] as const).map((t) => (
+            {([12, 24, 36, 48, 60] as const).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -582,6 +594,32 @@ function MedPayCalculator({ onApply }: { onApply: () => void }) {
         </div>
       </div>
 
+      <div className="mp-calc-field mp-calc-field--full mp-calc-tier-field">
+        <div className="mp-calc-label">
+          <span>Credit profile</span>
+          <strong>
+            {activeTier.label} · from {(APR * 100).toFixed(1)}%
+          </strong>
+        </div>
+        <div className="mp-calc-tier-row" role="radiogroup" aria-label="Credit profile">
+          {MP_TIERS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="radio"
+              aria-checked={t.key === tier}
+              className={`mp-calc-tier ${t.key === tier ? 'is-active' : ''}`}
+              onClick={() => setTier(t.key)}
+            >
+              <span className="mp-calc-tier-label">{t.label}</span>
+              <span className="mp-calc-tier-sub">
+                {t.sub} · {(t.apr * 100).toFixed(1)}%
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mp-calc-result">
         <div className="mp-calc-result-main">
           <div className="mp-calc-result-k">Est. monthly</div>
@@ -592,8 +630,8 @@ function MedPayCalculator({ onApply }: { onApply: () => void }) {
         </div>
         <div className="mp-calc-result-side">
           <div>
-            <div className="mp-calc-result-k">APR (representative)</div>
-            <div className="mp-calc-result-vs">7.9%</div>
+            <div className="mp-calc-result-k">APR · {activeTier.label.toLowerCase()}</div>
+            <div className="mp-calc-result-vs">{(APR * 100).toFixed(1)}%</div>
           </div>
           <div>
             <div className="mp-calc-result-k">Total interest</div>
@@ -607,8 +645,9 @@ function MedPayCalculator({ onApply }: { onApply: () => void }) {
         <ArrowRightIcon size={14} />
       </button>
       <p className="mp-calc-disc">
-        Illustrative only. Your actual APR, term, and monthly payment are determined by your
-        pre-qualified offers and credit profile. Soft pull only — zero impact to your score.
+        Illustrative — based on a representative {activeTier.label.toLowerCase()} credit profile (
+        {activeTier.sub}). Soft pull only; your actual APR, term, and monthly payment are set by
+        your pre-qualified offers.
       </p>
     </div>
   );
@@ -1896,6 +1935,54 @@ const MEDPAY_APPLY_CSS = `
   border-color: transparent;
   box-shadow: 0 6px 14px rgba(14, 124, 102, 0.22);
 }
+
+/* Credit-tier picker — full-width row of 4 chips, teal accent. */
+.mp-calc-tier-field {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+}
+.mp-calc-field--full { grid-column: 1 / -1; }
+.mp-calc-tier-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.mp-calc-tier {
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: rgba(14, 124, 102, 0.04);
+  border: 1px solid var(--mp-line);
+  color: var(--mp-ink-2);
+  text-align: center;
+  transition: all 160ms ease;
+  cursor: pointer;
+  min-height: 56px;
+}
+.mp-calc-tier:hover { background: rgba(14, 124, 102, 0.08); }
+.mp-calc-tier.is-active {
+  background: linear-gradient(135deg, var(--mp-teal), var(--mp-teal-2));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(14, 124, 102, 0.22);
+}
+.mp-calc-tier-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.mp-calc-tier-sub {
+  display: block;
+  font-size: 10.5px;
+  opacity: 0.7;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.mp-calc-tier.is-active .mp-calc-tier-sub { opacity: 0.95; }
+@media (max-width: 540px) {
+  .mp-calc-tier-row { grid-template-columns: repeat(2, 1fr); }
+}
+
 .mp-calc-result {
   margin-top: 24px;
   padding: 20px 22px;
