@@ -371,39 +371,45 @@ function LandingStep({ onApply }: { onApply: () => void }) {
             <div className="cp-apply-hero-stage">
               <div className="cp-hero-ring" aria-hidden />
 
-              {/* Floating chips matching landing — corner-anchored, LIVE one violet */}
-              <div
-                className="cp-chip cp-chip--violet"
-                style={{ top: '-6%', left: '-2%', animationDelay: '0s' }}
-              >
-                <span className="cp-chip-k">
-                  <span className="cp-chip-dot" />
-                  INSTANT
-                </span>
-                <span className="cp-chip-v">10s soft-pull pre-qual</span>
-              </div>
-              <div className="cp-chip" style={{ top: '-6%', right: '-2%', animationDelay: '0.5s' }}>
-                <span className="cp-chip-k">MARKETPLACE</span>
-                <span className="cp-chip-v">52 lenders · 5s SLA</span>
-              </div>
-              <div
-                className="cp-chip"
-                style={{ bottom: '-6%', left: '-2%', animationDelay: '1.0s' }}
-              >
-                <span className="cp-chip-k">APR FROM 5.9%</span>
-                <span className="cp-chip-v">12 to 60 month terms</span>
-              </div>
-              <div
-                className="cp-chip"
-                style={{ bottom: '-6%', right: '-2%', animationDelay: '1.5s' }}
-              >
-                <span className="cp-chip-k">PAYOUT</span>
-                <span className="cp-chip-v">program-direct · 48 to 72h</span>
-              </div>
-
               {/* Hero offer card — same gradient panel + violet stamp + livebar
-                  layout as the landing's `.cp-hero-card`. */}
+                  layout as the landing's `.cp-hero-card`. Chips live INSIDE the
+                  card so they anchor to its actual corners (the stage is wider
+                  than the card thanks to the perspective ring). */}
               <div className="cp-apply-hero-card cp-glow-edge">
+                {/* Floating chips — corner-anchored to the card with a small
+                    pixel overhang. */}
+                <div
+                  className="cp-chip cp-chip--violet cp-chip--anchor cp-chip--tl"
+                  style={{ animationDelay: '0s' }}
+                >
+                  <span className="cp-chip-k">
+                    <span className="cp-chip-dot" />
+                    INSTANT
+                  </span>
+                  <span className="cp-chip-v">10s soft-pull pre-qual</span>
+                </div>
+                <div
+                  className="cp-chip cp-chip--anchor cp-chip--tr"
+                  style={{ animationDelay: '0.5s' }}
+                >
+                  <span className="cp-chip-k">MARKETPLACE</span>
+                  <span className="cp-chip-v">52 lenders · 5s SLA</span>
+                </div>
+                <div
+                  className="cp-chip cp-chip--anchor cp-chip--bl"
+                  style={{ animationDelay: '1.0s' }}
+                >
+                  <span className="cp-chip-k">APR FROM 5.9%</span>
+                  <span className="cp-chip-v">12 to 60 month terms</span>
+                </div>
+                <div
+                  className="cp-chip cp-chip--anchor cp-chip--br"
+                  style={{ animationDelay: '1.5s' }}
+                >
+                  <span className="cp-chip-k">PAYOUT</span>
+                  <span className="cp-chip-v">program-direct · 48 to 72h</span>
+                </div>
+
                 <div className="cp-card-head">
                   <div>
                     <div className="cp-card-eyebrow">
@@ -550,7 +556,7 @@ const CP_TIERS = [
   { key: 'excellent', label: 'Excellent', sub: '720+ FICO', apr: 0.059 },
   { key: 'good', label: 'Good', sub: '660–719', apr: 0.099 },
   { key: 'fair', label: 'Fair', sub: '600–659', apr: 0.149 },
-  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.199 },
+  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.249 },
 ] as const;
 type CpTier = (typeof CP_TIERS)[number]['key'];
 
@@ -610,32 +616,43 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
         </div>
       </div>
 
-      {/* Credit-tier picker — drives APR so the estimator reflects the
+      {/* Credit-tier selector — drives APR so the estimator reflects the
           prospect's actual tier instead of always quoting the "from
-          5.9%" floor. */}
+          5.9%" floor. Native select for fast picking + iOS native UI. */}
       <div className="cp-calc-field cp-calc-field--full cp-calc-tier-field">
         <div className="cp-calc-label">
           <span>Credit profile</span>
           <strong>
-            {activeTier.label} · from {(APR * 100).toFixed(1)}%
+            {activeTier.label} · {(APR * 100).toFixed(1)}% APR
           </strong>
         </div>
-        <div className="cp-calc-tier-row" role="radiogroup" aria-label="Credit profile">
-          {CP_TIERS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="radio"
-              aria-checked={t.key === tier}
-              className={`cp-calc-tier ${t.key === tier ? 'is-active' : ''}`}
-              onClick={() => setTier(t.key)}
+        <div className="cp-calc-select-wrap">
+          <select
+            className="cp-calc-select"
+            value={tier}
+            onChange={(e) => setTier(e.target.value as CpTier)}
+            aria-label="Credit profile"
+          >
+            {CP_TIERS.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label} · {t.sub} · {(t.apr * 100).toFixed(1)}% APR
+              </option>
+            ))}
+          </select>
+          <span className="cp-calc-select-caret" aria-hidden>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span className="cp-calc-tier-label">{t.label}</span>
-              <span className="cp-calc-tier-sub">
-                {t.sub} · {(t.apr * 100).toFixed(1)}%
-              </span>
-            </button>
-          ))}
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
         </div>
       </div>
 
@@ -1640,6 +1657,16 @@ const COACHPAY_APPLY_CSS = `
   animation: cp-chip-float 7s ease-in-out infinite;
   transform-style: preserve-3d;
 }
+/* Corner-anchored chips — overhang the offer card by 14px so they
+   read as floating but stay hugged to the card edges. */
+.cp-chip--anchor { z-index: 9; }
+.cp-chip--tl { top: -14px; left: -14px; }
+.cp-chip--tr { top: -14px; right: -14px; }
+.cp-chip--bl { bottom: -14px; left: -14px; }
+.cp-chip--br { bottom: -14px; right: -14px; }
+@media (max-width: 540px) {
+  .cp-chip--anchor { display: none; }
+}
 @keyframes cp-chip-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -2223,54 +2250,57 @@ const COACHPAY_APPLY_CSS = `
   box-shadow: 0 6px 14px rgba(124, 58, 237, 0.4);
 }
 
-/* Credit-tier picker — full-width row of 4 chips. Each chip carries a
-   tier label + FICO band + APR so the prospect understands what
-   they're selecting. Active chip uses the same violet gradient as the
-   term chips for visual continuity. */
+/* Credit-tier dropdown — single native select for fast tier picking.
+   Wraps the native control so we can paint our own caret + glass
+   surface; the underlying <select> stays accessible + keyboard
+   navigable + uses iOS's native picker on mobile. */
 .cp-calc-tier-field {
   grid-column: 1 / -1;
   margin-top: 18px;
 }
 .cp-calc-field--full { grid-column: 1 / -1; }
-.cp-calc-tier-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+.cp-calc-select-wrap {
+  position: relative;
+  display: block;
 }
-.cp-calc-tier {
-  padding: 10px 8px;
-  border-radius: 10px;
+.cp-calc-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 100%;
+  padding: 14px 40px 14px 14px;
+  border-radius: 12px;
   background: rgba(124, 58, 237, 0.08);
   border: 1px solid rgba(124, 58, 237, 0.22);
   color: #f5f3ff;
-  text-align: center;
-  transition: all 160ms ease;
-  cursor: pointer;
-  min-height: 56px;
-}
-.cp-calc-tier:hover { background: rgba(124, 58, 237, 0.16); }
-.cp-calc-tier.is-active {
-  background: linear-gradient(135deg, #7c3aed, #a78bfa);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.4);
-}
-.cp-calc-tier-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: -0.01em;
-}
-.cp-calc-tier-sub {
-  display: block;
-  font-size: 10.5px;
-  opacity: 0.7;
-  margin-top: 2px;
+  cursor: pointer;
+  transition: all 160ms ease;
+  min-height: 52px;
   font-variant-numeric: tabular-nums;
 }
-.cp-calc-tier.is-active .cp-calc-tier-sub { opacity: 0.9; }
-@media (max-width: 540px) {
-  .cp-calc-tier-row { grid-template-columns: repeat(2, 1fr); }
+.cp-calc-select:hover { background: rgba(124, 58, 237, 0.14); }
+.cp-calc-select:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.55);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+}
+.cp-calc-select option {
+  background: #1c1530;
+  color: #f5f3ff;
+}
+.cp-calc-select-caret {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #c4b5fd;
+  pointer-events: none;
 }
 
 .cp-calc-result {

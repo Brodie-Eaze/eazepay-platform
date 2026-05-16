@@ -558,7 +558,7 @@ const TP_TIERS = [
   { key: 'excellent', label: 'Excellent', sub: '720+ FICO', apr: 0.059 },
   { key: 'good', label: 'Good', sub: '660–719', apr: 0.099 },
   { key: 'fair', label: 'Fair', sub: '600–659', apr: 0.149 },
-  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.199 },
+  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.249 },
 ] as const;
 type TpTier = (typeof TP_TIERS)[number]['key'];
 
@@ -622,25 +622,36 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
         <div className="tp-calc-label">
           <span>Credit profile</span>
           <strong>
-            {activeTier.label} · from {(APR * 100).toFixed(1)}%
+            {activeTier.label} · {(APR * 100).toFixed(1)}% APR
           </strong>
         </div>
-        <div className="tp-calc-tier-row" role="radiogroup" aria-label="Credit profile">
-          {TP_TIERS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="radio"
-              aria-checked={t.key === tier}
-              className={`tp-calc-tier ${t.key === tier ? 'is-active' : ''}`}
-              onClick={() => setTier(t.key)}
+        <div className="tp-calc-select-wrap">
+          <select
+            className="tp-calc-select"
+            value={tier}
+            onChange={(e) => setTier(e.target.value as TpTier)}
+            aria-label="Credit profile"
+          >
+            {TP_TIERS.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label} · {t.sub} · {(t.apr * 100).toFixed(1)}% APR
+              </option>
+            ))}
+          </select>
+          <span className="tp-calc-select-caret" aria-hidden>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span className="tp-calc-tier-label">{t.label}</span>
-              <span className="tp-calc-tier-sub">
-                {t.sub} · {(t.apr * 100).toFixed(1)}%
-              </span>
-            </button>
-          ))}
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
         </div>
       </div>
 
@@ -2313,54 +2324,53 @@ const TRADEPAY_APPLY_CSS = `
   box-shadow: 0 6px 14px rgba(249, 115, 22, 0.3);
 }
 
-/* Credit-tier picker — full-width row of 4 chips, slate+orange accent. */
+/* Credit-tier dropdown — single native select, slate+orange accent. */
 .tradepay-root .tp-calc-tier-field {
   grid-column: 1 / -1;
   margin-top: 18px;
 }
 .tradepay-root .tp-calc-field--full { grid-column: 1 / -1; }
-.tradepay-root .tp-calc-tier-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+.tradepay-root .tp-calc-select-wrap {
+  position: relative;
+  display: block;
 }
-.tradepay-root .tp-calc-tier {
-  padding: 10px 8px;
-  border-radius: 10px;
+.tradepay-root .tp-calc-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 100%;
+  padding: 14px 40px 14px 14px;
+  border-radius: 12px;
   background: rgba(15, 23, 42, 0.04);
   border: 1px solid rgba(15, 23, 42, 0.12);
-  color: #334155;
-  text-align: center;
-  transition: all 160ms ease;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  min-height: 56px;
+  transition: all 160ms ease;
+  min-height: 52px;
+  font-variant-numeric: tabular-nums;
 }
-.tradepay-root .tp-calc-tier:hover {
+.tradepay-root .tp-calc-select:hover {
   background: rgba(249, 115, 22, 0.06);
   border-color: rgba(249, 115, 22, 0.22);
 }
-.tradepay-root .tp-calc-tier.is-active {
-  background: linear-gradient(135deg, #0f172a, #ea580c);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.3);
+.tradepay-root .tp-calc-select:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
 }
-.tradepay-root .tp-calc-tier-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-.tradepay-root .tp-calc-tier-sub {
-  display: block;
-  font-size: 10.5px;
-  opacity: 0.7;
-  margin-top: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.tradepay-root .tp-calc-tier.is-active .tp-calc-tier-sub { opacity: 0.95; }
-@media (max-width: 540px) {
-  .tradepay-root .tp-calc-tier-row { grid-template-columns: repeat(2, 1fr); }
+.tradepay-root .tp-calc-select-caret {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f97316;
+  pointer-events: none;
 }
 
 .tradepay-root .tp-calc-result {

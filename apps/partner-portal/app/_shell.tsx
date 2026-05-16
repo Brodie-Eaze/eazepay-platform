@@ -112,17 +112,17 @@ const masterGroups: NavGroup[] = [
     ],
   },
   {
-    // Lender Integrations is intentionally narrow: marketplace registry →
-    // individual lenders → access overrides. Everything else (routing queues,
-    // dead-letter queue, webhooks, lender events) is operations/dev chrome —
-    // those pages still exist at their original routes for direct access, but
-    // they don't belong in a "what lenders does this platform integrate with"
-    // navigation group.
-    label: 'Lender Integrations',
+    // Lender Network is intentionally two items:
+    //   - "Lender Network" is the catalog (was Marketplaces + Lender Panel —
+    //     consolidated because they were two views of the same data).
+    //   - "Partner Access" is the override grid: which lenders does each
+    //     partner actually see, with reset-to-default + toggle controls.
+    // Operations chrome (routing queues, DLQ, webhooks, lender events) lives
+    // at its own routes and isn't surfaced here.
+    label: 'Lender Network',
     items: [
-      { href: '/marketplaces', label: 'Marketplaces', icon: <StoreIcon /> },
-      { href: '/lender-marketplace', label: 'Lender Panel', icon: <BankIcon /> },
-      { href: '/lender-marketplace/access', label: 'Per-partner Access', icon: <KeyIcon /> },
+      { href: '/lender-marketplace', label: 'Lender Network', icon: <BankIcon /> },
+      { href: '/lender-marketplace/access', label: 'Partner Access', icon: <KeyIcon /> },
     ],
   },
   {
