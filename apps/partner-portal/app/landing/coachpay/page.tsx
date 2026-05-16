@@ -71,40 +71,35 @@ const WATERFALL = [
     n: '01',
     stage: 'Pre-qual',
     title: 'Financial-data pre-qual on the call',
-    body:
-      "Prospect submits last 4 SSN + DOB during the close. Soft-pull credit returns approval likelihood in under 10 seconds, zero credit impact. The closer pivots from price to monthly.",
+    body: 'Prospect submits last 4 SSN + DOB during the close. Soft-pull credit returns approval likelihood in under 10 seconds, zero credit impact. The closer pivots from price to monthly.',
     metric: '< 10 sec',
   },
   {
     n: '02',
     stage: 'Agents',
     title: 'ORACLE scores. HELIX routes.',
-    body:
-      "ORACLE returns a fundability tier on the financial data. HELIX routes the prospect to the right closer based on tier and capacity. All software — no manual handoff, no homework after the call.",
+    body: 'ORACLE returns a fundability tier on the financial data. HELIX routes the prospect to the right closer based on tier and capacity. All software — no manual handoff, no homework after the call.',
     metric: '<10s decision',
   },
   {
     n: '03',
     stage: 'Decision',
     title: 'Marketplace waterfalls in parallel',
-    body:
-      "CoachPay routes one application across 52 lenders in parallel — engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.",
+    body: 'CoachPay routes one application across 52 lenders in parallel — engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.',
     metric: '52 lenders',
   },
   {
     n: '04',
     stage: 'Offer',
     title: 'Multiple ranked offers · APR from 5.9%',
-    body:
-      "The offer card surfaces multiple ranked offers tailored to the prospect — $5k to $50k tickets, 12 to 60 month terms, APR from 5.9% for qualifying clients. 0% interest plans available for qualifying programs (T&Cs apply).",
+    body: 'The offer card surfaces multiple ranked offers tailored to the prospect — $5k to $50k tickets, 12 to 60 month terms, APR from 5.9% for qualifying clients. 0% interest plans available for qualifying programs (T&Cs apply).',
     metric: 'APR from 5.9%',
   },
   {
     n: '05',
     stage: 'Funded',
     title: 'Merchant-direct payout · 48 to 72 hours',
-    body:
-      "The lender disburses straight to your business account — no intermediary holding funds. Funds generally land within 48 to 72 hours of the loan settling. Lender carries the credit risk; no clawback on routine defaults.",
+    body: 'The lender disburses straight to your business account — no intermediary holding funds. Funds generally land within 48 to 72 hours of the loan settling. Lender carries the credit risk; no clawback on routine defaults.',
     metric: '48 to 72 hours',
   },
 ];
@@ -122,7 +117,7 @@ const CASE_STUDIES = [
   },
   {
     quote:
-      "Our $14k certification cohort used to lose 60% of qualified applicants on price. Our closers spent six weeks per cohort chasing payment plans over Voxer and Slack. CoachPay returned that time. Recovered $620k of dropped enrolments in the first quarter live.",
+      'Our $14k certification cohort used to lose 60% of qualified applicants on price. Our closers spent six weeks per cohort chasing payment plans over Voxer and Slack. CoachPay returned that time. Recovered $620k of dropped enrolments in the first quarter live.',
     name: 'Priya Anand',
     role: 'Cohort Lead · Sage Academy',
     outcomes: [
@@ -132,7 +127,7 @@ const CASE_STUDIES = [
   },
   {
     quote:
-      "Stopped chasing payment plans over Voxer. The agentic layer pre-qualified 480 prospects last quarter and routed every Tier-1 lead to the right closer without anyone asking. ECHO suppressed junk traffic so the ad account learns from the closers, not every cold click. The math on a $9k cohort program changes when 30% more of your qualified prospects actually convert.",
+      'Stopped chasing payment plans over Voxer. The agentic layer pre-qualified 480 prospects last quarter and routed every Tier-1 lead to the right closer without anyone asking. ECHO suppressed junk traffic so the ad account learns from the closers, not every cold click. The math on a $9k cohort program changes when 30% more of your qualified prospects actually convert.',
     name: 'Jordan Hale',
     role: 'Creator · Pinnacle Strategies',
     outcomes: [
@@ -156,39 +151,32 @@ const INTEGRATION_LOGOS = [
 
 const OBJECTIONS = [
   {
-    q: "How is CoachPay different from Affirm, Klarna, or AfterPay sitting on my checkout?",
-    a:
-      "Affirm and Klarna are built for retail cart-level BNPL on physical goods. They cap tickets well below high-ticket coaching, and they're a single lender. If they decline, the buyer is gone. CoachPay waterfalls across 52 lenders in parallel (Affirm included), handles tickets from $5,000 to $50,000, surfaces multiple ranked offers tailored to the client's situation, and ships with seven autonomous agents running intake, scoring, routing, and the lender marketplace. All white-labelled under your brand.",
+    q: 'How is CoachPay different from Affirm, Klarna, or AfterPay sitting on my checkout?',
+    a: "Affirm and Klarna are built for retail cart-level BNPL on physical goods. They cap tickets well below high-ticket coaching, and they're a single lender. If they decline, the buyer is gone. CoachPay waterfalls across 52 lenders in parallel (Affirm included), handles tickets from $5,000 to $50,000, surfaces multiple ranked offers tailored to the client's situation, and ships with seven autonomous agents running intake, scoring, routing, and the lender marketplace. All white-labelled under your brand.",
   },
   {
     q: "Won't offering financing make my $20k program look like a credit-card sale?",
-    a:
-      "Opposite. Premium brands offer financing precisely because it anchors the buyer on monthly affordability, not the lump sum. Every screen is white-labelled to your brand. The lender appears once on the offer card per FCRA disclosure rules. Buyers experience financing as a feature of your offer, not a third-party bolt-on.",
+    a: 'Opposite. Premium brands offer financing precisely because it anchors the buyer on monthly affordability, not the lump sum. Every screen is white-labelled to your brand. The lender appears once on the offer card per FCRA disclosure rules. Buyers experience financing as a feature of your offer, not a third-party bolt-on.',
   },
   {
-    q: "If a student stops paying mid-program, am I on the hook for the cash collected?",
-    a:
-      "No. The lender on the offer carries the credit risk for routine defaults. Once the loan settles, funds land in your business account merchant-direct, generally within 48 to 72 hours — no intermediary holding funds. If a student quits the program, that's your refund policy decision, not the lender's problem. No clawback on routine defaults.",
+    q: 'If a student stops paying mid-program, am I on the hook for the cash collected?',
+    a: "No. The lender on the offer carries the credit risk for routine defaults. Once the loan settles, funds land in your business account merchant-direct, generally within 48 to 72 hours — no intermediary holding funds. If a student quits the program, that's your refund policy decision, not the lender's problem. No clawback on routine defaults.",
   },
   {
-    q: "What underwriting does CoachPay support for high-ticket programs?",
-    a:
-      "Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to 60 months for lower monthly repayments. 0% interest plans available for qualifying programs (T&Cs apply). Multiple ranked offers tailored to the client's situation. The waterfall picks the cheapest total cost for the prospect across 52 lenders quoted in parallel.",
+    q: 'What underwriting does CoachPay support for high-ticket programs?',
+    a: "Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to 60 months for lower monthly repayments. 0% interest plans available for qualifying programs (T&Cs apply). Multiple ranked offers tailored to the client's situation. The waterfall picks the cheapest total cost for the prospect across 52 lenders quoted in parallel.",
   },
   {
-    q: "How does the merchant payout actually work?",
-    a:
-      "Merchant-direct. The lender disburses straight to your business account once the loan settles — no escrow agent, no marketplace intermediary holding funds. Funds generally land within 48 to 72 hours. The lender carries the credit risk on routine defaults; no surprise clawbacks come back to you.",
+    q: 'How does the merchant payout actually work?',
+    a: 'Merchant-direct. The lender disburses straight to your business account once the loan settles — no escrow agent, no marketplace intermediary holding funds. Funds generally land within 48 to 72 hours. The lender carries the credit risk on routine defaults; no surprise clawbacks come back to you.',
   },
   {
     q: "What happens when the primary lender doesn't approve the full ticket?",
-    a:
-      "The card-stacking layer routes the client through 800+ credit card and BNPL options, ranked by remaining credit available, statement-cycle timing, and 0% promo windows. A $35k mastermind can fund across one personal loan plus two cards instead of being declined. Same instant-decision flow — the agentic layer just adds another fundable path.",
+    a: 'The card-stacking layer routes the client through 800+ credit card and BNPL options, ranked by remaining credit available, statement-cycle timing, and 0% promo windows. A $35k mastermind can fund across one personal loan plus two cards instead of being declined. Same instant-decision flow — the agentic layer just adds another fundable path.',
   },
   {
     q: "Won't offering financing commoditise my high-ticket program?",
-    a:
-      "No. The program is the product. Financing is the access path. Every elite operator selling $10k+ today offers some form of payment plan because removing the affordability friction unlocks the segment of qualified buyers who weren't liquid that week. CoachPay lets you do it without carrying the credit risk or paying clawbacks.",
+    a: "No. The program is the product. Financing is the access path. Every elite operator selling $10k+ today offers some form of payment plan because removing the affordability friction unlocks the segment of qualified buyers who weren't liquid that week. CoachPay lets you do it without carrying the credit risk or paying clawbacks.",
   },
 ];
 
@@ -204,10 +192,29 @@ const HERO_CHIPS: Array<{
   delay: string;
   accent?: boolean;
 }> = [
-  { top: '-12%',    left:  '2%', label: 'INSTANT',         value: '10s soft-pull pre-qual',  delay: '0s',   accent: true },
-  { top: '-12%',    right: '2%', label: 'MARKETPLACE',     value: '52 lenders · 5s SLA',     delay: '0.5s' },
-  { bottom: '-12%', left:  '2%', label: 'APR FROM 5.9%',   value: '12 to 60 month terms',    delay: '1.0s' },
-  { bottom: '-12%', right: '2%', label: 'MERCHANT-DIRECT', value: '48 to 72h payout',        delay: '1.5s' },
+  {
+    top: '-12%',
+    left: '2%',
+    label: 'INSTANT',
+    value: '10s soft-pull pre-qual',
+    delay: '0s',
+    accent: true,
+  },
+  { top: '-12%', right: '2%', label: 'MARKETPLACE', value: '52 lenders · 5s SLA', delay: '0.5s' },
+  {
+    bottom: '-12%',
+    left: '2%',
+    label: 'APR FROM 5.9%',
+    value: '12 to 60 month terms',
+    delay: '1.0s',
+  },
+  {
+    bottom: '-12%',
+    right: '2%',
+    label: 'MERCHANT-DIRECT',
+    value: '48 to 72h payout',
+    delay: '1.5s',
+  },
 ];
 
 /* ----------------------------------------------------------------------------
@@ -215,11 +222,11 @@ const HERO_CHIPS: Array<{
    ---------------------------------------------------------------------------- */
 
 interface RoiInputs {
-  leadsPerMonth: number;     // inbound leads / month
-  preQualPct: number;        // % that clear financial-data filter
-  showRatePct: number;       // % of cleared that actually show
-  closeRatePct: number;      // % of shows that close
-  avgTicket: number;         // avg program ticket $
+  leadsPerMonth: number; // inbound leads / month
+  preQualPct: number; // % that clear financial-data filter
+  showRatePct: number; // % of cleared that actually show
+  closeRatePct: number; // % of shows that close
+  avgTicket: number; // avg program ticket $
 }
 
 function useRoi(inputs: RoiInputs) {
@@ -233,8 +240,7 @@ function useRoi(inputs: RoiInputs) {
     const monthlyEnrolments = Math.round(monthly);
     const annualRevenue = Math.round(annualEnrolments * inputs.avgTicket);
     // closer hours saved per week: rejected leads that don't sit a 45-min discovery call
-    const skippedPerMonth =
-      inputs.leadsPerMonth * (1 - inputs.preQualPct / 100);
+    const skippedPerMonth = inputs.leadsPerMonth * (1 - inputs.preQualPct / 100);
     const closerHoursSavedWeekly = Math.round((skippedPerMonth * 0.75) / 4);
     return {
       monthlyEnrolments,
@@ -366,23 +372,19 @@ export default function CoachPayLandingPage() {
             <div className="cp-hero-copy">
               <div className="cp-eyebrow">
                 <span className="cp-eyebrow-dot" />
-                FOR HIGH-TICKET COACHES · CONSULTANTS · COURSE CREATORS
+                INSTANT-DECISION FINANCE · PRIME TO SUBPRIME · POINT OF SALE
               </div>
               <h1 className="cp-hero-h1">
-                <span className="cp-grad-text">
-                  Every qualified prospect financed.
-                </span>
+                <span className="cp-grad-text">Instant finance for every client.</span>
                 <br />
-                <span className="cp-grad-text">
-                  On the discovery call.
-                </span>
+                <span className="cp-grad-text">Real offers in 10 seconds.</span>
               </h1>
               <p className="cp-hero-sub">
-                CoachPay routes every prospect through a 52-lender marketplace in
-                parallel, returns a real offer in under 10 seconds, and lets your
-                closer convert on the strategy call before the objection lands.{' '}
+                CoachPay puts a full lender waterfall behind your offer — prime, near-prime,
+                subprime — and returns a real, signed pre-approval in under ten seconds. Your client
+                picks a plan on the call instead of "thinking about it."{' '}
                 <span className="cp-emph">
-                  Built for the high-ticket category, not the $99 course.
+                  Point-of-sale finance, end-to-end, with zero credit-score impact to apply.
                 </span>
               </p>
 
@@ -399,10 +401,7 @@ export default function CoachPayLandingPage() {
                     />
                   </svg>
                 </a>
-                <a
-                  href="/apply/coachpay"
-                  className="cp-btn cp-btn--ghost cp-btn--lg"
-                >
+                <a href="/apply/coachpay" className="cp-btn cp-btn--ghost cp-btn--lg">
                   See the closer flow
                 </a>
               </div>
@@ -435,9 +434,7 @@ export default function CoachPayLandingPage() {
                       <span className="cp-card-blip" />
                       COACHPAY · APPROVED
                     </div>
-                    <div className="cp-card-title">
-                      Mastermind enrolment · approved
-                    </div>
+                    <div className="cp-card-title">Mastermind enrolment · approved</div>
                   </div>
                   <div className="cp-card-stamp">approved</div>
                 </div>
@@ -505,9 +502,7 @@ export default function CoachPayLandingPage() {
 
           {/* trust strip */}
           <div className="cp-hero-trust">
-            <div className="cp-hero-trust-label">
-              Plugs into the stack you already run
-            </div>
+            <div className="cp-hero-trust-label">Plugs into the stack you already run</div>
             <Marquee logos={INTEGRATION_LOGOS} />
           </div>
         </div>
@@ -542,16 +537,13 @@ export default function CoachPayLandingPage() {
             </div>
             <h2 className="cp-h2 cp-h2--on-dark">
               Every prospect who says{' '}
-              <span className="cp-grad-text-violet">
-                &ldquo;I need to think about it&rdquo;
-              </span>{' '}
-              is a $24,000 program that walks out unfunded.
+              <span className="cp-grad-text-violet">&ldquo;I need to think about it&rdquo;</span> is
+              a $24,000 program that walks out unfunded.
             </h2>
             <p className="cp-h2-sub cp-h2-sub--on-dark">
-              High-ticket coaching has a 75% drop-off the moment price is
-              revealed. Your closers spend six weeks chasing payment plans over
-              Voxer. Most prospects never even apply because the lender
-              experience was built for a $200 dress, not a $24,000 program.
+              High-ticket coaching has a 75% drop-off the moment price is revealed. Your closers
+              spend six weeks chasing payment plans over Voxer. Most prospects never even apply
+              because the lender experience was built for a $200 dress, not a $24,000 program.
             </p>
           </div>
 
@@ -564,9 +556,7 @@ export default function CoachPayLandingPage() {
               <div className="cp-compare-stats">
                 {STATUS_QUO.map((s) => (
                   <div key={s.label} className="cp-compare-stat">
-                    <div className="cp-compare-stat-v cp-compare-stat-v--bad">
-                      {s.stat}
-                    </div>
+                    <div className="cp-compare-stat-v cp-compare-stat-v--bad">{s.stat}</div>
                     <div className="cp-compare-stat-l">{s.label}</div>
                   </div>
                 ))}
@@ -588,19 +578,13 @@ export default function CoachPayLandingPage() {
 
             <div className="cp-compare-card cp-compare-card--good">
               <div className="cp-compare-head">
-                <div className="cp-compare-label cp-compare-label--good">
-                  With CoachPay
-                </div>
-                <div className="cp-compare-sub">
-                  Financing + the agentic layer
-                </div>
+                <div className="cp-compare-label cp-compare-label--good">With CoachPay</div>
+                <div className="cp-compare-sub">Financing + the agentic layer</div>
               </div>
               <div className="cp-compare-stats">
                 {WITH_COACHPAY.map((s) => (
                   <div key={s.label} className="cp-compare-stat">
-                    <div className="cp-compare-stat-v cp-compare-stat-v--good">
-                      {s.stat}
-                    </div>
+                    <div className="cp-compare-stat-v cp-compare-stat-v--good">{s.stat}</div>
                     <div className="cp-compare-stat-l">{s.label}</div>
                   </div>
                 ))}
@@ -619,14 +603,12 @@ export default function CoachPayLandingPage() {
               HOW IT WORKS
             </div>
             <h2 className="cp-h2">
-              One platform.{' '}
-              <span className="cp-grad-text-violet">Five stages.</span>{' '}
-              Discovery call to enrolled prospect.
+              One platform. <span className="cp-grad-text-violet">Five stages.</span> Discovery call
+              to enrolled prospect.
             </h2>
             <p className="cp-h2-sub">
-              Every stage runs through a single deterministic pipeline with a
-              full audit trail. No vendor stack. No handoff loss. The prospect
-              experiences your brand end to end.
+              Every stage runs through a single deterministic pipeline with a full audit trail. No
+              vendor stack. No handoff loss. The prospect experiences your brand end to end.
             </p>
           </div>
 
@@ -645,18 +627,15 @@ export default function CoachPayLandingPage() {
                 PILLAR ONE · FINANCING
               </div>
               <h2 className="cp-h2">
-                <span className="cp-grad-text-violet">
-                  Multiple ranked offers in 10 seconds.
-                </span>{' '}
+                <span className="cp-grad-text-violet">Multiple ranked offers in 10 seconds.</span>{' '}
                 Merchant-direct payout, 48 to 72 hours.
               </h2>
               <p className="cp-h2-sub">
-                Loans from $5,000 to $50,000. APR from 5.9% for qualifying
-                clients. Terms from 12 to 60 months for lower monthly
-                repayments. 0% interest plans available for qualifying programs
-                (T&amp;Cs apply). 52 lenders quoted in parallel with a 5-second
-                SLA per round-trip. The lender disburses straight to your
-                business account — no intermediary holding funds.
+                Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to
+                60 months for lower monthly repayments. 0% interest plans available for qualifying
+                programs (T&amp;Cs apply). 52 lenders quoted in parallel with a 5-second SLA per
+                round-trip. The lender disburses straight to your business account — no intermediary
+                holding funds.
               </p>
               <div className="cp-pillar-roi">
                 <span className="cp-pillar-roi-blip" />
@@ -702,20 +681,16 @@ export default function CoachPayLandingPage() {
                 SECONDARY PATH · 800+ CARDS
               </div>
               <h2 className="cp-h2">
-                Card stacking ·{' '}
-                <span className="cp-grad-text-violet">
-                  access to 800+ cards
-                </span>{' '}
-                as a secondary path.
+                Card stacking · <span className="cp-grad-text-violet">access to 800+ cards</span> as
+                a secondary path.
               </h2>
               <p className="cp-h2-sub">
-                If the primary lender marketplace doesn&rsquo;t approve the full
-                ticket, the card-stacking layer routes the client through 800+
-                credit card and BNPL options ranked by remaining credit
-                available, statement-cycle timing, and 0% promo windows. The
-                client can fund a $35,000 mastermind across one personal loan
-                plus two cards instead of being declined. Same instant-decision
-                flow — the agentic layer just adds another fundable path.
+                If the primary lender marketplace doesn&rsquo;t approve the full ticket, the
+                card-stacking layer routes the client through 800+ credit card and BNPL options
+                ranked by remaining credit available, statement-cycle timing, and 0% promo windows.
+                The client can fund a $35,000 mastermind across one personal loan plus two cards
+                instead of being declined. Same instant-decision flow — the agentic layer just adds
+                another fundable path.
               </p>
               <div className="cp-cardstack-bullets">
                 <div className="cp-cardstack-bullet">
@@ -748,14 +723,12 @@ export default function CoachPayLandingPage() {
               QUALIFIED BUYERS · NOT FORM FILLERS
             </div>
             <h2 className="cp-h2 cp-h2--on-dark">
-              Speak to{' '}
-              <span className="cp-grad-text-violet">qualified buyers.</span>{' '}
-              Not form fillers.
+              Speak to <span className="cp-grad-text-violet">qualified buyers.</span> Not form
+              fillers.
             </h2>
             <p className="cp-h2-sub cp-h2-sub--on-dark">
-              Every discovery call slot fills with a prospect the financial-data
-              filter already cleared. Coach time goes to buyers, not tire
-              kickers.
+              Every discovery call slot fills with a prospect the financial-data filter already
+              cleared. Coach time goes to buyers, not tire kickers.
             </p>
           </div>
 
@@ -770,16 +743,14 @@ export default function CoachPayLandingPage() {
                 TIME MATH · WHY THIS MATTERS
               </div>
               <h3 className="cp-h3">
-                A discovery call is 30 to 60 minutes of operator time. A filler
-                prospect that ghosts or can&rsquo;t afford the program is pure
-                waste.
+                A discovery call is 30 to 60 minutes of operator time. A filler prospect that ghosts
+                or can&rsquo;t afford the program is pure waste.
               </h3>
               <p className="cp-qual-math-body">
-                Pre-qualification across multiple financial-data checkpoints —
-                credit, identity, cashflow, and optional asset signals — means
-                the prospect that lands in your calendar is already cleared.
-                Your closer talks to people who can pay; not people who came to
-                browse.
+                Pre-qualification across multiple financial-data checkpoints — credit, identity,
+                cashflow, and optional asset signals — means the prospect that lands in your
+                calendar is already cleared. Your closer talks to people who can pay; not people who
+                came to browse.
               </p>
             </div>
             <div className="cp-qual-math-tiles">
@@ -789,11 +760,15 @@ export default function CoachPayLandingPage() {
               </div>
               <div className="cp-qual-math-tile">
                 <div className="cp-qual-math-tile-v">Closer hours</div>
-                <div className="cp-qual-math-tile-l">saved per week when fillers don&rsquo;t book</div>
+                <div className="cp-qual-math-tile-l">
+                  saved per week when fillers don&rsquo;t book
+                </div>
               </div>
               <div className="cp-qual-math-tile">
                 <div className="cp-qual-math-tile-v">Funded</div>
-                <div className="cp-qual-math-tile-l">enrolments / month — what calendars actually convert</div>
+                <div className="cp-qual-math-tile-l">
+                  enrolments / month — what calendars actually convert
+                </div>
               </div>
             </div>
           </div>
@@ -809,26 +784,24 @@ export default function CoachPayLandingPage() {
                 <div className="cp-qual-loop-step-n">01</div>
                 <div className="cp-qual-loop-step-t">Hold pixel events</div>
                 <div className="cp-qual-loop-step-b">
-                  ECHO holds pixel events until the prospect clears
-                  qualification — Meta and Google never see the form fillers.
+                  ECHO holds pixel events until the prospect clears qualification — Meta and Google
+                  never see the form fillers.
                 </div>
               </div>
               <div className="cp-qual-loop-step">
                 <div className="cp-qual-loop-step-n">02</div>
                 <div className="cp-qual-loop-step-t">Fire weighted conversions</div>
                 <div className="cp-qual-loop-step-b">
-                  Cleared prospects fire as weighted conversions back to Meta
-                  and Google CAPI — the algorithms learn from buyers, not
-                  browsers.
+                  Cleared prospects fire as weighted conversions back to Meta and Google CAPI — the
+                  algorithms learn from buyers, not browsers.
                 </div>
               </div>
               <div className="cp-qual-loop-step">
                 <div className="cp-qual-loop-step-n">03</div>
                 <div className="cp-qual-loop-step-t">Retrain on funded enrolments</div>
                 <div className="cp-qual-loop-step-b">
-                  Funded enrolments uploaded as offline conversions. Ad spend
-                  gets more efficient month over month — same budget, more
-                  buyers.
+                  Funded enrolments uploaded as offline conversions. Ad spend gets more efficient
+                  month over month — same budget, more buyers.
                 </div>
               </div>
             </div>
@@ -846,21 +819,17 @@ export default function CoachPayLandingPage() {
             </div>
             <h3 className="cp-synergy-h3">
               The agentic layer is your{' '}
-              <span className="cp-grad-text-violet">financial filter.</span>{' '}
-              The lending waterfall is your{' '}
-              <span className="cp-grad-text-violet">closer.</span> The card
-              stack is your{' '}
+              <span className="cp-grad-text-violet">financial filter.</span> The lending waterfall
+              is your <span className="cp-grad-text-violet">closer.</span> The card stack is your{' '}
               <span className="cp-grad-text-violet">safety net.</span>
             </h3>
             <p className="cp-synergy-body">
-              Software agents pre-qualify every inbound prospect across multiple
-              financial-data checkpoints — soft-pull credit, identity, cashflow,
-              optional asset signals. Only the cleared prospects reach your
-              discovery-call calendar. The lending waterfall returns an instant
-              multi-offer decision on the call. When the primary loan doesn&rsquo;t
-              cover the full program, the card-stacking layer fans 800+ cards
-              across the gap. Combined, your closer time goes to buyers, not
-              form fillers.
+              Software agents pre-qualify every inbound prospect across multiple financial-data
+              checkpoints — soft-pull credit, identity, cashflow, optional asset signals. Only the
+              cleared prospects reach your discovery-call calendar. The lending waterfall returns an
+              instant multi-offer decision on the call. When the primary loan doesn&rsquo;t cover
+              the full program, the card-stacking layer fans 800+ cards across the gap. Combined,
+              your closer time goes to buyers, not form fillers.
             </p>
           </div>
         </div>
@@ -882,15 +851,14 @@ export default function CoachPayLandingPage() {
               PILLAR TWO · THE AGENTIC LAYER
             </div>
             <h2 className="cp-h2 cp-h2--on-dark">
-              <span className="cp-grad-text-violet">Seven agents</span> running
-              every qualification and every approval. 24/7.
+              <span className="cp-grad-text-violet">Seven agents</span> running every qualification
+              and every approval. 24/7.
             </h2>
             <p className="cp-h2-sub cp-h2-sub--on-dark">
-              Software agents operating on financial data — they never contact
-              the prospect directly. Each agent has a defined scope and a
-              measurable output. They replace the manual lead reviews, the
-              copy-paste enrichment, the routing guesswork, and the financing
-              leakage on cold ads.
+              Software agents operating on financial data — they never contact the prospect
+              directly. Each agent has a defined scope and a measurable output. They replace the
+              manual lead reviews, the copy-paste enrichment, the routing guesswork, and the
+              financing leakage on cold ads.
             </p>
           </div>
 
@@ -995,51 +963,31 @@ export default function CoachPayLandingPage() {
               sidePanel={
                 <div className="cp-agent-stream">
                   <div className="cp-agent-stream-head">
-                    <div className="cp-agent-stream-title">
-                      ECHO · live event stream
-                    </div>
+                    <div className="cp-agent-stream-title">ECHO · live event stream</div>
                     <div className="cp-agent-stream-meta">events/min · 142</div>
                   </div>
                   <div className="cp-agent-stream-rows">
                     <div className="cp-agent-stream-row">
-                      <span className="cp-agent-stream-k">
-                        prospect_qualified · T1
-                      </span>
-                      <span className="cp-agent-stream-v">
-                        Meta CAPI · weight 1.00
-                      </span>
+                      <span className="cp-agent-stream-k">prospect_qualified · T1</span>
+                      <span className="cp-agent-stream-v">Meta CAPI · weight 1.00</span>
                     </div>
                     <div className="cp-agent-stream-row">
-                      <span className="cp-agent-stream-k">
-                        prospect_qualified · T2
-                      </span>
-                      <span className="cp-agent-stream-v">
-                        Google Offline · weight 0.65
-                      </span>
+                      <span className="cp-agent-stream-k">prospect_qualified · T2</span>
+                      <span className="cp-agent-stream-v">Google Offline · weight 0.65</span>
                     </div>
                     <div className="cp-agent-stream-row">
-                      <span className="cp-agent-stream-k">
-                        enrolment_closed · $24,000
-                      </span>
-                      <span className="cp-agent-stream-v">
-                        Meta CAPI · weight 2.20
-                      </span>
+                      <span className="cp-agent-stream-k">enrolment_closed · $24,000</span>
+                      <span className="cp-agent-stream-v">Meta CAPI · weight 2.20</span>
                     </div>
                     <div className="cp-agent-stream-row">
-                      <span className="cp-agent-stream-k">
-                        prospect_disqualified · T4
-                      </span>
+                      <span className="cp-agent-stream-k">prospect_disqualified · T4</span>
                       <span className="cp-agent-stream-v cp-agent-stream-v--mute">
                         suppressed · audience exclude
                       </span>
                     </div>
                     <div className="cp-agent-stream-row cp-agent-stream-row--last">
-                      <span className="cp-agent-stream-k">
-                        enrolment_closed · $14,000
-                      </span>
-                      <span className="cp-agent-stream-v">
-                        Google Offline · weight 1.40
-                      </span>
+                      <span className="cp-agent-stream-k">enrolment_closed · $14,000</span>
+                      <span className="cp-agent-stream-v">Google Offline · weight 1.40</span>
                     </div>
                   </div>
                 </div>
@@ -1063,8 +1011,8 @@ export default function CoachPayLandingPage() {
               <div>
                 <div className="cp-agents-coord-eyebrow">Coordination layer</div>
                 <div className="cp-agents-coord-text">
-                  All seven agents share a common event bus, a shared memory
-                  store, and a unified observability plane.
+                  All seven agents share a common event bus, a shared memory store, and a unified
+                  observability plane.
                 </div>
               </div>
             </div>
@@ -1084,9 +1032,8 @@ export default function CoachPayLandingPage() {
 
           <div className="cp-agents-foot reveal">
             <span className="cp-agents-foot-dot" />
-            Software agents only — pre-qualification runs on financial data,
-            never outbound contact. FCRA permissible-purpose-aware. Every agent
-            action logged to an immutable audit trail.
+            Software agents only — pre-qualification runs on financial data, never outbound contact.
+            FCRA permissible-purpose-aware. Every agent action logged to an immutable audit trail.
           </div>
         </div>
       </section>
@@ -1101,15 +1048,12 @@ export default function CoachPayLandingPage() {
             </div>
             <h2 className="cp-h2">
               Model the funnel with{' '}
-              <span className="cp-grad-text-violet">
-                pre-qualification baked in.
-              </span>
+              <span className="cp-grad-text-violet">pre-qualification baked in.</span>
             </h2>
             <p className="cp-h2-sub">
-              Five inputs across the four-stage funnel — inbound leads, the
-              financial-data filter pass rate, your show rate, your close rate
-              on shows, and your average ticket. The math runs against your
-              numbers.
+              Five inputs across the four-stage funnel — inbound leads, the financial-data filter
+              pass rate, your show rate, your close rate on shows, and your average ticket. The math
+              runs against your numbers.
             </p>
           </div>
 
@@ -1123,9 +1067,7 @@ export default function CoachPayLandingPage() {
                   max={1000}
                   step={10}
                   format={(v) => `${v}`}
-                  onChange={(v) =>
-                    setRoiInputs((s) => ({ ...s, leadsPerMonth: v }))
-                  }
+                  onChange={(v) => setRoiInputs((s) => ({ ...s, leadsPerMonth: v }))}
                 />
                 <RoiSlider
                   label="Pre-qualification pass %"
@@ -1134,9 +1076,7 @@ export default function CoachPayLandingPage() {
                   max={90}
                   step={1}
                   format={(v) => `${v}%`}
-                  onChange={(v) =>
-                    setRoiInputs((s) => ({ ...s, preQualPct: v }))
-                  }
+                  onChange={(v) => setRoiInputs((s) => ({ ...s, preQualPct: v }))}
                 />
                 <RoiSlider
                   label="Discovery call show rate %"
@@ -1145,9 +1085,7 @@ export default function CoachPayLandingPage() {
                   max={95}
                   step={1}
                   format={(v) => `${v}%`}
-                  onChange={(v) =>
-                    setRoiInputs((s) => ({ ...s, showRatePct: v }))
-                  }
+                  onChange={(v) => setRoiInputs((s) => ({ ...s, showRatePct: v }))}
                 />
                 <RoiSlider
                   label="Close rate on discovery %"
@@ -1156,9 +1094,7 @@ export default function CoachPayLandingPage() {
                   max={70}
                   step={1}
                   format={(v) => `${v}%`}
-                  onChange={(v) =>
-                    setRoiInputs((s) => ({ ...s, closeRatePct: v }))
-                  }
+                  onChange={(v) => setRoiInputs((s) => ({ ...s, closeRatePct: v }))}
                 />
                 <RoiSlider
                   label="Average program ticket"
@@ -1173,48 +1109,29 @@ export default function CoachPayLandingPage() {
                       maximumFractionDigits: 0,
                     }).format(v)
                   }
-                  onChange={(v) =>
-                    setRoiInputs((s) => ({ ...s, avgTicket: v }))
-                  }
+                  onChange={(v) => setRoiInputs((s) => ({ ...s, avgTicket: v }))}
                 />
               </div>
 
               <div className={`cp-roi-output ${glow ? 'cp-roi-output--glow' : ''}`}>
-                <div className="cp-roi-out-label">
-                  Financing-driven tuition revenue / year
-                </div>
+                <div className="cp-roi-out-label">Financing-driven tuition revenue / year</div>
                 <div className="cp-roi-out-sub">illustrative · based on your inputs</div>
                 <div className="cp-roi-out-value">{annualFormatted}</div>
                 <div className="cp-roi-out-stats cp-roi-out-stats--3">
                   <div>
-                    <div className="cp-roi-out-stat-v">
-                      {roi.monthlyEnrolments}
-                    </div>
-                    <div className="cp-roi-out-stat-l">
-                      funded enrolments / month
-                    </div>
+                    <div className="cp-roi-out-stat-v">{roi.monthlyEnrolments}</div>
+                    <div className="cp-roi-out-stat-l">funded enrolments / month</div>
                   </div>
                   <div>
-                    <div className="cp-roi-out-stat-v">
-                      {roi.annualEnrolments}
-                    </div>
-                    <div className="cp-roi-out-stat-l">
-                      funded enrolments / year
-                    </div>
+                    <div className="cp-roi-out-stat-v">{roi.annualEnrolments}</div>
+                    <div className="cp-roi-out-stat-l">funded enrolments / year</div>
                   </div>
                   <div>
-                    <div className="cp-roi-out-stat-v">
-                      {roi.closerHoursSavedWeekly}h
-                    </div>
-                    <div className="cp-roi-out-stat-l">
-                      closer hours saved / week
-                    </div>
+                    <div className="cp-roi-out-stat-v">{roi.closerHoursSavedWeekly}h</div>
+                    <div className="cp-roi-out-stat-l">closer hours saved / week</div>
                   </div>
                 </div>
-                <a
-                  href="/welcome"
-                  className="cp-btn cp-btn--violet cp-btn--lg cp-roi-cta"
-                >
+                <a href="/welcome" className="cp-btn cp-btn--violet cp-btn--lg cp-roi-cta">
                   Start CoachPay signup
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
@@ -1227,9 +1144,8 @@ export default function CoachPayLandingPage() {
                   </svg>
                 </a>
                 <div className="cp-roi-out-disclaimer">
-                  Outputs are illustrative based on your inputs. Actual
-                  outcomes vary by offer, niche, and market. Not a guarantee of
-                  returns.
+                  Outputs are illustrative based on your inputs. Actual outcomes vary by offer,
+                  niche, and market. Not a guarantee of returns.
                 </div>
               </div>
             </div>
@@ -1247,9 +1163,7 @@ export default function CoachPayLandingPage() {
             </div>
             <h2 className="cp-h2">
               What changes when financing stops being{' '}
-              <span className="cp-grad-text-violet">
-                someone else&rsquo;s problem.
-              </span>
+              <span className="cp-grad-text-violet">someone else&rsquo;s problem.</span>
             </h2>
           </div>
 
@@ -1286,9 +1200,7 @@ export default function CoachPayLandingPage() {
               <span className="cp-eyebrow-dot" />
               INFRASTRUCTURE
             </div>
-            <h3 className="cp-h3">
-              Backed by the rails that move enterprise capital.
-            </h3>
+            <h3 className="cp-h3">Backed by the rails that move enterprise capital.</h3>
           </div>
           <Marquee logos={INTEGRATION_LOGOS} accent />
         </div>
@@ -1358,8 +1270,8 @@ export default function CoachPayLandingPage() {
             <span className="cp-grad-text-violet">On the discovery call.</span>
           </h2>
           <p className="cp-final-sub reveal">
-            Five-minute signup. Sixty-second KYB. Merchant-direct payout
-            generally lands within 48 to 72 hours of the loan settling.
+            Five-minute signup. Sixty-second KYB. Merchant-direct payout generally lands within 48
+            to 72 hours of the loan settling.
           </p>
           <div className="cp-final-ctas reveal">
             <a href="/welcome" className="cp-btn cp-btn--violet cp-btn--xl">
@@ -1374,10 +1286,7 @@ export default function CoachPayLandingPage() {
                 />
               </svg>
             </a>
-            <a
-              href="/apply/coachpay"
-              className="cp-btn cp-btn--ghost-light cp-btn--xl"
-            >
+            <a href="/apply/coachpay" className="cp-btn cp-btn--ghost-light cp-btn--xl">
               See the closer flow
             </a>
           </div>
@@ -1458,11 +1367,7 @@ function Marquee({ logos, accent }: { logos: string[]; accent?: boolean }) {
   );
 }
 
-function Waterfall({
-  stages,
-}: {
-  stages: typeof WATERFALL;
-}) {
+function Waterfall({ stages }: { stages: typeof WATERFALL }) {
   return (
     <div className="cp-waterfall reveal">
       <div className="cp-waterfall-svg-wrap">
@@ -1488,10 +1393,7 @@ function Waterfall({
               <stop offset="40%" stopColor="#C4B5FD" stopOpacity="0.95" />
               <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
             </radialGradient>
-            <path
-              id="cp-arc-path"
-              d="M 60 270 Q 360 250 600 170 T 1140 50"
-            />
+            <path id="cp-arc-path" d="M 60 270 Q 360 250 600 170 T 1140 50" />
           </defs>
           <path
             d="M 60 270 Q 360 250 600 170 T 1140 50"
@@ -1517,7 +1419,14 @@ function Waterfall({
           />
           {/* Traveling pulse that rides the arc node 01 → node 05 */}
           <circle r="8" fill="url(#cp-pulse-grad)" className="cp-waterfall-pulse">
-            <animateMotion dur="8s" repeatCount="indefinite" rotate="auto" keyTimes="0;0.85;1" keyPoints="0;1;1" calcMode="linear">
+            <animateMotion
+              dur="8s"
+              repeatCount="indefinite"
+              rotate="auto"
+              keyTimes="0;0.85;1"
+              keyPoints="0;1;1"
+              calcMode="linear"
+            >
               <mpath href="#cp-arc-path" />
             </animateMotion>
             <animate
@@ -1577,12 +1486,8 @@ function FinancingMockup() {
                 <span className="cp-fin-offers-blip" />
                 PROSPECT VIEW · WHITE-LABELLED
               </div>
-              <div className="cp-fin-offers-title">
-                Atlas Executive Coaching · $24,000
-              </div>
-              <div className="cp-fin-offers-sub">
-                3 of 52 lenders returned offers in 4.2s
-              </div>
+              <div className="cp-fin-offers-title">Atlas Executive Coaching · $24,000</div>
+              <div className="cp-fin-offers-sub">3 of 52 lenders returned offers in 4.2s</div>
             </div>
             <div className="cp-fin-offers-stamp">approved</div>
           </div>
@@ -1601,18 +1506,14 @@ function FinancingMockup() {
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">Monthly</div>
-                  <div className="cp-fin-offer-v cp-fin-offer-v--em">
-                    $612
-                  </div>
+                  <div className="cp-fin-offer-v cp-fin-offer-v--em">$612</div>
                 </div>
                 <div>
                   <div className="cp-fin-offer-k">APR</div>
                   <div className="cp-fin-offer-v">5.9%</div>
                 </div>
               </div>
-              <div className="cp-fin-offer-tag cp-fin-offer-tag--violet">
-                recommended
-              </div>
+              <div className="cp-fin-offer-tag cp-fin-offer-tag--violet">recommended</div>
             </div>
 
             <div className="cp-fin-offer">
@@ -1665,12 +1566,8 @@ function FinancingMockup() {
               <span className="cp-fin-offers-foot-dot" />
               soft pull · 0 credit impact
             </span>
-            <span className="cp-fin-offers-foot-pill">
-              merchant-direct payout · 48 to 72h
-            </span>
-            <span className="cp-fin-offers-foot-pill">
-              12 to 60 month terms
-            </span>
+            <span className="cp-fin-offers-foot-pill">merchant-direct payout · 48 to 72h</span>
+            <span className="cp-fin-offers-foot-pill">12 to 60 month terms</span>
           </div>
         </div>
 
@@ -1689,15 +1586,11 @@ function FinancingMockup() {
             <div className="cp-fin-promo-stat">
               <div>
                 <div className="cp-fin-promo-stat-v">From 5.9%</div>
-                <div className="cp-fin-promo-stat-l">
-                  APR for qualifying clients
-                </div>
+                <div className="cp-fin-promo-stat-l">APR for qualifying clients</div>
               </div>
               <div>
                 <div className="cp-fin-promo-stat-v">12-60mo</div>
-                <div className="cp-fin-promo-stat-l">
-                  terms · lower monthly repayments
-                </div>
+                <div className="cp-fin-promo-stat-l">terms · lower monthly repayments</div>
               </div>
             </div>
           </div>
@@ -1722,8 +1615,7 @@ function FinancingMockup() {
             <div className="cp-fin-marketplace-foot">
               <span>52 lenders queried in parallel</span>
               <span className="cp-fin-marketplace-counter">
-                <span className="cp-fin-marketplace-counter-v">38</span>{' '}
-                responded · 4.2s
+                <span className="cp-fin-marketplace-counter-v">38</span> responded · 4.2s
               </span>
             </div>
           </div>
@@ -1770,15 +1662,69 @@ function QualificationTree() {
           </defs>
 
           {/* Connector lines */}
-          <path d="M 440 60 L 440 140" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 440 200 L 440 280" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 440 340 L 240 420" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 440 340 L 440 420" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 440 340 L 640 420" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 240 480 L 440 540" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 440 480 L 440 540" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 640 480 L 440 540" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          <path d="M 440 600 L 440 680" stroke="url(#cp-qual-line)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path
+            d="M 440 60 L 440 140"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 440 200 L 440 280"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 440 340 L 240 420"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 440 340 L 440 420"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 440 340 L 640 420"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 240 480 L 440 540"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 440 480 L 440 540"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 640 480 L 440 540"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 440 600 L 440 680"
+            stroke="url(#cp-qual-line)"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
 
           {/* Single traveling pulse that wanders the trunk. Single rider
               following the central path, randomization is implicit because
@@ -1811,19 +1757,62 @@ function QualificationTree() {
         </svg>
 
         {/* Glass-card nodes positioned to match the SVG */}
-        <QualNodeCard top={0}   left="50%" code="Inbound application" label="lead enters the funnel" type="route" />
-        <QualNodeCard top={140} left="50%" code="PRISM" label="intake · dynamic question order" type="agent" />
-        <QualNodeCard top={280} left="50%" code="VEGA" label="identity · address · business signal" type="agent" />
-        <QualNodeCard top={420} left="20%" code="FCRA soft pull" label="credit · 0 score impact" type="data" />
+        <QualNodeCard
+          top={0}
+          left="50%"
+          code="Inbound application"
+          label="lead enters the funnel"
+          type="route"
+        />
+        <QualNodeCard
+          top={140}
+          left="50%"
+          code="PRISM"
+          label="intake · dynamic question order"
+          type="agent"
+        />
+        <QualNodeCard
+          top={280}
+          left="50%"
+          code="VEGA"
+          label="identity · address · business signal"
+          type="agent"
+        />
+        <QualNodeCard
+          top={420}
+          left="20%"
+          code="FCRA soft pull"
+          label="credit · 0 score impact"
+          type="data"
+        />
         <QualNodeCard top={420} left="50%" code="Plaid" label="cashflow signal" type="data" />
-        <QualNodeCard top={420} left="80%" code="Persona" label="identity verification" type="data" />
-        <QualNodeCard top={540} left="50%" code="ORACLE" label="score · fundability tier" type="agent" />
-        <QualNodeCard top={680} left="50%" code="Qualified · book" label="→ discovery-call calendar" type="route" highlight />
+        <QualNodeCard
+          top={420}
+          left="80%"
+          code="Persona"
+          label="identity verification"
+          type="data"
+        />
+        <QualNodeCard
+          top={540}
+          left="50%"
+          code="ORACLE"
+          label="score · fundability tier"
+          type="agent"
+        />
+        <QualNodeCard
+          top={680}
+          left="50%"
+          code="Qualified · book"
+          label="→ discovery-call calendar"
+          type="route"
+          highlight
+        />
       </div>
       <div className="cp-qual-tree-foot">
         <span className="cp-qual-tree-foot-dot" />
-        Software agents only. Pre-qualification runs on financial data — never
-        outbound voice, SMS, or DM contact with the prospect.
+        Software agents only. Pre-qualification runs on financial data — never outbound voice, SMS,
+        or DM contact with the prospect.
       </div>
     </div>
   );
@@ -1897,14 +1886,7 @@ function CardFan() {
   );
 }
 
-type AgentIconKey =
-  | 'prism'
-  | 'vega'
-  | 'oracle'
-  | 'helix'
-  | 'nexus'
-  | 'flux'
-  | 'echo';
+type AgentIconKey = 'prism' | 'vega' | 'oracle' | 'helix' | 'nexus' | 'flux' | 'echo';
 
 interface AgentStat {
   k: string;
@@ -1934,8 +1916,7 @@ function AgentCard({
   log: string;
   sidePanel?: React.ReactNode;
 }) {
-  const statsCols =
-    stats && stats.length === 3 ? 'cp-agent-stats--3' : 'cp-agent-stats--2';
+  const statsCols = stats && stats.length === 3 ? 'cp-agent-stats--3' : 'cp-agent-stats--2';
 
   const Header = (
     <div className="cp-agent-head">
@@ -2008,32 +1989,15 @@ function renderAgentIcon(name: AgentIconKey) {
     case 'prism':
       return (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M12 3L3 18h18L12 3z"
-            stroke="#fff"
-            strokeWidth="1.6"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M12 8v8M8 14h8"
-            stroke="#fff"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-          />
+          <path d="M12 3L3 18h18L12 3z" stroke="#fff" strokeWidth="1.6" strokeLinejoin="round" />
+          <path d="M12 8v8M8 14h8" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" />
         </svg>
       );
     case 'vega':
       return (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
           <circle cx="12" cy="12" r="4" stroke="#fff" strokeWidth="1.6" />
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            stroke="#fff"
-            strokeWidth="1"
-            strokeDasharray="2 3"
-          />
+          <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="1" strokeDasharray="2 3" />
         </svg>
       );
     case 'oracle':
@@ -2067,11 +2031,7 @@ function renderAgentIcon(name: AgentIconKey) {
           <circle cx="20" cy="6" r="1.6" fill="#fff" />
           <circle cx="4" cy="18" r="1.6" fill="#fff" />
           <circle cx="20" cy="18" r="1.6" fill="#fff" />
-          <path
-            d="M12 12L4 6M12 12L20 6M12 12L4 18M12 12L20 18"
-            stroke="#fff"
-            strokeWidth="0.8"
-          />
+          <path d="M12 12L4 6M12 12L20 6M12 12L4 18M12 12L20 18" stroke="#fff" strokeWidth="0.8" />
         </svg>
       );
     case 'flux':
@@ -2104,14 +2064,7 @@ function renderAgentIcon(name: AgentIconKey) {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
           <circle cx="12" cy="12" r="2" fill="#fff" />
           <circle cx="12" cy="12" r="6" stroke="#fff" strokeWidth="1.2" />
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="#fff"
-            strokeWidth="0.8"
-            strokeDasharray="2 3"
-          />
+          <circle cx="12" cy="12" r="10" stroke="#fff" strokeWidth="0.8" strokeDasharray="2 3" />
         </svg>
       );
   }
