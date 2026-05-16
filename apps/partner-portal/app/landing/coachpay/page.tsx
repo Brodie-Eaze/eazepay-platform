@@ -2784,7 +2784,6 @@ const STYLES = `
     letter-spacing: 0.14em;
     padding: 5px 10px;
     border-radius: 999px;
-    transform: rotate(2deg);
     box-shadow: 0 6px 20px -6px rgba(139, 92, 246, 0.55);
   }
   .cp-card-amount {
