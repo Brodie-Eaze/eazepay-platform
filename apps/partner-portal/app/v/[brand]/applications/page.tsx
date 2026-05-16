@@ -18,7 +18,18 @@ import {
   SearchIcon,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
-import { applications, type ApplicationRow } from '../../../../lib/master-data';
+import {
+  applicationsForPartner,
+  findPartner,
+  type ApplicationRow,
+} from '../../../../lib/master-data';
+import {
+  DEMO_PARTNER_BY_BRAND,
+  readCurrentPartnerIdFromDemoCookie,
+  readSubmittedAppsForPartner,
+  toLegacyRow,
+  type SubmittedAppBrand,
+} from '../../../../lib/submitted-applications';
 
 /* ─── Live-tracking shapes — mirror the BFF status route response.
  * Duplicated locally rather than importing from the server-only store
@@ -83,7 +94,8 @@ function timeAgoShort(iso: string): string {
   return `${Math.floor(h / 24)}d`;
 }
 
-const slugToBrand = (slug: string): BrandCode | null => BRAND_ORDER.find((c) => BRANDS[c].slug === slug) ?? null;
+const slugToBrand = (slug: string): BrandCode | null =>
+  BRAND_ORDER.find((c) => BRANDS[c].slug === slug) ?? null;
 
 const productCodeForBrand = (b: BrandCode): 'med-pay' | 'trade-pay' | 'coach-pay' | null => {
   if (b === 'medpay') return 'med-pay';
@@ -96,8 +108,17 @@ const statusPill = (s: ApplicationRow['status']) => {
   if (s === 'funded') return <StatusPill tone="success">Funded</StatusPill>;
   if (s === 'approved') return <StatusPill tone="success">Approved</StatusPill>;
   if (s === 'declined') return <StatusPill tone="danger">Declined</StatusPill>;
-  if (s === 'in_review') return <StatusPill tone="warning" dot>In review</StatusPill>;
-  return <StatusPill tone="info" dot>Submitted</StatusPill>;
+  if (s === 'in_review')
+    return (
+      <StatusPill tone="warning" dot>
+        In review
+      </StatusPill>
+    );
+  return (
+    <StatusPill tone="info" dot>
+      Submitted
+    </StatusPill>
+  );
 };
 
 export default function VerticalApplicationsPage() {
@@ -108,7 +129,72 @@ export default function VerticalApplicationsPage() {
   const spec = BRANDS[brand];
 
   const code = productCodeForBrand(brand);
-  const rows = code ? applications.filter((a) => a.product === code) : [];
+
+  /**
+   * Resolve the current session's partner identity, then scope the
+   * application list to that partner. This is the hardening boundary
+   * for PII isolation on this page: partner A must NEVER see partner
+   * B's applications.
+   *
+   * Resolution order:
+   *   1. The `eazepay_demo` cookie's brand → DEMO_PARTNER_BY_BRAND
+   *      binding (medpay → p_helio, tradepay → p_orion, coachpay → p_atlas).
+   *   2. Fallback: the brand's demo partner, so a freshly-loaded page
+   *      that hasn't seen the cookie yet still scopes correctly.
+   *
+   * In production, this read comes from the BFF (`/api/me`) which
+   * returns the merchantId bound to the session — never the URL,
+   * query string, or any user-supplied input. See ADR-0016 / 0017.
+   */
+  const [currentPartnerId, setCurrentPartnerId] = useState<string>(() => {
+    if (brand === 'medpay' || brand === 'tradepay' || brand === 'coachpay') {
+      return DEMO_PARTNER_BY_BRAND[brand];
+    }
+    return '';
+  });
+  useEffect(() => {
+    const fromCookie = readCurrentPartnerIdFromDemoCookie();
+    if (fromCookie) setCurrentPartnerId(fromCookie);
+  }, []);
+
+  // Submitted apps for THIS partner only. Hardened reader — passing an
+  // empty partnerId returns [] instead of leaking the full store.
+  const [submittedForPartner, setSubmittedForPartner] = useState<ApplicationRow[]>([]);
+  useEffect(() => {
+    if (!currentPartnerId || !code) {
+      setSubmittedForPartner([]);
+      return;
+    }
+    const partner = findPartner(currentPartnerId);
+    const legalName = partner?.legalName ?? '';
+    const brandSubmittedBrand = brand as SubmittedAppBrand;
+    const submitted = readSubmittedAppsForPartner(currentPartnerId)
+      .filter((a) => a.brand === brandSubmittedBrand)
+      .map((a) => toLegacyRow(a, legalName))
+      // Project to the local ApplicationRow shape used by the table.
+      .map(
+        (r): ApplicationRow => ({
+          id: r.id,
+          customer: r.customer,
+          customerEmail: r.customerEmail,
+          partner: r.partner,
+          product: r.product,
+          amountCents: r.amountCents,
+          fico: r.fico,
+          lender: r.lender,
+          status: r.status,
+          date: r.date,
+        }),
+      );
+    setSubmittedForPartner(submitted);
+  }, [currentPartnerId, code, brand]);
+
+  // Final row set: this partner's submitted apps (newest first) +
+  // their seeded historical apps, filtered to this brand.
+  const seedRows = code
+    ? applicationsForPartner(currentPartnerId).filter((a) => a.product === code)
+    : [];
+  const rows: ApplicationRow[] = [...submittedForPartner, ...seedRows];
 
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState('all');
@@ -151,12 +237,28 @@ export default function VerticalApplicationsPage() {
   /* Poll live status for every application visible in the table.
    * Capped at the brand's filtered roster so we don't fan out across
    * the whole canonical seed. */
-  const [liveStatusById, setLiveStatusById] = useState<Record<string, { status: LiveStatus; lastUpdatedAt: string }>>({});
+  const [liveStatusById, setLiveStatusById] = useState<
+    Record<string, { status: LiveStatus; lastUpdatedAt: string }>
+  >({});
   const [liveStatusError, setLiveStatusError] = useState(false);
   function exportCsv() {
     if (typeof window !== 'undefined') {
       try {
-        const csv = ['id,customer,partner,amount_cents,fico,lender,status,date', ...rows.map((a) => [a.id, a.customer, a.partner.replace(/,/g, ''), a.amountCents, a.fico, a.lender, a.status, a.date].join(','))].join('\n');
+        const csv = [
+          'id,customer,partner,amount_cents,fico,lender,status,date',
+          ...rows.map((a) =>
+            [
+              a.id,
+              a.customer,
+              a.partner.replace(/,/g, ''),
+              a.amountCents,
+              a.fico,
+              a.lender,
+              a.status,
+              a.date,
+            ].join(','),
+          ),
+        ].join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -236,31 +338,65 @@ export default function VerticalApplicationsPage() {
   const tabs = [
     { key: 'all', label: 'All', count: rows.length },
     { key: 'funded', label: 'Funded', count: rows.filter((a) => a.status === 'funded').length },
-    { key: 'approved', label: 'Approved', count: rows.filter((a) => a.status === 'approved').length },
-    { key: 'submitted', label: 'Submitted', count: rows.filter((a) => a.status === 'submitted').length },
-    { key: 'declined', label: 'Declined', count: rows.filter((a) => a.status === 'declined').length },
+    {
+      key: 'approved',
+      label: 'Approved',
+      count: rows.filter((a) => a.status === 'approved').length,
+    },
+    {
+      key: 'submitted',
+      label: 'Submitted',
+      count: rows.filter((a) => a.status === 'submitted').length,
+    },
+    {
+      key: 'declined',
+      label: 'Declined',
+      count: rows.filter((a) => a.status === 'declined').length,
+    },
   ];
 
   const columns: Column<ApplicationRow>[] = [
-    { key: 'customer', header: 'Customer', cell: (a) => (
-      <div className="flex items-center gap-2">
-        {myAppIds.has(a.id) && (
-          <span
-            className="size-1.5 rounded-full bg-info animate-pulse shrink-0"
-            aria-label="Your invite"
-            title="You sent this consumer the financing link"
-          />
-        )}
-        <div>
-          <div className="font-medium">{a.customer}</div>
-          <div className="text-[12px] text-fg-muted">{a.customerEmail}</div>
+    {
+      key: 'customer',
+      header: 'Customer',
+      cell: (a) => (
+        <div className="flex items-center gap-2">
+          {myAppIds.has(a.id) && (
+            <span
+              className="size-1.5 rounded-full bg-info animate-pulse shrink-0"
+              aria-label="Your invite"
+              title="You sent this consumer the financing link"
+            />
+          )}
+          <div>
+            <div className="font-medium">{a.customer}</div>
+            <div className="text-[12px] text-fg-muted">{a.customerEmail}</div>
+          </div>
         </div>
-      </div>
-    )},
-    { key: 'partner', header: 'Partner', cell: (a) => <span className="text-[13px]">{a.partner}</span> },
-    { key: 'amount', header: 'Amount', align: 'right', cell: (a) => <Money cents={a.amountCents} noFractions /> },
-    { key: 'fico', header: 'Credit', align: 'right', cell: (a) => <span className="tabular-nums">{a.fico}</span> },
-    { key: 'lender', header: 'Lender', cell: (a) => <span className="text-[13px]">{a.lender}</span> },
+      ),
+    },
+    {
+      key: 'partner',
+      header: 'Partner',
+      cell: (a) => <span className="text-[13px]">{a.partner}</span>,
+    },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      cell: (a) => <Money cents={a.amountCents} noFractions />,
+    },
+    {
+      key: 'fico',
+      header: 'Credit',
+      align: 'right',
+      cell: (a) => <span className="tabular-nums">{a.fico}</span>,
+    },
+    {
+      key: 'lender',
+      header: 'Lender',
+      cell: (a) => <span className="text-[13px]">{a.lender}</span>,
+    },
     { key: 'status', header: 'Status', cell: (a) => statusPill(a.status) },
     {
       key: 'live',
@@ -278,30 +414,58 @@ export default function VerticalApplicationsPage() {
         return (
           <div className="flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-info animate-pulse shrink-0" aria-hidden />
-            <StatusPill tone={LIVE_STATUS_TONE[live.status]}>{LIVE_STATUS_LABEL[live.status]}</StatusPill>
-            <span className="text-[10px] font-mono text-fg-muted shrink-0">{timeAgoShort(live.lastUpdatedAt)}</span>
+            <StatusPill tone={LIVE_STATUS_TONE[live.status]}>
+              {LIVE_STATUS_LABEL[live.status]}
+            </StatusPill>
+            <span className="text-[10px] font-mono text-fg-muted shrink-0">
+              {timeAgoShort(live.lastUpdatedAt)}
+            </span>
           </div>
         );
       },
     },
-    { key: 'date', header: 'Date', align: 'right', cell: (a) => <span className="text-[12px] text-fg-muted tabular-nums">{a.date}</span> },
+    {
+      key: 'date',
+      header: 'Date',
+      align: 'right',
+      cell: (a) => <span className="text-[12px] text-fg-muted tabular-nums">{a.date}</span>,
+    },
   ];
 
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Master', href: '/' }, { label: spec.name, href: `/v/${spec.slug}` }, { label: 'Applications' }]}
+        breadcrumbs={[
+          { label: 'Master', href: '/' },
+          { label: spec.name, href: `/v/${spec.slug}` },
+          { label: 'Applications' },
+        ]}
         title={`${spec.name} applications`}
         description={`Every consumer application routed to or originated from ${spec.name} this month.`}
         actions={<Button onClick={exportCsv}>Export CSV</Button>}
-        meta={<><StatusPill tone="accent">{spec.name}</StatusPill><StatusPill tone="neutral">{rows.length} total</StatusPill></>}
+        meta={
+          <>
+            <StatusPill tone="accent">{spec.name}</StatusPill>
+            <StatusPill tone="neutral">{rows.length} total</StatusPill>
+          </>
+        }
       />
       <PageBody>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <KpiCard label="Funded" value={rows.filter((a) => a.status === 'funded').length} />
           <KpiCard label="Approved" value={rows.filter((a) => a.status === 'approved').length} />
           <KpiCard label="Submitted" value={rows.filter((a) => a.status === 'submitted').length} />
-          <KpiCard label="Funded vol" value={<Money cents={rows.filter((a) => a.status === 'funded').reduce((a, b) => a + b.amountCents, 0)} compact />} />
+          <KpiCard
+            label="Funded vol"
+            value={
+              <Money
+                cents={rows
+                  .filter((a) => a.status === 'funded')
+                  .reduce((a, b) => a + b.amountCents, 0)}
+                compact
+              />
+            }
+          />
         </div>
 
         <Card padded className="mb-4">
@@ -336,7 +500,9 @@ export default function VerticalApplicationsPage() {
               }
               aria-pressed={onlyMyInvites}
             >
-              <span className={'size-1.5 rounded-full ' + (onlyMyInvites ? 'bg-accent' : 'bg-fg-muted')} />
+              <span
+                className={'size-1.5 rounded-full ' + (onlyMyInvites ? 'bg-accent' : 'bg-fg-muted')}
+              />
               Show only my invites
               <span className="text-fg-muted font-mono">({myAppIds.size})</span>
             </button>

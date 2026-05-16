@@ -50,6 +50,7 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
+import { saveSubmittedApp, DEMO_PARTNER_BY_BRAND } from '../../../lib/submitted-applications';
 
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
@@ -77,10 +78,16 @@ interface FilterArgs {
   tier: CreditTier;
   amountCents: number;
 }
+/**
+ * Filter lenders for this brand × tier × partner × amount, with a
+ * tier-fallback walk so a sparse coachpay sub_prime pool still
+ * surfaces offers (the matcher walks toward prime first, then back
+ * toward sub_prime).
+ */
+const TIER_ORDER: CreditTier[] = ['prime_plus', 'prime', 'near_prime', 'sub_prime'];
 function filterLenders({ partnerId, tier, amountCents }: FilterArgs): MarketplaceLenderRow[] {
-  return marketplaceLenders.filter((l) => {
+  const passesNonTier = (l: MarketplaceLenderRow): boolean => {
     if (l.brands.length > 0 && !l.brands.includes('coachpay')) return false;
-    if (!l.servesTiers.includes(tier)) return false;
     const override = partnerId
       ? partnerAccessOverrides.find(
           (o) => o.merchantId === partnerId && o.marketplaceLenderId === l.id,
@@ -92,7 +99,23 @@ function filterLenders({ partnerId, tier, amountCents }: FilterArgs): Marketplac
       return false;
     }
     return true;
-  });
+  };
+  const tryTier = (t: CreditTier) =>
+    marketplaceLenders.filter((l) => passesNonTier(l) && l.servesTiers.includes(t));
+
+  const direct = tryTier(tier);
+  if (direct.length > 0) return direct;
+
+  const idx = TIER_ORDER.indexOf(tier);
+  for (let i = idx - 1; i >= 0; i--) {
+    const r = tryTier(TIER_ORDER[i]!);
+    if (r.length > 0) return r;
+  }
+  for (let i = idx + 1; i < TIER_ORDER.length; i++) {
+    const r = tryTier(TIER_ORDER[i]!);
+    if (r.length > 0) return r;
+  }
+  return [];
 }
 
 export default function CoachPayApplyPage() {
@@ -131,6 +154,12 @@ export default function CoachPayApplyPage() {
     }
   }, [step]);
 
+  // Persist the application on engine → offers. Attribution: explicit
+  // ?ref=<partnerId> wins; otherwise fall back to the CoachPay demo
+  // partner (p_atlas) so an unattributed test still shows up only in
+  // CoachPay's portal.
+  const [persisted, setPersisted] = useState(false);
+
   // Session-bind enforcement
   useEffect(() => {
     if (!sessionId) return;
@@ -159,6 +188,23 @@ export default function CoachPayApplyPage() {
       }),
     [ref, tier, intake.amount],
   );
+
+  // Save app to the per-partner store once we land on the offers step.
+  useEffect(() => {
+    if (step !== 'offers' || persisted) return;
+    const partnerId = ref || DEMO_PARTNER_BY_BRAND.coachpay;
+    const top = eligibleLenders[0];
+    saveSubmittedApp({
+      partnerId,
+      brand: 'coachpay',
+      customer: `${intake.firstName.trim()} ${intake.lastName.trim()}`.trim(),
+      customerEmail: intake.email.trim(),
+      amountCents: cents(intake.amount),
+      tier,
+      lender: top?.displayName ?? 'Pending lender match',
+    });
+    setPersisted(true);
+  }, [step, persisted, ref, eligibleLenders, intake, tier]);
 
   const acceptDisclaimer = async () => {
     if (!consent) {

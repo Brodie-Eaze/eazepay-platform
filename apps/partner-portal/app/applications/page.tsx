@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -11,6 +11,7 @@ import {
   SearchIcon,
 } from '@eazepay/ui/web';
 import { partners as MASTER_PARTNERS, applicationsForPartner } from '../../lib/master-data';
+import { readSubmittedApps, type SubmittedApp } from '../../lib/submitted-applications';
 
 /**
  * Finance Applications — direct port of Lovable's `/admin/applications`.
@@ -39,7 +40,10 @@ interface PartnerAppsRow {
 const SEED: PartnerAppsRow[] = MASTER_PARTNERS.map((p) => {
   const apps = applicationsForPartner(p.id);
   // synthesise a plausible apps count when the master fixture is light
-  const count = apps.length > 0 ? apps.length + Math.floor(p.fundedCount / 2) : Math.max(2, Math.floor(p.fundedCount * 1.4));
+  const count =
+    apps.length > 0
+      ? apps.length + Math.floor(p.fundedCount / 2)
+      : Math.max(2, Math.floor(p.fundedCount * 1.4));
   return {
     partnerId: p.id,
     initials: p.initials,
@@ -50,22 +54,52 @@ const SEED: PartnerAppsRow[] = MASTER_PARTNERS.map((p) => {
   };
 });
 
-const MONTH_OPTIONS = ['All Months', 'May 2026', 'Apr 2026', 'Mar 2026', 'Feb 2026', 'Jan 2026', 'Dec 2025'] as const;
+const MONTH_OPTIONS = [
+  'All Months',
+  'May 2026',
+  'Apr 2026',
+  'Mar 2026',
+  'Feb 2026',
+  'Jan 2026',
+  'Dec 2025',
+] as const;
 
 export default function FinanceApplicationsPage() {
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState<(typeof MONTH_OPTIONS)[number]>('All Months');
   const [monthOpen, setMonthOpen] = useState(false);
 
+  /**
+   * Roll the consumer-submitted-app store into the per-partner counts
+   * the admin sees. Read once on mount; admin role implies "see every
+   * partner's submitted count" so we don't scope by partnerId here.
+   */
+  const [submittedAll, setSubmittedAll] = useState<SubmittedApp[]>([]);
+  useEffect(() => {
+    setSubmittedAll(readSubmittedApps());
+  }, []);
+
+  const liveRows: PartnerAppsRow[] = useMemo(() => {
+    if (submittedAll.length === 0) return SEED;
+    const byPartner = new Map<string, number>();
+    for (const s of submittedAll) {
+      byPartner.set(s.partnerId, (byPartner.get(s.partnerId) ?? 0) + 1);
+    }
+    return SEED.map((row) => {
+      const bump = byPartner.get(row.partnerId) ?? 0;
+      return bump > 0 ? { ...row, apps: row.apps + bump } : row;
+    });
+  }, [submittedAll]);
+
   const filtered = useMemo(
     () =>
-      SEED.filter((p) =>
+      liveRows.filter((p) =>
         search
           ? p.name.toLowerCase().includes(search.toLowerCase()) ||
             p.email.toLowerCase().includes(search.toLowerCase())
           : true,
       ),
-    [search],
+    [search, liveRows],
   );
 
   return (
@@ -77,10 +111,19 @@ export default function FinanceApplicationsPage() {
       />
       <PageBody>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-          <Kpi label="Total Apps" value={String(SEED.reduce((s, p) => s + p.apps, 0))} />
-          <Kpi label="Funded" value={String(Math.round(SEED.reduce((s, p) => s + p.apps, 0) * 0.38))} />
-          <Kpi label="Approved" value={String(Math.round(SEED.reduce((s, p) => s + p.apps, 0) * 0.21))} />
-          <Kpi label="Declined" value={String(Math.round(SEED.reduce((s, p) => s + p.apps, 0) * 0.09))} />
+          <Kpi label="Total Apps" value={String(liveRows.reduce((s, p) => s + p.apps, 0))} />
+          <Kpi
+            label="Funded"
+            value={String(Math.round(liveRows.reduce((s, p) => s + p.apps, 0) * 0.38))}
+          />
+          <Kpi
+            label="Approved"
+            value={String(Math.round(liveRows.reduce((s, p) => s + p.apps, 0) * 0.21))}
+          />
+          <Kpi
+            label="Declined"
+            value={String(Math.round(liveRows.reduce((s, p) => s + p.apps, 0) * 0.09))}
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -104,7 +147,12 @@ export default function FinanceApplicationsPage() {
             </button>
             {monthOpen && (
               <>
-                <button type="button" className="fixed inset-0 z-10" aria-label="Close" onClick={() => setMonthOpen(false)} />
+                <button
+                  type="button"
+                  className="fixed inset-0 z-10"
+                  aria-label="Close"
+                  onClick={() => setMonthOpen(false)}
+                />
                 <div className="absolute right-0 top-11 z-20 w-44 rounded-lg border border-border bg-bg-elevated shadow-lg overflow-hidden">
                   {MONTH_OPTIONS.map((o) => (
                     <button
@@ -114,7 +162,10 @@ export default function FinanceApplicationsPage() {
                         setMonth(o);
                         setMonthOpen(false);
                       }}
-                      className={'block w-full text-left px-3 py-2 text-[12px] hover:bg-bg-muted ' + (o === month ? 'bg-bg-muted text-fg font-semibold' : 'text-fg-secondary')}
+                      className={
+                        'block w-full text-left px-3 py-2 text-[12px] hover:bg-bg-muted ' +
+                        (o === month ? 'bg-bg-muted text-fg font-semibold' : 'text-fg-secondary')
+                      }
                     >
                       {o}
                     </button>
@@ -150,7 +201,10 @@ export default function FinanceApplicationsPage() {
                         </p>
                       </div>
                     </div>
-                    <ArrowRightIcon size={14} className="text-fg-muted col-span-1 justify-self-end" />
+                    <ArrowRightIcon
+                      size={14}
+                      className="text-fg-muted col-span-1 justify-self-end"
+                    />
                   </Link>
                 </li>
               ))}
