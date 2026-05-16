@@ -121,6 +121,18 @@ export default function MedPayApplyPage() {
     window.history.replaceState({ step }, '');
   }, [step]);
 
+  // Reset scroll + focus to top whenever the step changes so consumers
+  // always land at the top of the new step on mobile (no mid-page jumps).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    // Disable Safari's auto-restoration so iOS back-gestures don't reapply
+    // a stale scroll position on the step swap.
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, [step]);
+
   // Session-bind enforcement
   useEffect(() => {
     if (!sessionId) return;
@@ -249,7 +261,12 @@ export default function MedPayApplyPage() {
               />
             )}
             {step === 'intake' && (
-              <IntakeStep intake={intake} setIntake={setIntake} onSubmit={startEngine} />
+              <IntakeStep
+                intake={intake}
+                setIntake={setIntake}
+                onSubmit={startEngine}
+                onBack={() => setStep('disclaimer')}
+              />
             )}
             {step === 'engine' && <EngineStep />}
             {step === 'offers' && (
@@ -259,6 +276,7 @@ export default function MedPayApplyPage() {
                 lenders={eligibleLenders}
                 chosen={chosen}
                 setChosen={setChosen}
+                onBack={() => setStep('intake')}
               />
             )}
 
@@ -443,8 +461,156 @@ function LandingStep({ onApply }: { onApply: () => void }) {
             </div>
           </div>
         </div>
+
+        {/* ============== HOW IT WORKS ============== */}
+        <section id="how" className="mp-how">
+          <div className="mp-how-eyebrow">
+            <span className="mp-pulse-dot" />
+            HOW IT WORKS · 4 STEPS
+          </div>
+          <h2 className="mp-h2 mp-how-title">
+            <span className="grad-teal">From in-chair to funded</span>
+            <br />
+            <span className="grad-teal-deep">in under 72 hours.</span>
+          </h2>
+          <div className="mp-how-grid">
+            {[
+              {
+                n: '01',
+                title: 'Apply in seconds',
+                body: 'Soft credit pull only — zero impact to your score. Takes about 60 seconds in the chair, on your phone, or from home.',
+              },
+              {
+                n: '02',
+                title: 'We match you',
+                body: '52 medical lenders quoted in parallel. Pre-qualified offers ranked by lowest total cost.',
+              },
+              {
+                n: '03',
+                title: 'You pick the plan',
+                body: 'Compare APR, term, and monthly payment side-by-side. Plans from 24 to 84 months. APR from 6.9%.',
+              },
+              {
+                n: '04',
+                title: 'Provider paid direct',
+                body: 'Once you accept, the lender pays your dental or medical provider directly — typically within 48 to 72 hours.',
+              },
+            ].map((s) => (
+              <div key={s.n} className="mp-how-step glass-teal-hi">
+                <div className="mp-how-step-n">{s.n}</div>
+                <div className="mp-how-step-title">{s.title}</div>
+                <p className="mp-how-step-body">{s.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============== CALCULATOR ============== */}
+        <section className="mp-calc">
+          <div className="mp-calc-eyebrow">
+            <span className="mp-pulse-dot" />
+            PAYMENT ESTIMATOR · ILLUSTRATIVE ONLY
+          </div>
+          <h2 className="mp-h2 mp-calc-title">
+            <span className="grad-teal">What might my</span>
+            <br />
+            <span className="grad-teal-deep">monthly payment look like?</span>
+          </h2>
+          <MedPayCalculator onApply={onApply} />
+        </section>
       </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// MedPay payment estimator — small, simple amortization calc. Inputs
+// are an amount slider and a term selector; output is the monthly
+// payment at a representative APR. Disclosed as illustrative.
+// ─────────────────────────────────────────────────────────────────────
+function MedPayCalculator({ onApply }: { onApply: () => void }) {
+  const [amount, setAmount] = useState(12000);
+  const [term, setTerm] = useState<24 | 36 | 48 | 60 | 72>(48);
+  const APR = 0.079; // 7.9% representative
+  const r = APR / 12;
+  const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -term)));
+  const totalPaid = monthly * term;
+  const totalInterest = Math.max(0, totalPaid - amount);
+
+  return (
+    <div className="mp-calc-card glass-teal-hi">
+      <div className="mp-calc-grid">
+        <div className="mp-calc-field">
+          <div className="mp-calc-label">
+            <span>Amount</span>
+            <strong>${amount.toLocaleString('en-US')}</strong>
+          </div>
+          <input
+            type="range"
+            min={1500}
+            max={50000}
+            step={500}
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            className="mp-calc-range"
+            aria-label="Amount needed in USD"
+          />
+          <div className="mp-calc-range-foot">
+            <span>$1.5k</span>
+            <span>$50k</span>
+          </div>
+        </div>
+
+        <div className="mp-calc-field">
+          <div className="mp-calc-label">
+            <span>Term</span>
+            <strong>{term} months</strong>
+          </div>
+          <div className="mp-calc-terms">
+            {([24, 36, 48, 60, 72] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`mp-calc-term ${t === term ? 'is-active' : ''}`}
+                onClick={() => setTerm(t)}
+                aria-pressed={t === term}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mp-calc-result">
+        <div className="mp-calc-result-main">
+          <div className="mp-calc-result-k">Est. monthly</div>
+          <div className="mp-calc-result-v">
+            ${monthly.toLocaleString('en-US')}
+            <span className="mp-calc-result-unit"> / mo</span>
+          </div>
+        </div>
+        <div className="mp-calc-result-side">
+          <div>
+            <div className="mp-calc-result-k">APR (representative)</div>
+            <div className="mp-calc-result-vs">7.9%</div>
+          </div>
+          <div>
+            <div className="mp-calc-result-k">Total interest</div>
+            <div className="mp-calc-result-vs">${totalInterest.toLocaleString('en-US')}</div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" className="btn-primary-teal lg full mp-calc-cta" onClick={onApply}>
+        Check my real rate
+        <ArrowRightIcon size={14} />
+      </button>
+      <p className="mp-calc-disc">
+        Illustrative only. Your actual APR, term, and monthly payment are determined by your
+        pre-qualified offers and credit profile. Soft pull only — zero impact to your score.
+      </p>
+    </div>
   );
 }
 
@@ -516,13 +682,19 @@ function IntakeStep({
   intake,
   setIntake,
   onSubmit,
+  onBack,
 }: {
   intake: Intake;
   setIntake: (next: Intake) => void;
   onSubmit: () => void;
+  onBack: () => void;
 }) {
   return (
     <div className="mp-step glass-teal-hi">
+      <button type="button" className="mp-step-back" onClick={onBack} aria-label="Back to consent">
+        <span aria-hidden>←</span>
+        <span>Back</span>
+      </button>
       <div className="mp-step-tag">02 · YOUR DETAILS</div>
       <h2 className="mp-h2">
         <span className="grad-teal">Let&apos;s match you with</span>
@@ -668,12 +840,14 @@ function OffersStep({
   lenders,
   chosen,
   setChosen,
+  onBack,
 }: {
   tier: CreditTier;
   amountCents: number;
   lenders: MarketplaceLenderRow[];
   chosen: string | null;
   setChosen: (id: string) => void;
+  onBack: () => void;
 }) {
   const effectiveAmount = amountCents > 0 ? amountCents : 12_000_00;
   const [term, setTerm] = useState<36 | 48 | 60>(48);
@@ -712,6 +886,15 @@ function OffersStep({
 
   return (
     <div className="mp-offers">
+      <button
+        type="button"
+        className="mp-step-back"
+        onClick={onBack}
+        aria-label="Back to your details"
+      >
+        <span aria-hidden>←</span>
+        <span>Back</span>
+      </button>
       <div className="mp-offers-head">
         <div className="mp-step-tag">
           <span className="mp-pulse-dot" />
@@ -1531,6 +1714,242 @@ const MEDPAY_APPLY_CSS = `
   box-shadow: 0 30px 70px -25px rgba(14, 124, 102, 0.35);
 }
 
+/* ============== STEP BACK BUTTON ============== */
+.mp-step-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(14, 124, 102, 0.06);
+  color: var(--mp-ink-2);
+  border: 1px solid var(--mp-line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: background 160ms ease, transform 160ms ease;
+  min-height: 36px;
+}
+.mp-step-back:hover { background: rgba(14, 124, 102, 0.1); }
+.mp-step-back:active { transform: translateY(1px); }
+
+/* ============== HOW IT WORKS ============== */
+.mp-how {
+  margin-top: 96px;
+  padding-top: 24px;
+  scroll-margin-top: 80px;
+  position: relative;
+  z-index: 1;
+}
+.mp-how-eyebrow,
+.mp-calc-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(14, 124, 102, 0.08);
+  border: 1px solid var(--mp-line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--mp-ink-2);
+  text-transform: uppercase;
+}
+.mp-how-title,
+.mp-calc-title {
+  margin: 16px 0 28px;
+  letter-spacing: -0.025em;
+}
+.mp-how-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.mp-how-step {
+  padding: 22px 20px;
+  border-radius: 18px;
+  position: relative;
+}
+.mp-how-step-n {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mp-teal);
+  letter-spacing: 0.08em;
+}
+.mp-how-step-title {
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+}
+.mp-how-step-body {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--mp-mute);
+}
+
+/* ============== CALCULATOR ============== */
+.mp-calc {
+  margin-top: 64px;
+  padding-bottom: 96px;
+  position: relative;
+  z-index: 1;
+}
+.mp-calc-card {
+  padding: 28px;
+  border-radius: 22px;
+  max-width: 760px;
+}
+.mp-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.mp-calc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mp-calc-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mp-mute);
+  font-weight: 700;
+}
+.mp-calc-label strong {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+  text-transform: none;
+  font-feature-settings: 'tnum';
+}
+.mp-calc-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mp-teal), var(--mp-teal-2));
+  outline: none;
+  margin: 6px 0;
+}
+.mp-calc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--mp-teal);
+  box-shadow: 0 4px 10px rgba(14, 124, 102, 0.25);
+  cursor: pointer;
+}
+.mp-calc-range::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--mp-teal);
+  box-shadow: 0 4px 10px rgba(14, 124, 102, 0.25);
+  cursor: pointer;
+}
+.mp-calc-range-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--mp-mute);
+  font-weight: 600;
+}
+.mp-calc-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mp-calc-term {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(14, 124, 102, 0.04);
+  border: 1px solid var(--mp-line);
+  color: var(--mp-ink-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 160ms ease;
+  min-width: 56px;
+  min-height: 40px;
+}
+.mp-calc-term:hover {
+  background: rgba(14, 124, 102, 0.08);
+}
+.mp-calc-term.is-active {
+  background: linear-gradient(135deg, var(--mp-teal), var(--mp-teal-2));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(14, 124, 102, 0.22);
+}
+.mp-calc-result {
+  margin-top: 24px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(14, 124, 102, 0.06), rgba(34, 184, 160, 0.06));
+  border: 1px solid var(--mp-line);
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  align-items: center;
+}
+.mp-calc-result-k {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mp-mute);
+  font-weight: 700;
+}
+.mp-calc-result-v {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--mp-deep);
+  line-height: 1;
+  margin-top: 4px;
+  font-feature-settings: 'tnum';
+}
+.mp-calc-result-unit {
+  font-size: 16px;
+  color: var(--mp-mute);
+  font-weight: 600;
+  margin-left: 2px;
+}
+.mp-calc-result-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.mp-calc-result-vs {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+  margin-top: 4px;
+  font-feature-settings: 'tnum';
+}
+.mp-calc-cta { margin-top: 18px; }
+.mp-calc-disc {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--mp-mute);
+  line-height: 1.55;
+}
+
 /* ============== RESPONSIVE ============== */
 @media (max-width: 960px) {
   .mp-h1 { font-size: 44px; }
@@ -1538,11 +1957,35 @@ const MEDPAY_APPLY_CSS = `
   .mp-hero-grid { grid-template-columns: 1fr; }
   .mp-hero-right { min-height: 560px; }
   .mp-hero-strip { grid-template-columns: repeat(2, 1fr); }
+  .mp-how-grid { grid-template-columns: repeat(2, 1fr); }
+  .mp-calc-grid { grid-template-columns: 1fr; }
+  .mp-calc-result { grid-template-columns: 1fr; }
 }
 @media (max-width: 540px) {
   .mp-h1 { font-size: 34px; }
-  .mp-step { padding: 24px 20px; }
+  .mp-h2 { font-size: 26px; }
+  .mp-step { padding: 24px 18px; }
   .mp-offer-amount { font-size: 36px; }
   .mp-chip { font-size: 10px; padding: 5px 9px; }
+  .mp-container { padding: 0 18px; }
+  .mp-how { margin-top: 72px; }
+  .mp-how-grid { grid-template-columns: 1fr; gap: 12px; }
+  .mp-how-step { padding: 18px 16px; }
+  .mp-calc-card { padding: 22px 18px; }
+  .mp-calc-result { padding: 16px 18px; }
+  .mp-calc-result-v { font-size: 32px; }
+  .mp-calc-result-side { grid-template-columns: 1fr 1fr; }
+  .mp-apply-container { padding: 0 18px !important; }
+  /* keep inputs touch-target sized */
+  .mp-form input { min-height: 48px; font-size: 16px; }
+  .mp-form-submit { min-height: 52px; }
 }
+
+/* ============== VIEWPORT LOCK (no horizontal shake) ============== */
+html, body { overflow-x: hidden; width: 100%; max-width: 100%; }
+.medpay-root, .medpay-root * { max-width: 100%; }
+.medpay-root img, .medpay-root svg { max-width: 100%; height: auto; }
+
+/* Respect iOS safe area on the bottom (home indicator) */
+.mp-apply-footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 `;
