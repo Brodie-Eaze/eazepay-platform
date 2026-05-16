@@ -631,16 +631,18 @@ function FinancingPerformanceReport({
             data={data.map((d) => ({
               label: d.label,
               segments: [
-                { value: d.medpay, color: 'fill-info', label: 'MedPay' },
-                { value: d.tradepay, color: 'fill-accent', label: 'TradePay' },
-                { value: d.coachpay, color: 'fill-success', label: 'CoachPay' },
+                // Navy → light-grey ramp so the three brands read as
+                // tonal layers, not three competing accent colours.
+                { value: d.medpay, color: '#0d1530', label: 'MedPay' },
+                { value: d.tradepay, color: '#475569', label: 'TradePay' },
+                { value: d.coachpay, color: '#94a3b8', label: 'CoachPay' },
               ],
             }))}
           />
-          <div className="flex gap-4 text-[10px] mt-2 px-2">
-            <LegendDot color="bg-info" label="MedPay" />
-            <LegendDot color="bg-accent" label="TradePay" />
-            <LegendDot color="bg-success" label="CoachPay" />
+          <div className="flex gap-4 text-[11px] mt-3 px-2">
+            <LegendSwatch color="#0d1530" label="MedPay" />
+            <LegendSwatch color="#475569" label="TradePay" />
+            <LegendSwatch color="#94a3b8" label="CoachPay" />
           </div>
         </CardBody>
       </Card>
@@ -765,13 +767,11 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
           <CardHeader title="Approval rate by lender" />
           <CardBody>
             <HorizontalBars
-              data={rows
-                .slice(0, 10)
-                .map((r) => ({
-                  label: r.lender,
-                  value: r.approvalRate,
-                  sub: `${r.approvals}/${r.apps}`,
-                }))}
+              data={rows.slice(0, 10).map((r) => ({
+                label: r.lender,
+                value: r.approvalRate,
+                sub: `${r.approvals}/${r.apps}`,
+              }))}
               maxLabel="100%"
             />
           </CardBody>
@@ -1832,71 +1832,112 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
+/**
+ * Stacked bar chart. Each column carries 3 segments stacked vertically
+ * (MedPay/TradePay/CoachPay). Bar width is fixed and proportional so
+ * the columns never look like mismatched rectangles. Values rail sits
+ * above the bars on a fixed y; month label sits below on a fixed y.
+ * `seg.color` is now a literal CSS colour string (not a Tailwind class)
+ * so we can speak navy → grey → light-grey directly without dragging
+ * the platform's semantic accent tokens into a chart that's not about
+ * accents.
+ */
 function StackedBars({
   data,
-  height = 220,
+  height = 240,
 }: {
   data: Array<{ label: string; segments: Array<{ value: number; color: string; label: string }> }>;
   height?: number;
 }) {
   const width = 720;
-  const padTop = 18;
-  const padBottom = 24;
+  const padTop = 24;
+  const padBottom = 28;
+  const padLeft = 16;
+  const padRight = 16;
   const chartH = height - padTop - padBottom;
-  const max = Math.max(...data.map((d) => d.segments.reduce((s, x) => s + x.value, 0))) || 1;
-  const barW = (width - 32) / data.length - 14;
+  const totals = data.map((d) => d.segments.reduce((s, x) => s + x.value, 0));
+  const max = Math.max(...totals, 1);
+  const colW = (width - padLeft - padRight) / data.length;
+  const barW = Math.min(48, colW * 0.62);
+
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label="Funded volume by month, stacked by brand"
+      style={{ display: 'block' }}
+    >
+      {/* Y grid */}
       {[0.25, 0.5, 0.75, 1].map((t) => (
         <line
           key={t}
-          x1={16}
-          x2={width - 16}
+          x1={padLeft}
+          x2={width - padRight}
           y1={padTop + chartH * (1 - t)}
           y2={padTop + chartH * (1 - t)}
-          stroke="currentColor"
-          opacity={0.08}
+          stroke="#e2e8f0"
           strokeDasharray="2 4"
         />
       ))}
+      {/* Baseline */}
+      <line
+        x1={padLeft}
+        x2={width - padRight}
+        y1={padTop + chartH + 0.5}
+        y2={padTop + chartH + 0.5}
+        stroke="#cbd5e1"
+      />
+
       {data.map((d, i) => {
+        const cx = padLeft + i * colW + colW / 2;
+        const x = cx - barW / 2;
         let yCursor = padTop + chartH;
-        const totalForLabel = d.segments.reduce((s, x) => s + x.value, 0);
-        const x = 16 + i * (barW + 14) + 7;
+        const totalForLabel = totals[i]!;
         return (
-          <g key={i}>
+          <g key={d.label}>
+            {/* Stacked segments, drawn bottom-up */}
             {d.segments.map((seg, si) => {
               const h = (seg.value / max) * chartH;
               yCursor -= h;
+              // Only round the top of the topmost segment so the stack
+              // reads as a single bar.
+              const isTop = si === d.segments.length - 1;
               return (
                 <rect
-                  key={si}
+                  key={seg.label}
                   x={x}
                   y={yCursor}
                   width={barW}
-                  height={h}
-                  rx={2}
-                  className={seg.color}
-                />
+                  height={Math.max(0, h)}
+                  rx={isTop ? 4 : 0}
+                  fill={seg.color}
+                >
+                  <title>{`${d.label} · ${seg.label}: $${seg.value}K`}</title>
+                </rect>
               );
             })}
+            {/* Total value above the bar */}
             <text
-              x={x + barW / 2}
-              y={padTop - 4}
+              x={cx}
+              y={padTop - 8}
               textAnchor="middle"
-              fontSize="9.5"
-              fill="currentColor"
-              opacity={0.7}
+              fontSize={11}
+              fill="#475569"
+              fontWeight={600}
+              style={{ fontVariantNumeric: 'tabular-nums' }}
             >
               ${totalForLabel}K
             </text>
+            {/* Month label below the baseline */}
             <text
-              x={x + barW / 2}
-              y={height - 6}
+              x={cx}
+              y={height - 8}
               textAnchor="middle"
-              fontSize="10"
-              fill="currentColor"
-              opacity={0.6}
+              fontSize={11}
+              fill="#0f172a"
+              fontWeight={600}
             >
               {d.label}
             </text>
@@ -1904,6 +1945,20 @@ function StackedBars({
         );
       })}
     </svg>
+  );
+}
+
+/** Solid-square legend swatch keyed by literal CSS colour. */
+function LegendSwatch({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-fg-secondary">
+      <span
+        className="inline-block h-2.5 w-2.5 rounded-sm shrink-0"
+        style={{ backgroundColor: color }}
+        aria-hidden
+      />
+      <span className="text-[11px] font-medium">{label}</span>
+    </span>
   );
 }
 
@@ -1936,63 +1991,90 @@ function HorizontalBars({
   );
 }
 
+/**
+ * Funnel chart — vertical bars, all anchored to the same baseline, each
+ * narrower than the last (proportional to value). Navy → light grey
+ * shading so the eye reads the drop-off without colour noise. Values
+ * top-aligned, stage labels + cumulative conversion % below the bar
+ * along a fixed y rail so labels never drift with bar height.
+ */
 function FunnelSVG({
   stages,
 }: {
   stages: Array<{ label: string; value: number; convPct: number }>;
 }) {
   const width = 720;
-  const height = 220;
-  const max = stages[0]!.value;
-  const stepW = width / stages.length;
+  const height = 280;
+  const top = stages[0]!.value || 1;
+
+  // Top + bottom rails for the chart area.
+  const valueRailY = 26; // y for the "453" value above each bar
+  const baseY = 200; // bar baseline
+  const labelRailY = baseY + 22; // stage name
+  const pctRailY = baseY + 38; // cumulative conv %
+
+  const colW = width / stages.length;
+  const barW = colW * 0.7;
+
+  // Navy → light grey shading. 6 fixed stops so the ramp reads
+  // immediately and matches the rest of the platform's discipline.
+  const palette = ['#0d1530', '#1e3a8a', '#3b4f7a', '#64748b', '#94a3b8', '#cbd5e1'];
+
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label="Funnel chart — leads through funded"
+      style={{ display: 'block' }}
+    >
+      {/* Baseline rail */}
+      <line x1={0} x2={width} y1={baseY + 0.5} y2={baseY + 0.5} stroke="#e2e8f0" strokeWidth={1} />
       {stages.map((s, i) => {
-        const ratio = s.value / max;
-        const barH = ratio * (height - 60);
-        const x = i * stepW + 6;
-        const y = (height - 40 - barH) / 2 + 10;
+        const ratio = s.value / top;
+        const barH = Math.max(8, ratio * (baseY - valueRailY - 14));
+        const cx = i * colW + colW / 2;
+        const x = cx - barW / 2;
+        const y = baseY - barH;
+        const fill = palette[Math.min(i, palette.length - 1)]!;
         return (
-          <g key={i}>
-            <rect
-              x={x}
-              y={y}
-              width={stepW - 12}
-              height={barH}
-              rx={4}
-              className="fill-accent"
-              opacity={0.85 - i * 0.08}
-            />
+          <g key={s.label}>
+            {/* Value above the bar */}
             <text
-              x={x + (stepW - 12) / 2}
-              y={y - 4}
-              fontSize="10"
+              x={cx}
+              y={valueRailY - 2}
+              fontSize={11}
               textAnchor="middle"
-              fill="currentColor"
-              opacity={0.7}
+              fill="#475569"
+              fontWeight={600}
+              style={{ fontVariantNumeric: 'tabular-nums' }}
             >
               {s.value.toLocaleString()}
             </text>
+            {/* Bar */}
+            <rect x={x} y={y} width={barW} height={barH} rx={3} fill={fill} />
+            {/* Stage label rail */}
             <text
-              x={x + (stepW - 12) / 2}
-              y={y + barH + 14}
-              fontSize="10"
+              x={cx}
+              y={labelRailY}
+              fontSize={11}
               textAnchor="middle"
-              fill="currentColor"
-              opacity={0.85}
-              className="font-medium"
+              fill="#0f172a"
+              fontWeight={600}
             >
               {s.label}
             </text>
+            {/* Conversion vs. top of funnel — cumulative */}
             <text
-              x={x + (stepW - 12) / 2}
-              y={y + barH + 26}
-              fontSize="9"
+              x={cx}
+              y={pctRailY}
+              fontSize={10}
               textAnchor="middle"
-              fill="currentColor"
-              opacity={0.55}
+              fill="#94a3b8"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
             >
-              {s.convPct}%
+              {Math.round((s.value / top) * 100)}%
             </text>
           </g>
         );

@@ -260,42 +260,20 @@ const KpiTile = ({
           : 'text-fg-muted';
   const Arrow = isUp ? TrendUpIcon : isDown ? TrendDownIcon : TrendUpIcon;
 
-  // Delta pill colors (lifted from the master Command Center for parity).
-  const pillClass =
-    deltaPct === 0
-      ? 'bg-bg-muted/60 text-fg-muted ring-1 ring-border/60'
-      : directionIsGood
-        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'
-        : directionIsBad
-          ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70'
-          : 'bg-bg-muted/60 text-fg-muted ring-1 ring-border/60';
-
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-bg-elevated px-4 py-3.5 shadow-sm min-h-[110px] transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-200">
-      {/* top accent stripe */}
-      <span
-        className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-indigo-500 via-indigo-400 to-sky-400 opacity-70"
-        aria-hidden
-      />
-      {/* corner halo */}
-      <span
-        className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500/15 to-indigo-500/0 blur-xl"
-        aria-hidden
-      />
-      <div className="relative flex items-start justify-between gap-2">
+    <div className="relative flex flex-col justify-between rounded-lg border border-border bg-bg-elevated px-4 py-3.5 shadow-sm min-h-[110px]">
+      <div className="flex items-start justify-between gap-2">
         <span className="text-[10px] uppercase tracking-[0.16em] text-fg-muted font-semibold leading-tight">
           {label}
         </span>
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-bg-muted/60 text-indigo-600 shrink-0">
-          {icon}
-        </span>
+        <span className="text-fg-muted shrink-0">{icon}</span>
       </div>
-      <div className="relative mt-1 flex items-baseline gap-2 flex-wrap">
+      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
         <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight text-fg">
           {value}
         </span>
         <span
-          className={`inline-flex items-center gap-0.5 rounded-full px-2 py-[2px] text-[11px] font-semibold tabular-nums ${pillClass}`}
+          className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${tone}`}
         >
           <Arrow size={11} />
           {fmtPctDelta(deltaPct)}
@@ -701,15 +679,13 @@ export default function BrandHomePage() {
   }, [brand, productBrand]);
 
   // Donut palette. Prime gets the brand accent so each portal feels
-  // tinted without recolouring the whole chart. The supporting tiers
-  // use a lifted slate ramp — softer mid-grays so the chart reads as a
-  // single tonal piece, not a wall of dark.
+  // tinted without recolouring the whole chart.
   const donutSegments = useMemo(() => {
     const palette: Record<'Prime' | 'NearPrime' | 'Subprime' | 'DeepSubprime', string> = {
       Prime: spec.accentHex,
-      NearPrime: '#cbd5e1', // slate-300
-      Subprime: '#dbe2ed',
-      DeepSubprime: '#eef2f7',
+      NearPrime: '#94a3b8',
+      Subprime: '#cbd5e1',
+      DeepSubprime: '#e2e8f0',
     };
     return snapshot.creditMix.map((c) => ({
       name: c.name,
