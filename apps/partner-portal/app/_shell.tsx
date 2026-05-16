@@ -49,8 +49,18 @@ import {
 import { BRAND_ORDER, BRANDS, type BrandCode } from '@eazepay/shared-types';
 import { partnerOrg } from '../lib/mock-data';
 
-const NextLink = ({ href, className, children }: { href: string; className?: string; children: ReactNode }) => (
-  <Link href={href} className={className}>{children}</Link>
+const NextLink = ({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) => (
+  <Link href={href} className={className}>
+    {children}
+  </Link>
 );
 
 /**
@@ -82,17 +92,21 @@ const masterGroups: NavGroup[] = [
     ],
   },
   {
-    label: 'Onboarding',
+    // "Partners" is the front-of-house section for every partner-facing
+    // operation: their initial onboarding (the pipeline) and the live
+    // directory of approved partners. Merchant Approvals previously
+    // lived as a separate menu — it duplicated the pipeline's approve
+    // step, so it now lives inside Business Onboarding itself.
+    label: 'Partners',
     items: [
-      { href: '/onboarding-pipeline', label: 'Onboarding Pipeline', icon: <SendIcon /> },
-      { href: '/approvals', label: 'Merchant Approvals', icon: <ShieldIcon /> },
+      { href: '/onboarding-pipeline', label: 'Business Onboarding', icon: <SendIcon /> },
+      { href: '/partners', label: 'Partner Directory', icon: <UsersIcon /> },
     ],
   },
   {
     label: 'Pipeline',
     items: [
       { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
-      { href: '/partners', label: 'Partner Directory', icon: <UsersIcon /> },
       { href: '/payouts', label: 'Payouts', icon: <DollarIcon /> },
       { href: '/settlements', label: 'Settlements', icon: <BankIcon /> },
     ],
@@ -187,13 +201,7 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
           ? 'CoachPay Application'
           : 'Application';
   const brandSubmitIcon =
-    brand === 'medpay' ? (
-      <HeartPulseIcon />
-    ) : brand === 'tradepay' ? (
-      <BankIcon />
-    ) : (
-      <SendIcon />
-    );
+    brand === 'medpay' ? <HeartPulseIcon /> : brand === 'tradepay' ? <BankIcon /> : <SendIcon />;
   return [
     {
       label: 'Overview',
@@ -303,12 +311,19 @@ function BrandSwitcher({ activeBrand }: { activeBrand: BrandCode | null }) {
             onClick={() => setOpen(false)}
             className={`block px-3 py-2.5 text-[13px] hover:bg-bg-muted flex items-start gap-2 ${activeBrand === null ? 'bg-bg-muted' : ''}`}
           >
-            <span className="size-2 rounded-full mt-1.5 shrink-0" style={{ background: 'rgb(var(--accent))' }} />
+            <span
+              className="size-2 rounded-full mt-1.5 shrink-0"
+              style={{ background: 'rgb(var(--accent))' }}
+            />
             <span className="flex-1">
               <span className="block font-semibold">Master · all products</span>
-              <span className="block text-[11px] text-fg-muted leading-snug">Cross-vertical command centre</span>
+              <span className="block text-[11px] text-fg-muted leading-snug">
+                Cross-vertical command centre
+              </span>
             </span>
-            {activeBrand === null && <span className="text-[11px] text-fg-muted mt-1.5">Active</span>}
+            {activeBrand === null && (
+              <span className="text-[11px] text-fg-muted mt-1.5">Active</span>
+            )}
           </Link>
           <div className="h-px bg-border" />
           <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-fg-muted font-semibold">
@@ -324,10 +339,15 @@ function BrandSwitcher({ activeBrand }: { activeBrand: BrandCode | null }) {
                 onClick={() => setOpen(false)}
                 className={`block px-3 py-2 text-[13px] hover:bg-bg-muted flex items-start gap-2 ${isActive ? 'bg-bg-muted' : ''}`}
               >
-                <span className="size-2 rounded-full mt-1.5 shrink-0" style={{ background: 'rgb(var(--accent))' }} />
+                <span
+                  className="size-2 rounded-full mt-1.5 shrink-0"
+                  style={{ background: 'rgb(var(--accent))' }}
+                />
                 <span className="flex-1">
                   <span className="block font-medium">{b.name}</span>
-                  <span className="block text-[11px] text-fg-muted leading-snug">{b.verticals.slice(0, 3).join(' · ')}</span>
+                  <span className="block text-[11px] text-fg-muted leading-snug">
+                    {b.verticals.slice(0, 3).join(' · ')}
+                  </span>
                 </span>
                 {isActive ? (
                   <span className="text-[11px] text-fg-muted mt-1.5">Active</span>
@@ -424,7 +444,11 @@ export function Shell({ children }: { children: ReactNode }) {
       groups={groups}
       envLabel={envLabel}
       LinkComponent={NextLink}
-      searchPlaceholder={activeBrand ? `Search ${BRANDS[activeBrand].name} applications, partners…` : 'Search partners, applications, merchants…'}
+      searchPlaceholder={
+        activeBrand
+          ? `Search ${BRANDS[activeBrand].name} applications, partners…`
+          : 'Search partners, applications, merchants…'
+      }
       topRight={
         <div className="flex items-center gap-3">
           {/* Master-operator chrome — only shown on the master surface (no activeBrand).
@@ -433,22 +457,34 @@ export function Shell({ children }: { children: ReactNode }) {
           {!activeBrand && (
             <>
               <BrandSwitcher activeBrand={activeBrand} />
-              <StatusPill tone="success" dot>3 partners awaiting approval</StatusPill>
+              <StatusPill tone="success" dot>
+                3 partners awaiting approval
+              </StatusPill>
             </>
           )}
-          <Button size="sm" variant="ghost">Help</Button>
+          <Button size="sm" variant="ghost">
+            Help
+          </Button>
           <UserMenu />
         </div>
       }
       sidebarFooter={
         <div className="space-y-2">
-          <div className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wider">{partnerOrg.displayName}</div>
+          <div className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wider">
+            {partnerOrg.displayName}
+          </div>
           <div className="leading-snug">
             {activeBrand
               ? `${BRANDS[activeBrand].name} merchant · ${partnerOrg.liveStates} live states`
               : `${partnerOrg.tier} · ${partnerOrg.liveStates} live states`}
           </div>
-          <div className="text-[11px] text-fg-muted">Member since {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
+          <div className="text-[11px] text-fg-muted">
+            Member since{' '}
+            {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', {
+              month: 'short',
+              year: 'numeric',
+            })}
+          </div>
         </div>
       }
     >

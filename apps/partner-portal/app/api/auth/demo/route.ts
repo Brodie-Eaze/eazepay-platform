@@ -21,15 +21,17 @@ import { z } from 'zod';
  */
 
 /**
- * Whether demo mode is allowed at all. In dev + preview environments
- * we default to allowed; in production the operator must opt-in by
- * setting `DEMO_MODE_ENABLED=true`. This is read at request time (not
- * cached at module init) so a Railway env flip takes effect on the
- * next request without redeploy.
+ * Whether demo mode is allowed at all. We default to allowed in every
+ * environment — the brand portal tiles on the sign-in page are the
+ * primary way prospective partners explore MedPay / TradePay / CoachPay
+ * before formal onboarding, and the platform has no live consumer
+ * money flowing today. Operators can hard-disable by setting
+ * `DEMO_MODE_ENABLED=false`; everything else (unset, 'true', any
+ * other value) keeps the tiles working. Read at request time so a
+ * Railway env flip takes effect on the next request without redeploy.
  */
 function isDemoModeAllowed(): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
-  return process.env.DEMO_MODE_ENABLED === 'true';
+  return process.env.DEMO_MODE_ENABLED !== 'false';
 }
 
 /**

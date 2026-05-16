@@ -115,17 +115,16 @@ function safeRedirect(raw: string | null | undefined): string {
 }
 
 /**
- * Whether the silent demo-cookie fallback is permitted on this client.
- * Mirrors the server-side `DEMO_MODE_ENABLED` gate in
- * `/api/auth/demo/route.ts` and the middleware trust check — even if
- * those layers refuse, we also refuse here so a failed real-auth
- * attempt in production never silently auto-promotes to a demo
- * session. Demo workspaces remain reachable through the explicit
- * "View demo" / role / brand tiles below the form.
+ * Whether the demo tiles below the form are usable. Mirrors the
+ * server-side `DEMO_MODE_ENABLED` gate in `/api/auth/demo/route.ts`.
+ * Default: allowed everywhere — operators can hard-disable by setting
+ * `NEXT_PUBLIC_DEMO_MODE_ENABLED=false` at build time. We never
+ * silently auto-promote a failed real-auth attempt to a demo session
+ * (see SEC-001 in signIn() below); the tiles are always an explicit
+ * user action.
  */
 function clientDemoFallbackAllowed(): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
-  return process.env.NEXT_PUBLIC_DEMO_MODE_ENABLED === 'true';
+  return process.env.NEXT_PUBLIC_DEMO_MODE_ENABLED !== 'false';
 }
 
 export default function SignInPage() {
