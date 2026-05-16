@@ -446,23 +446,23 @@ function LandingStep({ onApply }: { onApply: () => void }) {
             {/* Floating chips, anchored to corners */}
             <div
               className="tp-chip tp-chip-orange tp-chip-pulse"
-              style={{ top: '-56px', left: '-8px' }}
+              style={{ top: '-16px', left: '-8px' }}
             >
               <span className="tp-chip-dot tp-chip-dot-orange" />
               <span className="tp-chip-k">FCRA</span>
               <span className="tp-chip-v">soft pull · 0 impact</span>
             </div>
-            <div className="tp-chip tp-chip-funded" style={{ top: '-56px', right: '-8px' }}>
+            <div className="tp-chip tp-chip-funded" style={{ top: '-16px', right: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">DECISION</span>
               <span className="tp-chip-v">14s · 52 lenders</span>
             </div>
-            <div className="tp-chip" style={{ bottom: '-56px', left: '-8px' }}>
+            <div className="tp-chip" style={{ bottom: '-16px', left: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">PAYOUT</span>
               <span className="tp-chip-v">contractor-direct · 48-72hr</span>
             </div>
-            <div className="tp-chip" style={{ bottom: '-56px', right: '-8px' }}>
+            <div className="tp-chip" style={{ bottom: '-16px', right: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">PROMO</span>
               <span className="tp-chip-v">0% interest plans · T&Cs</span>
