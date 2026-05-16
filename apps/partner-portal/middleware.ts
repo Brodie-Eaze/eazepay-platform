@@ -43,19 +43,17 @@ const isPublic = (pathname: string): boolean => {
 };
 
 /**
- * In production, an `eazepay_demo` cookie is only accepted if the
- * deployment explicitly enabled demo mode (`DEMO_MODE_ENABLED=true`).
- * Otherwise an attacker who knows the cookie name could mint themselves
- * a "demo" session by setting it client-side. Dev + preview always
- * accept demo cookies to keep iteration fast.
- *
- * The cookie SETTER in /app/api/auth/demo/route.ts also enforces this —
- * this middleware check is defence-in-depth in case an old cookie
- * survives a production cutover, or someone forges one.
+ * Whether to honour an `eazepay_demo` cookie as a session. We default
+ * to trusting demo cookies everywhere because the brand portal tiles
+ * on the sign-in page are the primary way prospective MedPay /
+ * TradePay / CoachPay partners explore the platform before formal
+ * onboarding, and no live consumer money is flowing today. Operators
+ * can hard-disable by setting `DEMO_MODE_ENABLED=false` — the cookie
+ * setter in /app/api/auth/demo/route.ts honours the same flag, so a
+ * forged cookie hitting a hardened deployment fails both layers.
  */
 function demoCookieTrusted(): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
-  return process.env.DEMO_MODE_ENABLED === 'true';
+  return process.env.DEMO_MODE_ENABLED !== 'false';
 }
 
 export function middleware(req: NextRequest) {

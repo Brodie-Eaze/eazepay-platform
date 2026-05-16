@@ -523,6 +523,8 @@ function PipelineRow({
 
 /* ─── Generate invite modal ───────────────────────────────────────── */
 
+type LinkChoice = InviteBrand | 'universal';
+
 function GenerateInviteModal({
   onClose,
   onCreated,
@@ -530,23 +532,43 @@ function GenerateInviteModal({
   onClose: () => void;
   onCreated: () => void | Promise<void>;
 }) {
-  const [brand, setBrand] = useState<InviteBrand | null>(null);
+  const [brand, setBrand] = useState<LinkChoice | null>(null);
   const [businessName, setBusinessName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [expiryHours, setExpiryHours] = useState<24 | 168 | 720>(168);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ url: string; token: string; expiresAt: string } | null>(
-    null,
-  );
+  const [result, setResult] = useState<{
+    url: string;
+    token: string;
+    expiresAt: string;
+    brand: LinkChoice;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const generate = async () => {
     if (!brand) {
-      setError('Pick a brand to continue.');
+      setError('Pick a link type to continue.');
       return;
     }
+
+    // ── Universal link: prospect picks their own vertical on /welcome.
+    // No API token needed — the /welcome wizard already starts with an
+    // industry-picker step, so it's a safe public entry point. We just
+    // construct the URL client-side with the operator's ref so the
+    // submission is still attributed.
+    if (brand === 'universal') {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const params = new URLSearchParams({ ref: OPERATOR_ID });
+      if (businessName.trim()) params.set('business', businessName.trim());
+      if (contactEmail.trim()) params.set('email', contactEmail.trim());
+      const url = `${origin}/welcome?${params.toString()}`;
+      const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
+      setResult({ url, token: 'universal', expiresAt, brand: 'universal' });
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     try {
@@ -576,7 +598,7 @@ function GenerateInviteModal({
         token: string;
         expiresAt: string;
       };
-      setResult({ url: json.inviteUrl, token: json.token, expiresAt: json.expiresAt });
+      setResult({ url: json.inviteUrl, token: json.token, expiresAt: json.expiresAt, brand });
       await onCreated();
     } catch {
       setError('Network error. Try again.');
@@ -589,6 +611,47 @@ function GenerateInviteModal({
     navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  /**
+   * Open the OS email composer with a prefilled subject + body. Uses a
+   * `mailto:` link rather than a server-side send so it works from any
+   * device, requires no SMTP wiring, and lets the operator personalise
+   * before sending. The prospect's email goes in the To: field when we
+   * have it; otherwise the composer opens with no recipient.
+   */
+  const sendByEmail = (r: { url: string; expiresAt: string; brand: LinkChoice }) => {
+    const brandLabel =
+      r.brand === 'universal'
+        ? 'EazePay'
+        : (BRAND_TILES.find((b) => b.id === r.brand)?.name ?? 'EazePay');
+    const expiry = new Date(r.expiresAt).toLocaleString('en-AU', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    const greeting = businessName.trim() ? `Hi ${businessName.trim()} team,` : 'Hi,';
+    const verticalLine =
+      r.brand === 'universal'
+        ? "Once you start the wizard you'll pick the vertical that matches your business (MedPay, TradePay, or CoachPay)."
+        : `This is your direct onboarding link for ${brandLabel}.`;
+    const body =
+      `${greeting}\n\n` +
+      `Thanks for the chat. Here's your onboarding link to get set up on the EazePay platform:\n\n` +
+      `${r.url}\n\n` +
+      `${verticalLine}\n\n` +
+      `It expires ${expiry}. Reply to this email if you hit any snags.\n\n` +
+      `— Brodie\n` +
+      `${OPERATOR_EMAIL}`;
+    const subject = `Your EazePay onboarding link${brandLabel !== 'EazePay' ? ` · ${brandLabel}` : ''}`;
+    const to = encodeURIComponent(contactEmail.trim());
+    const params = `?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const href = `mailto:${to}${params}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = href;
+    }
   };
 
   return (
@@ -634,7 +697,21 @@ function GenerateInviteModal({
               {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
               {copied ? 'Copied' : 'Copy link'}
             </Button>
+            <Button
+              size="sm"
+              onClick={() => sendByEmail(result)}
+              aria-label="Open email composer with the invite link prefilled"
+            >
+              <SendIcon size={13} />
+              Send via email
+            </Button>
           </div>
+          {!contactEmail.trim() && (
+            <p className="text-[11px] text-fg-muted leading-snug">
+              No contact email captured — the composer will open with an empty To: field so you can
+              type it in.
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
             <Link
@@ -672,7 +749,10 @@ function GenerateInviteModal({
               className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-secondary mb-2"
               id="invite-brand-label"
             >
-              Brand <span className="text-fg-muted">(locked once sent)</span>
+              Link type{' '}
+              <span className="text-fg-muted">
+                (brand-locked, or universal if the vertical isn't decided)
+              </span>
             </p>
             <div
               role="radiogroup"
@@ -709,6 +789,49 @@ function GenerateInviteModal({
                 );
               })}
             </div>
+            {/* Universal tile — full-width, distinguished from the 3 brand
+                tiles. Sends the prospect to /welcome where they self-pick
+                their vertical (industry-picker is step 1 of that wizard). */}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={brand === 'universal'}
+              onClick={() => setBrand('universal')}
+              className={
+                'mt-2 w-full text-left rounded-md border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-1 ' +
+                (brand === 'universal'
+                  ? 'border-[#0d1530] bg-[#0d1530]/5 shadow-[inset_0_0_0_1px_#0d1530]'
+                  : 'border-border bg-bg hover:bg-bg-muted/40')
+              }
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className="inline-flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-indigo-500 to-emerald-500 text-white shrink-0"
+                  aria-hidden
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+                <span className="text-[13px] font-semibold text-fg">Universal · they pick</span>
+                <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted bg-bg-muted rounded px-1.5 py-0.5 ml-auto">
+                  Config link
+                </span>
+              </div>
+              <p className="text-[11px] text-fg-muted leading-snug">
+                When you don't know the vertical yet. The prospect lands on the EazePay onboarding
+                wizard and picks MedPay / TradePay / CoachPay themselves on step 1.
+              </p>
+            </button>
           </section>
 
           <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -761,8 +884,8 @@ function GenerateInviteModal({
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
             <p className="text-[11px] text-fg-muted max-w-sm leading-snug">
-              You copy the link. You send it via your channel of choice. The system stamps the
-              application with your operator id when they submit.
+              Copy the link or send it directly via email. The system stamps the application with
+              your operator id when they submit.
             </p>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="ghost" onClick={onClose}>
@@ -777,6 +900,8 @@ function GenerateInviteModal({
                     />
                     Generating…
                   </>
+                ) : brand === 'universal' ? (
+                  'Generate universal link'
                 ) : (
                   'Generate link'
                 )}

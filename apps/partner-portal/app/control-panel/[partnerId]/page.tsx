@@ -1066,6 +1066,52 @@ function PayoutsTab({ partnerId }: { partnerId: string }) {
 /* ----------------------------------------------------------------------- */
 
 function LenderAccessTab({ partnerId, flash }: { partnerId: string; flash: (m: string) => void }) {
+  // Bump version on mutate so the in-memory mock store re-renders.
+  const [version, setVersion] = useState(0);
+
+  // Toggle the per-partner override for a lender. Default-on means: if no
+  // override exists, the row is enabled (assuming global+marketplace are
+  // active). First click writes a disabled override; second click flips it
+  // back to enabled. To "reset to default" the operator can clear the
+  // override via the deeper /lender-marketplace/access editor.
+  const toggleLender = (lenderId: string, lenderName: string, currentEnabled: boolean) => {
+    const nextEnabled = !currentEnabled;
+    const now = new Date().toISOString();
+    const idx = partnerAccessOverrides.findIndex(
+      (o) => o.merchantId === partnerId && o.marketplaceLenderId === lenderId,
+    );
+    if (idx >= 0) {
+      const prev = partnerAccessOverrides[idx]!;
+      partnerAccessOverrides[idx] = {
+        ...prev,
+        enabled: nextEnabled,
+        reason: nextEnabled ? null : (prev.reason ?? 'Partner-level toggle'),
+        changedAt: now,
+      };
+    } else {
+      partnerAccessOverrides.push({
+        merchantId: partnerId,
+        marketplaceLenderId: lenderId,
+        enabled: nextEnabled,
+        reason: nextEnabled ? null : 'Partner-level toggle',
+        changedAt: now,
+      });
+    }
+    setVersion((v) => v + 1);
+    flash(`${lenderName} ${nextEnabled ? 'enabled' : 'disabled'} for this partner.`);
+  };
+
+  const clearOverride = (lenderId: string, lenderName: string) => {
+    const idx = partnerAccessOverrides.findIndex(
+      (o) => o.merchantId === partnerId && o.marketplaceLenderId === lenderId,
+    );
+    if (idx >= 0) {
+      partnerAccessOverrides.splice(idx, 1);
+      setVersion((v) => v + 1);
+      flash(`${lenderName} reset to global default.`);
+    }
+  };
+
   const view = useMemo(() => {
     return marketplaceLenders.map((l) => {
       const mkt = marketplaces.find((m) => m.id === l.marketplaceId)!;
@@ -1075,7 +1121,8 @@ function LenderAccessTab({ partnerId, flash }: { partnerId: string; flash: (m: s
       );
       return { lender: l, marketplace: mkt, effective: eff, override };
     });
-  }, [partnerId]);
+    // version dep ensures recompute after toggle
+  }, [partnerId, version]);
 
   const enabled = view.filter((v) => v.effective.enabled).length;
   const overridden = view.filter((v) => v.override).length;
@@ -1151,21 +1198,60 @@ function LenderAccessTab({ partnerId, flash }: { partnerId: string; flash: (m: s
                         <span className="text-fg-muted">Global</span>
                       )}
                     </div>
-                    <div className="col-span-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => flash('Override editor opens in /lender-marketplace/access')}
-                        aria-label={`${v.effective.enabled ? 'Enabled' : 'Disabled'} — open override editor for ${v.lender.displayName}`}
-                        className="inline-flex items-center gap-1.5 text-[11px] min-h-[36px] px-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+                    <div className="col-span-2 flex items-center justify-end gap-2">
+                      {v.override && (
+                        <button
+                          type="button"
+                          onClick={() => clearOverride(v.lender.id, v.lender.displayName)}
+                          className="text-[10px] text-fg-muted hover:text-fg underline-offset-2 hover:underline transition"
+                          title={`Reset to global default (${v.lender.globallyEnabled ? 'enabled' : 'disabled'})`}
+                        >
+                          reset
+                        </button>
+                      )}
+                      <label
+                        className={`relative inline-flex items-center gap-2 ${
+                          v.effective.via === 'marketplace-paused'
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'cursor-pointer'
+                        }`}
+                        title={
+                          v.effective.via === 'marketplace-paused'
+                            ? 'Marketplace is paused — cannot toggle.'
+                            : v.effective.enabled
+                              ? 'Click to disable for this partner'
+                              : 'Click to enable for this partner'
+                        }
                       >
                         <span
-                          className={`size-4 rounded-full inline-flex items-center justify-center ${v.effective.enabled ? 'bg-success text-white' : 'bg-bg-muted text-fg-muted'}`}
+                          className={`text-[11px] tabular-nums font-medium ${
+                            v.effective.enabled ? 'text-fg' : 'text-fg-muted'
+                          }`}
                           aria-hidden
                         >
-                          {v.effective.enabled ? <CheckIcon size={9} /> : <XIcon size={9} />}
+                          {v.effective.enabled ? 'On' : 'Off'}
                         </span>
-                        {v.effective.enabled ? 'Enabled' : 'Disabled'}
-                      </button>
+                        <input
+                          type="checkbox"
+                          checked={v.effective.enabled}
+                          disabled={v.effective.via === 'marketplace-paused'}
+                          onChange={() =>
+                            toggleLender(v.lender.id, v.lender.displayName, v.effective.enabled)
+                          }
+                          className="peer sr-only"
+                          aria-label={`Toggle ${v.lender.displayName} for this partner`}
+                        />
+                        <span
+                          className={`relative h-5 w-9 rounded-full bg-bg-muted ring-1 ring-border transition-colors duration-200 peer-checked:bg-emerald-500 peer-checked:ring-emerald-600/40 peer-focus-visible:ring-2 peer-focus-visible:ring-border-focus`}
+                          aria-hidden
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                              v.effective.enabled ? 'translate-x-4' : ''
+                            }`}
+                          />
+                        </span>
+                      </label>
                     </div>
                   </li>
                 ))}
