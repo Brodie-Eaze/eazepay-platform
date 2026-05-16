@@ -121,6 +121,16 @@ export default function TradePayApplyPage() {
     window.history.replaceState({ step }, '');
   }, [step]);
 
+  // Reset scroll to top whenever the step changes so consumers land at
+  // the top of the new step on mobile (no mid-page jumps).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, [step]);
+
   // Session-bind enforcement
   useEffect(() => {
     if (!sessionId) return;
@@ -244,7 +254,12 @@ export default function TradePayApplyPage() {
               />
             )}
             {step === 'intake' && (
-              <IntakeStep intake={intake} setIntake={setIntake} onSubmit={startEngine} />
+              <IntakeStep
+                intake={intake}
+                setIntake={setIntake}
+                onSubmit={startEngine}
+                onBack={() => setStep('disclaimer')}
+              />
             )}
             {step === 'engine' && <EngineStep />}
             {step === 'offers' && (
@@ -254,6 +269,7 @@ export default function TradePayApplyPage() {
                 lenders={eligibleLenders}
                 chosen={chosen}
                 setChosen={setChosen}
+                onBack={() => setStep('intake')}
               />
             )}
 
@@ -469,8 +485,155 @@ function LandingStep({ onApply }: { onApply: () => void }) {
             </div>
           </div>
         </div>
+
+        {/* ============== HOW IT WORKS ============== */}
+        <section id="how" className="tp-how">
+          <div className="tp-how-eyebrow">
+            <span className="tp-pill-dot tp-pill-dot-orange" />
+            HOW IT WORKS · 4 STEPS
+          </div>
+          <h2 className="tp-h2 tp-how-title">
+            <span className="tp-grad-text">From quote to funded</span>
+            <br />
+            <span className="tp-grad-text-darker">in 72 hours.</span>
+          </h2>
+          <div className="tp-how-grid">
+            {[
+              {
+                n: '01',
+                title: 'Apply at quote time',
+                body: 'Soft credit pull only — zero impact to your score. Takes about 60 seconds, in the driveway or on the kitchen counter.',
+              },
+              {
+                n: '02',
+                title: 'We match you',
+                body: '52 contractor-friendly lenders quoted in parallel. Pre-qualified offers ranked by lowest total cost.',
+              },
+              {
+                n: '03',
+                title: 'You pick the plan',
+                body: 'Compare APR, term, and monthly payment side-by-side. Plans from 24 to 84 months. APR from 8.49%.',
+              },
+              {
+                n: '04',
+                title: 'Contractor paid direct',
+                body: 'Once you accept, the lender pays your contractor directly — typically within 48 to 72 hours of acceptance.',
+              },
+            ].map((s) => (
+              <div key={s.n} className="tp-how-step tp-step-card">
+                <div className="tp-how-step-n">{s.n}</div>
+                <div className="tp-how-step-title">{s.title}</div>
+                <p className="tp-how-step-body">{s.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============== CALCULATOR ============== */}
+        <section className="tp-calc">
+          <div className="tp-calc-eyebrow">
+            <span className="tp-pill-dot tp-pill-dot-orange" />
+            PAYMENT ESTIMATOR · ILLUSTRATIVE ONLY
+          </div>
+          <h2 className="tp-h2 tp-calc-title">
+            <span className="tp-grad-text">What might my</span>
+            <br />
+            <span className="tp-grad-text-darker">monthly payment look like?</span>
+          </h2>
+          <TradePayCalculator onApply={onApply} />
+        </section>
       </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// TradePay payment estimator. Simple amortization at a representative
+// APR. Disclosed as illustrative.
+// ─────────────────────────────────────────────────────────────────────
+function TradePayCalculator({ onApply }: { onApply: () => void }) {
+  const [amount, setAmount] = useState(24000);
+  const [term, setTerm] = useState<36 | 48 | 60 | 72 | 84>(60);
+  const APR = 0.0849;
+  const r = APR / 12;
+  const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -term)));
+  const totalPaid = monthly * term;
+  const totalInterest = Math.max(0, totalPaid - amount);
+
+  return (
+    <div className="tp-calc-card tp-step-card">
+      <div className="tp-calc-grid">
+        <div className="tp-calc-field">
+          <div className="tp-calc-label">
+            <span>Project amount</span>
+            <strong>${amount.toLocaleString('en-US')}</strong>
+          </div>
+          <input
+            type="range"
+            min={2500}
+            max={75000}
+            step={500}
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            className="tp-calc-range"
+            aria-label="Project amount in USD"
+          />
+          <div className="tp-calc-range-foot">
+            <span>$2.5k</span>
+            <span>$75k</span>
+          </div>
+        </div>
+
+        <div className="tp-calc-field">
+          <div className="tp-calc-label">
+            <span>Term</span>
+            <strong>{term} months</strong>
+          </div>
+          <div className="tp-calc-terms">
+            {([36, 48, 60, 72, 84] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`tp-calc-term ${t === term ? 'is-active' : ''}`}
+                onClick={() => setTerm(t)}
+                aria-pressed={t === term}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="tp-calc-result">
+        <div className="tp-calc-result-main">
+          <div className="tp-calc-result-k">Est. monthly</div>
+          <div className="tp-calc-result-v">
+            ${monthly.toLocaleString('en-US')}
+            <span className="tp-calc-result-unit"> / mo</span>
+          </div>
+        </div>
+        <div className="tp-calc-result-side">
+          <div>
+            <div className="tp-calc-result-k">APR (representative)</div>
+            <div className="tp-calc-result-vs">8.49%</div>
+          </div>
+          <div>
+            <div className="tp-calc-result-k">Total interest</div>
+            <div className="tp-calc-result-vs">${totalInterest.toLocaleString('en-US')}</div>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" className="tp-btn-primary lg full tp-calc-cta" onClick={onApply}>
+        Check my real rate
+        <ArrowRightIcon size={14} />
+      </button>
+      <p className="tp-calc-disc">
+        Illustrative only. Your actual APR, term, and monthly payment are determined by your
+        pre-qualified offers and credit profile. Soft pull only — zero impact to your score.
+      </p>
+    </div>
   );
 }
 
@@ -542,13 +705,19 @@ function IntakeStep({
   intake,
   setIntake,
   onSubmit,
+  onBack,
 }: {
   intake: Intake;
   setIntake: (next: Intake) => void;
   onSubmit: () => void;
+  onBack: () => void;
 }) {
   return (
     <div className="tp-step tp-step-card">
+      <button type="button" className="tp-step-back" onClick={onBack} aria-label="Back to consent">
+        <span aria-hidden>←</span>
+        <span>Back</span>
+      </button>
       <div className="tp-step-tag">02 · YOUR DETAILS</div>
       <h2 className="tp-h2">
         <span className="tp-grad-text">Let&apos;s match you with</span>
@@ -698,12 +867,14 @@ function OffersStep({
   lenders,
   chosen,
   setChosen,
+  onBack,
 }: {
   tier: CreditTier;
   amountCents: number;
   lenders: MarketplaceLenderRow[];
   chosen: string | null;
   setChosen: (id: string) => void;
+  onBack: () => void;
 }) {
   const effectiveAmount = amountCents > 0 ? amountCents : 24_000_00;
   const [term, setTerm] = useState<48 | 60 | 72>(60);
@@ -742,6 +913,15 @@ function OffersStep({
 
   return (
     <div className="tp-offers">
+      <button
+        type="button"
+        className="tp-step-back"
+        onClick={onBack}
+        aria-label="Back to your details"
+      >
+        <span aria-hidden>←</span>
+        <span>Back</span>
+      </button>
       <div className="tp-offers-head">
         <div className="tp-step-tag">
           <span className="tp-pill-dot tp-pill-dot-orange" />
@@ -1927,4 +2107,247 @@ const TRADEPAY_APPLY_CSS = `
     transform: none !important;
   }
 }
+
+/* ============== STEP BACK BUTTON ============== */
+.tradepay-root .tp-step-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #334155;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: background 160ms ease, transform 160ms ease;
+  min-height: 36px;
+}
+.tradepay-root .tp-step-back:hover { background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.22); color: #c2410c; }
+.tradepay-root .tp-step-back:active { transform: translateY(1px); }
+
+/* ============== HOW IT WORKS ============== */
+.tradepay-root .tp-how {
+  margin-top: 96px;
+  padding-top: 24px;
+  scroll-margin-top: 80px;
+  position: relative;
+  z-index: 1;
+}
+.tradepay-root .tp-how-eyebrow,
+.tradepay-root .tp-calc-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.22);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #c2410c;
+  text-transform: uppercase;
+}
+.tradepay-root .tp-how-title,
+.tradepay-root .tp-calc-title { margin: 16px 0 28px; letter-spacing: -0.025em; }
+.tradepay-root .tp-how-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.tradepay-root .tp-how-step { padding: 22px 20px; border-radius: 18px; position: relative; }
+.tradepay-root .tp-how-step-n {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ea580c;
+  letter-spacing: 0.08em;
+}
+.tradepay-root .tp-how-step-title {
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.tradepay-root .tp-how-step-body {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #475569;
+}
+
+/* ============== CALCULATOR ============== */
+.tradepay-root .tp-calc {
+  margin-top: 64px;
+  padding-bottom: 96px;
+  position: relative;
+  z-index: 1;
+}
+.tradepay-root .tp-calc-card { padding: 28px; border-radius: 22px; max-width: 760px; }
+.tradepay-root .tp-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.tradepay-root .tp-calc-field { display: flex; flex-direction: column; gap: 10px; }
+.tradepay-root .tp-calc-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+.tradepay-root .tp-calc-label strong {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  text-transform: none;
+  font-feature-settings: 'tnum';
+}
+.tradepay-root .tp-calc-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0f172a, #f97316);
+  outline: none;
+  margin: 6px 0;
+}
+.tradepay-root .tp-calc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #f97316;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
+  cursor: pointer;
+}
+.tradepay-root .tp-calc-range::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #f97316;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
+  cursor: pointer;
+}
+.tradepay-root .tp-calc-range-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.tradepay-root .tp-calc-terms { display: flex; flex-wrap: wrap; gap: 8px; }
+.tradepay-root .tp-calc-term {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 160ms ease;
+  min-width: 56px;
+  min-height: 40px;
+}
+.tradepay-root .tp-calc-term:hover {
+  background: rgba(249, 115, 22, 0.06);
+  border-color: rgba(249, 115, 22, 0.22);
+}
+.tradepay-root .tp-calc-term.is-active {
+  background: linear-gradient(135deg, #0f172a, #ea580c);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.3);
+}
+.tradepay-root .tp-calc-result {
+  margin-top: 24px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(15, 23, 42, 0.04));
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  align-items: center;
+}
+.tradepay-root .tp-calc-result-k {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+.tradepay-root .tp-calc-result-v {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  line-height: 1;
+  margin-top: 4px;
+  font-feature-settings: 'tnum';
+}
+.tradepay-root .tp-calc-result-unit {
+  font-size: 16px;
+  color: #64748b;
+  font-weight: 600;
+  margin-left: 2px;
+}
+.tradepay-root .tp-calc-result-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.tradepay-root .tp-calc-result-vs {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin-top: 4px;
+  font-feature-settings: 'tnum';
+}
+.tradepay-root .tp-calc-cta { margin-top: 18px; }
+.tradepay-root .tp-calc-disc {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+/* ============== RESPONSIVE — HOW / CALC ============== */
+@media (max-width: 960px) {
+  .tradepay-root .tp-how-grid { grid-template-columns: repeat(2, 1fr); }
+  .tradepay-root .tp-calc-grid { grid-template-columns: 1fr; }
+  .tradepay-root .tp-calc-result { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+  .tradepay-root .tp-how { margin-top: 72px; }
+  .tradepay-root .tp-how-grid { grid-template-columns: 1fr; gap: 12px; }
+  .tradepay-root .tp-how-step { padding: 18px 16px; }
+  .tradepay-root .tp-calc-card { padding: 22px 18px; }
+  .tradepay-root .tp-calc-result { padding: 16px 18px; }
+  .tradepay-root .tp-calc-result-v { font-size: 32px; }
+  .tradepay-root .tp-calc-result-side { grid-template-columns: 1fr 1fr; }
+  .tradepay-root .tp-apply-container { padding: 0 18px !important; }
+  /* keep inputs touch-target sized */
+  .tradepay-root .tp-form input { min-height: 48px; font-size: 16px; }
+}
+
+/* ============== VIEWPORT LOCK (no horizontal shake) ============== */
+html, body { overflow-x: hidden; width: 100%; max-width: 100%; }
+.tradepay-root, .tradepay-root * { max-width: 100%; }
+.tradepay-root img, .tradepay-root svg { max-width: 100%; height: auto; }
+.tradepay-root .tp-apply-footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 `;

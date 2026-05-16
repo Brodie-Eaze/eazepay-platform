@@ -56,11 +56,13 @@ const fundedVolume: Array<{ label: string; value: number }> = [
   { label: 'May', value: 0 },
 ];
 
+// Lighter, livelier donut palette — graded indigo → soft slate.
+// Reads as a single chart, not 4 separate moods, and lifts the whole card.
 const creditInsights = [
-  { name: 'Prime', range: '700–850', pct: 18, color: '#0d1530' },
-  { name: 'NearPrime', range: '640–699', pct: 14, color: '#1e3a8a' },
-  { name: 'Subprime', range: '580–639', pct: 6, color: '#94a3b8' },
-  { name: 'DeepSubprime', range: '300–579', pct: 6, color: '#cbd5e1' },
+  { name: 'Prime', range: '700–850', pct: 18, color: '#4338ca' }, // indigo-700
+  { name: 'NearPrime', range: '640–699', pct: 14, color: '#6366f1' }, // indigo-500
+  { name: 'Subprime', range: '580–639', pct: 6, color: '#a5b4fc' }, // indigo-300
+  { name: 'DeepSubprime', range: '300–579', pct: 6, color: '#cbd5e1' }, // slate-300
 ];
 
 const leaderboard = partners
@@ -90,19 +92,28 @@ export default function CommandCenter() {
       <PageBody>
         {/* ── KPI grid (6 cards) ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <Kpi label="Submitted" value="478" delta={12} />
-          <Kpi label="Approved" value="70" delta={5} />
-          <Kpi label="Funded" value="68" delta={8} />
+          <Kpi label="Submitted" value="478" delta={12} accent="indigo" />
+          <Kpi label="Approved" value="70" delta={5} accent="emerald" />
+          <Kpi label="Funded" value="68" delta={8} accent="violet" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Kpi
             label="Total Funded"
-            value={formatCurrency(masterKpis.totalFundedCents).replace(/\.\d+/, '').replace(',000,000', 'M')}
+            value={formatCurrency(masterKpis.totalFundedCents)
+              .replace(/\.\d+/, '')
+              .replace(',000,000', 'M')}
             delta={22}
             icon={<DollarIcon size={14} />}
+            accent="sky"
           />
-          <Kpi label="Declined" value="12" delta={-15} icon={<XIcon size={14} />} />
-          <Kpi label="In Review" value="8" delta={10} icon={<ClockIcon size={14} />} />
+          <Kpi label="Declined" value="12" delta={-15} icon={<XIcon size={14} />} accent="rose" />
+          <Kpi
+            label="In Review"
+            value="8"
+            delta={10}
+            icon={<ClockIcon size={14} />}
+            accent="amber"
+          />
         </div>
 
         {/* ── 3-up chart row ── */}
@@ -151,35 +162,37 @@ export default function CommandCenter() {
                       href={`/control-panel/${row.partnerId}`}
                       className="grid grid-cols-12 items-center gap-4 px-5 py-4 hover:bg-bg-muted/30"
                     >
-                    {/* Rank */}
-                    <div className="col-span-1 flex items-center gap-2 text-[13px]">
-                      {row.rank === 1 ? (
-                        <span className="text-fg">
-                          <TrophyIcon size={16} />
-                        </span>
-                      ) : (
-                        <span className="text-fg-muted font-medium w-4 text-center">{row.rank}</span>
-                      )}
-                    </div>
-                    {/* Name + progress bar */}
-                    <div className="col-span-7 min-w-0">
-                      <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                        <p className="text-[14px] font-semibold text-fg truncate">{row.name}</p>
-                        <p className="text-[14px] font-bold tabular-nums text-fg shrink-0">
-                          {formatFunded(row.funded)}
-                        </p>
+                      {/* Rank */}
+                      <div className="col-span-1 flex items-center gap-2 text-[13px]">
+                        {row.rank === 1 ? (
+                          <span className="text-fg">
+                            <TrophyIcon size={16} />
+                          </span>
+                        ) : (
+                          <span className="text-fg-muted font-medium w-4 text-center">
+                            {row.rank}
+                          </span>
+                        )}
                       </div>
-                      <div className="h-1.5 rounded-full bg-bg-muted overflow-hidden">
-                        <span
-                          className="block h-full rounded-full bg-[#0d1530]"
-                          style={{ width: `${Math.max(8, pct)}%` }}
-                        />
+                      {/* Name + progress bar */}
+                      <div className="col-span-7 min-w-0">
+                        <div className="flex items-baseline justify-between gap-3 mb-1.5">
+                          <p className="text-[14px] font-semibold text-fg truncate">{row.name}</p>
+                          <p className="text-[14px] font-bold tabular-nums text-fg shrink-0">
+                            {formatFunded(row.funded)}
+                          </p>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-bg-muted overflow-hidden">
+                          <span
+                            className="block h-full rounded-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-400 shadow-[0_0_0_1px_rgba(99,102,241,0.18)]"
+                            style={{ width: `${Math.max(8, pct)}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    {/* 3 stat columns */}
-                    <Stat n={row.apps} label="Apps" className="col-span-1" />
-                    <Stat n={row.fundedCount} label="Funded" className="col-span-1" />
-                    <Stat n={`${row.approval}%`} label="Approval" className="col-span-2" />
+                      {/* 3 stat columns */}
+                      <Stat n={row.apps} label="Apps" className="col-span-1" />
+                      <Stat n={row.fundedCount} label="Funded" className="col-span-1" />
+                      <Stat n={`${row.approval}%`} label="Approval" className="col-span-2" />
                     </Link>
                   </li>
                 );
@@ -199,29 +212,84 @@ function Kpi({
   value,
   delta,
   icon,
+  accent = 'indigo',
 }: {
   label: string;
   value: string;
   delta: number;
   icon?: React.ReactNode;
+  accent?: 'indigo' | 'emerald' | 'sky' | 'amber' | 'rose' | 'violet';
 }) {
   const positive = delta >= 0;
+  const accentMap = {
+    indigo: {
+      ring: 'from-indigo-500/15 to-indigo-500/0',
+      icon: 'text-indigo-600',
+      stripe: 'from-indigo-500 to-indigo-300',
+    },
+    emerald: {
+      ring: 'from-emerald-500/15 to-emerald-500/0',
+      icon: 'text-emerald-600',
+      stripe: 'from-emerald-500 to-emerald-300',
+    },
+    sky: {
+      ring: 'from-sky-500/15 to-sky-500/0',
+      icon: 'text-sky-600',
+      stripe: 'from-sky-500 to-sky-300',
+    },
+    amber: {
+      ring: 'from-amber-500/15 to-amber-500/0',
+      icon: 'text-amber-600',
+      stripe: 'from-amber-500 to-amber-300',
+    },
+    rose: {
+      ring: 'from-rose-500/15 to-rose-500/0',
+      icon: 'text-rose-600',
+      stripe: 'from-rose-500 to-rose-300',
+    },
+    violet: {
+      ring: 'from-violet-500/15 to-violet-500/0',
+      icon: 'text-violet-600',
+      stripe: 'from-violet-500 to-violet-300',
+    },
+  } as const;
+  const A = accentMap[accent];
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-5 py-4">
-      <div className="flex items-start justify-between">
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-bg-elevated px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-200">
+      {/* top accent stripe */}
+      <span
+        className={`absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r ${A.stripe} opacity-80`}
+        aria-hidden
+      />
+      {/* corner halo */}
+      <span
+        className={`pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br ${A.ring} blur-xl`}
+        aria-hidden
+      />
+      <div className="relative flex items-start justify-between">
         <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">
           {label}
         </p>
-        {icon && <span className="text-fg-muted">{icon}</span>}
+        {icon && (
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-lg bg-bg-muted/60 ${A.icon}`}
+          >
+            {icon}
+          </span>
+        )}
       </div>
-      <p className="mt-1 text-[20px] font-semibold tracking-tight text-fg leading-none">{value}</p>
+      <p className="relative mt-1 text-[22px] font-semibold tracking-tight text-fg leading-none tabular-nums">
+        {value}
+      </p>
       <p
         className={
-          'mt-2 flex items-center gap-1 text-[12px] font-semibold ' +
-          (positive ? 'text-fg' : 'text-fg-muted')
+          'relative mt-2 inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-[11px] font-semibold ' +
+          (positive
+            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70'
+            : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200/70')
         }
       >
-        {positive ? <TrendUpIcon size={12} /> : <TrendDownIcon size={12} />}
+        {positive ? <TrendUpIcon size={11} /> : <TrendDownIcon size={11} />}
         {positive ? '+' : ''}
         {delta}%
       </p>
@@ -264,7 +332,10 @@ function BarChartGrey({
     <div className="relative">
       <div className="flex">
         {/* Y-axis labels */}
-        <div className="w-12 flex flex-col justify-between text-[10px] text-fg-muted py-1" style={{ height: chartH }}>
+        <div
+          className="w-12 flex flex-col justify-between text-[10px] text-fg-muted py-1"
+          style={{ height: chartH }}
+        >
           {yTicks.map((y) => (
             <div key={y}>{yFormat(y)}</div>
           ))}
@@ -284,7 +355,10 @@ function BarChartGrey({
               const h = max === 0 ? 0 : (d.value / max) * (chartH - 8);
               return (
                 <div key={d.label} className="flex-1 max-w-[28px] flex flex-col items-center">
-                  <div className="w-full rounded-t-sm bg-slate-300/80" style={{ height: h }} />
+                  <div
+                    className="w-full rounded-t-md bg-gradient-to-t from-indigo-500/85 via-indigo-400/75 to-indigo-300/70"
+                    style={{ height: h }}
+                  />
                 </div>
               );
             })}
@@ -332,11 +406,28 @@ function CreditDonut() {
   return (
     <div>
       <div className="flex justify-center py-3">
-        <svg width="160" height="160" viewBox="0 0 150 150">
-          <circle cx={center} cy={center} r="58" fill="none" stroke="#f1f5f9" strokeWidth="22" />
+        <svg
+          width="160"
+          height="160"
+          viewBox="0 0 150 150"
+          style={{ filter: 'drop-shadow(0 6px 14px rgba(67,56,202,0.18))' }}
+        >
+          {/* track */}
+          <circle cx={center} cy={center} r="58" fill="none" stroke="#eef2ff" strokeWidth="22" />
+          {/* segments */}
           {segments.map((s, i) => (
-            <path key={i} d={arc(center, center, 58, s.start, s.end, 22)} fill={s.color} />
+            <path
+              key={i}
+              d={arc(center, center, 58, s.start, s.end, 22)}
+              fill={s.color}
+              style={{
+                transformOrigin: `${center}px ${center}px`,
+                animation: `donutGrow 720ms cubic-bezier(.22,1,.36,1) ${i * 80}ms both`,
+              }}
+            />
           ))}
+          {/* center disc — softens the "35" against any segment */}
+          <circle cx={center} cy={center} r="38" fill="#ffffff" />
           <text
             x={center}
             y={center + 7}
@@ -347,6 +438,18 @@ function CreditDonut() {
             35
           </text>
         </svg>
+        <style jsx>{`
+          @keyframes donutGrow {
+            from {
+              transform: scale(0.92);
+              opacity: 0;
+            }
+            to {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+        `}</style>
       </div>
 
       {/* Table */}
@@ -363,7 +466,9 @@ function CreditDonut() {
               <span className="text-fg truncate">{c.name}</span>
             </span>
             <span className="col-span-4 text-right text-fg-secondary tabular-nums">{c.range}</span>
-            <span className="col-span-2 text-right text-fg font-semibold tabular-nums">{c.pct}</span>
+            <span className="col-span-2 text-right text-fg font-semibold tabular-nums">
+              {c.pct}
+            </span>
           </li>
         ))}
       </ul>
@@ -371,15 +476,7 @@ function CreditDonut() {
   );
 }
 
-function Stat({
-  n,
-  label,
-  className,
-}: {
-  n: number | string;
-  label: string;
-  className?: string;
-}) {
+function Stat({ n, label, className }: { n: number | string; label: string; className?: string }) {
   return (
     <div className={'text-right ' + (className ?? '')}>
       <div className="text-[15px] font-bold text-fg tabular-nums leading-none">{n}</div>

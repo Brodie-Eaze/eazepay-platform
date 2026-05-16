@@ -121,6 +121,16 @@ export default function CoachPayApplyPage() {
     window.history.replaceState({ step }, '');
   }, [step]);
 
+  // Reset scroll to top whenever the step changes so consumers land at
+  // the top of the new step on mobile (no mid-page jumps).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, [step]);
+
   // Session-bind enforcement
   useEffect(() => {
     if (!sessionId) return;
@@ -250,7 +260,12 @@ export default function CoachPayApplyPage() {
               />
             )}
             {step === 'intake' && (
-              <IntakeStep intake={intake} setIntake={setIntake} onSubmit={startEngine} />
+              <IntakeStep
+                intake={intake}
+                setIntake={setIntake}
+                onSubmit={startEngine}
+                onBack={() => setStep('disclaimer')}
+              />
             )}
             {step === 'engine' && <EngineStep />}
             {step === 'offers' && (
@@ -260,6 +275,7 @@ export default function CoachPayApplyPage() {
                 lenders={eligibleLenders}
                 chosen={chosen}
                 setChosen={setChosen}
+                onBack={() => setStep('intake')}
               />
             )}
 
@@ -461,8 +477,159 @@ function LandingStep({ onApply }: { onApply: () => void }) {
             </div>
           </div>
         </div>
+
+        {/* ============== HOW IT WORKS ============== */}
+        <section id="how" className="cp-how">
+          <div className="cp-how-eyebrow">
+            <span className="cp-eyebrow-dot" />
+            HOW IT WORKS · 4 STEPS
+          </div>
+          <h2 className="cp-apply-h2 cp-how-title">
+            <span className="cp-grad-text">From enrolment call</span>
+            <br />
+            <span className="cp-grad-text-violet">to funded in 72 hours.</span>
+          </h2>
+          <div className="cp-how-grid">
+            {[
+              {
+                n: '01',
+                title: 'Apply during your enrolment call',
+                body: 'Soft credit pull only — zero impact to your score. Takes about 60 seconds on your phone, before you commit.',
+              },
+              {
+                n: '02',
+                title: 'We match you',
+                body: '52 coaching-friendly lenders quoted in parallel. Pre-qualified offers ranked by lowest total cost.',
+              },
+              {
+                n: '03',
+                title: 'You pick the plan',
+                body: 'Compare APR, term, and monthly payment side-by-side. Plans from 24 to 60 months. APR from 5.9%.',
+              },
+              {
+                n: '04',
+                title: 'Program paid direct',
+                body: 'Once you accept, the lender pays your coach or program directly — typically within 48 to 72 hours.',
+              },
+            ].map((s) => (
+              <div key={s.n} className="cp-how-step cp-step-glass">
+                <div className="cp-how-step-n">{s.n}</div>
+                <div className="cp-how-step-title">{s.title}</div>
+                <p className="cp-how-step-body">{s.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============== CALCULATOR ============== */}
+        <section className="cp-calc">
+          <div className="cp-calc-eyebrow">
+            <span className="cp-eyebrow-dot" />
+            PAYMENT ESTIMATOR · ILLUSTRATIVE ONLY
+          </div>
+          <h2 className="cp-apply-h2 cp-calc-title">
+            <span className="cp-grad-text">What might my</span>
+            <br />
+            <span className="cp-grad-text-violet">monthly payment look like?</span>
+          </h2>
+          <CoachPayCalculator onApply={onApply} />
+        </section>
       </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// CoachPay payment estimator. Simple amortization at a representative
+// APR. Disclosed as illustrative.
+// ─────────────────────────────────────────────────────────────────────
+function CoachPayCalculator({ onApply }: { onApply: () => void }) {
+  const [amount, setAmount] = useState(14000);
+  const [term, setTerm] = useState<24 | 36 | 48 | 60>(36);
+  const APR = 0.059;
+  const r = APR / 12;
+  const monthly = Math.round((amount * r) / (1 - Math.pow(1 + r, -term)));
+  const totalPaid = monthly * term;
+  const totalInterest = Math.max(0, totalPaid - amount);
+
+  return (
+    <div className="cp-calc-card cp-step-glass">
+      <div className="cp-calc-grid">
+        <div className="cp-calc-field">
+          <div className="cp-calc-label">
+            <span>Tuition / program cost</span>
+            <strong>${amount.toLocaleString('en-US')}</strong>
+          </div>
+          <input
+            type="range"
+            min={1500}
+            max={50000}
+            step={500}
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            className="cp-calc-range"
+            aria-label="Tuition or program cost in USD"
+          />
+          <div className="cp-calc-range-foot">
+            <span>$1.5k</span>
+            <span>$50k</span>
+          </div>
+        </div>
+
+        <div className="cp-calc-field">
+          <div className="cp-calc-label">
+            <span>Term</span>
+            <strong>{term} months</strong>
+          </div>
+          <div className="cp-calc-terms">
+            {([24, 36, 48, 60] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`cp-calc-term ${t === term ? 'is-active' : ''}`}
+                onClick={() => setTerm(t)}
+                aria-pressed={t === term}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="cp-calc-result">
+        <div className="cp-calc-result-main">
+          <div className="cp-calc-result-k">Est. monthly</div>
+          <div className="cp-calc-result-v">
+            ${monthly.toLocaleString('en-US')}
+            <span className="cp-calc-result-unit"> / mo</span>
+          </div>
+        </div>
+        <div className="cp-calc-result-side">
+          <div>
+            <div className="cp-calc-result-k">APR (representative)</div>
+            <div className="cp-calc-result-vs">5.9%</div>
+          </div>
+          <div>
+            <div className="cp-calc-result-k">Total interest</div>
+            <div className="cp-calc-result-vs">${totalInterest.toLocaleString('en-US')}</div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="cp-btn cp-btn--primary cp-btn--lg cp-btn--full cp-calc-cta"
+        onClick={onApply}
+      >
+        Check my real rate
+        <ArrowRightIcon size={14} />
+      </button>
+      <p className="cp-calc-disc">
+        Illustrative only. Your actual APR, term, and monthly payment are determined by your
+        pre-qualified offers and credit profile. Soft pull only — zero impact to your score.
+      </p>
+    </div>
   );
 }
 
@@ -534,13 +701,19 @@ function IntakeStep({
   intake,
   setIntake,
   onSubmit,
+  onBack,
 }: {
   intake: Intake;
   setIntake: (next: Intake) => void;
   onSubmit: () => void;
+  onBack: () => void;
 }) {
   return (
     <div className="cp-step cp-step-glass">
+      <button type="button" className="cp-step-back" onClick={onBack} aria-label="Back to consent">
+        <span aria-hidden>←</span>
+        <span>Back</span>
+      </button>
       <div className="cp-step-tag">02 · YOUR DETAILS</div>
       <h2 className="cp-apply-h2">
         <span className="cp-grad-text">Let&apos;s match you with</span>
@@ -687,12 +860,14 @@ function OffersStep({
   lenders,
   chosen,
   setChosen,
+  onBack,
 }: {
   tier: CreditTier;
   amountCents: number;
   lenders: MarketplaceLenderRow[];
   chosen: string | null;
   setChosen: (id: string) => void;
+  onBack: () => void;
 }) {
   const effectiveAmount = amountCents > 0 ? amountCents : 14_000_00;
   const [term, setTerm] = useState<36 | 48 | 60>(36);
@@ -731,6 +906,15 @@ function OffersStep({
 
   return (
     <div className="cp-offers">
+      <button
+        type="button"
+        className="cp-step-back"
+        onClick={onBack}
+        aria-label="Back to your details"
+      >
+        <span aria-hidden>←</span>
+        <span>Back</span>
+      </button>
       <div className="cp-offers-head">
         <div className="cp-step-tag">
           <span className="cp-eyebrow-dot" />
@@ -1834,4 +2018,244 @@ const COACHPAY_APPLY_CSS = `
   }
   .cp-chip--violet::after { display: none !important; }
 }
+
+/* ============== STEP BACK BUTTON ============== */
+.cp-step-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(124, 58, 237, 0.08);
+  color: #e9d5ff;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: background 160ms ease, transform 160ms ease;
+  min-height: 36px;
+}
+.cp-step-back:hover { background: rgba(124, 58, 237, 0.16); }
+.cp-step-back:active { transform: translateY(1px); }
+
+/* ============== HOW IT WORKS ============== */
+.cp-how {
+  margin-top: 96px;
+  padding-top: 24px;
+  scroll-margin-top: 80px;
+  position: relative;
+  z-index: 1;
+}
+.cp-how-eyebrow,
+.cp-calc-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #e9d5ff;
+  text-transform: uppercase;
+}
+.cp-how-title,
+.cp-calc-title { margin: 16px 0 28px; letter-spacing: -0.025em; }
+.cp-how-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.cp-how-step { padding: 22px 20px; border-radius: 18px; position: relative; }
+.cp-how-step-n {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c4b5fd;
+  letter-spacing: 0.08em;
+}
+.cp-how-step-title {
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f5f3ff;
+}
+.cp-how-step-body {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(245, 243, 255, 0.72);
+}
+
+/* ============== CALCULATOR ============== */
+.cp-calc {
+  margin-top: 64px;
+  padding-bottom: 96px;
+  position: relative;
+  z-index: 1;
+}
+.cp-calc-card { padding: 28px; border-radius: 22px; max-width: 760px; }
+.cp-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.cp-calc-field { display: flex; flex-direction: column; gap: 10px; }
+.cp-calc-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 243, 255, 0.6);
+  font-weight: 700;
+}
+.cp-calc-label strong {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: #f5f3ff;
+  text-transform: none;
+  font-feature-settings: 'tnum';
+}
+.cp-calc-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7c3aed, #c4b5fd);
+  outline: none;
+  margin: 6px 0;
+}
+.cp-calc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #f5f3ff;
+  border: 2px solid #7c3aed;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.4);
+  cursor: pointer;
+}
+.cp-calc-range::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #f5f3ff;
+  border: 2px solid #7c3aed;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.4);
+  cursor: pointer;
+}
+.cp-calc-range-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(245, 243, 255, 0.55);
+  font-weight: 600;
+}
+.cp-calc-terms { display: flex; flex-wrap: wrap; gap: 8px; }
+.cp-calc-term {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  color: #f5f3ff;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 160ms ease;
+  min-width: 56px;
+  min-height: 40px;
+}
+.cp-calc-term:hover { background: rgba(124, 58, 237, 0.16); }
+.cp-calc-term.is-active {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.4);
+}
+.cp-calc-result {
+  margin-top: 24px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(196, 181, 253, 0.1));
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  align-items: center;
+}
+.cp-calc-result-k {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245, 243, 255, 0.6);
+  font-weight: 700;
+}
+.cp-calc-result-v {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #f5f3ff;
+  line-height: 1;
+  margin-top: 4px;
+  font-feature-settings: 'tnum';
+}
+.cp-calc-result-unit {
+  font-size: 16px;
+  color: rgba(245, 243, 255, 0.6);
+  font-weight: 600;
+  margin-left: 2px;
+}
+.cp-calc-result-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cp-calc-result-vs {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f5f3ff;
+  margin-top: 4px;
+  font-feature-settings: 'tnum';
+}
+.cp-calc-cta { margin-top: 18px; }
+.cp-calc-disc {
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: rgba(245, 243, 255, 0.55);
+  line-height: 1.55;
+}
+
+/* ============== RESPONSIVE — HOW / CALC ============== */
+@media (max-width: 960px) {
+  .cp-how-grid { grid-template-columns: repeat(2, 1fr); }
+  .cp-calc-grid { grid-template-columns: 1fr; }
+  .cp-calc-result { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+  .cp-how { margin-top: 72px; }
+  .cp-how-grid { grid-template-columns: 1fr; gap: 12px; }
+  .cp-how-step { padding: 18px 16px; }
+  .cp-calc-card { padding: 22px 18px; }
+  .cp-calc-result { padding: 16px 18px; }
+  .cp-calc-result-v { font-size: 32px; }
+  .cp-calc-result-side { grid-template-columns: 1fr 1fr; }
+  .cp-apply-container { padding: 0 18px !important; }
+  /* keep inputs touch-target sized */
+  .cp-form input { min-height: 48px; font-size: 16px; }
+}
+
+/* ============== VIEWPORT LOCK (no horizontal shake) ============== */
+html, body { overflow-x: hidden; width: 100%; max-width: 100%; }
+.coachpay-root, .coachpay-root * { max-width: 100%; }
+.coachpay-root img, .coachpay-root svg { max-width: 100%; height: auto; }
+.cp-apply-footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 `;
