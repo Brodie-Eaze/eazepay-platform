@@ -185,7 +185,9 @@ export default function ApplyLandingPage() {
       amt < 5_000_00 ||
       amt > 50_000_00
     ) {
-      setError('Please fill every field. Phone must be 10 digits and amount between $5,000–$50,000.');
+      setError(
+        'Please fill every field. Phone must be 10 digits and amount between $5,000–$50,000.',
+      );
       return;
     }
     // Soft tier inference for the demo — production routes through the
@@ -203,7 +205,12 @@ export default function ApplyLandingPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: `rgb(${theme.soft})` }}>
+    <div
+      data-brand={b}
+      className="min-h-screen apply-shell"
+      style={{ background: `rgb(${theme.soft})` }}
+    >
+      {b === 'medpay' && <MedPayStyleBlock />}
       {/* Hardening item 10: idle timeout. */}
       <ConsumerIdleGuard onExpire={handleIdleExpire} />
 
@@ -227,7 +234,10 @@ export default function ApplyLandingPage() {
               )}
             </div>
             <div className="leading-tight">
-              <div className="text-[15px] font-bold tracking-tight" style={{ color: `rgb(${theme.navy})` }}>
+              <div
+                className="text-[15px] font-bold tracking-tight"
+                style={{ color: `rgb(${theme.navy})` }}
+              >
                 {content.brandName}
               </div>
               <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500 -mt-0.5">
@@ -238,9 +248,15 @@ export default function ApplyLandingPage() {
 
           {step === 'landing' && (
             <div className="hidden md:flex items-center gap-6 text-[13px] font-medium text-gray-700">
-              <a href="#how" className="hover:text-gray-900">How It Works</a>
-              <a href="#stories" className="hover:text-gray-900">Stories</a>
-              <a href="#faq" className="hover:text-gray-900">FAQ</a>
+              <a href="#how" className="hover:text-gray-900">
+                How It Works
+              </a>
+              <a href="#stories" className="hover:text-gray-900">
+                Stories
+              </a>
+              <a href="#faq" className="hover:text-gray-900">
+                FAQ
+              </a>
               <span className="inline-flex items-center gap-1.5 text-gray-700">
                 <PhoneIcon size={14} /> 1-800-FINANCE
               </span>
@@ -316,10 +332,7 @@ export default function ApplyLandingPage() {
           on every credit-related consumer-facing page so the consumer
           can always reach the CRAs and understand their adverse-action
           rights. */}
-      <footer
-        className="border-t bg-white"
-        style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}
-      >
+      <footer className="border-t bg-white" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}>
         <div className="max-w-3xl mx-auto px-6 lg:px-10 py-4 text-[11px] text-gray-600 leading-relaxed">
           {ECOA_FOOTER_NOTICE}
         </div>
@@ -408,7 +421,10 @@ function Landing({
               {content.ctaPrimary}
               <ArrowRightIcon size={14} />
             </button>
-            <a href="#how" className="h-12 px-6 inline-flex items-center text-[14px] font-medium text-gray-700 hover:text-gray-900">
+            <a
+              href="#how"
+              className="h-12 px-6 inline-flex items-center text-[14px] font-medium text-gray-700 hover:text-gray-900"
+            >
               {content.ctaSecondary}
             </a>
           </div>
@@ -444,11 +460,15 @@ function Landing({
           >
             Why {content.brandName}
           </p>
-          <h2 className="text-[28px] font-bold text-center tracking-tight" style={{ color: `rgb(${theme.navy})` }}>
+          <h2
+            className="text-[28px] font-bold text-center tracking-tight"
+            style={{ color: `rgb(${theme.navy})` }}
+          >
             Benefits That Set Us Apart
           </h2>
           <p className="text-center text-[14px] text-gray-600 mt-2 max-w-2xl mx-auto">
-            We work with top {lenderLabel} to bring you the most competitive rates and flexible terms.
+            We work with top {lenderLabel} to bring you the most competitive rates and flexible
+            terms.
           </p>
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -469,7 +489,10 @@ function Landing({
                 <div className="flex items-center gap-2 mb-2">
                   <span
                     className="size-8 rounded-lg flex items-center justify-center"
-                    style={{ background: `rgb(${theme.accent} / 0.12)`, color: `rgb(${theme.accent})` }}
+                    style={{
+                      background: `rgb(${theme.accent} / 0.12)`,
+                      color: `rgb(${theme.accent})`,
+                    }}
                   >
                     <CheckIcon size={16} />
                   </span>
@@ -493,20 +516,30 @@ function Landing({
           >
             Simple Process
           </p>
-          <h2 className="text-[28px] font-bold text-center tracking-tight" style={{ color: `rgb(${theme.navy})` }}>
+          <h2
+            className="text-[28px] font-bold text-center tracking-tight"
+            style={{ color: `rgb(${theme.navy})` }}
+          >
             Three Simple Steps
           </h2>
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
             {content.steps.map((s, i) => (
-              <div key={i} className="rounded-xl bg-white p-6 border" style={{ borderColor: `rgb(${theme.navy} / 0.10)` }}>
+              <div
+                key={i}
+                className="rounded-xl bg-white p-6 border"
+                style={{ borderColor: `rgb(${theme.navy} / 0.10)` }}
+              >
                 <div
                   className="size-9 rounded-full flex items-center justify-center text-white font-bold text-[13px]"
                   style={{ background: `rgb(${theme.navy})` }}
                 >
                   {i + 1}
                 </div>
-                <h3 className="mt-4 text-[16px] font-semibold" style={{ color: `rgb(${theme.navy})` }}>
+                <h3
+                  className="mt-4 text-[16px] font-semibold"
+                  style={{ color: `rgb(${theme.navy})` }}
+                >
                   {s.title}
                 </h3>
                 <p className="mt-2 text-[13px] text-gray-600 leading-relaxed">{s.description}</p>
@@ -549,7 +582,10 @@ function Landing({
           >
             Customer Stories
           </p>
-          <h2 className="text-[28px] font-bold text-center tracking-tight" style={{ color: `rgb(${theme.navy})` }}>
+          <h2
+            className="text-[28px] font-bold text-center tracking-tight"
+            style={{ color: `rgb(${theme.navy})` }}
+          >
             Trusted by thousands
           </h2>
 
@@ -560,12 +596,21 @@ function Landing({
                 className="rounded-xl border bg-white p-6"
                 style={{ borderColor: `rgb(${theme.navy} / 0.10)` }}
               >
-                <div className="text-[24px] leading-none mb-3" style={{ color: `rgb(${theme.accent})` }}>
+                <div
+                  className="text-[24px] leading-none mb-3"
+                  style={{ color: `rgb(${theme.accent})` }}
+                >
                   &ldquo;
                 </div>
                 <p className="text-[13px] text-gray-700 leading-relaxed">{t.quote}</p>
-                <div className="mt-5 pt-4 border-t" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}>
-                  <div className="text-[13px] font-semibold" style={{ color: `rgb(${theme.navy})` }}>
+                <div
+                  className="mt-5 pt-4 border-t"
+                  style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}
+                >
+                  <div
+                    className="text-[13px] font-semibold"
+                    style={{ color: `rgb(${theme.navy})` }}
+                  >
                     {t.name}
                   </div>
                   <div className="text-[11px] text-gray-500 mt-0.5">{t.role}</div>
@@ -585,7 +630,10 @@ function Landing({
           >
             FAQ
           </p>
-          <h2 className="text-[28px] font-bold text-center tracking-tight" style={{ color: `rgb(${theme.navy})` }}>
+          <h2
+            className="text-[28px] font-bold text-center tracking-tight"
+            style={{ color: `rgb(${theme.navy})` }}
+          >
             Common questions
           </h2>
 
@@ -596,9 +644,15 @@ function Landing({
                 className="group rounded-xl border bg-white p-5"
                 style={{ borderColor: `rgb(${theme.navy} / 0.10)` }}
               >
-                <summary className="cursor-pointer text-[14px] font-semibold flex items-center justify-between" style={{ color: `rgb(${theme.navy})` }}>
+                <summary
+                  className="cursor-pointer text-[14px] font-semibold flex items-center justify-between"
+                  style={{ color: `rgb(${theme.navy})` }}
+                >
                   {f.q}
-                  <span className="text-[20px] leading-none transition-transform group-open:rotate-45" style={{ color: `rgb(${theme.accent})` }}>
+                  <span
+                    className="text-[20px] leading-none transition-transform group-open:rotate-45"
+                    style={{ color: `rgb(${theme.accent})` }}
+                  >
                     +
                   </span>
                 </summary>
@@ -702,8 +756,8 @@ function DisclaimerStep({
 
         <div className="space-y-4 text-[14px] text-gray-700 leading-relaxed">
           <p>
-            We provide estimated financing options. Final approval and terms are set by the
-            lender. All offers shown are preliminary and subject to verification.
+            We provide estimated financing options. Final approval and terms are set by the lender.
+            All offers shown are preliminary and subject to verification.
           </p>
           <p>
             We may run eligibility checks and use third-party data sources to assess your
@@ -712,9 +766,9 @@ function DisclaimerStep({
           </p>
           <p>
             By continuing, you consent to {content.brandName} and its lending partners processing
-            your personal data for the purpose of assessing your eligibility for financial
-            products. You also consent to receiving communications regarding your application
-            status and available offers.
+            your personal data for the purpose of assessing your eligibility for financial products.
+            You also consent to receiving communications regarding your application status and
+            available offers.
           </p>
         </div>
 
@@ -722,7 +776,10 @@ function DisclaimerStep({
             panel, in plain English. Collapsed by default so the page
             doesn't get noisy, but always reachable on the same step the
             consumer authorizes the soft-pull. */}
-        <details className="mt-4 rounded-lg border bg-gray-50 p-4" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}>
+        <details
+          className="mt-4 rounded-lg border bg-gray-50 p-4"
+          style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}
+        >
           <summary className="cursor-pointer text-[13px] font-semibold text-gray-900">
             What we collect, and who we share it with
           </summary>
@@ -732,17 +789,16 @@ function DisclaimerStep({
               <ul className="mt-1 list-disc pl-5 space-y-1">
                 <li>Name, email, mobile phone</li>
                 <li>
-                  Requested amount and purpose of financing (typed verbatim, no
-                  compute on our side)
+                  Requested amount and purpose of financing (typed verbatim, no compute on our side)
                 </li>
                 <li>
-                  Date of birth and Social Security Number on later steps if you
-                  proceed (last 4 stored visibly, full SSN encrypted via PiiVault)
+                  Date of birth and Social Security Number on later steps if you proceed (last 4
+                  stored visibly, full SSN encrypted via PiiVault)
                 </li>
                 <li>Your current address on later steps if you proceed</li>
                 <li>
-                  Bank routing number and last 4 of the account number on later
-                  steps (full account number encrypted)
+                  Bank routing number and last 4 of the account number on later steps (full account
+                  number encrypted)
                 </li>
                 <li>Device fingerprint and IP address for fraud prevention</li>
               </ul>
@@ -789,7 +845,10 @@ function DisclaimerStep({
           ))}
         </ul>
 
-        <div className="mt-5 pt-5 border-t flex items-center gap-5 text-[12px] text-gray-600" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}>
+        <div
+          className="mt-5 pt-5 border-t flex items-center gap-5 text-[12px] text-gray-600"
+          style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}
+        >
           <span className="inline-flex items-center gap-1.5">
             <ShieldIcon size={13} /> 256-bit Encryption
           </span>
@@ -854,7 +913,8 @@ function IntakeStep({
   const onPhone = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
     let formatted = digits;
-    if (digits.length > 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    if (digits.length > 6)
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     else if (digits.length > 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
     else if (digits.length > 0) formatted = `(${digits}`;
     setIntake((s) => ({ ...s, phone: formatted }));
@@ -947,7 +1007,10 @@ function IntakeStep({
           </Field>
         </div>
 
-        <div className="mt-5 pt-5 border-t flex items-center gap-5 text-[12px] text-gray-600" style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}>
+        <div
+          className="mt-5 pt-5 border-t flex items-center gap-5 text-[12px] text-gray-600"
+          style={{ borderColor: `rgb(${theme.navy} / 0.08)` }}
+        >
           <span className="inline-flex items-center gap-1.5">
             <ShieldIcon size={13} /> 256-bit Encryption
           </span>
@@ -969,7 +1032,13 @@ function IntakeStep({
   );
 }
 
-function EngineStep({ brandName, theme }: { brandName: string; theme: ReturnType<typeof brandTheme> }) {
+function EngineStep({
+  brandName,
+  theme,
+}: {
+  brandName: string;
+  theme: ReturnType<typeof brandTheme>;
+}) {
   // Progressive checklist — each item turns green ~900ms after the
   // previous one so the user sees the orchestration engine's stages
   // tick by (eligibility → lender quote → ranking).
@@ -1018,7 +1087,8 @@ function EngineStep({ brandName, theme }: { brandName: string; theme: ReturnType
               ) : (
                 <span
                   className={
-                    'size-4 rounded-full border-2 ' + (active ? 'border-current' : 'border-gray-300')
+                    'size-4 rounded-full border-2 ' +
+                    (active ? 'border-current' : 'border-gray-300')
                   }
                 />
               )}
@@ -1078,8 +1148,8 @@ function OffersStep({
             No matches right now
           </h2>
           <p className="mt-3 text-[14px] text-gray-600 max-w-lg mx-auto">
-            Your referring partner has no lenders enabled for this credit tier. Reach out to
-            them and they can request access at /lender-marketplace/access.
+            Your referring partner has no lenders enabled for this credit tier. Reach out to them
+            and they can request access at /lender-marketplace/access.
           </p>
         </div>
       </div>
@@ -1096,7 +1166,8 @@ function OffersStep({
     const base = 7 + idx * 5;
     return `${base}.9% – ${base + 5}.9%`;
   };
-  const monthlyFor = (idx: number) => Math.round(effectiveAmount / 100 / Math.max(24, 48 - idx * 12));
+  const monthlyFor = (idx: number) =>
+    Math.round(effectiveAmount / 100 / Math.max(24, 48 - idx * 12));
   const termBandFor = (idx: number) => `${24 - Math.min(idx * 6, 12)} – ${48 - idx * 12} months`;
 
   return (
@@ -1109,7 +1180,9 @@ function OffersStep({
           You&apos;ve been matched!
         </h2>
         <p className="mt-3 text-[14px] text-gray-600 max-w-xl mx-auto">
-          Based on your profile, here are your pre-qualified funding options.
+          {content.brandName === 'MedPay'
+            ? '52 lenders quoted in parallel. Ranked by lowest total cost. Soft pull only — your credit score is unchanged.'
+            : 'Based on your profile, here are your pre-qualified funding options.'}
         </p>
         <p className="mt-3 text-[11px] uppercase tracking-[0.18em] font-semibold text-gray-500">
           Expires in {mm}:{ss} · {tierLabel[tier]} · FICO {tierFico[tier]}
@@ -1174,7 +1247,10 @@ function OffersStep({
           <div className="text-[10px] uppercase tracking-[0.18em] text-white/55 font-semibold mb-2">
             Select Term
           </div>
-          <div className="inline-flex p-1 rounded-xl gap-1" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <div
+            className="inline-flex p-1 rounded-xl gap-1"
+            style={{ background: 'rgba(255,255,255,0.08)' }}
+          >
             {([36, 48, 60] as const).map((t) => (
               <button
                 key={t}
@@ -1350,8 +1426,8 @@ function OffersStep({
       )}
 
       <p className="mt-7 text-center text-[12px] text-gray-500 max-w-lg mx-auto">
-        Not sure what to choose? Start with your best option — we&apos;ll automatically route you
-        to other lenders if needed.
+        Not sure what to choose? Start with your best option — we&apos;ll automatically route you to
+        other lenders if needed.
       </p>
 
       {/* ── Apply → Approval → Funding strip ── */}
@@ -1404,7 +1480,12 @@ function OffersStep({
             <p className="text-[12px] mt-0.5">
               We&apos;ll hand you off to {lenders.find((l) => l.id === chosen)?.displayName} to
               finish your application.
-              {ref_ && <> Attribution back to partner <span className="font-mono">{ref_}</span>.</>}
+              {ref_ && (
+                <>
+                  {' '}
+                  Attribution back to partner <span className="font-mono">{ref_}</span>.
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -1456,16 +1537,175 @@ interface FilterArgs {
   amountCents: number;
 }
 
-function filterLenders({ brand, partnerId, tier, amountCents }: FilterArgs): MarketplaceLenderRow[] {
+function filterLenders({
+  brand,
+  partnerId,
+  tier,
+  amountCents,
+}: FilterArgs): MarketplaceLenderRow[] {
   return marketplaceLenders.filter((l) => {
     if (l.brands.length > 0 && !l.brands.includes(brand)) return false;
     if (!l.servesTiers.includes(tier)) return false;
     const override = partnerId
-      ? partnerAccessOverrides.find((o) => o.merchantId === partnerId && o.marketplaceLenderId === l.id)
+      ? partnerAccessOverrides.find(
+          (o) => o.merchantId === partnerId && o.marketplaceLenderId === l.id,
+        )
       : undefined;
     const effective = override ? override.enabled : l.globallyEnabled;
     if (!effective) return false;
-    if (amountCents > 0 && (amountCents < l.minAmountCents || amountCents > l.maxAmountCents)) return false;
+    if (amountCents > 0 && (amountCents < l.minAmountCents || amountCents > l.maxAmountCents))
+      return false;
     return true;
   });
+}
+
+/**
+ * MedPay-specific visual upgrades. Lifts the same colour language and
+ * 3D depth used on /landing/medpay so the patient experience aligns
+ * with the marketing surface. Compliance copy (FCRA consent, ECOA
+ * notice) is untouched — only the visual treatment changes.
+ *
+ * Scoped via [data-brand="medpay"] so TradePay and CoachPay apply
+ * pages keep their existing themes unchanged.
+ */
+function MedPayStyleBlock() {
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
+          [data-brand="medpay"] {
+            --mp-teal: #0E7C66;
+            --mp-teal-2: #22B8A0;
+            --mp-teal-3: #2BC5AD;
+            --mp-teal-deep: #062C29;
+            --mp-teal-pale: rgba(34, 184, 160, 0.06);
+            --mp-teal-line: rgba(14, 124, 102, 0.10);
+            --mp-teal-glow: rgba(14, 124, 102, 0.45);
+            --mp-ink: #062C29;
+            --mp-ink-2: #355A53;
+          }
+
+          /* Soft clinical gradient background with subtle grid mask,
+             matched to the MedPay landing hero. */
+          [data-brand="medpay"].apply-shell {
+            background:
+              radial-gradient(1200px 600px at 10% 0%, rgba(34, 184, 160, 0.10), transparent 60%),
+              radial-gradient(800px 600px at 90% 20%, rgba(14, 124, 102, 0.06), transparent 70%),
+              linear-gradient(180deg, #ECFFFE 0%, #FFFFFF 70%);
+            position: relative;
+          }
+          [data-brand="medpay"].apply-shell::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+              linear-gradient(rgba(14, 124, 102, 0.025) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(14, 124, 102, 0.025) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black 30%, transparent 80%);
+            z-index: 0;
+          }
+          [data-brand="medpay"] > * { position: relative; z-index: 1; }
+
+          /* Headlines and body get the landing's tightened Inter rhythm. */
+          [data-brand="medpay"] h1,
+          [data-brand="medpay"] h2,
+          [data-brand="medpay"] h3 {
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+            letter-spacing: -0.022em;
+          }
+
+          /* Header logomark — gradient teal instead of flat deep navy. */
+          [data-brand="medpay"] header {
+            background: rgba(255, 255, 255, 0.78) !important;
+            backdrop-filter: blur(10px);
+            border-color: var(--mp-teal-line) !important;
+          }
+
+          /* Primary CTAs get gradient + glow shadow (matches landing). */
+          [data-brand="medpay"] header button,
+          [data-brand="medpay"] .cta-medpay,
+          [data-brand="medpay"] button[type="submit"]:not([data-mp-ghost]) {
+            background: linear-gradient(180deg, var(--mp-teal-2) 0%, var(--mp-teal) 100%) !important;
+            box-shadow: 0 12px 30px -10px var(--mp-teal-glow) !important;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+          }
+          [data-brand="medpay"] header button:hover,
+          [data-brand="medpay"] .cta-medpay:hover,
+          [data-brand="medpay"] button[type="submit"]:not([data-mp-ghost]):hover {
+            background: linear-gradient(180deg, var(--mp-teal-3) 0%, #138B73 100%) !important;
+            box-shadow: 0 16px 40px -12px var(--mp-teal-glow) !important;
+            transform: translateY(-1px);
+          }
+
+          /* AI Recommended hero offer card — 3D perspective + teal
+             gradient instead of flat dark fill. */
+          [data-brand="medpay"] main > div > div.rounded-2xl.p-7.text-white {
+            background: linear-gradient(160deg,
+              var(--mp-teal-deep) 0%,
+              var(--mp-teal) 55%,
+              #128973 100%) !important;
+            box-shadow:
+              0 40px 100px -30px rgba(14, 124, 102, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            transform: perspective(1400px) rotateX(1.5deg);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        box-shadow 0.4s ease;
+            position: relative;
+            overflow: hidden;
+          }
+          [data-brand="medpay"] main > div > div.rounded-2xl.p-7.text-white::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+              radial-gradient(600px 300px at 100% 0%, rgba(255, 255, 255, 0.08), transparent 70%);
+            pointer-events: none;
+          }
+          [data-brand="medpay"] main > div > div.rounded-2xl.p-7.text-white:hover {
+            transform: perspective(1400px) rotateX(0deg) translateY(-4px);
+            box-shadow:
+              0 50px 120px -30px rgba(14, 124, 102, 0.7),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+          }
+
+          /* "Other Available Options" secondary cards — frosted with
+             teal border that matches the landing's glass-teal pattern. */
+          [data-brand="medpay"] main ul > li.rounded-2xl.border.bg-white {
+            background: rgba(255, 255, 255, 0.78) !important;
+            backdrop-filter: blur(8px);
+            border-color: var(--mp-teal-line) !important;
+            box-shadow: 0 20px 50px -25px rgba(14, 124, 102, 0.18);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+          }
+          [data-brand="medpay"] main ul > li.rounded-2xl.border.bg-white:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 30px 70px -25px rgba(14, 124, 102, 0.28);
+          }
+
+          /* Pulse dot keyframes for the engine loading step + any other
+             "live" indicators. */
+          @keyframes mpPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(1.4); }
+          }
+          [data-brand="medpay"] .mp-pulse-dot,
+          [data-brand="medpay"] [data-mp-pulse] {
+            animation: mpPulse 1.4s ease-in-out infinite;
+          }
+
+          /* Footer ECOA notice — tone-shifted to soft teal so it
+             belongs to the page. Text-readability and content
+             are unchanged. */
+          [data-brand="medpay"] footer {
+            background: rgba(255, 255, 255, 0.78) !important;
+            backdrop-filter: blur(8px);
+            border-color: var(--mp-teal-line) !important;
+          }
+        `,
+      }}
+    />
+  );
 }
