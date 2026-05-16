@@ -16,7 +16,6 @@ import {
   Money,
   type Column,
   SearchIcon,
-  ShieldIcon,
   ArrowRightIcon,
 } from '@eazepay/ui/web';
 import {
@@ -99,7 +98,9 @@ export default function AccessMatrixPage() {
   };
 
   const effectiveEnabledForPartner = lenderRows.filter((l) => accessFor(l.id).enabled).length;
-  const explicitOverridesForPartner = overrides.filter((o) => o.merchantId === selectedPartnerId).length;
+  const explicitOverridesForPartner = overrides.filter(
+    (o) => o.merchantId === selectedPartnerId,
+  ).length;
 
   const columns: Column<(typeof marketplaceLenders)[number]>[] = [
     {
@@ -137,8 +138,14 @@ export default function AccessMatrixPage() {
         ) : (
           <div className="flex flex-wrap gap-1">
             {l.brands.map((b) => (
-              <span key={b} className="text-[11px] inline-flex items-center gap-1 rounded-full bg-bg-muted px-1.5 py-0.5">
-                <span className="size-1.5 rounded-full" style={{ background: BRANDS[b].accentHex }} />
+              <span
+                key={b}
+                className="text-[11px] inline-flex items-center gap-1 rounded-full bg-bg-muted px-1.5 py-0.5"
+              >
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ background: BRANDS[b].accentHex }}
+                />
                 {BRANDS[b].name}
               </span>
             ))}
@@ -151,63 +158,77 @@ export default function AccessMatrixPage() {
       align: 'right',
       cell: (l) => (
         <span className="text-[12px] tabular-nums text-fg-muted">
-          <Money cents={l.minAmountCents} compact noFractions /> – <Money cents={l.maxAmountCents} compact noFractions />
+          <Money cents={l.minAmountCents} compact noFractions /> –{' '}
+          <Money cents={l.maxAmountCents} compact noFractions />
         </span>
       ),
     },
     {
       key: 'access',
       header: 'Access',
-      cell: (l) => {
-        const status = accessFor(l.id);
-        if (status.via === 'marketplace-paused') {
-          return <StatusPill tone="warning">Marketplace paused</StatusPill>;
-        }
-        if (status.via === 'override') {
-          return status.enabled ? (
-            <StatusPill tone="accent" icon={<ShieldIcon size={11} />}>Override · enabled</StatusPill>
-          ) : (
-            <StatusPill tone="danger" icon={<ShieldIcon size={11} />}>Override · disabled</StatusPill>
-          );
-        }
-        return status.enabled ? (
-          <StatusPill tone="success" dot>Inherited · on</StatusPill>
-        ) : (
-          <StatusPill tone="neutral">Inherited · off</StatusPill>
-        );
-      },
-    },
-    {
-      key: 'actions',
-      header: '',
       align: 'right',
       cell: (l) => {
         const status = accessFor(l.id);
-        const isOverridden = status.via === 'override';
         const lender = marketplaceLenders.find((ml) => ml.id === l.id)!;
+        const isOverridden = status.via === 'override';
+        const isPaused = status.via === 'marketplace-paused';
+
+        if (isPaused) {
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <StatusPill tone="warning">Marketplace paused</StatusPill>
+            </div>
+          );
+        }
+
+        const handleToggle = () => setOverride(l.id, !status.enabled);
+
         return (
-          <div className="flex items-center gap-1 justify-end">
-            <Button
-              size="sm"
-              variant={status.enabled && status.via !== 'marketplace-paused' ? 'subtle' : 'ghost'}
-              onClick={() => setOverride(l.id, true)}
-              disabled={status.via === 'marketplace-paused'}
-            >
-              Force on
-            </Button>
-            <Button
-              size="sm"
-              variant={!status.enabled && status.via === 'override' ? 'danger' : 'ghost'}
-              onClick={() => setOverride(l.id, false)}
-              disabled={status.via === 'marketplace-paused'}
-            >
-              Deny
-            </Button>
+          <div className="flex items-center justify-end gap-2">
             {isOverridden && (
-              <Button size="sm" variant="ghost" onClick={() => setOverride(l.id, null)}>
-                Reset to {lender.globallyEnabled ? 'on' : 'off'}
-              </Button>
+              <button
+                type="button"
+                onClick={() => setOverride(l.id, null)}
+                className="text-[10px] text-fg-muted hover:text-fg underline-offset-2 hover:underline transition"
+                title={`Reset to global default (${lender.globallyEnabled ? 'enabled' : 'disabled'})`}
+              >
+                reset
+              </button>
             )}
+            <label
+              className="relative inline-flex items-center gap-2 cursor-pointer"
+              title={
+                status.enabled
+                  ? 'Click to disable for this partner'
+                  : 'Click to enable for this partner'
+              }
+            >
+              <span
+                className={`text-[11px] tabular-nums font-medium ${
+                  status.enabled ? 'text-fg' : 'text-fg-muted'
+                }`}
+                aria-hidden
+              >
+                {status.enabled ? 'On' : 'Off'}
+              </span>
+              <input
+                type="checkbox"
+                checked={status.enabled}
+                onChange={handleToggle}
+                className="peer sr-only"
+                aria-label={`Toggle ${l.displayName} for this partner`}
+              />
+              <span
+                className="relative h-5 w-9 rounded-full bg-bg-muted ring-1 ring-border transition-colors duration-200 peer-checked:bg-emerald-500 peer-checked:ring-emerald-600/40 peer-focus-visible:ring-2 peer-focus-visible:ring-border-focus"
+                aria-hidden
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                    status.enabled ? 'translate-x-4' : ''
+                  }`}
+                />
+              </span>
+            </label>
           </div>
         );
       },
@@ -234,10 +255,10 @@ export default function AccessMatrixPage() {
       />
       <PageBody>
         <Banner intent="info" className="mb-4" title="Inheritance rule">
-          When no override exists for a partner, the partner inherits the lender's <strong>global</strong>{' '}
-          state. An override row replaces inheritance — useful for compliance holds, partner-requested
-          allowlists, or one-off concessions. Overrides survive marketplace pauses (the marketplace
-          status is the highest fence).
+          When no override exists for a partner, the partner inherits the lender's{' '}
+          <strong>global</strong> state. An override row replaces inheritance — useful for
+          compliance holds, partner-requested allowlists, or one-off concessions. Overrides survive
+          marketplace pauses (the marketplace status is the highest fence).
         </Banner>
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
@@ -276,8 +297,9 @@ export default function AccessMatrixPage() {
               }
               description={
                 <span>
-                  <strong>{effectiveEnabledForPartner}</strong> of {lenderRows.length} lenders effectively
-                  enabled · <strong>{explicitOverridesForPartner}</strong> explicit override
+                  <strong>{effectiveEnabledForPartner}</strong> of {lenderRows.length} lenders
+                  effectively enabled · <strong>{explicitOverridesForPartner}</strong> explicit
+                  override
                   {explicitOverridesForPartner === 1 ? '' : 's'} for this partner
                 </span>
               }
