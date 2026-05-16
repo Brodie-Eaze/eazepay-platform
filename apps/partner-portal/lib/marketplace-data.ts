@@ -199,7 +199,10 @@ export const marketplaceLenders: MarketplaceLenderRow[] = [
     maxAmountCents: 25_000_00,
     minScore: 600,
     permittedStates: [],
-    globallyEnabled: false, // toggled off globally
+    // Enabled by default so a coachpay sub_prime applicant has at least
+    // one match. Operators can disable per-partner via the Partner
+    // Access matrix.
+    globallyEnabled: true,
     syncedAt: '2026-05-04T06:00:00Z',
   },
   // engine.tech — cross-brand prime+

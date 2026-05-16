@@ -1,8 +1,12 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import { findPartner, applicationsForPartner } from '../../../lib/master-data';
+import {
+  readSubmittedAppsForPartner,
+  type SubmittedApp,
+} from '../../../lib/submitted-applications';
 import {
   PageBody,
   Card,
@@ -81,68 +85,303 @@ const PARTNERS: Record<string, PartnerInfo> = {
     industry: 'Coaching',
     product: 'CoachPay',
     apps: [
-      { id: 'FA-1001', client: 'John Martinez',  product: 'CoachPay', amount: 45_000, status: 'Funded',    date: '2026-03-05', detail: { loanTerm: '24 months', interestRate: '8.5%', creditScore: 720, purpose: 'Business expansion', dateSubmitted: '2026-03-05' } },
-      { id: 'FA-1002', client: 'Lisa Chen',      product: 'CoachPay', amount: 32_000, status: 'Funded',    date: '2026-03-04', detail: { loanTerm: '36 months', interestRate: '9.2%', creditScore: 695, purpose: 'Coaching program',    dateSubmitted: '2026-03-04' } },
-      { id: 'FA-1003', client: 'Robert Davis',   product: 'CoachPay', amount: 78_000, status: 'Approved',  date: '2026-03-03', detail: { loanTerm: '60 months', interestRate: '7.9%', creditScore: 745, purpose: 'Bootcamp series',     dateSubmitted: '2026-03-03' } },
-      { id: 'FA-1004', client: 'Emily Watson',   product: 'CoachPay', amount: 25_000, status: 'Submitted', date: '2026-03-07', detail: { loanTerm: '24 months', interestRate: '—',    creditScore: 680, purpose: 'Certification',       dateSubmitted: '2026-03-07' } },
-      { id: 'FA-1005', client: 'Michael Brown',  product: 'CoachPay', amount: 52_000, status: 'Funded',    date: '2026-02-28', detail: { loanTerm: '48 months', interestRate: '8.7%', creditScore: 710, purpose: 'Career programs',     dateSubmitted: '2026-02-28' } },
-      { id: 'FA-1006', client: 'Amanda Torres',  product: 'CoachPay', amount: 18_000, status: 'Submitted', date: '2026-03-06', detail: { loanTerm: '24 months', interestRate: '—',    creditScore: 655, purpose: 'Coaching',             dateSubmitted: '2026-03-06' } },
-      { id: 'FA-1007', client: 'David Kim',      product: 'CoachPay', amount: 65_000, status: 'Approved',  date: '2026-03-02', detail: { loanTerm: '48 months', interestRate: '8.1%', creditScore: 730, purpose: 'Bootcamp',             dateSubmitted: '2026-03-02' } },
-      { id: 'FA-1008', client: 'Rachel Green',   product: 'CoachPay', amount: 40_000, status: 'Funded',    date: '2026-02-25', detail: { loanTerm: '36 months', interestRate: '8.6%', creditScore: 705, purpose: 'Coaching',             dateSubmitted: '2026-02-25' } },
-      { id: 'FA-1009', client: 'Carlos Rivera',  product: 'CoachPay', amount: 15_000, status: 'Declined',  date: '2026-03-01', detail: { loanTerm: '12 months', interestRate: '—',    creditScore: 580, purpose: 'Specialty courses',    dateSubmitted: '2026-03-01' } },
-      { id: 'FA-1010', client: 'Jessica Park',   product: 'CoachPay', amount: 55_000, status: 'Approved',  date: '2026-03-06', detail: { loanTerm: '60 months', interestRate: '7.8%', creditScore: 740, purpose: 'Executive coaching',  dateSubmitted: '2026-03-06' } },
-      { id: 'FA-1011', client: 'Tyler Hughes',   product: 'CoachPay', amount: 37_000, status: 'Funded',    date: '2026-02-27', detail: { loanTerm: '36 months', interestRate: '8.4%', creditScore: 715, purpose: 'Coaching program',    dateSubmitted: '2026-02-27' } },
-      { id: 'FA-1012', client: 'Olivia Chen',    product: 'CoachPay', amount: 22_500, status: 'Submitted', date: '2026-03-08', detail: { loanTerm: '24 months', interestRate: '—',    creditScore: 665, purpose: 'Certification',       dateSubmitted: '2026-03-08' } },
+      {
+        id: 'FA-1001',
+        client: 'John Martinez',
+        product: 'CoachPay',
+        amount: 45_000,
+        status: 'Funded',
+        date: '2026-03-05',
+        detail: {
+          loanTerm: '24 months',
+          interestRate: '8.5%',
+          creditScore: 720,
+          purpose: 'Business expansion',
+          dateSubmitted: '2026-03-05',
+        },
+      },
+      {
+        id: 'FA-1002',
+        client: 'Lisa Chen',
+        product: 'CoachPay',
+        amount: 32_000,
+        status: 'Funded',
+        date: '2026-03-04',
+        detail: {
+          loanTerm: '36 months',
+          interestRate: '9.2%',
+          creditScore: 695,
+          purpose: 'Coaching program',
+          dateSubmitted: '2026-03-04',
+        },
+      },
+      {
+        id: 'FA-1003',
+        client: 'Robert Davis',
+        product: 'CoachPay',
+        amount: 78_000,
+        status: 'Approved',
+        date: '2026-03-03',
+        detail: {
+          loanTerm: '60 months',
+          interestRate: '7.9%',
+          creditScore: 745,
+          purpose: 'Bootcamp series',
+          dateSubmitted: '2026-03-03',
+        },
+      },
+      {
+        id: 'FA-1004',
+        client: 'Emily Watson',
+        product: 'CoachPay',
+        amount: 25_000,
+        status: 'Submitted',
+        date: '2026-03-07',
+        detail: {
+          loanTerm: '24 months',
+          interestRate: '—',
+          creditScore: 680,
+          purpose: 'Certification',
+          dateSubmitted: '2026-03-07',
+        },
+      },
+      {
+        id: 'FA-1005',
+        client: 'Michael Brown',
+        product: 'CoachPay',
+        amount: 52_000,
+        status: 'Funded',
+        date: '2026-02-28',
+        detail: {
+          loanTerm: '48 months',
+          interestRate: '8.7%',
+          creditScore: 710,
+          purpose: 'Career programs',
+          dateSubmitted: '2026-02-28',
+        },
+      },
+      {
+        id: 'FA-1006',
+        client: 'Amanda Torres',
+        product: 'CoachPay',
+        amount: 18_000,
+        status: 'Submitted',
+        date: '2026-03-06',
+        detail: {
+          loanTerm: '24 months',
+          interestRate: '—',
+          creditScore: 655,
+          purpose: 'Coaching',
+          dateSubmitted: '2026-03-06',
+        },
+      },
+      {
+        id: 'FA-1007',
+        client: 'David Kim',
+        product: 'CoachPay',
+        amount: 65_000,
+        status: 'Approved',
+        date: '2026-03-02',
+        detail: {
+          loanTerm: '48 months',
+          interestRate: '8.1%',
+          creditScore: 730,
+          purpose: 'Bootcamp',
+          dateSubmitted: '2026-03-02',
+        },
+      },
+      {
+        id: 'FA-1008',
+        client: 'Rachel Green',
+        product: 'CoachPay',
+        amount: 40_000,
+        status: 'Funded',
+        date: '2026-02-25',
+        detail: {
+          loanTerm: '36 months',
+          interestRate: '8.6%',
+          creditScore: 705,
+          purpose: 'Coaching',
+          dateSubmitted: '2026-02-25',
+        },
+      },
+      {
+        id: 'FA-1009',
+        client: 'Carlos Rivera',
+        product: 'CoachPay',
+        amount: 15_000,
+        status: 'Declined',
+        date: '2026-03-01',
+        detail: {
+          loanTerm: '12 months',
+          interestRate: '—',
+          creditScore: 580,
+          purpose: 'Specialty courses',
+          dateSubmitted: '2026-03-01',
+        },
+      },
+      {
+        id: 'FA-1010',
+        client: 'Jessica Park',
+        product: 'CoachPay',
+        amount: 55_000,
+        status: 'Approved',
+        date: '2026-03-06',
+        detail: {
+          loanTerm: '60 months',
+          interestRate: '7.8%',
+          creditScore: 740,
+          purpose: 'Executive coaching',
+          dateSubmitted: '2026-03-06',
+        },
+      },
+      {
+        id: 'FA-1011',
+        client: 'Tyler Hughes',
+        product: 'CoachPay',
+        amount: 37_000,
+        status: 'Funded',
+        date: '2026-02-27',
+        detail: {
+          loanTerm: '36 months',
+          interestRate: '8.4%',
+          creditScore: 715,
+          purpose: 'Coaching program',
+          dateSubmitted: '2026-02-27',
+        },
+      },
+      {
+        id: 'FA-1012',
+        client: 'Olivia Chen',
+        product: 'CoachPay',
+        amount: 22_500,
+        status: 'Submitted',
+        date: '2026-03-08',
+        detail: {
+          loanTerm: '24 months',
+          interestRate: '—',
+          creditScore: 665,
+          purpose: 'Certification',
+          dateSubmitted: '2026-03-08',
+        },
+      },
     ],
   },
   medfirst: {
-    id: 'medfirst', name: 'MedFirst Solutions', email: 'james@medfirst.com', phone: '(212) 555-0202', industry: 'Medical', product: 'MedPay',
+    id: 'medfirst',
+    name: 'MedFirst Solutions',
+    email: 'james@medfirst.com',
+    phone: '(212) 555-0202',
+    industry: 'Medical',
+    product: 'MedPay',
     apps: Array.from({ length: 8 }).map((_, i) => ({
       id: `MA-100${i + 1}`,
-      client: ['Maria Santos', 'Angela White', 'Robert Taylor', 'David Park', 'Robert Kim', 'James Taylor', 'Sarah Chen', 'Emily Rodriguez'][i]!,
+      client: [
+        'Maria Santos',
+        'Angela White',
+        'Robert Taylor',
+        'David Park',
+        'Robert Kim',
+        'James Taylor',
+        'Sarah Chen',
+        'Emily Rodriguez',
+      ][i]!,
       product: 'MedPay' as const,
       amount: [42_000, 28_000, 20_000, 9_500, 15_000, 6_800, 75_000, 50_000][i]!,
-      status: (['Submitted', 'Approved', 'Approved', 'Funded', 'Funded', 'Submitted', 'Approved', 'Declined'][i]) as Exclude<Status, 'All'>,
+      status: [
+        'Submitted',
+        'Approved',
+        'Approved',
+        'Funded',
+        'Funded',
+        'Submitted',
+        'Approved',
+        'Declined',
+      ][i] as Exclude<Status, 'All'>,
       date: '2026-02-15',
-      detail: { loanTerm: '36 months', interestRate: '8.4%', creditScore: 690, purpose: 'Procedure financing', dateSubmitted: '2026-02-15' },
+      detail: {
+        loanTerm: '36 months',
+        interestRate: '8.4%',
+        creditScore: 690,
+        purpose: 'Procedure financing',
+        dateSubmitted: '2026-02-15',
+      },
     })),
   },
   tradeforce: {
-    id: 'tradeforce', name: 'TradeForce Pro', email: 'mike@tradeforce.com', phone: '(415) 555-0303', industry: 'Trades', product: 'TradePay',
+    id: 'tradeforce',
+    name: 'TradeForce Pro',
+    email: 'mike@tradeforce.com',
+    phone: '(415) 555-0303',
+    industry: 'Trades',
+    product: 'TradePay',
     apps: Array.from({ length: 6 }).map((_, i) => ({
       id: `TA-100${i + 1}`,
-      client: ['Jake Morrison', 'Tom Bradley', 'Carla Ruiz', 'Sandra Lopez', 'Lisa Chen', 'Mike Henderson'][i]!,
+      client: [
+        'Jake Morrison',
+        'Tom Bradley',
+        'Carla Ruiz',
+        'Sandra Lopez',
+        'Lisa Chen',
+        'Mike Henderson',
+      ][i]!,
       product: 'TradePay' as const,
       amount: [8_500, 12_000, 22_000, 32_000, 45_000, 18_500][i]!,
-      status: (['Submitted', 'Submitted', 'Declined', 'Approved', 'Funded', 'Funded'][i]) as Exclude<Status, 'All'>,
+      status: ['Submitted', 'Submitted', 'Declined', 'Approved', 'Funded', 'Funded'][i] as Exclude<
+        Status,
+        'All'
+      >,
       date: '2026-02-20',
-      detail: { loanTerm: '48 months', interestRate: '9.1%', creditScore: 680, purpose: 'Project financing', dateSubmitted: '2026-02-20' },
+      detail: {
+        loanTerm: '48 months',
+        interestRate: '9.1%',
+        creditScore: 680,
+        purpose: 'Project financing',
+        dateSubmitted: '2026-02-20',
+      },
     })),
   },
   dental: {
-    id: 'dental', name: 'Dental Care Partners', email: 'amy@dentalcarepartners.com', phone: '(310) 555-0404', industry: 'Dental', product: 'MedPay',
+    id: 'dental',
+    name: 'Dental Care Partners',
+    email: 'amy@dentalcarepartners.com',
+    phone: '(310) 555-0404',
+    industry: 'Dental',
+    product: 'MedPay',
     apps: Array.from({ length: 4 }).map((_, i) => ({
       id: `DA-100${i + 1}`,
       client: ['Sandra Lopez', 'Aisha Khan', 'James Taylor', 'Robert Davis'][i]!,
       product: 'MedPay' as const,
       amount: [32_000, 28_000, 6_800, 81_000][i]!,
-      status: (['Approved', 'Funded', 'Submitted', 'Approved'][i]) as Exclude<Status, 'All'>,
+      status: ['Approved', 'Funded', 'Submitted', 'Approved'][i] as Exclude<Status, 'All'>,
       date: '2026-02-25',
-      detail: { loanTerm: '24 months', interestRate: '8.9%', creditScore: 695, purpose: 'Dental implants', dateSubmitted: '2026-02-25' },
+      detail: {
+        loanTerm: '24 months',
+        interestRate: '8.9%',
+        creditScore: 695,
+        purpose: 'Dental implants',
+        dateSubmitted: '2026-02-25',
+      },
     })),
   },
 };
 
 const STATUS_PILL: Record<Exclude<Status, 'All'>, string> = {
-  Funded:    'bg-bg-inverse text-white before:bg-white',
-  Approved:  'bg-bg-muted text-fg border border-border before:bg-fg',
-  Declined:  'bg-bg-muted text-fg-muted border border-border before:bg-fg-muted',
+  Funded: 'bg-bg-inverse text-white before:bg-white',
+  Approved: 'bg-bg-muted text-fg border border-border before:bg-fg',
+  Declined: 'bg-bg-muted text-fg-muted border border-border before:bg-fg-muted',
   Submitted: 'bg-bg-muted text-fg-secondary border border-border before:bg-fg-secondary',
 };
 
 const PAGE_SIZE = 10;
 const fmt = (n: number) => `$${n.toLocaleString('en-US')}`;
-const capitalize = (s: string) => (s.charAt(0).toUpperCase() + s.slice(1)) as 'Submitted' | 'Funded' | 'Approved' | 'Declined' | 'Submitted';
+const capitalize = (s: string) =>
+  (s.charAt(0).toUpperCase() + s.slice(1)) as
+    | 'Submitted'
+    | 'Funded'
+    | 'Approved'
+    | 'Declined'
+    | 'Submitted';
 
 export default function PartnerAccountPage() {
   const { partnerId } = useParams<{ partnerId: string }>();
@@ -161,10 +400,18 @@ export default function PartnerAccountPage() {
         product:
           a.product === 'med-pay' ? 'MedPay' : a.product === 'trade-pay' ? 'TradePay' : 'CoachPay',
         amount: Math.round(a.amountCents / 100),
-        status: (a.status === 'in_review' ? 'Submitted' : capitalize(a.status)) as Exclude<Status, 'All'>,
+        status: (a.status === 'in_review' ? 'Submitted' : capitalize(a.status)) as Exclude<
+          Status,
+          'All'
+        >,
         date: a.date,
         detail: {
-          loanTerm: a.product === 'trade-pay' ? '48 months' : a.product === 'med-pay' ? '36 months' : '24 months',
+          loanTerm:
+            a.product === 'trade-pay'
+              ? '48 months'
+              : a.product === 'med-pay'
+                ? '36 months'
+                : '24 months',
           interestRate: a.status === 'funded' || a.status === 'approved' ? '8.4%' : '—',
           creditScore: a.fico,
           purpose:
@@ -188,6 +435,55 @@ export default function PartnerAccountPage() {
     }
   }
   if (!partner) notFound();
+
+  /**
+   * Append consumer-submitted apps for this partner. The hardened
+   * reader returns [] for an unknown partnerId, so even if a forged
+   * URL hits this route with a wrong id, no rows leak across.
+   *
+   * Sequenced in a useEffect so the localStorage read happens client-
+   * side only; the seed rows still hydrate immediately for SSR.
+   */
+  const [liveApps, setLiveApps] = useState<AppRow[]>([]);
+  useEffect(() => {
+    if (!partner) return;
+    const submitted: SubmittedApp[] = readSubmittedAppsForPartner(partner.id);
+    setLiveApps(
+      submitted.map((s) => ({
+        id: s.id,
+        client: s.customer,
+        product: s.brand === 'medpay' ? 'MedPay' : s.brand === 'tradepay' ? 'TradePay' : 'CoachPay',
+        amount: Math.round(s.amountCents / 100),
+        status: (s.status === 'in_review' ? 'Submitted' : capitalize(s.status)) as Exclude<
+          Status,
+          'All'
+        >,
+        date: s.submittedAt.slice(0, 10),
+        detail: {
+          loanTerm:
+            s.brand === 'tradepay' ? '48 months' : s.brand === 'medpay' ? '36 months' : '24 months',
+          interestRate: '—',
+          creditScore:
+            s.tier === 'prime_plus'
+              ? 760
+              : s.tier === 'prime'
+                ? 720
+                : s.tier === 'near_prime'
+                  ? 680
+                  : 620,
+          purpose:
+            s.brand === 'medpay'
+              ? 'Procedure financing'
+              : s.brand === 'tradepay'
+                ? 'Home improvement project'
+                : 'Coaching program',
+          dateSubmitted: s.submittedAt.slice(0, 10),
+        },
+      })),
+    );
+  }, [partner?.id]);
+  // Merge: newest submitted first, then the seeded historical rows.
+  partner = { ...partner, apps: [...liveApps, ...partner.apps] };
 
   const [filter, setFilter] = useState<Status>('All');
   const [page, setPage] = useState(1);
@@ -256,13 +552,19 @@ export default function PartnerAccountPage() {
           <Kpi label="Approved" value={String(totals.approved)} icon={<CheckIcon size={12} />} />
           <Kpi label="Declined" value={String(totals.declined)} icon={<XIcon size={12} />} />
           <Kpi label="Submitted" value={String(totals.submitted)} icon={<InfoIcon size={12} />} />
-          <Kpi label="Funded Vol." value={`$${Math.round(totals.fundedVol / 1000)}K`} icon={<DollarIcon size={12} />} />
+          <Kpi
+            label="Funded Vol."
+            value={`$${Math.round(totals.fundedVol / 1000)}K`}
+            icon={<DollarIcon size={12} />}
+          />
         </div>
 
         <Card>
           <CardBody className="p-0">
             <div className="px-5 py-3 border-b border-border">
-              <h2 className="text-[14px] font-semibold text-fg">Finance Applications ({filtered.length})</h2>
+              <h2 className="text-[14px] font-semibold text-fg">
+                Finance Applications ({filtered.length})
+              </h2>
             </div>
             <div className="grid grid-cols-12 px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
               <span className="col-span-2">ID</span>
@@ -285,9 +587,16 @@ export default function PartnerAccountPage() {
                       <span className="col-span-2 font-mono text-fg-secondary">{a.id}</span>
                       <span className="col-span-3 font-medium text-fg truncate">{a.client}</span>
                       <span className="col-span-2 text-fg-secondary text-[12px]">{a.product}</span>
-                      <span className="col-span-2 text-right font-semibold text-fg tabular-nums">{fmt(a.amount)}</span>
+                      <span className="col-span-2 text-right font-semibold text-fg tabular-nums">
+                        {fmt(a.amount)}
+                      </span>
                       <span className="col-span-2">
-                        <span className={'text-[10px] px-2 py-0.5 rounded-full font-medium ' + STATUS_PILL[a.status]}>
+                        <span
+                          className={
+                            'text-[10px] px-2 py-0.5 rounded-full font-medium ' +
+                            STATUS_PILL[a.status]
+                          }
+                        >
                           {a.status}
                         </span>
                       </span>
@@ -318,7 +627,8 @@ export default function PartnerAccountPage() {
 
             <div className="flex items-center justify-between px-5 py-3 border-t border-border">
               <p className="text-[11px] text-fg-muted">
-                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(filtered.length, page * PAGE_SIZE)} of {filtered.length}
+                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(filtered.length, page * PAGE_SIZE)}{' '}
+                of {filtered.length}
               </p>
               <div className="flex gap-1">
                 <button

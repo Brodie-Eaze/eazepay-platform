@@ -50,6 +50,7 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
+import { saveSubmittedApp, DEMO_PARTNER_BY_BRAND } from '../../../lib/submitted-applications';
 
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
@@ -77,10 +78,19 @@ interface FilterArgs {
   tier: CreditTier;
   amountCents: number;
 }
+/**
+ * Filter lenders for this brand × tier × partner × amount. Includes a
+ * tier-fallback walk: if the prospect's hashed tier returns zero
+ * lenders (real catalogs have gaps — eg. no enabled sub_prime
+ * coachpay lender at $500), we walk the tier ramp toward `prime` and
+ * back toward `sub_prime` until we find a non-empty set. This mirrors
+ * how a real lender waterfall handles a sparse pool — the prospect
+ * sees an offer instead of a dead-end "no matches" screen.
+ */
+const TIER_ORDER: CreditTier[] = ['prime_plus', 'prime', 'near_prime', 'sub_prime'];
 function filterLenders({ partnerId, tier, amountCents }: FilterArgs): MarketplaceLenderRow[] {
-  return marketplaceLenders.filter((l) => {
+  const passesNonTier = (l: MarketplaceLenderRow): boolean => {
     if (l.brands.length > 0 && !l.brands.includes('medpay')) return false;
-    if (!l.servesTiers.includes(tier)) return false;
     const override = partnerId
       ? partnerAccessOverrides.find(
           (o) => o.merchantId === partnerId && o.marketplaceLenderId === l.id,
@@ -92,7 +102,24 @@ function filterLenders({ partnerId, tier, amountCents }: FilterArgs): Marketplac
       return false;
     }
     return true;
-  });
+  };
+  const tryTier = (t: CreditTier) =>
+    marketplaceLenders.filter((l) => passesNonTier(l) && l.servesTiers.includes(t));
+
+  const direct = tryTier(tier);
+  if (direct.length > 0) return direct;
+
+  // Walk toward prime first (less risky), then toward sub_prime.
+  const idx = TIER_ORDER.indexOf(tier);
+  for (let i = idx - 1; i >= 0; i--) {
+    const r = tryTier(TIER_ORDER[i]!);
+    if (r.length > 0) return r;
+  }
+  for (let i = idx + 1; i < TIER_ORDER.length; i++) {
+    const r = tryTier(TIER_ORDER[i]!);
+    if (r.length > 0) return r;
+  }
+  return [];
 }
 
 export default function MedPayApplyPage() {
@@ -133,6 +160,11 @@ export default function MedPayApplyPage() {
     }
   }, [step]);
 
+  // Tracking: has this session's app been persisted yet? Effect declared
+  // AFTER `eligibleLenders` further down so the closure picks up the
+  // resolved matcher.
+  const [persisted, setPersisted] = useState(false);
+
   // Session-bind enforcement
   useEffect(() => {
     if (!sessionId) return;
@@ -161,6 +193,26 @@ export default function MedPayApplyPage() {
       }),
     [ref, tier, intake.amount],
   );
+
+  // Persist the application the moment the engine completes (step → offers).
+  // Attribution: explicit ?ref=<partnerId> wins; otherwise fall back to the
+  // MedPay demo partner binding (p_helio) so an unattributed test still
+  // shows up in MedPay's portal, not in TradePay/CoachPay.
+  useEffect(() => {
+    if (step !== 'offers' || persisted) return;
+    const partnerId = ref || DEMO_PARTNER_BY_BRAND.medpay;
+    const top = eligibleLenders[0];
+    saveSubmittedApp({
+      partnerId,
+      brand: 'medpay',
+      customer: `${intake.firstName.trim()} ${intake.lastName.trim()}`.trim(),
+      customerEmail: intake.email.trim(),
+      amountCents: cents(intake.amount),
+      tier,
+      lender: top?.displayName ?? 'Pending lender match',
+    });
+    setPersisted(true);
+  }, [step, persisted, ref, eligibleLenders, intake, tier]);
 
   const acceptDisclaimer = async () => {
     if (!consent) {
