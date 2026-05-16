@@ -534,7 +534,7 @@ const MP_TIERS = [
   { key: 'excellent', label: 'Excellent', sub: '720+ FICO', apr: 0.059 },
   { key: 'good', label: 'Good', sub: '660–719', apr: 0.099 },
   { key: 'fair', label: 'Fair', sub: '600–659', apr: 0.149 },
-  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.199 },
+  { key: 'building', label: 'Building', sub: 'under 600', apr: 0.249 },
 ] as const;
 type MpTier = (typeof MP_TIERS)[number]['key'];
 
@@ -598,25 +598,36 @@ function MedPayCalculator({ onApply }: { onApply: () => void }) {
         <div className="mp-calc-label">
           <span>Credit profile</span>
           <strong>
-            {activeTier.label} · from {(APR * 100).toFixed(1)}%
+            {activeTier.label} · {(APR * 100).toFixed(1)}% APR
           </strong>
         </div>
-        <div className="mp-calc-tier-row" role="radiogroup" aria-label="Credit profile">
-          {MP_TIERS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="radio"
-              aria-checked={t.key === tier}
-              className={`mp-calc-tier ${t.key === tier ? 'is-active' : ''}`}
-              onClick={() => setTier(t.key)}
+        <div className="mp-calc-select-wrap">
+          <select
+            className="mp-calc-select"
+            value={tier}
+            onChange={(e) => setTier(e.target.value as MpTier)}
+            aria-label="Credit profile"
+          >
+            {MP_TIERS.map((t) => (
+              <option key={t.key} value={t.key}>
+                {t.label} · {t.sub} · {(t.apr * 100).toFixed(1)}% APR
+              </option>
+            ))}
+          </select>
+          <span className="mp-calc-select-caret" aria-hidden>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <span className="mp-calc-tier-label">{t.label}</span>
-              <span className="mp-calc-tier-sub">
-                {t.sub} · {(t.apr * 100).toFixed(1)}%
-              </span>
-            </button>
-          ))}
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
         </div>
       </div>
 
@@ -1936,51 +1947,50 @@ const MEDPAY_APPLY_CSS = `
   box-shadow: 0 6px 14px rgba(14, 124, 102, 0.22);
 }
 
-/* Credit-tier picker — full-width row of 4 chips, teal accent. */
+/* Credit-tier dropdown — single native select, teal accent. */
 .mp-calc-tier-field {
   grid-column: 1 / -1;
   margin-top: 18px;
 }
 .mp-calc-field--full { grid-column: 1 / -1; }
-.mp-calc-tier-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+.mp-calc-select-wrap {
+  position: relative;
+  display: block;
 }
-.mp-calc-tier {
-  padding: 10px 8px;
-  border-radius: 10px;
+.mp-calc-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 100%;
+  padding: 14px 40px 14px 14px;
+  border-radius: 12px;
   background: rgba(14, 124, 102, 0.04);
   border: 1px solid var(--mp-line);
-  color: var(--mp-ink-2);
-  text-align: center;
-  transition: all 160ms ease;
-  cursor: pointer;
-  min-height: 56px;
-}
-.mp-calc-tier:hover { background: rgba(14, 124, 102, 0.08); }
-.mp-calc-tier.is-active {
-  background: linear-gradient(135deg, var(--mp-teal), var(--mp-teal-2));
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 6px 14px rgba(14, 124, 102, 0.22);
-}
-.mp-calc-tier-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--mp-ink);
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: -0.01em;
-}
-.mp-calc-tier-sub {
-  display: block;
-  font-size: 10.5px;
-  opacity: 0.7;
-  margin-top: 2px;
+  cursor: pointer;
+  transition: all 160ms ease;
+  min-height: 52px;
   font-variant-numeric: tabular-nums;
 }
-.mp-calc-tier.is-active .mp-calc-tier-sub { opacity: 0.95; }
-@media (max-width: 540px) {
-  .mp-calc-tier-row { grid-template-columns: repeat(2, 1fr); }
+.mp-calc-select:hover { background: rgba(14, 124, 102, 0.08); }
+.mp-calc-select:focus {
+  outline: none;
+  border-color: var(--mp-teal);
+  box-shadow: 0 0 0 3px rgba(14, 124, 102, 0.18);
+}
+.mp-calc-select-caret {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mp-teal);
+  pointer-events: none;
 }
 
 .mp-calc-result {
