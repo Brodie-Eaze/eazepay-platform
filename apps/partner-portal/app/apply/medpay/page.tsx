@@ -1979,6 +1979,55 @@ const MEDPAY_APPLY_CSS = `
   /* keep inputs touch-target sized */
   .mp-form input { min-height: 48px; font-size: 16px; }
   .mp-form-submit { min-height: 52px; }
+
+  /* ── Hero offer card — mobile fit ─────────────────────────────────
+     The hero stage was overflowing on phones:
+       - pixel grid bled to the right edge
+       - 3-col offer row crushed "Cross River Bank" vertically
+       - 5-stage bar labels collided into "PREQUAQUOTOFFERACCEPRAYOUT"
+       - floating chips (FCRA / DECISION / PAYOUT / PROMO) wrapped weirdly
+     Fix: contain the stage, drop decorative chrome, restack the rows. */
+  .mp-hero-stage {
+    min-height: auto;
+    padding-bottom: 24px;
+  }
+  .mp-hero-right { min-height: auto; }
+  .mp-pixel-grid,
+  .mp-halo { display: none; }
+  .mp-hero-stage .mp-offer-card {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    transform: none !important;
+  }
+  /* 3-col EST. MONTHLY / APR / LENDER becomes a tidy 2-col grid;
+     the long "Cross River Bank" lender value spans the full width
+     beneath, which avoids the vertical 3-letter wrap. */
+  .mp-offer-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+  }
+  .mp-offer-row > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .mp-offer-row-v { font-size: 14px; }
+  .mp-offer-row-v.sm { font-size: 13px; }
+  /* Stage bar — show the track only, drop the 5-label rail since the
+     "PREQUAL / QUOTE / OFFER / ACCEPT / PAYOUT" copy collides at any
+     width under ~360px. The progress bar already conveys the story. */
+  .mp-offer-bar-stages { display: none; }
+  /* Floating chips (FCRA / DECISION / PAYOUT / PROMO) — these are
+     decorative on mobile and were clipping the bottom of the card.
+     The pre-qualified pill + foot row inside the card already make
+     the same statement. */
+  .mp-chip { display: none; }
+  .mp-offer-card { padding: 22px 18px; }
+  .mp-offer-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
 }
 
 /* ============== VIEWPORT LOCK (no horizontal shake) ============== */
