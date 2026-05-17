@@ -17,6 +17,7 @@ import { NotificationModule } from '@eazepay/service-notification';
 import { PaymentModule } from '@eazepay/service-payment';
 import { RiskModule } from '@eazepay/service-risk';
 import { WebhookModule } from '@eazepay/service-webhook';
+import { BillingModule } from '@eazepay/service-billing';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -112,6 +113,18 @@ const env = loadEnv();
     MerchantModule.forRoot({
       prismaToken: PrismaService,
       kybProvider: env.KYB_PROVIDER,
+      isDevelopment: env.NODE_ENV === 'development',
+    }),
+    BillingModule.forRoot({
+      // Off by default — see env.BILLING_ENABLED. Flip on per-env once
+      // Resend + Stripe are wired and the accounts team is ready.
+      // While off, the module is a no-op: no controllers, no service,
+      // no /billing/* surface, no effect on the rest of the platform.
+      enabled: env.BILLING_ENABLED,
+      prismaToken: PrismaService,
+      // Mock until the settlements ledger adapter lands; module refuses
+      // to boot with 'mock' outside development (see billing.module.ts).
+      activitySource: 'mock',
       isDevelopment: env.NODE_ENV === 'development',
     }),
     OrchestrationModule.forRoot({ prismaToken: PrismaService }),

@@ -122,6 +122,17 @@ const EnvSchema = z
       .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
       .transform((v) => v === true || v === 'true' || v === '1')
       .default(false),
+    /**
+     * Billing service kill-switch. When false (the default), the
+     * BillingModule registers as a no-op — no controllers, no service,
+     * no /billing/* surface. Lets us ship the code to main with the
+     * rest of the platform unaffected; flip on per-environment once
+     * Resend + Stripe are wired and the accounts team is ready.
+     */
+    BILLING_ENABLED: z
+      .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+      .transform((v) => v === true || v === 'true' || v === '1')
+      .default(false),
     OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     /**

@@ -843,6 +843,8 @@ model Merchant {
   beneficialOwners BeneficialOwner[]
   applicationLinks ApplicationLink[]
   lenderAccess     PartnerLenderAccess[]
+  billingConfig    BillingConfig?
+  invoices         Invoice[]
 
   @@index([status])
   @@map("merchants")
@@ -1469,4 +1471,202 @@ model HighsaleSnapshot {
 
   @@index([creditTier, status])
   @@map("highsale_snapshots")
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Billing — platform-fee invoicing.
+// ─────────────────────────────────────────────────────────────────────
+// EazePay invoices each Merchant a platform fee on funded volume.
+// `BillingConfig` controls how/when a merchant gets invoiced.
+// `Invoice` is one period's bill; `InvoicePayment` records remittance
+// against it; `InvoiceActivity` is the audit log; `ConfirmToken`
+// gates the recipient confirm/dispute page.
+//
+// PII posture:
+//   - BillingConfig.sendToEmailEnc is envelope-encrypted (AAD bound
+//     to merchantId + field name) via PiiVaultService.sealOpaque.
+//   - InvoiceActivity.summary is free-text but bounded to operator-
+//     authored or recipient-authored content; future hardening can
+//     encrypt this if the audit chain needs to.
+//   - ConfirmToken uses a 256-bit random token and is rate-limited
+//     at the controller level.
+//
+// Indexes target the dominant query patterns: list-by-period,
+// list-by-merchant, list-by-status-and-due-date (for the Collections
+// lane), and confirm-token lookup.
+
+enum BillingCycle {
+  monthly
+  weekly
+  paused
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  voided
+}
+
+enum InvoicePaymentMethod {
+  ach
+  wire
+  card
+  check
+  other
+}
+
+enum InvoiceActivityKind {
+  status_change
+  fee_pct_change
+  fee_amount_change
+  due_date_change
+  payment_recorded
+  voided
+  unvoided
+  email_composed
+  generated
+  confirmed
+  disputed
+}
+
+enum ConfirmState {
+  pending
+  confirmed
+  disputed
+}
+
+/// Per-merchant billing configuration. One row per Merchant; created
+/// lazily on first edit (defaults are computed in service code so the
+/// table only stores explicit overrides).
+model BillingConfig {
+  id                       String       @id @default(uuid()) @db.Uuid
+  merchantId               String       @unique @db.Uuid @map("merchant_id")
+  merchant                 Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  cycle                    BillingCycle @default(monthly)
+  /// 1-28 for monthly, 0-6 (Sun-Sat) for weekly. UI clamps before write.
+  dayOfPeriod              Int          @default(1) @map("day_of_period")
+  /// Encrypted recipient override (PiiVaultService.sealOpaque envelope,
+  /// AAD = `{entity:billing_config, field:sendToEmail, merchantId}`).
+  /// NULL means fall back to Merchant's contact email.
+  sendToEmailEnc           String?      @map("send_to_email_enc")
+  autoSend                 Boolean      @default(false) @map("auto_send")
+  /// Free-text URL template with `{{invoice}}` + `{{amount}}` substitution.
+  /// Not encrypted: pasted Stripe/MICAMP link is not user PII, but the
+  /// resolved URL may contain merchant identifiers. Treat as confidential.
+  paymentLinkTemplate      String?      @map("payment_link_template")
+  note                     String?
+  updatedById              String?      @db.Uuid @map("updated_by_id")
+  createdAt                DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt                DateTime     @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  invoices Invoice[]
+
+  @@index([cycle])
+  @@map("billing_configs")
+}
+
+/// One invoice per (merchant, period). The `invoiceNo` is the
+/// human-readable display id (e.g. INV-2026-05-p_atlas) and is the
+/// stable external reference used in emails + URLs.
+model Invoice {
+  id              String        @id @default(uuid()) @db.Uuid
+  invoiceNo       String        @unique @map("invoice_no")
+  merchantId      String        @db.Uuid @map("merchant_id")
+  merchant        Merchant      @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  billingConfigId String?       @db.Uuid @map("billing_config_id")
+  billingConfig   BillingConfig? @relation(fields: [billingConfigId], references: [id], onDelete: SetNull)
+  /// "YYYY-MM" for monthly, "YYYY-Www" for weekly.
+  periodId        String        @map("period_id")
+  periodLabel     String        @map("period_label")
+  periodStart     DateTime      @db.Date @map("period_start")
+  periodEnd       DateTime      @db.Date @map("period_end")
+  /// Source aggregate at generate-time. Frozen so a later settlement
+  /// re-roll doesn't silently change the invoice amount.
+  grossFundedCents BigInt       @map("gross_funded_cents")
+  /// Effective fee % at generate-time, in basis points × 100 (e.g.
+  /// 350 = 3.50%). Stored as integer to avoid float drift.
+  feeBps          Int           @map("fee_bps")
+  /// Default = round(grossFundedCents * feeBps / 10000). Can be
+  /// overridden by accounts via setAmount.
+  amountCents     BigInt        @map("amount_cents")
+  status          InvoiceStatus @default(draft)
+  dueDate         DateTime      @db.Date @map("due_date")
+  voidedAt        DateTime?     @db.Timestamptz(6) @map("voided_at")
+  voidReason      String?       @map("void_reason")
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(6) @map("updated_at")
+
+  payments       InvoicePayment[]
+  activity       InvoiceActivity[]
+  confirmTokens  ConfirmToken[]
+
+  @@unique([merchantId, periodId])
+  @@index([periodId, status])
+  @@index([status, dueDate])
+  @@map("invoices")
+}
+
+/// Payment recorded against an invoice. Append-only; corrections are
+/// new entries with a `note` referencing the prior id rather than
+/// edits-in-place.
+model InvoicePayment {
+  id          String        @id @default(uuid()) @db.Uuid
+  invoiceId   String        @db.Uuid @map("invoice_id")
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amountCents BigInt               @map("amount_cents")
+  paidAt      DateTime             @db.Date @map("paid_at")
+  method      InvoicePaymentMethod
+  reference   String?
+  note        String?
+  recordedById String?      @db.Uuid @map("recorded_by_id")
+  recordedAt  DateTime      @default(now()) @db.Timestamptz(6) @map("recorded_at")
+
+  @@index([invoiceId])
+  @@map("invoice_payments")
+}
+
+/// Audit trail for one invoice. Every mutation a human (operator or
+/// recipient) makes against an invoice lands here. Append-only.
+model InvoiceActivity {
+  id        String              @id @default(uuid()) @db.Uuid
+  invoiceId String              @db.Uuid @map("invoice_id")
+  invoice   Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  kind      InvoiceActivityKind
+  /// Display name for the actor — operator email, or "recipient" for
+  /// confirm/dispute actions, or "system" for cron-driven changes.
+  actorLabel String             @map("actor_label")
+  /// User id (NULL for unauthenticated recipient or system actions).
+  actorId   String?             @db.Uuid @map("actor_id")
+  summary   String
+  /// IP + UA for recipient (confirm/dispute) actions — gives the
+  /// audit chain a forensic anchor without storing PII.
+  remoteIp  String?             @map("remote_ip")
+  userAgent String?             @map("user_agent")
+  at        DateTime            @default(now()) @db.Timestamptz(6)
+
+  @@index([invoiceId, at(sort: Desc)])
+  @@map("invoice_activity")
+}
+
+/// Token gating the recipient confirm/dispute page. Single-use semantic:
+/// once `state` flips off `pending` the token is dead.
+model ConfirmToken {
+  id           String       @id @default(uuid()) @db.Uuid
+  /// 32-byte random base64url, used in URL path.
+  token        String       @unique
+  invoiceId    String       @db.Uuid @map("invoice_id")
+  invoice      Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  state        ConfirmState @default(pending)
+  actedAt      DateTime?    @db.Timestamptz(6) @map("acted_at")
+  disputeReason String?     @map("dispute_reason")
+  remoteIp     String?      @map("remote_ip")
+  userAgent    String?      @map("user_agent")
+  expiresAt    DateTime     @db.Timestamptz(6) @map("expires_at")
+  createdAt    DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+
+  @@index([invoiceId])
+  @@index([expiresAt])
+  @@map("confirm_tokens")
 }

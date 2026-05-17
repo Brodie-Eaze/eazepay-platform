@@ -7,62 +7,180 @@ import {
   findInvoiceByConfirmToken,
   setConfirmState,
   readInvoiceOverrides,
+  computeInvoiceForPartner,
 } from '../../../../lib/invoicing';
 import { partners as MASTER_PARTNERS } from '../../../../lib/master-data';
-import { computeInvoiceForPartner } from '../../../../lib/invoicing';
+import { BillingApi, BillingApiError, isBillingApiAvailable } from '../../../../lib/billing-api';
 
 /**
  * Recipient confirm/dispute page — what the business owner lands on
  * when they click the link in the invoice email. Public, token-gated.
  */
+type ResolvedView = {
+  state: 'pending' | 'confirmed' | 'disputed';
+  disputeReason: string | null;
+  invoice: {
+    invoiceNo: string;
+    merchant: string;
+    vertical: string | null;
+    periodLabel: string;
+    grossFundedCents: number;
+    feePct: number;
+    amountCents: number;
+    dueDate: string;
+  };
+};
+
+/**
+ * Recipient confirm/dispute page.
+ *
+ * Calls the public BFF (`/public/billing/confirm/<token>`) when the
+ * API is reachable; falls back to localStorage adapters so the demo
+ * keeps working offline. Either way the recipient sees the same UX.
+ */
 export default function InvoiceConfirmPage() {
   const params = useParams();
   const token = String(params?.token ?? '');
-  const [tick, setTick] = useState(0);
+  const [view, setView] = useState<ResolvedView | null>(null);
+  const [loading, setLoading] = useState(true);
   const [reason, setReason] = useState('');
-
-  const found = findInvoiceByConfirmToken(token);
-  const invoiceNo = found?.invoiceNo ?? null;
-  // partnerId is the suffix of the period-scoped invoice number.
-  const partnerId = invoiceNo?.split('-').slice(3).join('-');
-  const partner = partnerId ? MASTER_PARTNERS.find((p) => p.id === partnerId) : undefined;
-
-  const override = invoiceNo ? readInvoiceOverrides()[invoiceNo] : undefined;
-  const state = override?.confirm?.state ?? 'pending';
-
-  const computed = partner
-    ? computeInvoiceForPartner({
-        partnerId: partner.id,
-        product: partner.product,
-        fundedNetCents: partner.netCents,
-      })
-    : null;
-  const feeCents = override?.customFeeCents ?? computed?.feeAmountCents ?? 0;
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // No-op effect — `tick` re-render is wired through the action
-    // handlers so the page reflects state without a full reload.
-  }, [tick]);
+    let cancelled = false;
+    (async () => {
+      try {
+        if (await isBillingApiAvailable()) {
+          const r = await BillingApi.resolveConfirmToken(token);
+          if (cancelled) return;
+          setView({
+            state: r.state,
+            disputeReason: r.disputeReason,
+            invoice: {
+              invoiceNo: r.invoice.invoiceNo,
+              merchant: r.invoice.merchant,
+              vertical: r.invoice.vertical,
+              periodLabel: r.invoice.periodLabel,
+              grossFundedCents: Number(r.invoice.grossFundedCents),
+              feePct: r.invoice.feeBps / 10000,
+              amountCents: Number(r.invoice.amountCents),
+              dueDate: r.invoice.dueDate,
+            },
+          });
+        } else {
+          // Offline path — read localStorage.
+          const found = findInvoiceByConfirmToken(token);
+          if (!found) {
+            setView(null);
+            return;
+          }
+          const ov = readInvoiceOverrides()[found.invoiceNo];
+          const partnerId = found.invoiceNo.split('-').slice(3).join('-');
+          const partner = MASTER_PARTNERS.find((p) => p.id === partnerId);
+          if (!partner) {
+            setView(null);
+            return;
+          }
+          const computed = computeInvoiceForPartner({
+            partnerId: partner.id,
+            product: partner.product,
+            fundedNetCents: partner.netCents,
+          });
+          setView({
+            state: ov?.confirm?.state ?? 'pending',
+            disputeReason: ov?.confirm?.disputeReason ?? null,
+            invoice: {
+              invoiceNo: found.invoiceNo,
+              merchant: partner.legalName,
+              vertical: partner.product,
+              periodLabel: 'current',
+              grossFundedCents: computed.grossFundedCents,
+              feePct: computed.feePct,
+              amountCents: ov?.customFeeCents ?? computed.feeAmountCents,
+              dueDate: ov?.dueDate ?? '',
+            },
+          });
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setError(
+          e instanceof BillingApiError && e.status === 404
+            ? 'Invalid or expired link.'
+            : 'Could not load this invoice. Try again later.',
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
-  if (!found || !partner || !computed) {
+  if (loading)
+    return (
+      <PublicShell>
+        <p>Loading…</p>
+      </PublicShell>
+    );
+
+  if (error || !view) {
     return (
       <PublicShell>
         <p className="text-[14px] text-fg-secondary">
-          This confirmation link is no longer valid. Please reach out to your account manager if you
-          believe this is in error.
+          {error ??
+            'This confirmation link is no longer valid. Please reach out to your account manager if you believe this is in error.'}
         </p>
       </PublicShell>
     );
   }
 
-  const confirm = () => {
-    setConfirmState(found.invoiceNo, 'confirmed', 'recipient');
-    setTick((t) => t + 1);
+  const state = view.state;
+  const feeCents = view.invoice.amountCents;
+  const partner = { legalName: view.invoice.merchant, product: view.invoice.vertical };
+  const computed = {
+    grossFundedCents: view.invoice.grossFundedCents,
+    feePct: view.invoice.feePct,
   };
-  const dispute = () => {
-    setConfirmState(found.invoiceNo, 'disputed', 'recipient', reason.trim() || 'no reason');
-    setTick((t) => t + 1);
+  const found = { invoiceNo: view.invoice.invoiceNo };
+
+  const act = async (decision: 'confirm' | 'dispute') => {
+    try {
+      if (await isBillingApiAvailable()) {
+        const r = await BillingApi.applyConfirmDecision(
+          token,
+          decision,
+          decision === 'dispute' ? reason.trim() || undefined : undefined,
+        );
+        setView({
+          ...view,
+          state: r.state,
+          disputeReason: decision === 'dispute' ? reason.trim() || null : null,
+        });
+      } else {
+        setConfirmState(
+          found.invoiceNo,
+          decision === 'confirm' ? 'confirmed' : 'disputed',
+          'recipient',
+          decision === 'dispute' ? reason.trim() || 'no reason' : undefined,
+        );
+        setView({
+          ...view,
+          state: decision === 'confirm' ? 'confirmed' : 'disputed',
+          disputeReason: decision === 'dispute' ? reason.trim() || null : null,
+        });
+      }
+    } catch (e) {
+      setError(
+        e instanceof BillingApiError && e.status === 409
+          ? 'This invoice has already been actioned.'
+          : 'Could not record your response — please try again.',
+      );
+    }
   };
+
+  const confirm = () => act('confirm');
+  const dispute = () => act('dispute');
 
   return (
     <PublicShell>
@@ -77,6 +195,8 @@ export default function InvoiceConfirmPage() {
         <Stat label="Amount due" value={fmtUsd(feeCents)} emphasis />
         <Stat label="Status" value={state.toUpperCase()} />
       </div>
+
+      {error && <p className="mt-4 text-[12px] text-rose-700">{error}</p>}
 
       {state === 'pending' ? (
         <>
@@ -108,8 +228,8 @@ export default function InvoiceConfirmPage() {
             </p>
             <p className="mt-1 text-[12px] text-fg-muted">
               Status: <strong>{state}</strong>
-              {state === 'disputed' && override?.confirm?.disputeReason && (
-                <span> · Reason: {override.confirm.disputeReason}</span>
+              {state === 'disputed' && view.disputeReason && (
+                <span> · Reason: {view.disputeReason}</span>
               )}
             </p>
             <p className="mt-3 text-[12px] text-fg-muted">
