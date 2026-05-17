@@ -288,6 +288,7 @@ export function MonthlyBillingTab({ period, flash, version, bumpVersion }: Props
       feePct: r.feePct,
       dueDate: r.dueDate,
       grossFundedCents: r.grossFundedCents,
+      vertical: r.vertical,
     });
   }, []);
 
@@ -435,8 +436,12 @@ export function MonthlyBillingTab({ period, flash, version, bumpVersion }: Props
 
       {/* Table */}
       <div className="rounded-xl border border-border bg-bg-elevated overflow-hidden">
+        {/* Header columns sum to 12 and match the body row spans exactly.
+            Allocation: 3 (checkbox + avatar + merchant) + 2 (vertical) +
+            1 (gross) + 1 (fee%) + 1 (amount) + 1 (due) + 3 (status+
+            actions) = 12. */}
         <div className="grid grid-cols-12 gap-3 px-5 py-2.5 border-b border-border bg-bg-muted/30 items-center">
-          <label className="col-span-1 flex items-center gap-2 cursor-pointer">
+          <label className="col-span-3 flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={filtered.length > 0 && selected.size === filtered.length}
@@ -447,13 +452,13 @@ export function MonthlyBillingTab({ period, flash, version, bumpVersion }: Props
               aria-label="Select all visible"
             />
             <span className="text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
-              Invoice
+              Invoice · Merchant
             </span>
           </label>
           <SortHeader label="Vertical" sortKey="vertical" align="left" span={2} />
-          <SortHeader label="Gross funded" sortKey="gross" align="right" span={2} />
+          <SortHeader label="Gross" sortKey="gross" align="right" span={1} />
           <SortHeader label="Fee %" sortKey="feePct" align="right" span={1} />
-          <SortHeader label="Amount" sortKey="feeAmount" align="right" span={2} />
+          <SortHeader label="Amount" sortKey="feeAmount" align="right" span={1} />
           <SortHeader label="Due" sortKey="dueDate" align="right" span={1} />
           <SortHeader label="Status · Actions" sortKey="status" align="right" span={3} />
         </div>
@@ -508,7 +513,7 @@ export function MonthlyBillingTab({ period, flash, version, bumpVersion }: Props
                     <p className="text-[13px] text-fg truncate">{r.vertical}</p>
                     <p className="text-[11px] text-fg-muted truncate">{r.periodLabel}</p>
                   </div>
-                  <div className="col-span-2 text-right tabular-nums text-[13px] text-fg">
+                  <div className="col-span-1 text-right tabular-nums text-[13px] text-fg">
                     {fmtUsdCompact(r.grossFundedCents)}
                   </div>
                   <div className="col-span-1 text-right">
@@ -542,7 +547,7 @@ export function MonthlyBillingTab({ period, flash, version, bumpVersion }: Props
                       </button>
                     )}
                   </div>
-                  <div className="col-span-2 text-right">
+                  <div className="col-span-1 text-right">
                     {editingAmount ? (
                       <div className="flex items-center justify-end gap-1">
                         <span className="text-[11px] text-fg-muted">$</span>

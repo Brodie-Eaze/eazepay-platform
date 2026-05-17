@@ -49,6 +49,21 @@ import {
 import { BRAND_ORDER, BRANDS, type BrandCode } from '@eazepay/shared-types';
 import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
+import { NotificationBell } from '../components/NotificationBell';
+import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
+
+/**
+ * Map a per-brand portal to the notification recipient key — the
+ * partner merchantId. The demo signs every brand portal in as the
+ * FIRST roster partner for that brand (matches the BillingTab demo
+ * pattern in /v/[brand]/billing). When real auth lands, swap this
+ * for the merchantId resolved from the JWT.
+ */
+function notificationRecipientForBrand(brand: BrandCode): string {
+  const brandName = BRANDS[brand].name.toLowerCase();
+  const partner = MASTER_PARTNERS_ROSTER.find((p) => p.product.toLowerCase() === brandName);
+  return partner?.id ?? `partner_${brand}`;
+}
 
 const NextLink = ({
   href,
@@ -500,6 +515,13 @@ export function Shell({ children }: { children: ReactNode }) {
               </StatusPill>
             </>
           )}
+          {/* Notification bell — scope = 'master' on operator
+              surfaces, partner merchantId on per-brand. Master sees
+              a mirror of every notification dispatched from the
+              billing send composer; partner sees only their own. */}
+          <NotificationBell
+            recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
+          />
           <Button size="sm" variant="ghost">
             Help
           </Button>

@@ -159,6 +159,7 @@ export function CollectionsTab({ flash, version, bumpVersion }: Props) {
       feePct: r.feePct,
       dueDate: r.dueDate,
       grossFundedCents: r.grossFundedCents,
+      vertical: r.vertical,
     });
   };
 

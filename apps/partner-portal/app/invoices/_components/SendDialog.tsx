@@ -12,6 +12,7 @@ import {
 } from '@eazepay/ui/web';
 import { ensureConfirmToken, appendActivity } from '../../../lib/invoicing';
 import { getBillingConfig, resolvePaymentLink } from '../../../lib/billing-config';
+import { pushNotificationWithMasterMirror } from '../../../lib/notifications';
 
 const inputCn =
   'mt-1 w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[13px] outline-none focus:ring-2 focus:ring-border-focus';
@@ -30,6 +31,9 @@ export interface SendTarget {
   feePct: number;
   dueDate: string;
   grossFundedCents: number;
+  /** Vertical / product label (e.g. "MedPay"). Used to deep-link
+   *  the notification to the recipient's brand portal billing view. */
+  vertical: string;
 }
 
 interface Props {
@@ -106,8 +110,31 @@ export function SendDialog({ target, onClose, onSent }: Props) {
       by: ACTOR,
       summary: `Composed email to ${email}${payUrl ? ' · with pay link' : ''}`,
     });
+    // Push to the recipient partner's NotificationBell + mirror to
+    // master so the operator sees what they dispatched. Deep-link
+    // takes the partner straight to their per-brand billing surface
+    // where this invoice now appears with status 'sent'.
+    const partnerHref = `/v/${guessBrandSlug(target.vertical)}/billing`;
+    pushNotificationWithMasterMirror({
+      recipient: target.partnerId,
+      kind: 'invoice_sent',
+      title: `New invoice from EazePay — ${target.invoiceNo}`,
+      body: `${target.periodLabel} platform-fee invoice for ${fmtUsd(target.amountCents)} is ready to review.${payUrl ? ' Pay link included.' : ''}`,
+      href: partnerHref,
+      masterTitle: `Sent ${target.invoiceNo} to ${target.merchant}`,
+      masterBody: `${target.periodLabel} · ${fmtUsd(target.amountCents)} · recipient: ${email}`,
+    });
     onSent(target.invoiceNo);
   };
+
+  /** Convert a vertical product label (e.g. "MedPay") into the URL
+   *  slug used on per-brand routes ('medpay'). Multi-brand falls
+   *  back to medpay so the notification deep-link still resolves. */
+  function guessBrandSlug(vertical: string): string {
+    const v = vertical.toLowerCase().replace(/\s+/g, '');
+    if (v === 'medpay' || v === 'tradepay' || v === 'coachpay') return v;
+    return 'medpay';
+  }
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
