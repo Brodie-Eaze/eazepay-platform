@@ -64,7 +64,7 @@ type TabKey =
   | 'overview'
   | 'users'
   | 'applications'
-  | 'payouts'
+  | 'billing'
   | 'lender'
   | 'activity'
   | 'settings';
@@ -73,7 +73,7 @@ const TAB_ITEMS: Array<{ key: TabKey; label: string }> = [
   { key: 'overview', label: 'Overview' },
   { key: 'users', label: 'Users & Roles' },
   { key: 'applications', label: 'Applications' },
-  { key: 'payouts', label: 'Payouts' },
+  { key: 'billing', label: 'Billing' },
   { key: 'lender', label: 'Lender Access' },
   { key: 'activity', label: 'Activity' },
   { key: 'settings', label: 'Settings' },
@@ -473,7 +473,14 @@ export default function PartnerDetailPage() {
           {tab === 'applications' && (
             <ApplicationsTab partnerId={base.id} partnerName={base.legalName} />
           )}
-          {tab === 'payouts' && <PayoutsTab partnerId={base.id} />}
+          {tab === 'billing' && (
+            <BillingTab
+              partnerId={base.id}
+              partnerName={base.legalName}
+              partnerEmail={base.email}
+              flash={flash}
+            />
+          )}
           {tab === 'lender' && <LenderAccessTab partnerId={base.id} flash={flash} />}
           {tab === 'activity' && <ActivityTab partnerId={base.id} />}
           {tab === 'settings' && (
@@ -994,70 +1001,263 @@ function ApplicationsTab({ partnerId, partnerName }: { partnerId: string; partne
 }
 
 /* ----------------------------------------------------------------------- */
-/*  Tab: Payouts                                                            */
+/*  Tab: Billing                                                            */
 /* ----------------------------------------------------------------------- */
 
-function PayoutsTab({ partnerId }: { partnerId: string }) {
-  const payouts = useMemo(() => seedPayouts(partnerId), [partnerId]);
+import { getBillingConfig, setBillingConfig, type BillingCycle } from '../../../lib/billing-config';
+import { readInvoiceOverrides } from '../../../lib/invoicing';
+import { partners as MASTER_PARTNERS_ROSTER } from '../../../lib/master-data';
+import { computeInvoiceForPartner } from '../../../lib/invoicing';
+
+function BillingTab({
+  partnerId,
+  partnerName,
+  partnerEmail,
+  flash,
+}: {
+  partnerId: string;
+  partnerName: string;
+  partnerEmail: string;
+  flash: (m: string) => void;
+}) {
+  const [version, setVersion] = useState(0);
+  const cfg = useMemo(() => getBillingConfig(partnerId), [partnerId, version]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Locate the partner's invoices in localStorage. The invoiceNo
+  // convention is `INV-<periodId>-<partnerId>` (set by the generator).
+  const invoices = useMemo(() => {
+    const overrides = readInvoiceOverrides();
+    const partner = MASTER_PARTNERS_ROSTER.find((p) => p.id === partnerId);
+    if (!partner) return [];
+    return Object.entries(overrides)
+      .filter(([id]) => id.endsWith(`-${partnerId}`))
+      .map(([invoiceNo, ov]) => {
+        const computed = computeInvoiceForPartner({
+          partnerId: partner.id,
+          product: partner.product,
+          fundedNetCents: partner.netCents,
+        });
+        const amount =
+          typeof ov.customFeeCents === 'number' ? ov.customFeeCents : computed.feeAmountCents;
+        const paid = (ov.payments ?? []).reduce((s, p) => s + p.amountCents, 0);
+        return {
+          invoiceNo,
+          status: (ov.status ?? 'draft') as 'draft' | 'sent' | 'paid' | 'overdue',
+          voided: !!ov.voidedAt,
+          dueDate: ov.dueDate ?? '—',
+          amountCents: amount,
+          paidCents: paid,
+          feePct: computed.feePct,
+        };
+      })
+      .sort((a, b) => b.invoiceNo.localeCompare(a.invoiceNo));
+  }, [partnerId, version]);
+
+  const totalOutstanding = invoices
+    .filter((i) => i.status !== 'paid' && !i.voided)
+    .reduce((s, i) => s + Math.max(0, i.amountCents - i.paidCents), 0);
+  const totalPaid = invoices
+    .filter((i) => i.status === 'paid')
+    .reduce((s, i) => s + i.amountCents, 0);
+
+  const updateCfg = (
+    patch: Partial<{
+      cycle: BillingCycle;
+      dayOfPeriod: number;
+      sendToEmail?: string;
+      autoSend: boolean;
+      paymentLinkTemplate?: string;
+    }>,
+  ) => {
+    setBillingConfig({ ...cfg, ...patch, partnerId });
+    setVersion((v) => v + 1);
+    flash('Billing config updated');
+  };
+
   return (
-    <Card>
-      <CardHeader
-        title="Recent payouts"
-        description={`Last ${payouts.length} payout cycles. Full ledger lives in /payouts/${partnerId}.`}
-        action={
-          <Link
-            href={`/payouts/${partnerId}`}
-            className="text-[12px] text-accent hover:underline inline-flex items-center gap-1"
-          >
-            View ledger <ArrowRightIcon size={11} />
-          </Link>
-        }
-      />
-      <CardBody className="p-0">
-        <div className="overflow-x-auto" role="region" aria-label="Recent payouts" tabIndex={0}>
-          <div className="min-w-[640px]">
-            <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
-              <span className="col-span-3">Payout ID</span>
-              <span className="col-span-2">Date</span>
-              <span className="col-span-2 text-right">Gross</span>
-              <span className="col-span-2 text-right">Fee</span>
-              <span className="col-span-2 text-right">Net</span>
-              <span className="col-span-1">Status</span>
-            </div>
-            <ul className="divide-y divide-border" aria-label={`${payouts.length} payout cycles`}>
-              {payouts.map((p) => (
-                <li key={p.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
-                  <div className="col-span-3 font-mono text-fg-muted">{p.id}</div>
-                  <div className="col-span-2 text-fg-secondary">{p.date}</div>
-                  <div className="col-span-2 text-right tabular-nums">
-                    <Money cents={p.grossCents} />
-                  </div>
-                  <div className="col-span-2 text-right tabular-nums text-fg-muted">
-                    <Money cents={p.feeCents} />
-                  </div>
-                  <div className="col-span-2 text-right font-semibold tabular-nums">
-                    <Money cents={p.netCents} />
-                  </div>
-                  <div className="col-span-1">
-                    <StatusPill
-                      tone={
-                        p.status === 'paid'
-                          ? 'success'
-                          : p.status === 'settled'
-                            ? 'info'
-                            : 'warning'
-                      }
-                    >
-                      {p.status}
-                    </StatusPill>
-                  </div>
-                </li>
-              ))}
-            </ul>
+    <div className="space-y-4">
+      {/* Header / stats */}
+      <Card>
+        <CardHeader
+          title="Billing"
+          description={`Platform-fee invoicing for ${partnerName}. Defaults inherit from the merchant's vertical; edit per-merchant overrides below.`}
+          action={
+            <Link
+              href={`/invoices?merchantId=${encodeURIComponent(partnerId)}`}
+              className="text-[12px] text-accent hover:underline inline-flex items-center gap-1"
+            >
+              Open in billing workspace <ArrowRightIcon size={11} />
+            </Link>
+          }
+        />
+        <CardBody className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Kpi label="Outstanding" value={<Money cents={totalOutstanding} />} />
+          <Kpi label="Paid (lifetime)" value={<Money cents={totalPaid} />} />
+          <Kpi label="Cycle" value={<span className="capitalize">{cfg.cycle}</span>} />
+          <Kpi
+            label="Auto-send"
+            value={
+              cfg.autoSend ? (
+                <span className="text-emerald-700">On</span>
+              ) : (
+                <span className="text-fg-muted">Off</span>
+              )
+            }
+          />
+        </CardBody>
+      </Card>
+
+      {/* Per-merchant config */}
+      <Card>
+        <CardHeader
+          title="Billing config"
+          description="Cycle, day, recipient override, payment-link template, and auto-send. These settings drive what 'Generate from activity' produces for this merchant each period."
+        />
+        <CardBody className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Field label="Cycle">
+            <select
+              value={cfg.cycle}
+              onChange={(e) => updateCfg({ cycle: e.target.value as BillingCycle })}
+              className="w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[13px]"
+            >
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+              <option value="paused">Paused</option>
+            </select>
+          </Field>
+          <Field label={cfg.cycle === 'weekly' ? 'Day of week (0=Sun)' : 'Day of month'}>
+            <input
+              type="number"
+              min={0}
+              max={cfg.cycle === 'weekly' ? 6 : 28}
+              value={cfg.dayOfPeriod}
+              onChange={(e) => updateCfg({ dayOfPeriod: Number(e.target.value) || 1 })}
+              className="w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[13px] tabular-nums"
+            />
+          </Field>
+          <Field label="Send-to email (defaults to merchant contact)">
+            <input
+              type="email"
+              value={cfg.sendToEmail ?? ''}
+              onChange={(e) => updateCfg({ sendToEmail: e.target.value || undefined })}
+              placeholder={partnerEmail}
+              className="w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[13px]"
+            />
+          </Field>
+          <Field label="Auto-send drafts on generate">
+            <label className="inline-flex items-center gap-2 h-9 text-[13px]">
+              <input
+                type="checkbox"
+                checked={cfg.autoSend}
+                onChange={(e) => updateCfg({ autoSend: e.target.checked })}
+              />
+              {cfg.autoSend ? 'Yes — flip to Sent immediately' : 'No — leave as Draft'}
+            </label>
+          </Field>
+          <div className="md:col-span-2">
+            <Field label="Payment-link template ({{invoice}} + {{amount}} placeholders)">
+              <input
+                type="text"
+                value={cfg.paymentLinkTemplate ?? ''}
+                onChange={(e) => updateCfg({ paymentLinkTemplate: e.target.value || undefined })}
+                placeholder="https://pay.stripe.com/inv/{{invoice}}?amount={{amount}}"
+                className="w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[12px] font-mono"
+              />
+            </Field>
           </div>
-        </div>
-      </CardBody>
-    </Card>
+        </CardBody>
+      </Card>
+
+      {/* Invoice list for this merchant */}
+      <Card>
+        <CardHeader
+          title="Recent invoices"
+          description={`${invoices.length} invoice${invoices.length === 1 ? '' : 's'} on file. Use the billing workspace for full edit / send / payment flows.`}
+        />
+        <CardBody className="p-0">
+          {invoices.length === 0 ? (
+            <div className="px-5 py-10 text-center text-fg-muted text-[13px]">
+              No invoices yet. Click <strong>"Generate from activity"</strong> on the master billing
+              page to create drafts.
+            </div>
+          ) : (
+            <div
+              className="overflow-x-auto"
+              role="region"
+              aria-label="Recent invoices"
+              tabIndex={0}
+            >
+              <div className="min-w-[640px]">
+                <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
+                  <span className="col-span-4">Invoice</span>
+                  <span className="col-span-2">Due</span>
+                  <span className="col-span-2 text-right">Amount</span>
+                  <span className="col-span-2 text-right">Paid</span>
+                  <span className="col-span-2">Status</span>
+                </div>
+                <ul className="divide-y divide-border">
+                  {invoices.map((i) => (
+                    <li
+                      key={i.invoiceNo}
+                      className={`grid grid-cols-12 items-center px-5 py-3 text-[12px] ${i.voided ? 'opacity-60' : ''}`}
+                    >
+                      <div className="col-span-4 font-mono text-fg-secondary truncate">
+                        {i.invoiceNo}
+                        {i.voided && (
+                          <span className="ml-1.5 text-rose-600 font-semibold">VOID</span>
+                        )}
+                      </div>
+                      <div className="col-span-2 text-fg-muted">{i.dueDate}</div>
+                      <div className="col-span-2 text-right tabular-nums font-semibold">
+                        <Money cents={i.amountCents} />
+                      </div>
+                      <div className="col-span-2 text-right tabular-nums text-fg-muted">
+                        <Money cents={i.paidCents} />
+                      </div>
+                      <div className="col-span-2">
+                        <StatusPill
+                          tone={
+                            i.status === 'paid'
+                              ? 'success'
+                              : i.status === 'overdue'
+                                ? 'danger'
+                                : i.status === 'sent'
+                                  ? 'warning'
+                                  : 'neutral'
+                          }
+                        >
+                          {i.status}
+                        </StatusPill>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <span className="block text-[10px] uppercase tracking-wider font-semibold text-fg-muted mb-1">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function Kpi({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-border bg-bg-elevated px-4 py-3">
+      <p className="text-[10px] uppercase tracking-wider font-semibold text-fg-muted">{label}</p>
+      <p className="mt-1 text-[16px] font-semibold tabular-nums">{value}</p>
+    </div>
   );
 }
 

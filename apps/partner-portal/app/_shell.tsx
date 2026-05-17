@@ -111,11 +111,12 @@ const masterGroups: NavGroup[] = [
       // "Settlements" no longer needs its own top-level nav entry.
       // /settlements remains accessible at its direct URL.
       { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
-      // Invoices — the platform invoices merchants for the platform-fee
+      // Billing — the platform invoices merchants for the platform-fee
       // % on funded volume (varies by vertical). The old "Payouts" framing
-      // was incorrect: EazePay never pays merchants. /payouts now
-      // redirects to /invoices so old deep links survive.
-      { href: '/invoices', label: 'Invoices', icon: <DollarIcon /> },
+      // was incorrect: EazePay never pays merchants. /payouts and
+      // /invoices both resolve here so deep links survive. The workspace
+      // itself is a 3-tab Monthly/Collections/Automation page.
+      { href: '/invoices', label: 'Billing', icon: <DollarIcon /> },
     ],
   },
   {
@@ -230,6 +231,7 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
         { href: `${base}/transactions`, label: 'Transactions', icon: <QueueIcon /> },
         { href: `${base}/applications`, label: 'Financing', icon: <DocIcon /> },
         { href: `${base}/settlements`, label: 'Settlements', icon: <DollarIcon /> },
+        { href: `${base}/billing`, label: 'Billing', icon: <DollarIcon /> },
       ],
     },
     {
@@ -274,6 +276,7 @@ const NAKED_ROUTES = [
   '/apply', // consumer apply landing — external customers, no sidebar
   '/lenders', // public lender developer hub — prospective lenders, no sidebar
   '/landing', // per-vertical marketing landing pages — public, no sidebar
+  '/invoices/confirm', // recipient confirm/dispute page — public, token-gated
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {

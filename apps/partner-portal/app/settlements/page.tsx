@@ -150,7 +150,18 @@ export default function SettlementsPage() {
         ]}
         title="Funding & settlements"
         description="Weekly net settlement to your operating account. Reconciled against the loan tape line-by-line; full breakdown on each row."
-        actions={<Button onClick={exportRecon}>Export reconciliation</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/invoices?periodId=${new Date().toISOString().slice(0, 7)}`}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border bg-bg-elevated text-[12px] font-semibold text-fg-secondary hover:bg-bg-muted/60 transition"
+              title="Open the billing workspace scoped to this period"
+            >
+              Bill this period →
+            </Link>
+            <Button onClick={exportRecon}>Export reconciliation</Button>
+          </div>
+        }
       />
       <PageBody>
         {/* Tab strip mirrors /applications so the operator can flip
