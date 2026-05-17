@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import { redeemInvite, getInvite, BRAND_FROM_CONFIG_SLUG } from '../../../../../lib/invites-store';
 import { enforceCsrf } from '../../../../../lib/csrf.js';
 import { enforce as enforceEdgeRateLimit } from '../../../../../lib/edge-rate-limit.js';
@@ -198,7 +199,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const applicationId = `app_${parsed.data.brand}_${Date.now().toString(36)}`;
+  // SEC-112: collision-free + unguessable. The previous form
+  // `app_<brand>_<base36-ts>` had two problems:
+  //   1. simultaneous applies in the same millisecond could collide
+  //   2. iterating timestamps let an attacker harvest consent receipts
+  //      via SEC-104 (now fixed, but the underlying id format was the
+  //      load-bearing predictability).
+  const applicationId = `app_${parsed.data.brand}_${randomUUID()}`;
   if (inviteIsValid && parsed.data.inviteToken) {
     await redeemInvite(parsed.data.inviteToken, applicationId);
   }

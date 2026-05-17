@@ -35,6 +35,7 @@ import {
   type ConsumerInviteBrand,
 } from '../../../../../lib/consumer-invites-store';
 import { allowedPartnerIdsForBrand, getSessionContext } from '../../../../../lib/session';
+import { enforceCsrf } from '../../../../../lib/csrf.js';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 
@@ -84,6 +85,10 @@ function problem(
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ brand: string }> }) {
+  // SEC-108: state-changing endpoint requires CSRF token.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
   const { brand: brandParam } = await params;
   const brandParsed = BrandEnum.safeParse(brandParam);
   if (!brandParsed.success) {

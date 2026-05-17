@@ -115,19 +115,17 @@ export async function captureConsent(args: {
 
   try {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        `eazepay.consent.${args.applicationId}`,
-        JSON.stringify(receipt),
-      );
+      window.localStorage.setItem(`eazepay.consent.${args.applicationId}`, JSON.stringify(receipt));
     }
   } catch {
     // localStorage quota / privacy-mode block. Non-fatal.
   }
 
   try {
+    const { csrfHeaders } = await import('./client-csrf');
     const res = await fetch('/api/applications/consent', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify({
         applicationId: args.applicationId,
         sessionId: args.sessionId,

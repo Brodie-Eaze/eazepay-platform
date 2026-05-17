@@ -21,6 +21,7 @@ import {
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { useApi, formatCurrency, formatDate } from '../../../../lib/api-client';
+import { csrfHeaders } from '../../../../lib/client-csrf';
 
 /**
  * Brand portal — Payment Links.
@@ -47,7 +48,15 @@ type PaymentLink = {
   amount: number; // cents
   customerName: string | null;
   customerEmail: string | null;
-  status: 'CREATED' | 'SENT' | 'OPENED' | 'STARTED' | 'COMPLETED' | 'ABANDONED' | 'EXPIRED' | 'DISABLED';
+  status:
+    | 'CREATED'
+    | 'SENT'
+    | 'OPENED'
+    | 'STARTED'
+    | 'COMPLETED'
+    | 'ABANDONED'
+    | 'EXPIRED'
+    | 'DISABLED';
   createdAt: string;
   expiresAt: string | null;
   sentAt: string | null;
@@ -69,13 +78,23 @@ const STATUS_LABEL: Record<PaymentLink['status'], string> = {
   DISABLED: 'Disabled',
 };
 
-const PROGRESS_STEPS: Array<PaymentLink['status']> = ['CREATED', 'SENT', 'OPENED', 'STARTED', 'COMPLETED'];
+const PROGRESS_STEPS: Array<PaymentLink['status']> = [
+  'CREATED',
+  'SENT',
+  'OPENED',
+  'STARTED',
+  'COMPLETED',
+];
 const TERMINAL = new Set<PaymentLink['status']>(['ABANDONED', 'EXPIRED', 'DISABLED', 'COMPLETED']);
 
 function ProgressDots({ status }: { status: PaymentLink['status'] }) {
   if (TERMINAL.has(status) && status !== 'COMPLETED') {
     return (
-      <span className={'text-[10px] font-semibold ' + (status === 'EXPIRED' ? 'text-fg-muted' : 'text-fg')}>
+      <span
+        className={
+          'text-[10px] font-semibold ' + (status === 'EXPIRED' ? 'text-fg-muted' : 'text-fg')
+        }
+      >
         {STATUS_LABEL[status]}
       </span>
     );
@@ -195,7 +214,13 @@ interface CreateForm {
   customerEmail: string;
   expiresInDays: string;
 }
-const BLANK_FORM: CreateForm = { description: '', amount: '', customerName: '', customerEmail: '', expiresInDays: '14' };
+const BLANK_FORM: CreateForm = {
+  description: '',
+  amount: '',
+  customerName: '',
+  customerEmail: '',
+  expiresInDays: '14',
+};
 
 /* ────────────────────────────────────────────────────────────────────
  * Consumer financing-link panel
@@ -340,9 +365,9 @@ export default function PaymentLinksPage() {
   const [form, setForm] = useState<CreateForm>({ ...BLANK_FORM });
 
   /* ── Consumer financing-link state ───────────────────────────────── */
-  const consumerBrand = (brand === 'medpay' || brand === 'tradepay' || brand === 'coachpay'
-    ? brand
-    : null) as ConsumerInviteBrand | null;
+  const consumerBrand = (
+    brand === 'medpay' || brand === 'tradepay' || brand === 'coachpay' ? brand : null
+  ) as ConsumerInviteBrand | null;
   const partnerId = consumerBrand ? PARTNER_FOR_BRAND[consumerBrand] : '';
 
   const [consumerForm, setConsumerForm] = useState<ConsumerInviteForm>({
@@ -378,7 +403,9 @@ export default function PaymentLinksPage() {
   /* Live-status lookup per applicationId — only for invites that have
    * progressed past `active`. Polls once per query at 5s so the table
    * column shows fresh status pills. */
-  const [statusByAppId, setStatusByAppId] = useState<Record<string, { status: LiveStatus; lastUpdatedAt: string }>>({});
+  const [statusByAppId, setStatusByAppId] = useState<
+    Record<string, { status: LiveStatus; lastUpdatedAt: string }>
+  >({});
   useEffect(() => {
     if (!consumerBrand) return;
     const apps = consumerInvites
@@ -442,13 +469,15 @@ export default function PaymentLinksPage() {
       }
       const res = await fetch(`/api/v/${consumerBrand}/consumer-invites`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         credentials: 'include',
         body: JSON.stringify(body),
       });
       if (!res.ok) {
         const errBody = (await res.json().catch(() => ({}))) as { detail?: string };
-        setConsumerError(errBody?.detail ?? 'Could not mint financing link. Check the fields and try again.');
+        setConsumerError(
+          errBody?.detail ?? 'Could not mint financing link. Check the fields and try again.',
+        );
         return;
       }
       const json = (await res.json()) as { token: string; inviteUrl: string; expiresAt: string };
@@ -461,7 +490,8 @@ export default function PaymentLinksPage() {
         consumerLastName: consumerForm.consumerLastName || undefined,
         consumerEmail: consumerForm.consumerEmail || undefined,
         consumerPhone: consumerForm.consumerPhone || undefined,
-        loanAmountCents: Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : undefined,
+        loanAmountCents:
+          Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : undefined,
         purpose: consumerForm.purpose || undefined,
         expiresAt: json.expiresAt,
         status: 'active',
@@ -484,7 +514,9 @@ export default function PaymentLinksPage() {
      * relative URL is enough. We resolve it to an absolute string so
      * the clipboard payload is unambiguous when pasted into SMS. */
     const fullUrl =
-      typeof window !== 'undefined' ? new URL(relativeUrl, window.location.origin).toString() : relativeUrl;
+      typeof window !== 'undefined'
+        ? new URL(relativeUrl, window.location.origin).toString()
+        : relativeUrl;
     navigator.clipboard.writeText(fullUrl).catch(() => {});
     setCopiedToken(token);
     setTimeout(() => setCopiedToken((curr) => (curr === token ? null : curr)), 1500);
@@ -492,7 +524,9 @@ export default function PaymentLinksPage() {
 
   const buildMailto = (invite: ConsumerInviteRow): string => {
     const fullUrl =
-      typeof window !== 'undefined' ? new URL(invite.inviteUrl, window.location.origin).toString() : invite.inviteUrl;
+      typeof window !== 'undefined'
+        ? new URL(invite.inviteUrl, window.location.origin).toString()
+        : invite.inviteUrl;
     const subject = encodeURIComponent(`Your ${CONSUMER_BRAND_LABEL[invite.brand]} financing link`);
     const greeting = invite.consumerFirstName ? `Hi ${invite.consumerFirstName},` : 'Hi,';
     const bodyLines = [
@@ -509,7 +543,9 @@ export default function PaymentLinksPage() {
 
   const buildSmsHref = (invite: ConsumerInviteRow): string => {
     const fullUrl =
-      typeof window !== 'undefined' ? new URL(invite.inviteUrl, window.location.origin).toString() : invite.inviteUrl;
+      typeof window !== 'undefined'
+        ? new URL(invite.inviteUrl, window.location.origin).toString()
+        : invite.inviteUrl;
     const greeting = invite.consumerFirstName ? `Hi ${invite.consumerFirstName}, ` : '';
     const messageBody = `${greeting}your ${CONSUMER_BRAND_LABEL[invite.brand]} financing link is ready. Soft check only, about 2 minutes: ${fullUrl}`;
     /* iOS uses `&`; Android tolerates both. Stick with `&` which is the
@@ -571,10 +607,7 @@ export default function PaymentLinksPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[
-          { label: brandName, href: `/v/${brandSlug}` },
-          { label: 'Payment Links' },
-        ]}
+        breadcrumbs={[{ label: brandName, href: `/v/${brandSlug}` }, { label: 'Payment Links' }]}
         title="Payment Links"
         description={`Send a payment or financing link to a customer — ${brandName} branded checkout.`}
         actions={
@@ -598,58 +631,83 @@ export default function PaymentLinksPage() {
                 }
               />
               <CardBody>
-                <form onSubmit={submitConsumerInvite} className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                <form
+                  onSubmit={submitConsumerInvite}
+                  className="grid grid-cols-1 md:grid-cols-6 gap-3"
+                >
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Consumer first name</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Consumer first name
+                    </label>
                     <input
                       placeholder="e.g. Cassidy"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                       value={consumerForm.consumerFirstName}
-                      onChange={(e) => setConsumerForm((f) => ({ ...f, consumerFirstName: e.target.value }))}
+                      onChange={(e) =>
+                        setConsumerForm((f) => ({ ...f, consumerFirstName: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Consumer last name</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Consumer last name
+                    </label>
                     <input
                       placeholder="e.g. Wren"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                       value={consumerForm.consumerLastName}
-                      onChange={(e) => setConsumerForm((f) => ({ ...f, consumerLastName: e.target.value }))}
+                      onChange={(e) =>
+                        setConsumerForm((f) => ({ ...f, consumerLastName: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Loan amount (USD, optional)</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Loan amount (USD, optional)
+                    </label>
                     <input
                       type="number"
                       step="100"
                       placeholder="e.g. 7400"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px] tabular-nums"
                       value={consumerForm.loanAmount}
-                      onChange={(e) => setConsumerForm((f) => ({ ...f, loanAmount: e.target.value }))}
+                      onChange={(e) =>
+                        setConsumerForm((f) => ({ ...f, loanAmount: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-3">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Consumer email (optional)</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Consumer email (optional)
+                    </label>
                     <input
                       type="email"
                       placeholder="cassidy@example.com"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                       value={consumerForm.consumerEmail}
-                      onChange={(e) => setConsumerForm((f) => ({ ...f, consumerEmail: e.target.value }))}
+                      onChange={(e) =>
+                        setConsumerForm((f) => ({ ...f, consumerEmail: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-3">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Consumer phone (optional)</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Consumer phone (optional)
+                    </label>
                     <input
                       type="tel"
                       placeholder="(415) 555 0188"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px] tabular-nums"
                       value={consumerForm.consumerPhone}
-                      onChange={(e) => setConsumerForm((f) => ({ ...f, consumerPhone: e.target.value }))}
+                      onChange={(e) =>
+                        setConsumerForm((f) => ({ ...f, consumerPhone: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-4">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Purpose (optional)</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Purpose (optional)
+                    </label>
                     <input
                       placeholder={
                         consumerBrand === 'medpay'
@@ -664,12 +722,17 @@ export default function PaymentLinksPage() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Link expires in</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Link expires in
+                    </label>
                     <select
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                       value={consumerForm.expiryHours}
                       onChange={(e) =>
-                        setConsumerForm((f) => ({ ...f, expiryHours: e.target.value as ConsumerInviteForm['expiryHours'] }))
+                        setConsumerForm((f) => ({
+                          ...f,
+                          expiryHours: e.target.value as ConsumerInviteForm['expiryHours'],
+                        }))
                       }
                     >
                       <option value="1">1 hour</option>
@@ -679,29 +742,37 @@ export default function PaymentLinksPage() {
                     </select>
                   </div>
                   <div className="md:col-span-4">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Salesperson (signed-in)</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Salesperson (signed-in)
+                    </label>
                     <input
                       type="email"
                       placeholder="you@partner.com"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                       value={consumerForm.salespersonEmail}
-                      onChange={(e) => setConsumerForm((f) => ({ ...f, salespersonEmail: e.target.value }))}
+                      onChange={(e) =>
+                        setConsumerForm((f) => ({ ...f, salespersonEmail: e.target.value }))
+                      }
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Send on behalf of (optional)</label>
+                    <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                      Send on behalf of (optional)
+                    </label>
                     <input
                       type="email"
                       placeholder="teammate@partner.com"
                       className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                       onChange={(e) =>
-                        e.target.value && setConsumerForm((f) => ({ ...f, salespersonEmail: e.target.value }))
+                        e.target.value &&
+                        setConsumerForm((f) => ({ ...f, salespersonEmail: e.target.value }))
                       }
                     />
                   </div>
                   <div className="md:col-span-6 flex items-center justify-between pt-2 border-t border-border">
                     <p className="text-[11px] text-fg-muted">
-                      Anchored to partner <span className="font-mono">{partnerId}</span> · expires in {EXPIRY_LABELS[consumerForm.expiryHours]}
+                      Anchored to partner <span className="font-mono">{partnerId}</span> · expires
+                      in {EXPIRY_LABELS[consumerForm.expiryHours]}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
@@ -709,7 +780,10 @@ export default function PaymentLinksPage() {
                         variant="secondary"
                         size="sm"
                         onClick={() =>
-                          setConsumerForm({ ...BLANK_CONSUMER_FORM, salespersonEmail: consumerForm.salespersonEmail })
+                          setConsumerForm({
+                            ...BLANK_CONSUMER_FORM,
+                            salespersonEmail: consumerForm.salespersonEmail,
+                          })
                         }
                       >
                         Reset
@@ -726,7 +800,9 @@ export default function PaymentLinksPage() {
                     </div>
                   </div>
                   {consumerError && (
-                    <p className="md:col-span-6 text-[11px] text-danger font-medium">{consumerError}</p>
+                    <p className="md:col-span-6 text-[11px] text-danger font-medium">
+                      {consumerError}
+                    </p>
                   )}
                 </form>
 
@@ -745,7 +821,9 @@ export default function PaymentLinksPage() {
                           For{' '}
                           <strong className="text-fg">
                             {lastMintedInvite.consumerFirstName ?? 'consumer'}
-                            {lastMintedInvite.consumerLastName ? ` ${lastMintedInvite.consumerLastName}` : ''}
+                            {lastMintedInvite.consumerLastName
+                              ? ` ${lastMintedInvite.consumerLastName}`
+                              : ''}
                           </strong>
                           {' · expires '}
                           {new Date(lastMintedInvite.expiresAt).toLocaleString()}
@@ -758,18 +836,36 @@ export default function PaymentLinksPage() {
                         <Button
                           size="sm"
                           variant="secondary"
-                          leadingIcon={copiedToken === lastMintedInvite.token ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
-                          onClick={() => copyInviteLink(lastMintedInvite.token, lastMintedInvite.inviteUrl)}
+                          leadingIcon={
+                            copiedToken === lastMintedInvite.token ? (
+                              <CheckIcon size={12} />
+                            ) : (
+                              <CopyIcon size={12} />
+                            )
+                          }
+                          onClick={() =>
+                            copyInviteLink(lastMintedInvite.token, lastMintedInvite.inviteUrl)
+                          }
                         >
                           {copiedToken === lastMintedInvite.token ? 'Copied' : 'Copy URL'}
                         </Button>
                         <a href={buildMailto(lastMintedInvite)}>
-                          <Button size="sm" variant="secondary" leadingIcon={<SendIcon size={12} />} type="button">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            leadingIcon={<SendIcon size={12} />}
+                            type="button"
+                          >
                             Email
                           </Button>
                         </a>
                         <a href={buildSmsHref(lastMintedInvite)}>
-                          <Button size="sm" variant="secondary" leadingIcon={<PhoneIcon size={12} />} type="button">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            leadingIcon={<PhoneIcon size={12} />}
+                            type="button"
+                          >
                             SMS
                           </Button>
                         </a>
@@ -785,9 +881,7 @@ export default function PaymentLinksPage() {
               <CardHeader
                 title="Recent invites you have sent"
                 description="Watch each consumer move through the apply flow. Click into a row for the live tracker."
-                action={
-                  <StatusPill tone="neutral">{consumerInvites.length} total</StatusPill>
-                }
+                action={<StatusPill tone="neutral">{consumerInvites.length} total</StatusPill>}
               />
               <CardBody padded={false}>
                 <div className="grid grid-cols-12 px-5 py-3 text-[11px] font-semibold text-fg-muted uppercase tracking-wider bg-bg-muted border-b border-border">
@@ -801,27 +895,41 @@ export default function PaymentLinksPage() {
                   <div className="text-center py-10">
                     <LinkIcon size={28} className="mx-auto mb-3 text-fg-muted" />
                     <p className="font-medium text-fg text-[13px]">No financing links sent yet</p>
-                    <p className="text-[12px] text-fg-muted mt-1">Mint your first link above and a row will appear here.</p>
+                    <p className="text-[12px] text-fg-muted mt-1">
+                      Mint your first link above and a row will appear here.
+                    </p>
                   </div>
                 ) : (
                   <ul className="divide-y divide-border">
                     {consumerInvites.map((inv) => {
                       const liveStatus =
                         (inv.applicationId && statusByAppId[inv.applicationId]?.status) ||
-                        (inv.status === 'redeemed' ? ('funded' as LiveStatus) : ('invite_sent' as LiveStatus));
+                        (inv.status === 'redeemed'
+                          ? ('funded' as LiveStatus)
+                          : ('invite_sent' as LiveStatus));
                       const tone = LIVE_STATUS_TONE[liveStatus];
-                      const fullName = [inv.consumerFirstName, inv.consumerLastName].filter(Boolean).join(' ') || 'Unknown consumer';
+                      const fullName =
+                        [inv.consumerFirstName, inv.consumerLastName].filter(Boolean).join(' ') ||
+                        'Unknown consumer';
                       return (
-                        <li key={inv.token} className="grid grid-cols-12 px-5 py-3 items-center hover:bg-bg-muted/40 text-[13px]">
+                        <li
+                          key={inv.token}
+                          className="grid grid-cols-12 px-5 py-3 items-center hover:bg-bg-muted/40 text-[13px]"
+                        >
                           <div className="col-span-3 min-w-0">
                             <p className="font-medium text-fg truncate">{fullName}</p>
                             <p className="text-[11px] text-fg-muted truncate">
                               {inv.consumerEmail ?? inv.consumerPhone ?? '—'}
                             </p>
                           </div>
-                          <div className="col-span-2 text-[12px] text-fg-secondary">{relativeAgo(inv.createdAt)}</div>
+                          <div className="col-span-2 text-[12px] text-fg-secondary">
+                            {relativeAgo(inv.createdAt)}
+                          </div>
                           <div className="col-span-3 flex items-center gap-2">
-                            <span className="size-1.5 rounded-full bg-info animate-pulse" aria-hidden />
+                            <span
+                              className="size-1.5 rounded-full bg-info animate-pulse"
+                              aria-hidden
+                            />
                             <StatusPill tone={tone}>{LIVE_STATUS_LABEL[liveStatus]}</StatusPill>
                           </div>
                           <div className="col-span-2 text-[11px] text-fg-muted">
@@ -831,14 +939,22 @@ export default function PaymentLinksPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              leadingIcon={copiedToken === inv.token ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
+                              leadingIcon={
+                                copiedToken === inv.token ? (
+                                  <CheckIcon size={12} />
+                                ) : (
+                                  <CopyIcon size={12} />
+                                )
+                              }
                               onClick={() => copyInviteLink(inv.token, inv.inviteUrl)}
                             >
                               {copiedToken === inv.token ? 'Copied' : 'Copy'}
                             </Button>
                             {inv.applicationId ? (
                               <Link href={`/v/${brandSlug}/applications/${inv.applicationId}`}>
-                                <Button size="sm" variant="secondary">View live</Button>
+                                <Button size="sm" variant="secondary">
+                                  View live
+                                </Button>
                               </Link>
                             ) : (
                               <Button size="sm" variant="ghost" disabled>
@@ -861,13 +977,19 @@ export default function PaymentLinksPage() {
             <CardBody>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-[15px] font-semibold text-fg">New payment link</h2>
-                <button onClick={() => setShowCreate(false)} className="text-fg-muted hover:text-fg" aria-label="Close">
+                <button
+                  onClick={() => setShowCreate(false)}
+                  className="text-fg-muted hover:text-fg"
+                  aria-label="Close"
+                >
                   <XIcon size={16} />
                 </button>
               </div>
               <form onSubmit={submit} className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Description *</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Description *
+                  </label>
                   <input
                     required
                     placeholder="What is this payment for?"
@@ -877,7 +999,9 @@ export default function PaymentLinksPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Amount (USD) *</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Amount (USD) *
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -889,7 +1013,9 @@ export default function PaymentLinksPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Expires in (days)</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Expires in (days)
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -900,7 +1026,9 @@ export default function PaymentLinksPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Customer name</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Customer name
+                  </label>
                   <input
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                     value={form.customerName}
@@ -908,7 +1036,9 @@ export default function PaymentLinksPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Customer email</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Customer email
+                  </label>
                   <input
                     type="email"
                     placeholder="If set, link is emailed automatically"
@@ -918,10 +1048,19 @@ export default function PaymentLinksPage() {
                   />
                 </div>
                 <div className="col-span-2 flex justify-end gap-2 pt-2">
-                  <Button variant="secondary" size="sm" type="button" onClick={() => setShowCreate(false)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    type="button"
+                    onClick={() => setShowCreate(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button size="sm" type="submit" disabled={createMutation.isPending || !form.description || !form.amount}>
+                  <Button
+                    size="sm"
+                    type="submit"
+                    disabled={createMutation.isPending || !form.description || !form.amount}
+                  >
                     {createMutation.isPending ? 'Creating…' : 'Create link'}
                   </Button>
                 </div>
@@ -949,7 +1088,13 @@ export default function PaymentLinksPage() {
                 {[1, 2, 3].map((i) => (
                   <li key={i} className="grid grid-cols-12 px-5 py-4 gap-3">
                     {Array.from({ length: 4 }).map((_, j) => (
-                      <div key={j} className={'h-4 bg-bg-muted rounded animate-pulse ' + (j === 0 ? 'col-span-4' : 'col-span-2')} />
+                      <div
+                        key={j}
+                        className={
+                          'h-4 bg-bg-muted rounded animate-pulse ' +
+                          (j === 0 ? 'col-span-4' : 'col-span-2')
+                        }
+                      />
                     ))}
                   </li>
                 ))}
@@ -958,7 +1103,9 @@ export default function PaymentLinksPage() {
               <div className="text-center py-12">
                 <LinkIcon size={32} className="mx-auto mb-3 text-fg-muted" />
                 <p className="font-medium text-fg">No payment links yet</p>
-                <p className="text-[12px] text-fg-muted mt-1">Create your first link to start collecting payments.</p>
+                <p className="text-[12px] text-fg-muted mt-1">
+                  Create your first link to start collecting payments.
+                </p>
               </div>
             ) : (
               <ul className="divide-y divide-border">
@@ -967,7 +1114,10 @@ export default function PaymentLinksPage() {
                   const canDisable = !TERMINAL.has(l.status);
                   const canResend = ['SENT', 'OPENED', 'STARTED', 'ABANDONED'].includes(l.status);
                   return (
-                    <li key={l.id} className="grid grid-cols-12 px-5 py-3 items-center hover:bg-bg-muted/40 text-[13px]">
+                    <li
+                      key={l.id}
+                      className="grid grid-cols-12 px-5 py-3 items-center hover:bg-bg-muted/40 text-[13px]"
+                    >
                       <div className="col-span-4 min-w-0">
                         <p className="font-medium text-fg truncate">{l.description}</p>
                         <p className="text-[11px] text-fg-muted truncate">
@@ -991,12 +1141,22 @@ export default function PaymentLinksPage() {
                       <div className="col-span-3 flex items-center justify-end gap-2">
                         <CopyBtn text={url} />
                         {canResend && (
-                          <Button size="sm" variant="ghost" disabled={resendMutation.isPending} onClick={() => resendMutation.mutate(l.id)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={resendMutation.isPending}
+                            onClick={() => resendMutation.mutate(l.id)}
+                          >
                             Resend
                           </Button>
                         )}
                         {canDisable && (
-                          <Button size="sm" variant="ghost" disabled={disableMutation.isPending} onClick={() => disableMutation.mutate(l.id)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={disableMutation.isPending}
+                            onClick={() => disableMutation.mutate(l.id)}
+                          >
                             Disable
                           </Button>
                         )}
@@ -1016,7 +1176,9 @@ export default function PaymentLinksPage() {
               <p className="text-[11px] text-fg-muted">
                 {total} link{total === 1 ? '' : 's'} total
               </p>
-              <p className="text-[11px] text-fg-muted">Activity timeline + refund flow coming next round.</p>
+              <p className="text-[11px] text-fg-muted">
+                Activity timeline + refund flow coming next round.
+              </p>
             </div>
           </CardBody>
         </Card>

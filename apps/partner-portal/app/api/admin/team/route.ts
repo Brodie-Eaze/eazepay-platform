@@ -3,11 +3,22 @@ import { z } from 'zod';
 
 /**
  * Internal-team list + invite. Proxies to backend `/v1/admin/team`
- * when an access token is present; otherwise returns an empty list so
- * the page renders from its seed data in development.
+ * when an access token is present.
  *
- * The endpoint is master-admin-only on the backend; this proxy adds
- * no authz of its own — the backend is the source of truth.
+ * SEC-107 hardening: pre-fix, the no-token path returned `{ok: true}`
+ * ("optimistic UI in dev"). In production, that lied — a demo session
+ * or unauthenticated caller could POST `{email:'x@y', role:'master_admin'}`
+ * and receive a 200 even though no backend write happened. Once the
+ * backend is wired and any cache/replay surface ever syncs that
+ * response, the lie becomes truth.
+ *
+ * Policy:
+ *   - Real session (`eazepay_at` cookie): proxy to backend as before.
+ *   - No token: return 401 not_signed_in in production. The legacy
+ *     optimistic behaviour is now gated on `ALLOW_OPTIMISTIC_BFF=true`
+ *     for explicit dev opt-in (defaults false everywhere). The page can
+ *     still render its seed data on a 401 — it doesn't depend on
+ *     the route lying.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3300';
@@ -18,9 +29,29 @@ const InviteSchema = z.object({
   role: z.enum(['master_admin', 'admin', 'underwriter', 'compliance', 'support', 'read_only']),
 });
 
+function optimisticBffAllowed(): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
+  return process.env.ALLOW_OPTIMISTIC_BFF === 'true';
+}
+
+function unauthorized(): NextResponse {
+  return NextResponse.json(
+    {
+      type: 'about:blank',
+      title: 'Unauthorized',
+      status: 401,
+      code: 'not_signed_in',
+    },
+    { status: 401 },
+  );
+}
+
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('eazepay_at')?.value;
-  if (!token) return NextResponse.json({ members: [] });
+  if (!token) {
+    if (optimisticBffAllowed()) return NextResponse.json({ members: [] });
+    return unauthorized();
+  }
   try {
     const res = await fetch(`${API_URL}/v1/admin/team`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -49,8 +80,8 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!token) {
-    // No-op success so optimistic UI is consistent in dev.
-    return NextResponse.json({ ok: true });
+    if (optimisticBffAllowed()) return NextResponse.json({ ok: true });
+    return unauthorized();
   }
   try {
     const res = await fetch(`${API_URL}/v1/admin/team`, {
@@ -63,6 +94,16 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json(await res.json());
   } catch {
-    return NextResponse.json({ ok: true });
+    // Backend unreachable. Don't lie: return 502 so the client doesn't
+    // think the invite landed.
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Backend unreachable',
+        status: 502,
+        code: 'backend_unreachable',
+      },
+      { status: 502 },
+    );
   }
 }

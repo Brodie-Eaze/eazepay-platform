@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
 import { getSessionContext } from '../../../../lib/session';
+import { enforceCsrf } from '../../../../lib/csrf.js';
 
 /**
  * POST /api/applications/consent — consumer soft-pull consent receipt.
@@ -89,6 +90,14 @@ interface ConsentBody {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC-108: CSRF verification. The consumer apply page reads the
+  // eazepay_csrf cookie minted by middleware and echoes it via the
+  // X-CSRF-Token header (see lib/consumer-consent.ts). A cross-origin
+  // attacker cannot read the cookie (Strict SameSite + Secure) so
+  // they cannot forge consent receipts on a victim's behalf.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
   // SEC — Per-IP edge rate limit. The consent map is an in-memory
   // store that grows by one entry per request; without a cap an
   // attacker can OOM the BFF replica by posting synthetic receipts.

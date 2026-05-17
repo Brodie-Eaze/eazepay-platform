@@ -184,10 +184,14 @@ export async function POST(req: NextRequest) {
     }
 
     const response = NextResponse.json({ ok: true });
+    // SEC-106: sameSite=strict — a top-level GET-initiated cross-site
+    // request will NOT carry these auth cookies, closing the lingering
+    // Lax-mode CSRF/fixation surface. The partner portal has no SSO
+    // inbound flow that would need Lax, so strict is the right default.
     response.cookies.set('eazepay_at', data.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: ACCESS_TTL_SECONDS,
     });
@@ -195,7 +199,7 @@ export async function POST(req: NextRequest) {
       response.cookies.set('eazepay_rt', data.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/api/auth',
         maxAge: REFRESH_TTL_SECONDS,
       });

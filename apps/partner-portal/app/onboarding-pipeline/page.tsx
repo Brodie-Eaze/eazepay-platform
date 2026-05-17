@@ -30,6 +30,7 @@ import {
   type OnboardingBusiness,
   type OnboardingStatus,
 } from '../../lib/onboarding-data';
+import { csrfHeaders } from '../../lib/client-csrf';
 
 /**
  * Onboarding Command Centre — the master operator queue.
@@ -574,7 +575,7 @@ function GenerateInviteModal({
     try {
       const res = await fetch('/api/onboarding/invite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         credentials: 'include',
         body: JSON.stringify({
           brand,
