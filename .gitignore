@@ -75,3 +75,9 @@ android/.gradle/
 .cache/
 .turbo/
 tmp/
+
+
+# Playwright artifacts
+test-results/
+playwright-report/
+.last-run.json
