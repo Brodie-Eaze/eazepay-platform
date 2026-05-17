@@ -89,15 +89,11 @@ export const AppShell: FC<{
 
   const SidebarContents = (
     <>
-      {/* Brand block — compact EAZE wordmark over product subtitle */}
-      <div className="px-4 pt-4 pb-3 flex items-center gap-2.5 shrink-0">
-        <div className="h-9 w-9 rounded-lg bg-white/95 flex items-center justify-center shrink-0 shadow-sm">
-          {/* Lightning bolt in dark navy — matches the reference's
-              "EAZE Partner Portal" mark. */}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#0d1530" aria-hidden>
-            <path d="M13 2 4 13h6l-1 9 9-11h-6z" />
-          </svg>
-        </div>
+      {/* Brand block — wordmark + product subtitle only. The
+          lightning-bolt tile that used to live left of the wordmark
+          was dropped per user direction so the sidebar reads as a
+          clean type-only mark. */}
+      <div className="px-4 pt-5 pb-3 shrink-0">
         <div className="leading-tight min-w-0">
           {/* Wordmark sized to match EazePay Intelligence: 17px,
               semibold (600), tracking-tight. Lighter weight than the
