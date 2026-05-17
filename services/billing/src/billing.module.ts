@@ -17,11 +17,30 @@ export interface BillingModuleOptions {
   isDevelopment: boolean;
   /** Confirm/dispute token TTL. Default 30 days. */
   confirmTokenTtlHours?: number;
+  /**
+   * Feature gate. When false, the module registers nothing — no
+   * controllers, no providers, no migrations side-effects — so the
+   * rest of the platform behaves as if the package weren't installed.
+   * Lets you ship the code to main behind an env flag and only flip
+   * it on once Resend + Stripe are wired and the accounts team is
+   * ready. Defaults to false so a deploy without explicit opt-in is
+   * an inert no-op.
+   */
+  enabled?: boolean;
 }
 
 @Module({})
 export class BillingModule {
   static forRoot(options: BillingModuleOptions): DynamicModule {
+    if (options.enabled !== true) {
+      // No-op module — exports nothing, mounts nothing. Code is on
+      // disk and migrations run (Prisma schema is independent of this
+      // gate), but the HTTP surface and the service are absent so
+      // requests to /billing/* return Nest's default 404 and no
+      // billing-related logic can affect other features.
+      return { module: BillingModule };
+    }
+
     const prisma: Provider = { provide: PRISMA, useExisting: options.prismaToken as never };
 
     const activity: Provider = {
