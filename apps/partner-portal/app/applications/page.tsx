@@ -110,6 +110,25 @@ export default function FinanceApplicationsPage() {
         description="View each referral partner's client finance applications and outcomes"
       />
       <PageBody>
+        {/* Tab strip — Settlements lives under here instead of its own
+            top-level nav entry. Both views read the same underlying
+            application set; "Settlements" filters to funded rows + adds
+            payout-tracking columns. */}
+        <div className="flex items-center gap-1 mb-5 border-b border-border">
+          <span
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-fg border-b-2 border-fg -mb-px"
+            aria-current="page"
+          >
+            Applications
+          </span>
+          <Link
+            href="/settlements"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-fg-secondary hover:text-fg transition border-b-2 border-transparent hover:border-border-strong -mb-px"
+          >
+            Settlements
+          </Link>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
           <Kpi label="Total Apps" value={String(liveRows.reduce((s, p) => s + p.apps, 0))} />
           <Kpi
