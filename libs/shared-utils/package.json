@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@nestjs/common": "^10.4.0",
-    "zod": "^3.23.0"
+    "@nestjs/common": "^11.1.21",
+    "zod": "^4.4.3"
   }
 }
