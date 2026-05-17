@@ -41,7 +41,10 @@ import {
   type TeamInviteEmailVars,
   type InvoiceIssuedEmailVars,
   type PasswordResetEmailVars,
-} from '@eazepay/service-email';
+  // Import from the framework-free entry point — the default barrel
+  // re-exports NestJS modules + Prisma adapters, which webpack tries
+  // to bundle and fails on (no @nestjs/common in this app's deps).
+} from '@eazepay/service-email/web';
 
 export type SendableBrand = BrandCode | 'master';
 
