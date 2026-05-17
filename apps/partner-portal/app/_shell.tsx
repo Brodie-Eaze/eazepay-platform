@@ -226,11 +226,16 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       ],
     },
     {
+      // Trimmed deliberately — the per-brand merchant does NOT process
+      // cards through EazePay (MiCamp handles their gateway, on a
+      // separate platform), so Transactions + Settlements were removed
+      // to avoid implying we own that surface. What stays:
+      //   - Applications: the finance applications they originate
+      //     (live offer ticker per app lands in PR #26)
+      //   - Billing: our platform-fee invoices to them + pay-link
       label: 'Payments',
       items: [
-        { href: `${base}/transactions`, label: 'Transactions', icon: <QueueIcon /> },
-        { href: `${base}/applications`, label: 'Financing', icon: <DocIcon /> },
-        { href: `${base}/settlements`, label: 'Settlements', icon: <DollarIcon /> },
+        { href: `${base}/applications`, label: 'Applications', icon: <DocIcon /> },
         { href: `${base}/billing`, label: 'Billing', icon: <DollarIcon /> },
       ],
     },
