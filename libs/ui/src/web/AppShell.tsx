@@ -226,12 +226,46 @@ export const AppShell: FC<{
   );
 };
 
+/**
+ * Pick the single nav href that should highlight for a given path.
+ * Returns the LONGEST href in the tree that matches the active path
+ * (either exactly or as a parent prefix) — this is what stops two
+ * sibling items like `/lender-marketplace` and `/lender-marketplace/
+ * access` from both lighting up when the user is on the deeper one.
+ * Only the most-specific match wins.
+ */
+function pickActiveHref(items: NavItem[], path: string): string | null {
+  let bestHref: string | null = null;
+  let bestLen = -1;
+  const visit = (list: NavItem[]) => {
+    for (const it of list) {
+      const matches = path === it.href || (it.href !== '/' && path.startsWith(it.href + '/'));
+      if (matches && it.href.length > bestLen) {
+        bestHref = it.href;
+        bestLen = it.href.length;
+      }
+      if (it.children?.length) visit(it.children);
+    }
+  };
+  visit(items);
+  return bestHref;
+}
+
+/** True if `target` is `item.href` or any descendant's href. */
+function hrefMatchesItemOrChild(item: NavItem, target: string): boolean {
+  if (item.href === target) return true;
+  if (!item.children?.length) return false;
+  return item.children.some((c) => hrefMatchesItemOrChild(c, target));
+}
+
 const NavGroupBlock: FC<{
   group: NavGroup;
   activePath: string;
   Link: FC<{ href: string; className?: string; children: ReactNode }>;
 }> = ({ group, activePath, Link }) => {
   const [open, setOpen] = useState(true);
+  // Single winning href per group — never two siblings active at once.
+  const winningHref = pickActiveHref(group.items, activePath);
   return (
     <div className="mb-2.5 pt-1.5">
       {group.label && (
@@ -257,7 +291,13 @@ const NavGroupBlock: FC<{
           className="space-y-0.5"
         >
           {group.items.map((it) => (
-            <NavRow key={it.href} item={it} activePath={activePath} Link={Link} />
+            <NavRow
+              key={it.href}
+              item={it}
+              activePath={activePath}
+              winningHref={winningHref}
+              Link={Link}
+            />
           ))}
         </div>
       )}
@@ -268,10 +308,15 @@ const NavGroupBlock: FC<{
 const NavRow: FC<{
   item: NavItem;
   activePath: string;
+  /** The single winning href in this group, computed once by
+   *  NavGroupBlock. An item is active when its href is the winner OR
+   *  one of its descendants is the winner. Sibling prefixes never
+   *  highlight, which prevents the historical "two siblings light up"
+   *  bug when one href is a string-prefix of the other. */
+  winningHref: string | null;
   Link: FC<{ href: string; className?: string; children: ReactNode }>;
-}> = ({ item, activePath, Link }) => {
-  const active =
-    activePath === item.href || (item.href !== '/' && activePath.startsWith(item.href + '/'));
+}> = ({ item, activePath, winningHref, Link }) => {
+  const active = winningHref !== null && hrefMatchesItemOrChild(item, winningHref);
   const [open, setOpen] = useState(active);
 
   if (item.children?.length) {
@@ -313,7 +358,13 @@ const NavRow: FC<{
             className="ml-5 mt-0.5 space-y-0.5 border-l border-white/[0.06] pl-2"
           >
             {item.children.map((c) => (
-              <NavRow key={c.href} item={c} activePath={activePath} Link={Link} />
+              <NavRow
+                key={c.href}
+                item={c}
+                activePath={activePath}
+                winningHref={winningHref}
+                Link={Link}
+              />
             ))}
           </div>
         )}

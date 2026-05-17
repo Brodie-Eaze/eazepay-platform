@@ -262,26 +262,58 @@ export default function AccessMatrixPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           <Card className="xl:col-span-1 h-fit">
-            <CardHeader title="Select partner" />
+            <CardHeader
+              title="Partners"
+              description={`${partnerList.length} merchants · click any row to scope the lender matrix`}
+            />
             <CardBody padded={false}>
-              <div className="max-h-[520px] overflow-y-auto divide-y divide-border">
-                {partnerList.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedPartnerId(p.id)}
-                    className={`w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-bg-muted/40 transition-colors ${
-                      p.id === selectedPartnerId ? 'bg-bg-muted/60' : ''
-                    }`}
-                  >
-                    <div className="size-9 rounded-full bg-bg-muted text-fg-secondary flex items-center justify-center font-semibold text-[11px] shrink-0">
-                      {p.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium truncate">{p.legalName}</div>
-                      <div className="text-[11px] text-fg-muted truncate">{p.product}</div>
-                    </div>
-                  </button>
-                ))}
+              <div className="max-h-[640px] overflow-y-auto divide-y divide-border">
+                {partnerList.map((p) => {
+                  const overrideCount = overrides.filter((o) => o.merchantId === p.id).length;
+                  const isActive = p.id === selectedPartnerId;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedPartnerId(p.id)}
+                      aria-pressed={isActive}
+                      className={
+                        'w-full px-4 py-3 text-left flex items-center gap-3 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus ' +
+                        (isActive
+                          ? 'bg-fg/[0.06] border-l-2 border-fg pl-[14px]'
+                          : 'hover:bg-bg-muted/40 border-l-2 border-transparent')
+                      }
+                    >
+                      <div
+                        className={
+                          'size-9 rounded-full flex items-center justify-center font-semibold text-[11px] shrink-0 ' +
+                          (isActive ? 'bg-fg text-bg-elevated' : 'bg-bg-muted text-fg-secondary')
+                        }
+                      >
+                        {p.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium truncate text-fg">
+                          {p.legalName}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-fg-muted mt-0.5">
+                          <span className="truncate">{p.product}</span>
+                          {overrideCount > 0 && (
+                            <>
+                              <span aria-hidden>·</span>
+                              <span className="inline-flex items-center gap-1 text-amber-700">
+                                <span className="size-1.5 rounded-full bg-amber-500" aria-hidden />
+                                {overrideCount} override{overrideCount === 1 ? '' : 's'}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {isActive && (
+                        <ArrowRightIcon size={12} className="text-fg-muted shrink-0" aria-hidden />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </CardBody>
           </Card>
@@ -321,6 +353,15 @@ export default function AccessMatrixPage() {
                       ...marketplaces.map((m) => ({ value: m.id, label: m.displayName })),
                     ]}
                   />
+                  <Link href={`/control-panel/${partner.id}`}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      trailingIcon={<ArrowRightIcon size={12} />}
+                    >
+                      Open control panel
+                    </Button>
+                  </Link>
                 </div>
               }
             />

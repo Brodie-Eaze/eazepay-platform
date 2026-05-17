@@ -106,13 +106,16 @@ const masterGroups: NavGroup[] = [
   {
     label: 'Pipeline',
     items: [
+      // All Applications covers both the application queue AND the
+      // settlement view (linked from the Applications header), so
+      // "Settlements" no longer needs its own top-level nav entry.
+      // /settlements remains accessible at its direct URL.
       { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
       // Invoices — the platform invoices merchants for the platform-fee
       // % on funded volume (varies by vertical). The old "Payouts" framing
       // was incorrect: EazePay never pays merchants. /payouts now
       // redirects to /invoices so old deep links survive.
       { href: '/invoices', label: 'Invoices', icon: <DollarIcon /> },
-      { href: '/settlements', label: 'Settlements', icon: <BankIcon /> },
     ],
   },
   {
