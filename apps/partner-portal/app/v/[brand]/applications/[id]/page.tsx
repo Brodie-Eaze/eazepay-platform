@@ -123,6 +123,7 @@ interface LiveStatusBody {
 }
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../../../lib/master-data';
+import { LiveOfferTicker } from '../../../../../components/LiveOfferTicker';
 import {
   lookupHighsaleSnapshot,
   marketplaceLenders,
@@ -202,7 +203,16 @@ const fmtClock = (ms: number): string => {
 // Agent codenames — the orchestration internals that surface on the timeline.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type AgentCode = 'PRISM' | 'VEGA' | 'ORACLE' | 'HELIX' | 'NEXUS' | 'FLUX' | 'ECHO' | 'SENTRY' | 'LEDGER';
+type AgentCode =
+  | 'PRISM'
+  | 'VEGA'
+  | 'ORACLE'
+  | 'HELIX'
+  | 'NEXUS'
+  | 'FLUX'
+  | 'ECHO'
+  | 'SENTRY'
+  | 'LEDGER';
 
 const agentTone: Record<AgentCode, StatusTone> = {
   PRISM: 'info',
@@ -274,10 +284,13 @@ function buildPipeline(app: ApplicationRow, baseStart: number): Stage[] {
 
   // Decide how far the pipeline advanced based on app.status.
   let activeIdx: number;
-  if (app.status === 'submitted') activeIdx = pick(seeded(app.id + '|stage'), [1, 2, 3]); // mid-flight
+  if (app.status === 'submitted')
+    activeIdx = pick(seeded(app.id + '|stage'), [1, 2, 3]); // mid-flight
   else if (app.status === 'in_review') activeIdx = 3;
-  else if (app.status === 'approved') activeIdx = 5; // sitting at esign
-  else if (app.status === 'declined') activeIdx = 3; // declined at waterfall
+  else if (app.status === 'approved')
+    activeIdx = 5; // sitting at esign
+  else if (app.status === 'declined')
+    activeIdx = 3; // declined at waterfall
   else activeIdx = 7; // funded — past the end (all done)
 
   let cursor = baseStart;
@@ -322,21 +335,67 @@ function buildEvents(app: ApplicationRow, baseStart: number, lenders: WaterfallR
     t += Math.floor(r() * (hi - lo) + lo);
   };
 
-  ev.push({ ts: t, agent: 'PRISM', message: `Application submitted via /apply/${slug}`, ref: `partner_${partnerRef} · ip 10.${Math.floor(r() * 250)}.${Math.floor(r() * 250)}.${Math.floor(r() * 250)}` });
+  ev.push({
+    ts: t,
+    agent: 'PRISM',
+    message: `Application submitted via /apply/${slug}`,
+    ref: `partner_${partnerRef} · ip 10.${Math.floor(r() * 250)}.${Math.floor(r() * 250)}.${Math.floor(r() * 250)}`,
+  });
   bump(800, 1400);
-  ev.push({ ts: t, agent: 'PRISM', message: 'Smart-form complete · 8 fields · 2 conditional branches', ref: `form_${app.id.replace('a_', 'f_')}` });
+  ev.push({
+    ts: t,
+    agent: 'PRISM',
+    message: 'Smart-form complete · 8 fields · 2 conditional branches',
+    ref: `form_${app.id.replace('a_', 'f_')}`,
+  });
   bump(600, 1100);
-  ev.push({ ts: t, agent: 'PRISM', message: 'Identity capture · ID front + back + selfie liveness', ref: `persona_inq_${(hash(app.id) % 100000).toString(16)}` });
+  ev.push({
+    ts: t,
+    agent: 'PRISM',
+    message: 'Identity capture · ID front + back + selfie liveness',
+    ref: `persona_inq_${(hash(app.id) % 100000).toString(16)}`,
+  });
   bump(800, 1300);
-  ev.push({ ts: t, agent: 'SENTRY', message: 'Device fingerprint match · trusted browser · no VPN', ref: `fp_${(hash(app.id + 'fp') % 1_000_000).toString(36)}` });
+  ev.push({
+    ts: t,
+    agent: 'SENTRY',
+    message: 'Device fingerprint match · trusted browser · no VPN',
+    ref: `fp_${(hash(app.id + 'fp') % 1_000_000).toString(36)}`,
+  });
   bump(900, 1500);
-  ev.push({ ts: t, agent: 'VEGA', message: 'Enrichment fan-out · 3 providers · matched in 312ms', ref: 'Persona, Plaid Identity, Highsale' });
+  ev.push({
+    ts: t,
+    agent: 'VEGA',
+    message: 'Enrichment fan-out · 3 providers · matched in 312ms',
+    ref: 'Persona, Plaid Identity, Highsale',
+  });
   bump(700, 1200);
-  ev.push({ ts: t, agent: 'ORACLE', message: `Risk score 0.${(20 + Math.floor(r() * 40)).toString().padStart(2, '0')} · tier ${tierLabelInline(app.fico)}`, ref: `oracle_v3.2 · fico_band ${ficoBand(app.fico)}` });
+  ev.push({
+    ts: t,
+    agent: 'ORACLE',
+    message: `Risk score 0.${(20 + Math.floor(r() * 40)).toString().padStart(2, '0')} · tier ${tierLabelInline(app.fico)}`,
+    ref: `oracle_v3.2 · fico_band ${ficoBand(app.fico)}`,
+  });
   bump(500, 900);
-  ev.push({ ts: t, agent: 'HELIX', message: `Income / DTI computed · ${Math.floor(15 + r() * 25)}.${Math.floor(r() * 99).toString().padStart(2, '0')}% DTI`, ref: 'plaid_assets + paystub_ocr' });
+  ev.push({
+    ts: t,
+    agent: 'HELIX',
+    message: `Income / DTI computed · ${Math.floor(15 + r() * 25)}.${Math.floor(r() * 99)
+      .toString()
+      .padStart(2, '0')}% DTI`,
+    ref: 'plaid_assets + paystub_ocr',
+  });
   bump(600, 1100);
-  ev.push({ ts: t, agent: 'NEXUS', message: `Routed to ${lenders.length} lenders in parallel`, ref: lenders.slice(0, 4).map((l) => l.lender).join(', ') + (lenders.length > 4 ? ', ...' : '') });
+  ev.push({
+    ts: t,
+    agent: 'NEXUS',
+    message: `Routed to ${lenders.length} lenders in parallel`,
+    ref:
+      lenders
+        .slice(0, 4)
+        .map((l) => l.lender)
+        .join(', ') + (lenders.length > 4 ? ', ...' : ''),
+  });
 
   // Lender results — interleaved.
   for (const l of lenders) {
@@ -345,7 +404,7 @@ function buildEvents(app: ApplicationRow, baseStart: number, lenders: WaterfallR
       ev.push({
         ts: t,
         agent: 'NEXUS',
-        message: `${l.lender} approved · $${(l.monthlyCents * l.termMonths / 100).toFixed(0)} total · ${l.termMonths}mo · ${(l.aprBps / 100).toFixed(2)}% APR`,
+        message: `${l.lender} approved · $${((l.monthlyCents * l.termMonths) / 100).toFixed(0)} total · ${l.termMonths}mo · ${(l.aprBps / 100).toFixed(2)}% APR`,
         ref: `quote ${(hash(l.lender + app.id) % 1_000_000).toString(36)} · ${l.latencyMs}ms`,
       });
     } else {
@@ -361,28 +420,73 @@ function buildEvents(app: ApplicationRow, baseStart: number, lenders: WaterfallR
   // Status-conditional tail.
   if (app.status === 'submitted') {
     bump(800, 2000);
-    ev.push({ ts: t, agent: 'ECHO', message: 'Awaiting customer selection on offer screen', ref: `session_${(hash(app.id + 'sess') % 1_000_000).toString(36)}` });
+    ev.push({
+      ts: t,
+      agent: 'ECHO',
+      message: 'Awaiting customer selection on offer screen',
+      ref: `session_${(hash(app.id + 'sess') % 1_000_000).toString(36)}`,
+    });
   } else if (app.status === 'approved') {
     bump(900, 2200);
-    ev.push({ ts: t, agent: 'ECHO', message: 'Customer viewing offer screen', ref: `session_${(hash(app.id + 'sess') % 1_000_000).toString(36)}` });
+    ev.push({
+      ts: t,
+      agent: 'ECHO',
+      message: 'Customer viewing offer screen',
+      ref: `session_${(hash(app.id + 'sess') % 1_000_000).toString(36)}`,
+    });
     bump(8000, 22000);
-    ev.push({ ts: t, agent: 'ECHO', message: 'Customer accepted offer · awaiting e-signature', ref: 'tila_box_ack=true' });
+    ev.push({
+      ts: t,
+      agent: 'ECHO',
+      message: 'Customer accepted offer · awaiting e-signature',
+      ref: 'tila_box_ack=true',
+    });
   } else if (app.status === 'funded') {
     bump(1500, 3500);
     ev.push({ ts: t, agent: 'ECHO', message: 'Customer accepted offer', ref: 'tila_box_ack=true' });
     bump(12000, 30000);
-    ev.push({ ts: t, agent: 'ECHO', message: `Customer e-signed offer · IP 10.${Math.floor(r() * 250)}.${Math.floor(r() * 250)}.${Math.floor(r() * 250)} · device ✓`, ref: `envelope_${(hash(app.id + 'env') % 100000).toString(16)}` });
+    ev.push({
+      ts: t,
+      agent: 'ECHO',
+      message: `Customer e-signed offer · IP 10.${Math.floor(r() * 250)}.${Math.floor(r() * 250)}.${Math.floor(r() * 250)} · device ✓`,
+      ref: `envelope_${(hash(app.id + 'env') % 100000).toString(16)}`,
+    });
     bump(1000, 2500);
-    ev.push({ ts: t, agent: 'FLUX', message: `Disbursing via RTP · routing #${21000000 + Math.floor(r() * 89)}`, ref: `${app.lender} → partner_${partnerRef} account ✓` });
+    ev.push({
+      ts: t,
+      agent: 'FLUX',
+      message: `Disbursing via RTP · routing #${21000000 + Math.floor(r() * 89)}`,
+      ref: `${app.lender} → partner_${partnerRef} account ✓`,
+    });
     bump(2500, 5500);
-    ev.push({ ts: t, agent: 'FLUX', message: `Funded · $${(app.amountCents / 100).toLocaleString('en-US')} disbursed`, ref: `txn_${(hash(app.id + 'txn') % 1_000_000_000).toString(36)} · RTP settled in 4.2s` });
+    ev.push({
+      ts: t,
+      agent: 'FLUX',
+      message: `Funded · $${(app.amountCents / 100).toLocaleString('en-US')} disbursed`,
+      ref: `txn_${(hash(app.id + 'txn') % 1_000_000_000).toString(36)} · RTP settled in 4.2s`,
+    });
     bump(500, 900);
-    ev.push({ ts: t, agent: 'LEDGER', message: 'Servicing handoff complete · payment schedule registered', ref: `loan_${(hash(app.id + 'loan') % 1_000_000).toString(36)}` });
+    ev.push({
+      ts: t,
+      agent: 'LEDGER',
+      message: 'Servicing handoff complete · payment schedule registered',
+      ref: `loan_${(hash(app.id + 'loan') % 1_000_000).toString(36)}`,
+    });
   } else if (app.status === 'declined') {
     bump(800, 1600);
-    ev.push({ ts: t, agent: 'NEXUS', message: 'All lender quotes returned · no fundable offer', ref: 'waterfall.reject_all' });
+    ev.push({
+      ts: t,
+      agent: 'NEXUS',
+      message: 'All lender quotes returned · no fundable offer',
+      ref: 'waterfall.reject_all',
+    });
     bump(400, 900);
-    ev.push({ ts: t, agent: 'ECHO', message: 'Adverse action notice queued (ECOA / FCRA)', ref: `notice_${(hash(app.id + 'aan') % 100000).toString(16)} · scheduled +30d` });
+    ev.push({
+      ts: t,
+      agent: 'ECHO',
+      message: 'Adverse action notice queued (ECOA / FCRA)',
+      ref: `notice_${(hash(app.id + 'aan') % 100000).toString(16)} · scheduled +30d`,
+    });
   }
 
   return ev;
@@ -464,7 +568,8 @@ function buildWaterfall(app: ApplicationRow, tier: CreditTier | null): Waterfall
       aprBps,
       termMonths: term,
       monthlyCents: decision === 'approved' ? Math.round(total / term) : 0,
-      topReason: decision === 'declined' ? pick(seeded(app.id + l.displayName), DECLINE_REASONS) : '',
+      topReason:
+        decision === 'declined' ? pick(seeded(app.id + l.displayName), DECLINE_REASONS) : '',
       latencyMs: 120 + Math.floor(r() * 800),
       recommended: false,
     };
@@ -514,9 +619,12 @@ export default function DealDetailPage() {
 
   const fetchLive = useCallback(async () => {
     try {
-      const res = await fetch(`/api/v/${brandSlug}/applications/${encodeURIComponent(app.id)}/status`, {
-        credentials: 'include',
-      });
+      const res = await fetch(
+        `/api/v/${brandSlug}/applications/${encodeURIComponent(app.id)}/status`,
+        {
+          credentials: 'include',
+        },
+      );
       if (!res.ok) {
         if (!errorLoggedRef.current) {
           errorLoggedRef.current = true;
@@ -590,7 +698,7 @@ export default function DealDetailPage() {
   const statusLabel =
     app.status === 'in_review'
       ? 'In review'
-      : (app.status.charAt(0).toUpperCase() + app.status.slice(1));
+      : app.status.charAt(0).toUpperCase() + app.status.slice(1);
 
   // ─── Compliance / risk / docs (deterministic synth) ───
   const r = seeded(app.id + '|misc');
@@ -603,7 +711,18 @@ export default function DealDetailPage() {
   const auditChain = useMemo(() => {
     const ar = seeded(app.id + '|audit');
     return Array.from({ length: 10 }).map((_, i) => {
-      const stageName = ['INIT', 'CONSENT', 'PII_HASH', 'SOFT_PULL', 'ENRICH', 'SCORE', 'ROUTE', 'QUOTE', 'OFFER', 'EXEC'][i];
+      const stageName = [
+        'INIT',
+        'CONSENT',
+        'PII_HASH',
+        'SOFT_PULL',
+        'ENRICH',
+        'SCORE',
+        'ROUTE',
+        'QUOTE',
+        'OFFER',
+        'EXEC',
+      ][i];
       const hashHex = Array.from({ length: 16 })
         .map(() => Math.floor(ar() * 16).toString(16))
         .join('');
@@ -635,28 +754,47 @@ export default function DealDetailPage() {
       header: 'Decision',
       cell: (row) =>
         row.decision === 'approved' ? (
-          <StatusPill tone="success" icon={<CheckIcon size={10} />}>Approved</StatusPill>
+          <StatusPill tone="success" icon={<CheckIcon size={10} />}>
+            Approved
+          </StatusPill>
         ) : (
-          <StatusPill tone="danger" icon={<XIcon size={10} />}>Declined</StatusPill>
+          <StatusPill tone="danger" icon={<XIcon size={10} />}>
+            Declined
+          </StatusPill>
         ),
     },
     {
       key: 'apr',
       header: 'APR',
       align: 'right',
-      cell: (row) => (row.decision === 'approved' ? <Apr bps={row.aprBps} /> : <span className="text-fg-muted">—</span>),
+      cell: (row) =>
+        row.decision === 'approved' ? (
+          <Apr bps={row.aprBps} />
+        ) : (
+          <span className="text-fg-muted">—</span>
+        ),
     },
     {
       key: 'term',
       header: 'Term',
       align: 'right',
-      cell: (row) => (row.decision === 'approved' ? `${row.termMonths} mo` : <span className="text-fg-muted">—</span>),
+      cell: (row) =>
+        row.decision === 'approved' ? (
+          `${row.termMonths} mo`
+        ) : (
+          <span className="text-fg-muted">—</span>
+        ),
     },
     {
       key: 'monthly',
       header: 'Monthly',
       align: 'right',
-      cell: (row) => (row.decision === 'approved' ? <Money cents={row.monthlyCents} /> : <span className="text-fg-muted">—</span>),
+      cell: (row) =>
+        row.decision === 'approved' ? (
+          <Money cents={row.monthlyCents} />
+        ) : (
+          <span className="text-fg-muted">—</span>
+        ),
     },
     {
       key: 'reason',
@@ -691,7 +829,9 @@ export default function DealDetailPage() {
             </span>
             <span>{app.customer}</span>
             <span className="inline-flex items-center gap-1.5">
-              {isLive && <span className="size-1.5 rounded-full bg-info animate-pulse" aria-hidden />}
+              {isLive && (
+                <span className="size-1.5 rounded-full bg-info animate-pulse" aria-hidden />
+              )}
               <StatusPill tone={statusTone} dot={!isLive}>
                 {statusLabel}
               </StatusPill>
@@ -716,18 +856,34 @@ export default function DealDetailPage() {
             <StatusPill tone="accent">{spec.name}</StatusPill>
             {tier && <StatusPill tone="info">{tierLabel[tier]}</StatusPill>}
             <StatusPill tone="neutral">Lender of record: {app.lender}</StatusPill>
-            <span className="text-[11px] text-fg-muted font-mono">last event {lastEvent ? fmtRel(now - lastEvent.ts) : '—'}</span>
+            <span className="text-[11px] text-fg-muted font-mono">
+              last event {lastEvent ? fmtRel(now - lastEvent.ts) : '—'}
+            </span>
           </>
         }
         actions={
           <>
-            <Button variant="ghost" size="sm" leadingIcon={<RouteIcon size={14} />}>Reroute to lender</Button>
-            <Button variant="ghost" size="sm" leadingIcon={<AlertIcon size={14} />}>Mark for review</Button>
-            <Button size="sm" leadingIcon={<SendIcon size={14} />}>Send notice</Button>
+            <Button variant="ghost" size="sm" leadingIcon={<RouteIcon size={14} />}>
+              Reroute to lender
+            </Button>
+            <Button variant="ghost" size="sm" leadingIcon={<AlertIcon size={14} />}>
+              Mark for review
+            </Button>
+            <Button size="sm" leadingIcon={<SendIcon size={14} />}>
+              Send notice
+            </Button>
           </>
         }
       />
       <PageBody>
+        {/* ─── 0. Live offer ticker — real SSE-backed feed of lender
+                 quotes as they stream in. Subscribes to
+                 /v1/applications/<id>/stream; works for every brand
+                 (medpay, tradepay, coachpay) because this route is
+                 brand-agnostic and the backend filters by the
+                 application's merchant ownership. ──────────────────── */}
+        <LiveOfferTicker applicationId={id} />
+
         {/* ─── A. Live tracking — what the partner watches in real time ─── */}
         <Card className="mb-4">
           <CardHeader
@@ -770,11 +926,11 @@ export default function DealDetailPage() {
             {/* Progress bar */}
             <div className="mb-3">
               <div className="flex items-center justify-between text-[11px] text-fg-muted mb-1.5">
-                <span>
-                  {live ? `${live.progressPct}%` : '—'} complete
-                </span>
+                <span>{live ? `${live.progressPct}%` : '—'} complete</span>
                 <span className="font-mono">
-                  {live ? `step ${LIVE_STATUS_ORDER.indexOf(live.status) + 1} of ${LIVE_STATUS_ORDER.length}` : ''}
+                  {live
+                    ? `step ${LIVE_STATUS_ORDER.indexOf(live.status) + 1} of ${LIVE_STATUS_ORDER.length}`
+                    : ''}
                 </span>
               </div>
               <div className="h-1.5 rounded-full bg-bg-muted overflow-hidden">
@@ -813,11 +969,20 @@ export default function DealDetailPage() {
                             </span>
                           ) : isActive ? (
                             <span className="relative inline-flex size-5 items-center justify-center">
-                              <span className="absolute inset-0 rounded-full bg-info/20 animate-pulse" aria-hidden />
-                              <span className="relative inline-flex size-2.5 rounded-full bg-info ring-2 ring-info/30" aria-hidden />
+                              <span
+                                className="absolute inset-0 rounded-full bg-info/20 animate-pulse"
+                                aria-hidden
+                              />
+                              <span
+                                className="relative inline-flex size-2.5 rounded-full bg-info ring-2 ring-info/30"
+                                aria-hidden
+                              />
                             </span>
                           ) : (
-                            <span className="inline-flex size-5 rounded-full bg-bg-elevated ring-1 ring-inset ring-border" aria-hidden />
+                            <span
+                              className="inline-flex size-5 rounded-full bg-bg-elevated ring-1 ring-inset ring-border"
+                              aria-hidden
+                            />
                           )}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -855,7 +1020,8 @@ export default function DealDetailPage() {
                 </div>
                 {live && live.offers.length === 0 && (
                   <div className="rounded-md border border-dashed border-border bg-bg-muted/30 px-4 py-6 text-center text-[12px] text-fg-muted">
-                    Offers will appear here once the consumer's application reaches the lender waterfall.
+                    Offers will appear here once the consumer's application reaches the lender
+                    waterfall.
                   </div>
                 )}
                 <div className="grid grid-cols-1 gap-2">
@@ -873,7 +1039,9 @@ export default function DealDetailPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[13px] font-medium text-fg truncate">{offer.lenderName}</span>
+                            <span className="text-[13px] font-medium text-fg truncate">
+                              {offer.lenderName}
+                            </span>
                             <StatusPill tone={tone}>
                               {offer.decision === 'approved'
                                 ? 'Approved'
@@ -886,7 +1054,9 @@ export default function DealDetailPage() {
                             <p className="text-[11px] text-fg-muted font-mono mt-0.5">
                               {offer.apr ? `${offer.apr.toFixed(2)}% APR` : ''}
                               {offer.termMonths ? ` · ${offer.termMonths}mo` : ''}
-                              {typeof offer.amount === 'number' ? ` · $${Math.round(offer.amount / 100).toLocaleString('en-US')}` : ''}
+                              {typeof offer.amount === 'number'
+                                ? ` · $${Math.round(offer.amount / 100).toLocaleString('en-US')}`
+                                : ''}
                             </p>
                           )}
                           {offer.decision === 'pending' && (
@@ -912,12 +1082,16 @@ export default function DealDetailPage() {
                     <StageDot status={s.status} />
                     <div className="mt-2 text-[12px] font-semibold text-fg">{s.label}</div>
                     <div className="mt-0.5 text-[10px] font-mono uppercase tracking-wider text-fg-muted">
-                      {s.status === 'done' && s.completedAtMs ? fmtRel(now - s.completedAtMs) : null}
+                      {s.status === 'done' && s.completedAtMs
+                        ? fmtRel(now - s.completedAtMs)
+                        : null}
                       {s.status === 'active' ? 'in progress' : null}
                       {s.status === 'pending' ? 'pending' : null}
                       {s.status === 'skipped' ? 'skipped' : null}
                     </div>
-                    <div className="mt-0.5 text-[10px] font-mono text-fg-muted">dwell {s.dwellSec}s</div>
+                    <div className="mt-0.5 text-[10px] font-mono text-fg-muted">
+                      dwell {s.dwellSec}s
+                    </div>
                   </div>
                   {i < pipeline.length - 1 && (
                     <div className="flex items-center px-1">
@@ -943,7 +1117,10 @@ export default function DealDetailPage() {
                   Currently at <strong className="text-fg">{activeStage.label}</strong>
                   <span className="text-fg-muted">· active for {activeStage.dwellSec}s</span>
                 </span>
-                <span className="font-mono text-[11px] text-fg-muted">orchestration-v3.2 · trace_id={(hash(app.id + 'trace') % 1_000_000_000_000).toString(36)}</span>
+                <span className="font-mono text-[11px] text-fg-muted">
+                  orchestration-v3.2 · trace_id=
+                  {(hash(app.id + 'trace') % 1_000_000_000_000).toString(36)}
+                </span>
               </div>
             )}
           </CardBody>
@@ -962,28 +1139,46 @@ export default function DealDetailPage() {
                 </span>
               }
               description={`${events.length} events · newest top`}
-              action={<StatusPill tone="neutral" icon={<ClockIcon size={10} />}>{fmtRel(now - (lastEvent?.ts ?? now))}</StatusPill>}
+              action={
+                <StatusPill tone="neutral" icon={<ClockIcon size={10} />}>
+                  {fmtRel(now - (lastEvent?.ts ?? now))}
+                </StatusPill>
+              }
             />
             <CardBody padded={false}>
               <ol className="max-h-[520px] overflow-y-auto divide-y divide-border">
                 {feed.map((e, i) => (
-                  <li key={`${e.ts}-${i}`} className="px-4 py-2.5 hover:bg-bg-muted/30 transition-colors">
+                  <li
+                    key={`${e.ts}-${i}`}
+                    className="px-4 py-2.5 hover:bg-bg-muted/30 transition-colors"
+                  >
                     <div className="flex items-start gap-2.5">
                       <div className="shrink-0 pt-0.5">
                         {i === 0 && isLive ? (
-                          <span className="inline-flex size-2 rounded-full bg-info animate-pulse" aria-hidden />
+                          <span
+                            className="inline-flex size-2 rounded-full bg-info animate-pulse"
+                            aria-hidden
+                          />
                         ) : (
                           <span className="inline-flex size-2 rounded-full bg-border" aria-hidden />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-mono text-[10px] text-fg-muted tabular-nums">{fmtClock(e.ts)}</span>
+                          <span className="font-mono text-[10px] text-fg-muted tabular-nums">
+                            {fmtClock(e.ts)}
+                          </span>
                           <AgentBadge code={e.agent} />
-                          <span className="font-mono text-[10px] text-fg-muted ml-auto tabular-nums">{fmtRel(now - e.ts)}</span>
+                          <span className="font-mono text-[10px] text-fg-muted ml-auto tabular-nums">
+                            {fmtRel(now - e.ts)}
+                          </span>
                         </div>
                         <div className="text-[13px] text-fg leading-snug">{e.message}</div>
-                        {e.ref && <div className="text-[11px] text-fg-muted font-mono mt-0.5 truncate">{e.ref}</div>}
+                        {e.ref && (
+                          <div className="text-[11px] text-fg-muted font-mono mt-0.5 truncate">
+                            {e.ref}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </li>
@@ -1004,12 +1199,7 @@ export default function DealDetailPage() {
               }
             />
             <CardBody padded={false}>
-              <DataTable
-                columns={waterfallCols}
-                rows={waterfall}
-                rowKey={(w) => w.lender}
-                dense
-              />
+              <DataTable columns={waterfallCols} rows={waterfall} rowKey={(w) => w.lender} dense />
             </CardBody>
           </Card>
         </div>
@@ -1021,32 +1211,58 @@ export default function DealDetailPage() {
             <CardHeader
               title="Customer"
               description="PII masked at rest · just-in-time unmask requires SOC2 step-up"
-              action={<StatusPill tone="info" icon={<ShieldIcon size={10} />}>PII masked</StatusPill>}
+              action={
+                <StatusPill tone="info" icon={<ShieldIcon size={10} />}>
+                  PII masked
+                </StatusPill>
+              }
             />
             <CardBody className="space-y-3">
               <MaskedField label="Legal name" masked={maskName(app.customer)} />
               <MaskedField label="DOB" masked="••/••/19••" />
-              <MaskedField label="SSN" masked={`•••-••-${(hash(app.id + 'ssn') % 9000 + 1000)}`} />
+              <MaskedField label="SSN" masked={`•••-••-${(hash(app.id + 'ssn') % 9000) + 1000}`} />
               <MaskedField label="Address" masked="••• ••••• St · ••••••••, ••" />
-              <MaskedField label="Email" masked={app.customerEmail.replace(/^(.).+(@.+)$/, '$1•••$2')} />
-              <MaskedField label="Phone" masked={`(•••) •••-${(hash(app.id + 'ph') % 9000 + 1000)}`} />
+              <MaskedField
+                label="Email"
+                masked={app.customerEmail.replace(/^(.).+(@.+)$/, '$1•••$2')}
+              />
+              <MaskedField
+                label="Phone"
+                masked={`(•••) •••-${(hash(app.id + 'ph') % 9000) + 1000}`}
+              />
               <div className="pt-2 border-t border-border grid grid-cols-2 gap-3 text-[12px]">
                 <div>
-                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">DTI</div>
+                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">
+                    DTI
+                  </div>
                   <div className="mt-0.5 font-mono tabular-nums">{dti}%</div>
                 </div>
                 <div>
-                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">FICO</div>
-                  <div className="mt-0.5 font-mono tabular-nums">{app.fico} ({ficoBand(app.fico)})</div>
+                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">
+                    FICO
+                  </div>
+                  <div className="mt-0.5 font-mono tabular-nums">
+                    {app.fico} ({ficoBand(app.fico)})
+                  </div>
                 </div>
                 <div>
-                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">Income</div>
+                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">
+                    Income
+                  </div>
                   <div className="mt-0.5 font-mono tabular-nums">
                     {highsale ? (
                       <>
-                        <Money cents={highsale.summary.annualIncomeCentsRange.lowCents} compact noFractions />
+                        <Money
+                          cents={highsale.summary.annualIncomeCentsRange.lowCents}
+                          compact
+                          noFractions
+                        />
                         <span className="text-fg-muted"> – </span>
-                        <Money cents={highsale.summary.annualIncomeCentsRange.highCents} compact noFractions />
+                        <Money
+                          cents={highsale.summary.annualIncomeCentsRange.highCents}
+                          compact
+                          noFractions
+                        />
                       </>
                     ) : (
                       '—'
@@ -1054,7 +1270,9 @@ export default function DealDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">Employment</div>
+                  <div className="text-fg-muted text-[10px] uppercase tracking-wider font-semibold">
+                    Employment
+                  </div>
                   <div className="mt-0.5 text-[12px]">W-2 · 4y tenure</div>
                 </div>
               </div>
@@ -1064,12 +1282,22 @@ export default function DealDetailPage() {
           <Card>
             <CardHeader title="Application" />
             <CardBody>
-              <DataRow label="Amount requested" value={<Money cents={app.amountCents} noFractions />} />
+              <DataRow
+                label="Amount requested"
+                value={<Money cents={app.amountCents} noFractions />}
+              />
               <DataRow label="Purpose" value={productLabel[app.product]} />
               <DataRow label="Term preferred" value="48 months" />
               <DataRow label="Brand" value={spec.name} />
               <DataRow label="Partner" value={app.partner} />
-              <DataRow label="Referral source" value={<span className="font-mono text-[12px]">{app.partner.split(/\s+/)[0]?.toLowerCase()}.eaze.pay</span>} />
+              <DataRow
+                label="Referral source"
+                value={
+                  <span className="font-mono text-[12px]">
+                    {app.partner.split(/\s+/)[0]?.toLowerCase()}.eaze.pay
+                  </span>
+                }
+              />
               <DataRow label="Submitted" value={`${app.date} · ${fmtClock(baseStart)}`} />
               <DataRow label="Lender of record" value={app.lender} />
             </CardBody>
@@ -1085,20 +1313,36 @@ export default function DealDetailPage() {
             <CardBody>
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-fg-muted font-semibold">SENTRY risk</div>
-                  <div className="text-[28px] font-semibold tabular-nums leading-none mt-1">{riskScore}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-fg-muted font-semibold">
+                    SENTRY risk
+                  </div>
+                  <div className="text-[28px] font-semibold tabular-nums leading-none mt-1">
+                    {riskScore}
+                  </div>
                   <div className="text-[11px] text-success mt-1 font-medium">low</div>
                 </div>
                 <div className="h-12 w-px bg-border" />
                 <div className="text-right">
-                  <div className="text-[10px] uppercase tracking-wider text-fg-muted font-semibold">Sift</div>
-                  <div className="text-[18px] font-semibold tabular-nums leading-none mt-1">{siftScore}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-fg-muted font-semibold">
+                    Sift
+                  </div>
+                  <div className="text-[18px] font-semibold tabular-nums leading-none mt-1">
+                    {siftScore}
+                  </div>
                   <div className="text-[11px] text-success mt-1 font-medium">clean</div>
                 </div>
               </div>
               <div className="space-y-2 text-[12px]">
-                <RiskRow ok label="Identity match (Persona)" detail={`${personaConfidence}% confidence`} />
-                <RiskRow ok={velocity === 0} label="Velocity (24h)" detail={`${velocity} app${velocity === 1 ? '' : 's'}`} />
+                <RiskRow
+                  ok
+                  label="Identity match (Persona)"
+                  detail={`${personaConfidence}% confidence`}
+                />
+                <RiskRow
+                  ok={velocity === 0}
+                  label="Velocity (24h)"
+                  detail={`${velocity} app${velocity === 1 ? '' : 's'}`}
+                />
                 <RiskRow ok label="Device fingerprint" detail="trusted · no VPN" />
                 <RiskRow ok label="Synthetic-ID check" detail="passed (Socure + Plaid)" />
                 <RiskRow ok label="OFAC / sanctions" detail="clear" />
@@ -1119,12 +1363,19 @@ export default function DealDetailPage() {
             />
             <CardBody className="space-y-2">
               {[
-                { name: 'ID front (drivers license)', ts: baseStart + 4_200, kind: 'image' as const },
+                {
+                  name: 'ID front (drivers license)',
+                  ts: baseStart + 4_200,
+                  kind: 'image' as const,
+                },
                 { name: 'ID back', ts: baseStart + 4_800, kind: 'image' as const },
                 { name: 'Proof of income (paystub)', ts: baseStart + 6_100, kind: 'pdf' as const },
                 { name: 'Consent / e-signature form', ts: baseStart + 9_500, kind: 'pdf' as const },
               ].map((d) => (
-                <div key={d.name} className="flex items-center gap-3 rounded border border-border bg-bg-elevated px-3 py-2 hover:bg-bg-muted/30">
+                <div
+                  key={d.name}
+                  className="flex items-center gap-3 rounded border border-border bg-bg-elevated px-3 py-2 hover:bg-bg-muted/30"
+                >
                   <div className="size-9 rounded bg-bg-muted ring-1 ring-border flex items-center justify-center text-fg-muted shrink-0">
                     <DocIcon size={16} />
                   </div>
@@ -1134,7 +1385,9 @@ export default function DealDetailPage() {
                       {d.kind.toUpperCase()} · captured {fmtRel(now - d.ts)}
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm">View</Button>
+                  <Button variant="ghost" size="sm">
+                    View
+                  </Button>
                 </div>
               ))}
             </CardBody>
@@ -1150,24 +1403,61 @@ export default function DealDetailPage() {
               />
               <CardBody>
                 <DataRow label="Rail" value={<StatusPill tone="success">RTP</StatusPill>} />
-                <DataRow label="Funded at" value={<span className="font-mono text-[12px]">{fmtClock(baseStart + 65_000)}</span>} />
-                <DataRow label="Net to partner" value={<Money cents={Math.round(app.amountCents * 0.97)} noFractions />} />
-                <DataRow label="Platform take" value={<Money cents={Math.round(app.amountCents * 0.03)} noFractions />} />
+                <DataRow
+                  label="Funded at"
+                  value={
+                    <span className="font-mono text-[12px]">{fmtClock(baseStart + 65_000)}</span>
+                  }
+                />
+                <DataRow
+                  label="Net to partner"
+                  value={<Money cents={Math.round(app.amountCents * 0.97)} noFractions />}
+                />
+                <DataRow
+                  label="Platform take"
+                  value={<Money cents={Math.round(app.amountCents * 0.03)} noFractions />}
+                />
                 <DataRow label="Lender of record" value={`${app.lender} (TILA disclosed)`} />
-                <DataRow label="Settlement latency" value={<span className="font-mono">4.2s</span>} />
-                <DataRow label="Servicing" value={<span className="inline-flex items-center gap-1.5">handed off <AgentBadge code="LEDGER" /></span>} />
+                <DataRow
+                  label="Settlement latency"
+                  value={<span className="font-mono">4.2s</span>}
+                />
+                <DataRow
+                  label="Servicing"
+                  value={
+                    <span className="inline-flex items-center gap-1.5">
+                      handed off <AgentBadge code="LEDGER" />
+                    </span>
+                  }
+                />
               </CardBody>
             </Card>
           ) : (
             <Card>
               <CardHeader title="Compliance" />
               <CardBody className="space-y-2 text-[12px]">
-                <RiskRow ok label="FCRA permissible purpose" detail="601(a)(3)(A) · soft pull only" />
-                <RiskRow ok label="ECOA notice scheduled" detail={app.status === 'declined' ? 'AAN +30d window' : 'n/a — no adverse action'} />
+                <RiskRow
+                  ok
+                  label="FCRA permissible purpose"
+                  detail="601(a)(3)(A) · soft pull only"
+                />
+                <RiskRow
+                  ok
+                  label="ECOA notice scheduled"
+                  detail={app.status === 'declined' ? 'AAN +30d window' : 'n/a — no adverse action'}
+                />
                 <RiskRow ok label="TILA box delivered" detail="acknowledged at offer" />
                 <RiskRow ok label="State licensing" detail={`AZ · NMLS #1234567`} />
-                <RiskRow ok label="Soft-pull artifact" detail={highsale ? `ref ${highsale.highsaleRef}` : 'pending'} />
-                <RiskRow ok label="Consent log" detail={`opt-in v2.4 · ${fmtClock(baseStart + 2_400)}`} />
+                <RiskRow
+                  ok
+                  label="Soft-pull artifact"
+                  detail={highsale ? `ref ${highsale.highsaleRef}` : 'pending'}
+                />
+                <RiskRow
+                  ok
+                  label="Consent log"
+                  detail={`opt-in v2.4 · ${fmtClock(baseStart + 2_400)}`}
+                />
               </CardBody>
             </Card>
           )}
@@ -1187,20 +1477,27 @@ export default function DealDetailPage() {
               <ol className="divide-y divide-border max-h-[360px] overflow-y-auto">
                 {auditChain.map((a, i) => (
                   <li key={a.hash} className="px-4 py-2 flex items-center gap-3">
-                    <span className="text-[10px] font-mono text-fg-muted tabular-nums shrink-0">#{(auditChain.length - i).toString().padStart(2, '0')}</span>
+                    <span className="text-[10px] font-mono text-fg-muted tabular-nums shrink-0">
+                      #{(auditChain.length - i).toString().padStart(2, '0')}
+                    </span>
                     <span className="inline-flex items-center rounded bg-bg-muted text-fg-secondary px-1.5 py-0.5 text-[10px] font-bold tracking-wider font-mono ring-1 ring-inset ring-border shrink-0">
                       {a.stage}
                     </span>
                     <span className="text-[11px] font-mono text-fg-secondary truncate flex-1">
                       {a.hash.slice(0, 10)}…{a.hash.slice(-6)}
                     </span>
-                    <span className="text-[10px] font-mono text-fg-muted tabular-nums shrink-0">{fmtClock(a.tsMs)}</span>
+                    <span className="text-[10px] font-mono text-fg-muted tabular-nums shrink-0">
+                      {fmtClock(a.tsMs)}
+                    </span>
                   </li>
                 ))}
               </ol>
               <div className="px-4 py-2.5 border-t border-border bg-bg-muted/30 text-[11px] text-fg-muted font-mono flex items-center gap-2">
                 <CheckIcon size={12} className="text-success" />
-                Verified · last hash <span className="text-fg-secondary">{auditChain[0]?.hash.slice(0, 8)}…{auditChain[0]?.hash.slice(-4)}</span>
+                Verified · last hash{' '}
+                <span className="text-fg-secondary">
+                  {auditChain[0]?.hash.slice(0, 8)}…{auditChain[0]?.hash.slice(-4)}
+                </span>
               </div>
             </CardBody>
           </Card>
@@ -1210,7 +1507,10 @@ export default function DealDetailPage() {
         <Card>
           <CardBody className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-mono text-fg-muted">
             <span className="inline-flex items-center gap-2">
-              <BankIcon size={12} /> trace_id <span className="text-fg-secondary">{(hash(app.id + 'trace') % 1_000_000_000_000).toString(36)}</span>
+              <BankIcon size={12} /> trace_id{' '}
+              <span className="text-fg-secondary">
+                {(hash(app.id + 'trace') % 1_000_000_000_000).toString(36)}
+              </span>
             </span>
             <span className="inline-flex items-center gap-2">
               <ChartIcon size={12} /> orchestration-v3.2
@@ -1247,7 +1547,10 @@ function StageDot({ status }: { status: StageStatus }) {
     return (
       <span className="relative inline-flex size-7 items-center justify-center">
         <span className="absolute inset-0 rounded-full bg-info/20 animate-pulse" aria-hidden />
-        <span className="relative inline-flex size-4 rounded-full bg-info ring-2 ring-info/30" aria-hidden />
+        <span
+          className="relative inline-flex size-4 rounded-full bg-info ring-2 ring-info/30"
+          aria-hidden
+        />
       </span>
     );
   }
