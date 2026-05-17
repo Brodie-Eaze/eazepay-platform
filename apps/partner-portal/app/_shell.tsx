@@ -276,18 +276,29 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       ],
     },
     {
-      // Services — direct duplicate of the master Services group, made
-      // available to every partner regardless of vertical (medpay,
-      // tradepay, coachpay). Each link goes to the SAME shared
-      // marketing surface as the master operator's view; there's no
-      // per-brand-scoped variant of these pages because they're
-      // group-wide offerings.
+      // Services — every link is scoped under /v/<brand>/services/ so
+      // a partner can never leak back into the master operator's URL
+      // space. The per-brand routes render the same shared marketing
+      // content as the master pages, but the URL, breadcrumbs, and
+      // sidebar stay inside the brand portal.
       label: 'Services',
       items: [
-        { href: '/eaze-affiliate', label: 'Eaze Affiliate', icon: <SparkIcon /> },
-        { href: '/marketing-consult', label: 'Marketing Consult', icon: <BoltIcon /> },
-        { href: '/sales-recruitment', label: 'Sales Recruitment', icon: <UsersIcon /> },
-        { href: '/marketplace', label: 'Marketplace', icon: <StoreIcon /> },
+        {
+          href: `${base}/services/eaze-affiliate`,
+          label: 'Eaze Affiliate',
+          icon: <SparkIcon />,
+        },
+        {
+          href: `${base}/services/marketing-consult`,
+          label: 'Marketing Consult',
+          icon: <BoltIcon />,
+        },
+        {
+          href: `${base}/services/sales-recruitment`,
+          label: 'Sales Recruitment',
+          icon: <UsersIcon />,
+        },
+        { href: `${base}/services/marketplace`, label: 'Marketplace', icon: <StoreIcon /> },
       ],
     },
     {
@@ -409,7 +420,7 @@ function BrandSwitcher({ activeBrand }: { activeBrand: BrandCode | null }) {
   );
 }
 
-function UserMenu() {
+function UserMenu({ activeBrand }: { activeBrand: BrandCode | null }) {
   const router = useRouter();
 
   const signOut = async () => {
@@ -421,6 +432,17 @@ function UserMenu() {
       router.push('/sign-in');
     }
   };
+
+  // Per-brand account chrome: every link stays inside /v/<brand>/. The
+  // master operator's /admin/team, /audit, /security, /help are walled
+  // off — a brand merchant never resolves to those routes.
+  const base = activeBrand ? `/v/${BRANDS[activeBrand].slug}` : '';
+  const settingsHref = activeBrand ? `${base}/settings` : '/settings';
+  const teamHref = activeBrand ? `${base}/team` : '/admin/team';
+  const activityHref = activeBrand ? `${base}/settings` : '/audit';
+  const securityHref = activeBrand ? `${base}/settings` : '/security';
+  const helpHref = activeBrand ? `${base}/settings` : '/help';
+  const teamLabel = activeBrand ? 'Manage team & roles' : 'Manage internal team';
 
   return (
     <DropdownMenu>
@@ -442,20 +464,20 @@ function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>EAZE Admin</DropdownMenuLabel>
-        <DropdownMenuItem onSelect={() => router.push('/settings')}>
+        <DropdownMenuItem onSelect={() => router.push(settingsHref)}>
           <SettingsIcon size={14} /> Profile & preferences
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => router.push('/admin/team')}>
-          <UsersIcon size={14} /> Manage internal team
+        <DropdownMenuItem onSelect={() => router.push(teamHref)}>
+          <UsersIcon size={14} /> {teamLabel}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => router.push('/audit')}>
+        <DropdownMenuItem onSelect={() => router.push(activityHref)}>
           <DocIcon size={14} /> My activity log
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => router.push('/security')}>
+        <DropdownMenuItem onSelect={() => router.push(securityHref)}>
           <ShieldIcon size={14} /> Security & 2FA
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => router.push('/help')}>
+        <DropdownMenuItem onSelect={() => router.push(helpHref)}>
           <DocIcon size={14} /> Help & support
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -467,6 +489,34 @@ function UserMenu() {
   );
 }
 
+/**
+ * Dev-time guard: when rendering a per-brand portal, every sidebar
+ * href MUST start with `/v/<brand>/` (or be an explicitly allow-listed
+ * external/protocol link like `https:`, `mailto:`, etc.). This catches
+ * regressions where someone adds a nav item that would leak back to
+ * the master operating system. Production builds skip the check.
+ */
+function assertNoMasterLeaks(groups: NavGroup[], brandSlug: string): void {
+  if (process.env.NODE_ENV === 'production') return;
+  const allowedPrefix = `/v/${brandSlug}/`;
+  const allowedExternal = /^(https?:|mailto:|tel:|#)/;
+  for (const group of groups) {
+    for (const item of group.items) {
+      const href = item.href;
+      if (!href) continue;
+      if (href === `/v/${brandSlug}`) continue;
+      if (href.startsWith(allowedPrefix)) continue;
+      if (allowedExternal.test(href)) continue;
+      // eslint-disable-next-line no-console
+      console.error(
+        `[partner-portal wall-up] href "${href}" in group "${group.label}" leaks ` +
+          `out of /v/${brandSlug}/. Every per-brand nav item must stay inside ` +
+          `the partner's portal namespace.`,
+      );
+    }
+  }
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/';
   if (NAKED_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {
@@ -475,6 +525,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const activeBrand = brandFromPath(pathname);
   const groups = activeBrand ? verticalGroups(activeBrand) : masterGroups;
+  if (activeBrand) assertNoMasterLeaks(groups, BRANDS[activeBrand].slug);
   // Sidebar wordmark + subtitle:
   //   Master view → "EAZE" · "Operating System" (the operating system
   //                  every partner portal connects to)
@@ -525,7 +576,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Button size="sm" variant="ghost">
             Help
           </Button>
-          <UserMenu />
+          <UserMenu activeBrand={activeBrand} />
         </div>
       }
       sidebarFooter={
