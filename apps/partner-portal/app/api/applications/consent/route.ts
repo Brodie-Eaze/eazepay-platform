@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
+import { getSessionContext } from '../../../../lib/session';
 
 /**
  * POST /api/applications/consent — consumer soft-pull consent receipt.
@@ -131,11 +132,50 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET surface — used by ops to verify a receipt during a dispute. In
- * production this is admin-only. For the dev flow it's open so the
- * operator (Brodie) can curl it and see what landed.
+ * GET surface — used by ops to verify a receipt during a dispute.
+ *
+ * SEC-104 hardening: pre-fix, this GET returned every receipt for a
+ * given applicationId (IP, UA, disclosure version, consentText, full
+ * sessionId) to ANY caller — applicationId values are guessable
+ * (`app_<brand>_<base36-ts>` per SEC-112) so the leak path was
+ * iterate-and-harvest.
+ *
+ * Policy:
+ *   - Require an operator-level session (master/all/admin/operator/
+ *     viewer/investor demo presets, or a real session in master_admin
+ *     role once the backend wires it). Brand-scoped demo presets get
+ *     403 — partner merchants don't read FCRA audit chains.
+ *   - 404 when no session at all so the existence of the route isn't
+ *     a probing signal for unauthenticated attackers.
  */
 export async function GET(req: NextRequest) {
+  const session = await getSessionContext(req);
+  if (session.mode === 'none') {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Not Found',
+        status: 404,
+        code: 'not_found',
+      },
+      { status: 404 },
+    );
+  }
+
+  const isAdmin = (session.mode === 'demo' && session.isOperator) || session.mode === 'real';
+  if (!isAdmin) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Forbidden',
+        status: 403,
+        code: 'admin_required',
+        detail: 'Consent receipt access is limited to operator-tier sessions.',
+      },
+      { status: 403 },
+    );
+  }
+
   const applicationId = req.nextUrl.searchParams.get('applicationId');
   if (!applicationId) {
     return NextResponse.json({ ok: false, error: 'applicationId_required' }, { status: 400 });
