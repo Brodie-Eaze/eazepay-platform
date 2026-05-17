@@ -1773,3 +1773,43 @@ model EventLog {
   @@index([at])
   @@map("event_log")
 }
+
+/// SEC + SOC2 — durable audit row for every transactional email the
+/// platform dispatches via BrandedEmailService. Answers regulator-
+/// style queries: "show me every email sent to this merchant between
+/// dates A and B." Body is intentionally NOT persisted (regenerable
+/// from template + originating-service args; PII would otherwise live
+/// in this row). See services/email/email-dispatch-audit.service.ts.
+model EmailDispatch {
+  id                String   @id @default(uuid()) @db.Uuid
+  /// 'medpay' | 'tradepay' | 'coachpay' | 'direct' | 'master'.
+  /// Stored as plain text to keep this table independent of the
+  /// ProductBrand enum (master is not a ProductBrand value).
+  brand             String
+  recipient         String
+  /// Template registry key (welcome | password_reset | team_invite |
+  /// invoice_issued | …). Free-text not enforced as enum so adding a
+  /// template doesn't require a migration.
+  templateKey       String   @map("template_key")
+  subject           String
+  /// Provider that handled the dispatch ('resend' | 'mock' | …).
+  provider          String
+  providerMessageId String   @map("provider_message_id")
+  /// Caller-supplied or auto-generated idempotency token. Indexed
+  /// non-unique because the SAME key can legitimately appear twice
+  /// across years (rotation, manual replay) — uniqueness is
+  /// guaranteed within Resend's 24h dedup window, not at our layer.
+  idempotencyKey    String   @map("idempotency_key")
+  sentAt            DateTime @map("sent_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  /// "Show me every email to recipient X, newest first."
+  @@index([recipient, sentAt(sort: Desc)])
+  /// "Show me every email of template Y in date range Z."
+  @@index([templateKey, sentAt(sort: Desc)])
+  /// "Show me every email for brand B in date range Z" — used by the
+  /// per-vertical FinOps + compliance reports.
+  @@index([brand, sentAt(sort: Desc)])
+  @@index([idempotencyKey])
+  @@map("email_dispatch")
+}

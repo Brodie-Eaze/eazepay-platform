@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { PRISMA } from '../internal/tokens.js';
 import { hash, verify } from '@node-rs/argon2';
 // Algorithm.Argon2id is an ambient const enum; we use the numeric value
 // directly to avoid the isolatedModules const-enum restriction.
 const ARGON2_ID = 2;
-import { Conflict, Unauthorized } from '@eazepay/shared-utils';
+import { Conflict, NotFound, Unauthorized } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import type {
   IdentityCheckPasswordInput,
@@ -55,11 +55,7 @@ export class LocalIdentityAdapter implements IdentityProvider {
     } catch (err: unknown) {
       // Prisma throws P2002 on unique constraint. We never disclose which
       // field collided — registration enumeration mitigation.
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        (err as { code?: string }).code === 'P2002'
-      ) {
+      if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') {
         throw Conflict({
           code: 'account_exists',
           detail: 'an account with that identifier already exists',
@@ -72,9 +68,7 @@ export class LocalIdentityAdapter implements IdentityProvider {
   async checkPassword(input: IdentityCheckPasswordInput): Promise<UserId> {
     const isEmail = input.identifier.includes('@');
     const user = await this.prisma.user.findFirst({
-      where: isEmail
-        ? { email: input.identifier.toLowerCase() }
-        : { phoneE164: input.identifier },
+      where: isEmail ? { email: input.identifier.toLowerCase() } : { phoneE164: input.identifier },
       select: { id: true, passwordHash: true, status: true },
     });
 
@@ -95,5 +89,28 @@ export class LocalIdentityAdapter implements IdentityProvider {
       throw Unauthorized({ code: 'account_unavailable' });
     }
     return user.id as UserId;
+  }
+
+  /**
+   * Replace the password hash for an existing user. Used by the
+   * password-reset flow AFTER OTP verification (AuthService.resetPassword
+   * is responsible for sequencing). The new hash uses the same Argon2id
+   * cost parameters as signUp so the verify-after-reset path stays
+   * constant-time.
+   */
+  async setPassword(input: { userId: UserId; newPassword: string }): Promise<void> {
+    const passwordHash = await hash(input.newPassword, ARGON2_OPTS);
+    try {
+      await this.prisma.user.update({
+        where: { id: input.userId },
+        data: { passwordHash },
+      });
+    } catch (err: unknown) {
+      // P2025 = record not found.
+      if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2025') {
+        throw NotFound({ code: 'user_not_found' });
+      }
+      throw err;
+    }
   }
 }

@@ -19,6 +19,13 @@ import type { RefreshDto } from './dto/refresh.dto.js';
 import type { ResendOtpDto } from './dto/resend-otp.dto.js';
 import type { TotpEnrollVerifyDto } from './dto/totp-enroll.dto.js';
 import type { TotpVerifyDto } from './dto/totp-verify.dto.js';
+import type { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import type { ResetPasswordDto } from './dto/reset-password.dto.js';
+import {
+  PASSWORD_RESET_EMAIL_DISPATCHER,
+  type PasswordResetEmailDispatcher,
+} from './ports/password-reset-email.port.js';
+import { Optional } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +40,14 @@ export class AuthService {
     private readonly sessions: SessionService,
     private readonly totp: TotpService,
     private readonly passwordPolicy: PasswordPolicyService,
+    // SEC: optional password-reset email dispatcher. Lets unit tests
+    // construct AuthService without wiring the full email stack. Real
+    // deployments inject a BrandedEmailService-backed adapter (see
+    // apps/api). Absence at runtime is logged when forgot-password
+    // is called, so the gap is loud.
+    @Optional()
+    @Inject(PASSWORD_RESET_EMAIL_DISPATCHER)
+    private readonly passwordResetMailer?: PasswordResetEmailDispatcher,
   ) {}
 
   async register(dto: RegisterDto): Promise<RegisterResult> {
@@ -375,6 +390,149 @@ export class AuthService {
         targetId: sessionId,
       },
     });
+  }
+
+  /**
+   * Public forgot-password trigger. Idempotent + anti-enumeration —
+   * always returns the same 202-shaped response regardless of whether
+   * the email matches a real account.
+   *
+   * Flow when email matches:
+   *   1. Mint OTP challenge (purpose='password_reset', 30-min TTL).
+   *   2. Dispatch branded email via PasswordResetEmailDispatcher.
+   *   3. Write audit row (actorType='user', action='auth.password_reset.requested').
+   *
+   * Flow when email doesn't match:
+   *   - Do nothing. Same response, same latency (best-effort — we
+   *     don't run a fake Argon2 here because the public surface
+   *     doesn't expose a timing comparison anyway).
+   */
+  async requestPasswordReset(dto: ForgotPasswordDto, requestOrigin: string): Promise<{ ok: true }> {
+    const user = await this.prisma.user.findFirst({
+      where: { email: dto.email.toLowerCase() },
+      select: { id: true, email: true },
+    });
+
+    // Anti-enumeration: same response regardless of outcome.
+    if (!user || !user.email) return { ok: true };
+
+    // Mint OTP challenge with a 30-min TTL (SEC audit ask). Single-use
+    // is built into OtpService.verifyAndConsume so we don't have to
+    // remember to consume it here.
+    const challenge = await this.otp.createChallenge({
+      userId: user.id as UserId,
+      channel: 'email',
+      destination: user.email,
+      purpose: 'password_reset',
+      ttlSeconds: 30 * 60,
+    });
+
+    // Resolve the brand for the email. If the request supplied one,
+    // honour it; else default to 'direct' (parent EazePay branding).
+    // A future round can resolve from the user's primary merchant
+    // brand via MerchantUser join.
+    const brand = dto.brand ?? 'direct';
+
+    if (this.passwordResetMailer) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_ORIGIN ?? 'https://partners.eazepay.com';
+      const resetUrl =
+        brand === 'direct'
+          ? `${baseUrl}/auth/reset?challenge=${challenge.challengeId}`
+          : `${baseUrl}/v/${brand}/auth/reset?challenge=${challenge.challengeId}`;
+      try {
+        await this.passwordResetMailer.send({
+          brand,
+          to: user.email,
+          recipientName: user.email.split('@')[0] ?? 'there',
+          resetUrl,
+          resetCode: challenge.code,
+          requestOrigin,
+          idempotencyKey: challenge.challengeId,
+        });
+      } catch (err) {
+        // Email failures don't block the audit row — caller still got
+        // the OTP via the (mock) notification gateway in dev, and the
+        // audit row captures the request.
+        this.logger.error(
+          `password-reset email failed for user ${user.id}: ${(err as Error).message}`,
+        );
+      }
+    } else {
+      this.logger.warn(
+        `requestPasswordReset: no PasswordResetEmailDispatcher wired — challenge ${challenge.challengeId} minted but no email sent`,
+      );
+    }
+
+    await this.prisma.auditOutbox.create({
+      data: {
+        actorType: 'user',
+        actorId: user.id,
+        action: 'auth.password_reset.requested',
+        targetType: 'User',
+        targetId: user.id,
+        after: { brand, requestOrigin },
+      },
+    });
+
+    return { ok: true };
+  }
+
+  /**
+   * Complete the password reset. Verifies the OTP, swaps the password
+   * hash, revokes every active session for the user (forces re-login
+   * everywhere), and writes the audit row.
+   *
+   * Single-use is enforced by `otp.verifyAndConsume` — same Redis key
+   * the original challenge sits in.
+   */
+  async resetPassword(dto: ResetPasswordDto): Promise<{ ok: true }> {
+    // 1. Verify the OTP. Throws Unauthorized / TooManyRequests on
+    //    failure; the controller surfaces those as RFC 7807 errors.
+    const userId = await this.otp.verifyAndConsume({
+      challengeId: dto.challengeId,
+      code: dto.code,
+      expectedPurpose: 'password_reset',
+    });
+
+    // 2. Breach check the new password. Same gate as register() so a
+    //    user can't reset to a known-breached password.
+    const breachCheck = await this.passwordPolicy.checkBreached(dto.newPassword);
+    if (breachCheck.breached) {
+      throw Conflict({
+        code: 'password_breached',
+        detail: `This password has appeared in ${breachCheck.count} data breaches. Choose another.`,
+      });
+    }
+
+    // 3. Replace the hash + revoke every active session for this user.
+    //    Order matters: write the new hash first so a successful return
+    //    from this call means the user can sign in with the new password.
+    //    Session revocation is best-effort — if it fails partway, the
+    //    new password still works.
+    await this.identity.setPassword({ userId, newPassword: dto.newPassword });
+
+    try {
+      await this.sessions.revokeAllForUser(userId);
+    } catch (err) {
+      this.logger.error(
+        `password reset for ${userId}: session revoke partially failed (${(err as Error).message}). User is still signed in on other devices.`,
+      );
+    }
+
+    // 4. Audit. Captures the userId at the rolled-back state — useful
+    //    for incident response if the reset is later flagged as
+    //    fraudulent.
+    await this.prisma.auditOutbox.create({
+      data: {
+        actorType: 'user',
+        actorId: userId,
+        action: 'auth.password_reset.completed',
+        targetType: 'User',
+        targetId: userId,
+      },
+    });
+
+    return { ok: true };
   }
 
   private async issueSession(

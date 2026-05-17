@@ -12,7 +12,7 @@ interface ChallengeRecord {
   destination: string; // hashed; never plaintext
   codeHash: string;
   attempts: number;
-  purpose: 'register_verify' | 'login_mfa' | 'step_up';
+  purpose: 'register_verify' | 'login_mfa' | 'step_up' | 'password_reset';
   expiresAt: number; // ms epoch
 }
 
@@ -53,7 +53,7 @@ export class OtpService {
     userId: UserId;
     channel: 'sms' | 'email' | 'totp';
     destination: string;
-    purpose: 'register_verify' | 'login_mfa' | 'step_up';
+    purpose: 'register_verify' | 'login_mfa' | 'step_up' | 'password_reset';
     ttlSeconds?: number;
   }): Promise<{ challengeId: string; code: string; expiresAt: string }> {
     const challengeId = randomUUID();
@@ -157,7 +157,7 @@ export class OtpService {
   async verifyAndConsume(input: {
     challengeId: string;
     code: string;
-    expectedPurpose: 'register_verify' | 'login_mfa' | 'step_up';
+    expectedPurpose: 'register_verify' | 'login_mfa' | 'step_up' | 'password_reset';
   }): Promise<UserId> {
     const key = KEY_PREFIX + input.challengeId;
     const raw = await this.redis.get(key);
@@ -224,7 +224,7 @@ export class OtpService {
   async supersedePriorChallenge(challengeId: string): Promise<{
     userId: UserId;
     channel: 'sms' | 'email' | 'totp';
-    purpose: 'register_verify' | 'login_mfa' | 'step_up';
+    purpose: 'register_verify' | 'login_mfa' | 'step_up' | 'password_reset';
     destinationHash: string;
   } | null> {
     const key = KEY_PREFIX + challengeId;

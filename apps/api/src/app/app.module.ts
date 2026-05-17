@@ -4,7 +4,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { LoggerModule } from 'nestjs-pino';
-import { AuthModule, JwtAuthGuard } from '@eazepay/service-auth';
+import { AuthModule, JwtAuthGuard, PASSWORD_RESET_EMAIL_DISPATCHER } from '@eazepay/service-auth';
+import { EmailModule, PrismaEmailDispatchAudit } from '@eazepay/service-email';
 import { UserModule } from '@eazepay/service-user';
 import { AdminModule } from '@eazepay/service-admin';
 import { ApplicationModule } from '@eazepay/service-application';
@@ -36,6 +37,7 @@ import { HighsaleWebhookController } from './highsale-webhook.controller.js';
 import { ObjectStorageModule } from './object-storage.module.js';
 import { DevStorageController } from './dev-storage.controller.js';
 import { ConsumerDocumentDownloadController } from './document-download.controller.js';
+import { BrandedEmailPasswordResetAdapter } from './adapters/branded-email-password-reset.adapter.js';
 
 const env = loadEnv();
 
@@ -68,6 +70,12 @@ const env = loadEnv();
       isDevelopment: env.NODE_ENV === 'development',
       channels: { email: 'console', sms: 'console', push: 'console' },
     }),
+    // EmailModule wires the Resend adapter when RESEND_API_KEY is set,
+    // else the Mock adapter that logs to stdout. The audit writer is
+    // Prisma-backed (PrismaEmailDispatchAudit) so every send lands in
+    // the email_dispatch table for SOC2 evidence — see migration
+    // 20260517_email_dispatch_audit.
+    EmailModule.forRoot({ prismaToken: PrismaService }),
     RiskModule.forRoot({
       prismaToken: PrismaService,
       deviceProvider: env.DEVICE_RISK_PROVIDER,
@@ -267,6 +275,16 @@ const env = loadEnv();
     Reflector,
     OrchestrationPostSubmitAdapter,
     PaymentContractedHookAdapter,
+    // Bridges service-auth's PasswordResetEmailDispatcher port to
+    // service-email's BrandedEmailService. Lives in apps/api because
+    // this is the only place both modules compose; service-auth must
+    // not depend on service-email at the package level (would couple
+    // two libs that should stay independently testable).
+    BrandedEmailPasswordResetAdapter,
+    {
+      provide: PASSWORD_RESET_EMAIL_DISPATCHER,
+      useExisting: BrandedEmailPasswordResetAdapter,
+    },
     // Rate limiter runs BEFORE the JWT guard so unauthenticated floods
     // can't burn CPU on token validation. Order matters in NestJS:
     // guards execute in the order they appear in this array.

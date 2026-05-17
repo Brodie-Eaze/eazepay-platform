@@ -14,6 +14,8 @@ import type { RefreshDto } from './dto/refresh.dto.js';
 import type { ResendOtpDto } from './dto/resend-otp.dto.js';
 import type { TotpEnrollInitDto, TotpEnrollVerifyDto } from './dto/totp-enroll.dto.js';
 import type { TotpVerifyDto } from './dto/totp-verify.dto.js';
+import type { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import type { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 /**
  * Auth-route throttle profile: significantly tighter than the default
@@ -102,6 +104,49 @@ export class AuthController {
   @ApiOperation({ summary: 'Rotate refresh token and issue a new access token' })
   refresh(@Body() dto: RefreshDto): Promise<RefreshResult> {
     return this.auth.refresh(dto);
+  }
+
+  /**
+   * Public forgot-password trigger. ALWAYS returns 202 {ok:true} —
+   * never reveals whether the email matches a real account (anti-
+   * enumeration). When it does match, a single-use 30-min OTP is
+   * minted and a branded email is dispatched. Tight throttle (3/min/IP)
+   * because this endpoint sends mail without any prior session — the
+   * abuse surface is "spray mail at attacker-controlled addresses to
+   * burn our Resend quota".
+   */
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post('forgot-password')
+  @HttpCode(202)
+  @ApiOperation({ summary: 'Trigger a password-reset email (anti-enumeration: always 202)' })
+  forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent?: string,
+  ): Promise<{ ok: true }> {
+    const origin = userAgent ? `${ip} · ${userAgent.slice(0, 80)}` : ip;
+    return this.auth.requestPasswordReset(dto, origin);
+  }
+
+  /**
+   * Complete the reset. Verifies the OTP from forgot-password, swaps
+   * the password hash, revokes every active session (forces re-login
+   * everywhere — including the device the user used to request the
+   * reset). The breach-check (HIBP) runs here, not at request time,
+   * because we want to fail BEFORE rotating the hash if the new
+   * password is no better than the old one.
+   *
+   * Throttle is OTP-grade because each call burns one of the 5
+   * attempts on the underlying challenge.
+   */
+  @Public()
+  @Throttle(OTP_THROTTLE)
+  @Post('reset-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Complete password reset using OTP challenge' })
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<{ ok: true }> {
+    return this.auth.resetPassword(dto);
   }
 
   /**
