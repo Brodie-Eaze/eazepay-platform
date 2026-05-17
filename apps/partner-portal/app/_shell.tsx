@@ -445,16 +445,23 @@ export function Shell({ children }: { children: ReactNode }) {
 
   const activeBrand = brandFromPath(pathname);
   const groups = activeBrand ? verticalGroups(activeBrand) : masterGroups;
-  // Sidebar subtitle under the EAZE wordmark:
-  //   Master view → "Operating System"  (the operating system every partner portal connects to)
-  //   Brand view  → "Partner"           (single-vertical merchant view; brand context shown via env-label pill)
-  const product = activeBrand ? 'Partner' : 'Operating System';
+  // Sidebar wordmark + subtitle:
+  //   Master view → "EAZE" · "Operating System" (the operating system
+  //                  every partner portal connects to)
+  //   Brand view  → "Eaze" · "Partner Portal"   (softer mixed-case
+  //                  mark for the per-brand merchant; brand identity
+  //                  comes through via the env-label pill in the top
+  //                  bar, so the wordmark stays consistent across
+  //                  all three vertical portals)
+  const wordmark = activeBrand ? 'Eaze' : 'EAZE';
+  const product = activeBrand ? 'Partner Portal' : 'Operating System';
   const envLabel: { label: string; tone: 'live' } = activeBrand
     ? { label: `${BRANDS[activeBrand].name} · Live`, tone: 'live' }
     : { label: 'Live · Master', tone: 'live' };
 
   return (
     <AppShell
+      wordmark={wordmark}
       product={product}
       activePath={pathname}
       groups={groups}

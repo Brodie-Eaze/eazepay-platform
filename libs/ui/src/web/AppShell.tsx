@@ -24,6 +24,10 @@ export const AppShell: FC<{
   children: ReactNode;
   /** Product / tier label shown under the wordmark, e.g. "Partner Portal". */
   product: string;
+  /** Brand wordmark shown above the product subtitle. Defaults to
+   *  "EAZE" so the master surface keeps its all-caps mark; per-brand
+   *  surfaces can pass "Eaze" for a softer mixed-case treatment. */
+  wordmark?: string;
   groups: NavGroup[];
   /** Currently-active path, used for highlighting. */
   activePath: string;
@@ -40,6 +44,7 @@ export const AppShell: FC<{
 }> = ({
   children,
   product,
+  wordmark = 'EAZE',
   groups,
   activePath,
   topRight,
@@ -100,7 +105,9 @@ export const AppShell: FC<{
               old extrabold reads more refined alongside the Inter
               stylistic-set glyphs (cv11/ss01) globals.css already
               opts into. */}
-          <div className="text-white font-semibold text-[17px] tracking-tight truncate">EAZE</div>
+          <div className="text-white font-semibold text-[17px] tracking-tight truncate">
+            {wordmark}
+          </div>
           <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-sidebar-fg truncate mt-1">
             {product}
           </div>
