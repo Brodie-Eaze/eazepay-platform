@@ -1,16 +1,20 @@
 import { randomBytes } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 import {
   ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type { PrismaClient } from '@prisma/client';
 // Value import (not type-only): NestJS DI resolves constructor params
 // via emitted decorator metadata, which requires a runtime reference.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { PiiVaultService } from '@eazepay/service-user';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { EventsService } from '@eazepay/service-events';
 import { ACTIVITY_SOURCE, CONFIRM_TOKEN_TTL_HOURS, PRISMA } from './internal/tokens.js';
 import { parseMonthlyPeriod } from './internal/period.js';
 import type { ActivitySource } from './ports/activity-source.port.js';
@@ -59,7 +63,36 @@ export class BillingService {
     private readonly vault: PiiVaultService,
     @Inject(ACTIVITY_SOURCE) private readonly activity: ActivitySource,
     @Inject(CONFIRM_TOKEN_TTL_HOURS) private readonly tokenTtlHours: number,
+    /**
+     * EventsService is @Optional so BillingModule still boots when
+     * EVENTS_ENABLED=false (the events module registers nothing in
+     * that case, so the DI container can't resolve the dep). Every
+     * publish() call is wrapped in `if (this.events)` and never
+     * propagates errors back to the caller.
+     */
+    @Optional() private readonly events?: EventsService,
   ) {}
+
+  /** Wrapper so publish errors don't break the transaction we're in.
+   *  Used as: `await this.tryPublish(tx, {...})`. */
+  private async tryPublish(
+    tx: Prisma.TransactionClient,
+    input: Parameters<EventsService['publish']>[1],
+  ): Promise<void> {
+    if (!this.events) return;
+    try {
+      await this.events.publish(tx, input);
+    } catch (err) {
+      // PiiInEventPayloadError indicates a developer bug — fail
+      // loudly. Anything else (Redis blip, etc.) is non-fatal.
+      if (err instanceof Error && err.name === 'PiiInEventPayloadError') {
+        throw err;
+      }
+      // Otherwise: silently absorb. The event_log row was created
+      // before pub/sub broadcast, so on Redis failure the catchup
+      // replay still surfaces it.
+    }
+  }
 
   /* ─── Billing configs ───────────────────────────────────────── */
 
@@ -280,6 +313,17 @@ export class BillingService {
             summary: `Generated from activity for ${period.label} · gross ${gross.toString()} × ${feeBps}bps = ${amount.toString()}`,
           },
         });
+        // Fan out to the event bus → master Live Activity strip + the
+        // partner's per-merchant view picks this up.
+        await this.tryPublish(tx, {
+          kind: 'invoice_generated',
+          merchantId: m.id,
+          targetType: 'Invoice',
+          targetId: inv.id,
+          actorId: actor.id ?? null,
+          actorLabel: actor.label,
+          payload: { invoiceNo, periodId, feeBps },
+        });
         if (status === 'sent') {
           await tx.invoiceActivity.create({
             data: {
@@ -289,6 +333,15 @@ export class BillingService {
               actorId: actor.id,
               summary: 'Status → sent (auto-send enabled)',
             },
+          });
+          await this.tryPublish(tx, {
+            kind: 'invoice_sent',
+            merchantId: m.id,
+            targetType: 'Invoice',
+            targetId: inv.id,
+            actorId: actor.id ?? null,
+            actorLabel: actor.label,
+            payload: { invoiceNo, periodId, autoSend: true },
           });
         }
       });
@@ -567,6 +620,16 @@ export class BillingService {
             summary: 'Status → paid (payment fully settled invoice)',
           },
         });
+        // Master Live Activity + per-merchant view see this in real-time.
+        await this.tryPublish(tx, {
+          kind: 'invoice_paid',
+          merchantId: inv.merchantId,
+          targetType: 'Invoice',
+          targetId: inv.id,
+          actorId: actor.id ?? null,
+          actorLabel: actor.label,
+          payload: { invoiceNo, method: input.method },
+        });
       }
       await tx.invoiceActivity.create({
         data: {
@@ -587,7 +650,7 @@ export class BillingService {
   async mintConfirmToken(invoiceNo: string, actor: { id: string; label: string }) {
     const inv = await this.prisma.invoice.findUnique({
       where: { invoiceNo },
-      select: { id: true, voidedAt: true },
+      select: { id: true, voidedAt: true, merchantId: true },
     });
     if (!inv) throw new NotFoundException(`invoice ${invoiceNo} not found`);
     if (inv.voidedAt) throw new ConflictException(`cannot send voided invoice`);
@@ -605,6 +668,15 @@ export class BillingService {
           actorId: actor.id,
           summary: `Composed confirm/dispute email · token expires ${expiresAt.toISOString()}`,
         },
+      });
+      await this.tryPublish(tx, {
+        kind: 'invoice_sent',
+        merchantId: inv.merchantId,
+        targetType: 'Invoice',
+        targetId: inv.id,
+        actorId: actor.id ?? null,
+        actorLabel: actor.label,
+        payload: { invoiceNo },
       });
     });
     return { token, expiresAt: expiresAt.toISOString() };
@@ -680,6 +752,26 @@ export class BillingService {
           userAgent: forensics.userAgent ?? null,
         },
       });
+      // Resolve the merchantId for the published event so partner +
+      // master subscribers route correctly.
+      const inv = await tx.invoice.findUnique({
+        where: { id: row.invoiceId },
+        select: { merchantId: true, invoiceNo: true },
+      });
+      if (inv) {
+        await this.tryPublish(tx, {
+          kind: decision === 'confirm' ? 'invoice_confirmed' : 'invoice_disputed',
+          merchantId: inv.merchantId,
+          targetType: 'Invoice',
+          targetId: row.invoiceId,
+          actorId: null,
+          actorLabel: 'recipient',
+          // The dispute reason is free text → carry as encrypted PII
+          // payload, not in the open payload object.
+          payload: { invoiceNo: inv.invoiceNo },
+          payloadPii: decision === 'dispute' ? forensics.reason : undefined,
+        });
+      }
       return { state: nextState };
     });
   }

@@ -48,6 +48,7 @@ import {
 } from '@eazepay/ui/web';
 import { BRAND_ORDER, BRANDS, type BrandCode } from '@eazepay/shared-types';
 import { partnerOrg } from '../lib/mock-data';
+import { LiveActivityStrip } from '../components/LiveActivityStrip';
 
 const NextLink = ({
   href,
@@ -498,6 +499,10 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
       }
     >
+      {/* Live Activity strip — master operator only. Streams every
+          fleet event in real-time. Hidden on per-brand surfaces so
+          merchants never see other tenants. */}
+      {!activeBrand && <LiveActivityStrip />}
       {children}
     </AppShell>
   );
