@@ -7,10 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { PrismaClient } from '@prisma/client';
-// Value import (not type-only): NestJS DI resolves constructor params
-// via emitted decorator metadata, which requires a runtime reference.
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { PiiVaultService } from '@eazepay/service-user';
+import type { PiiVaultService } from '@eazepay/service-user';
 import { ACTIVITY_SOURCE, CONFIRM_TOKEN_TTL_HOURS, PRISMA } from './internal/tokens.js';
 import { parseMonthlyPeriod } from './internal/period.js';
 import type { ActivitySource } from './ports/activity-source.port.js';
