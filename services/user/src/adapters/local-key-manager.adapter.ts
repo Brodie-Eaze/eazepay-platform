@@ -1,13 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  aesGcmDecrypt,
-  aesGcmEncrypt,
-  generateDataKey,
-} from '@eazepay/shared-utils';
-import type {
-  DataKeyMaterial,
-  KeyManager,
-} from '../ports/key-manager.port.js';
+import { aesGcmDecrypt, aesGcmEncrypt, generateDataKey } from '@eazepay/shared-utils';
+import type { DataKeyMaterial, KeyManager } from '../ports/key-manager.port.js';
 
 /**
  * Dev / non-AWS-KMS path. The KEK is loaded from env (32 bytes hex).

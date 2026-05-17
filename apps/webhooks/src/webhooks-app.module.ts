@@ -1,4 +1,10 @@
-import { Module, Logger, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import {
+  Module,
+  Logger,
+  Injectable,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaClient } from '@prisma/client';
 import { AuthModule } from '@eazepay/service-auth';

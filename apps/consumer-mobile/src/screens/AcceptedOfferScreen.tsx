@@ -23,10 +23,27 @@ export default function AcceptedOfferScreen({ navigation }: Props) {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: lightColors.bgDefault, padding: spacing.xxl, justifyContent: 'space-between' },
+  safe: {
+    flex: 1,
+    backgroundColor: lightColors.bgDefault,
+    padding: spacing.xxl,
+    justifyContent: 'space-between',
+  },
   body: { marginTop: spacing.giant },
-  h1: { fontSize: fontSizes.h2, fontWeight: '700', color: lightColors.textPrimary, marginBottom: spacing.lg },
+  h1: {
+    fontSize: fontSizes.h2,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+    marginBottom: spacing.lg,
+  },
   body1: { color: lightColors.textSecondary, fontSize: fontSizes.bodyLg, lineHeight: 26 },
-  btn: { backgroundColor: lightColors.accentDefault, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xxl },
+  btn: {
+    backgroundColor: lightColors.accentDefault,
+    height: 52,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xxl,
+  },
   btnText: { color: lightColors.textOnAccent, fontWeight: '600', fontSize: fontSizes.body },
 });

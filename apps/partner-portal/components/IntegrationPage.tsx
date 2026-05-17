@@ -72,7 +72,18 @@ export interface IntegrationPageProps {
 }
 
 export function IntegrationPage(props: IntegrationPageProps) {
-  const { category = 'INTEGRATION', name, icon, heading, body, stats, features, howItWorks, requirements, cta } = props;
+  const {
+    category = 'INTEGRATION',
+    name,
+    icon,
+    heading,
+    body,
+    stats,
+    features,
+    howItWorks,
+    requirements,
+    cta,
+  } = props;
 
   return (
     <div className="px-8 py-6 max-w-3xl">
@@ -98,9 +109,7 @@ export function IntegrationPage(props: IntegrationPageProps) {
           {stats.map((s, i) => (
             <div
               key={s.label}
-              className={
-                'p-5 ' + (i < stats.length - 1 ? 'border-r border-border' : '')
-              }
+              className={'p-5 ' + (i < stats.length - 1 ? 'border-r border-border' : '')}
             >
               <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">
                 {s.label}
@@ -114,7 +123,11 @@ export function IntegrationPage(props: IntegrationPageProps) {
         <div
           className={
             'grid border-t border-border ' +
-            (features.length === 4 ? 'grid-cols-2' : features.length === 6 ? 'grid-cols-3' : 'grid-cols-3')
+            (features.length === 4
+              ? 'grid-cols-2'
+              : features.length === 6
+                ? 'grid-cols-3'
+                : 'grid-cols-3')
           }
         >
           {features.map((f, i) => {

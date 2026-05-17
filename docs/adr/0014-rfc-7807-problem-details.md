@@ -31,25 +31,25 @@ with the EazePay extensions described below.
 
 ```json
 {
-  "type":     "about:blank",
-  "title":    "Bad Request",
-  "status":   400,
-  "code":     "idempotency_key_invalid",
-  "detail":   "Idempotency-Key must match /^[A-Za-z0-9_-]{16,128}$/",
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "code": "idempotency_key_invalid",
+  "detail": "Idempotency-Key must match /^[A-Za-z0-9_-]{16,128}$/",
   "instance": "/v1/auth/register",
   "request_id": "req_8KvR2NQp",
-  "errors":   [{ "field": "Idempotency-Key", "code": "invalid_format" }]
+  "errors": [{ "field": "Idempotency-Key", "code": "invalid_format" }]
 }
 ```
 
 EazePay extensions on top of RFC 7807:
 
-| Field | Required | Purpose |
-|---|---|---|
-| `code` | yes | Stable, snake_case machine identifier. Never localised. |
-| `request_id` | yes | Correlation ID also present on `X-EazePay-Request-Id` header. |
-| `errors` | when 422 | Array of field-level violations from the Zod parser. |
-| `retry_after` | when 429 / 503 | Seconds until the caller may retry. Mirrors `Retry-After`. |
+| Field         | Required       | Purpose                                                       |
+| ------------- | -------------- | ------------------------------------------------------------- |
+| `code`        | yes            | Stable, snake_case machine identifier. Never localised.       |
+| `request_id`  | yes            | Correlation ID also present on `X-EazePay-Request-Id` header. |
+| `errors`      | when 422       | Array of field-level violations from the Zod parser.          |
+| `retry_after` | when 429 / 503 | Seconds until the caller may retry. Mirrors `Retry-After`.    |
 
 Implementation lives in
 [`apps/api/src/common/filters/problem-exception.filter.ts`](../../apps/api/src/common/filters/problem-exception.filter.ts)

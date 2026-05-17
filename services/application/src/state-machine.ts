@@ -117,7 +117,4 @@ export const applyTransition = (
 };
 
 export const isTerminalStatus = (status: ApplicationStatus): boolean =>
-  status === 'active' ||
-  status === 'declined' ||
-  status === 'cancelled' ||
-  status === 'expired';
+  status === 'active' || status === 'declined' || status === 'cancelled' || status === 'expired';

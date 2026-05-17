@@ -58,17 +58,18 @@ type IsBannedKey<K extends string> = K extends string
                   : false
   : false;
 
-export type BannedKeys<T> = T extends Array<infer U>
-  ? Array<BannedKeys<U>>
-  : T extends object
-    ? {
-        [K in keyof T]: K extends string
-          ? IsBannedKey<K> extends true
-            ? never
-            : BannedKeys<T[K]>
-          : T[K];
-      }
-    : T;
+export type BannedKeys<T> =
+  T extends Array<infer U>
+    ? Array<BannedKeys<U>>
+    : T extends object
+      ? {
+          [K in keyof T]: K extends string
+            ? IsBannedKey<K> extends true
+              ? never
+              : BannedKeys<T[K]>
+            : T[K];
+        }
+      : T;
 
 /**
  * Use as the type of `before` / `after` on the audit write helper.

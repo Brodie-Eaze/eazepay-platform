@@ -18,19 +18,110 @@ interface Listing {
 }
 
 const SEED: Listing[] = [
-  { initials: 'BR', name: 'BrightPath Consulting',   category: 'Consulting',          email: 'info@brightpathconsulting.com', status: 'Pending', appliedAt: '08/03/2026' },
-  { initials: 'PI', name: 'PixelForge Design',       category: 'Branding & Design',   email: 'team@pixelforge.co',            status: 'Pending', appliedAt: '08/03/2026' },
-  { initials: 'SE', name: 'SecureVault Compliance',  category: 'Legal & Compliance',  email: 'hello@securevault.io',          status: 'Pending', appliedAt: '08/03/2026' },
-  { initials: 'AP', name: 'Apex Tax Solutions',      category: 'Accounting & Tax',    email: 'hello@apextax.example',         status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'PE', name: 'PeakCover Insurance',     category: 'Insurance',           email: 'hello@peakcover.example',       status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'EL', name: 'EliteHire Sales',         category: 'HR & Staffing',       email: 'hello@elitehire.example',       status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'GR', name: 'GrowthPulse Marketing',   category: 'Marketing',           email: 'hello@growthpulse.example',     status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'FO', name: 'Forge Studio',            category: 'Branding & Design',   email: 'hello@forgestudio.example',     status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'NE', name: 'NeuralEdge AI',           category: 'Consulting',          email: 'hello@neuraledge.example',      status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'SH', name: 'ShieldGuard Insurance',   category: 'Insurance',           email: 'hello@shieldguard.example',     status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'TA', name: 'TaxPro Advisors',         category: 'Accounting & Tax',    email: 'hello@taxpro.example',          status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'CO', name: 'ComplianceFirst',         category: 'Legal & Compliance',  email: 'hello@compliancefirst.example', status: 'Live',    appliedAt: '01/03/2026' },
-  { initials: 'BR', name: 'BrandForge Creative',     category: 'Branding & Design',   email: 'hello@brandforge.example',      status: 'Live',    appliedAt: '01/03/2026' },
+  {
+    initials: 'BR',
+    name: 'BrightPath Consulting',
+    category: 'Consulting',
+    email: 'info@brightpathconsulting.com',
+    status: 'Pending',
+    appliedAt: '08/03/2026',
+  },
+  {
+    initials: 'PI',
+    name: 'PixelForge Design',
+    category: 'Branding & Design',
+    email: 'team@pixelforge.co',
+    status: 'Pending',
+    appliedAt: '08/03/2026',
+  },
+  {
+    initials: 'SE',
+    name: 'SecureVault Compliance',
+    category: 'Legal & Compliance',
+    email: 'hello@securevault.io',
+    status: 'Pending',
+    appliedAt: '08/03/2026',
+  },
+  {
+    initials: 'AP',
+    name: 'Apex Tax Solutions',
+    category: 'Accounting & Tax',
+    email: 'hello@apextax.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'PE',
+    name: 'PeakCover Insurance',
+    category: 'Insurance',
+    email: 'hello@peakcover.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'EL',
+    name: 'EliteHire Sales',
+    category: 'HR & Staffing',
+    email: 'hello@elitehire.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'GR',
+    name: 'GrowthPulse Marketing',
+    category: 'Marketing',
+    email: 'hello@growthpulse.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'FO',
+    name: 'Forge Studio',
+    category: 'Branding & Design',
+    email: 'hello@forgestudio.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'NE',
+    name: 'NeuralEdge AI',
+    category: 'Consulting',
+    email: 'hello@neuraledge.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'SH',
+    name: 'ShieldGuard Insurance',
+    category: 'Insurance',
+    email: 'hello@shieldguard.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'TA',
+    name: 'TaxPro Advisors',
+    category: 'Accounting & Tax',
+    email: 'hello@taxpro.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'CO',
+    name: 'ComplianceFirst',
+    category: 'Legal & Compliance',
+    email: 'hello@compliancefirst.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
+  {
+    initials: 'BR',
+    name: 'BrandForge Creative',
+    category: 'Branding & Design',
+    email: 'hello@brandforge.example',
+    status: 'Live',
+    appliedAt: '01/03/2026',
+  },
 ];
 
 export default function MarketplaceApprovalsPage() {
@@ -84,7 +175,10 @@ export default function MarketplaceApprovalsPage() {
           <CardBody className="p-0">
             <ul className="divide-y divide-border">
               {rows.map((m, i) => (
-                <li key={i} className="grid grid-cols-12 items-center gap-4 px-5 py-4 hover:bg-bg-muted/40">
+                <li
+                  key={i}
+                  className="grid grid-cols-12 items-center gap-4 px-5 py-4 hover:bg-bg-muted/40"
+                >
                   <div className="col-span-8 flex items-center gap-3 min-w-0">
                     <span className="size-10 rounded-full bg-bg-muted text-fg-secondary flex items-center justify-center font-semibold text-[12px] shrink-0">
                       {m.initials}

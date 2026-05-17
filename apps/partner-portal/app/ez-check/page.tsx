@@ -1,10 +1,4 @@
-import {
-  ShieldIcon,
-  SearchIcon,
-  ChartIcon,
-  GaugeIcon,
-  RouteIcon,
-} from '@eazepay/ui/web';
+import { ShieldIcon, SearchIcon, ChartIcon, GaugeIcon, RouteIcon } from '@eazepay/ui/web';
 import { IntegrationPage } from '../../components/IntegrationPage';
 
 /**

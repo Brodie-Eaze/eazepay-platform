@@ -47,8 +47,7 @@ export class DecisionService {
     // Affordability — MVP stub. Real version pulls cashflow from Plaid /
     // bureau / payslip and sensitivity-tests at -10% income.
     const income = input.declaredMonthlyIncomeCents ?? ASSUMED_INCOME_CENTS;
-    const obligations =
-      input.declaredMonthlyObligationsCents ?? ASSUMED_OBLIGATIONS_CENTS;
+    const obligations = input.declaredMonthlyObligationsCents ?? ASSUMED_OBLIGATIONS_CENTS;
     const monthlyPayment = this.estimateMonthlyPaymentCents(
       input.requestedAmountCents,
       input.termMonths,

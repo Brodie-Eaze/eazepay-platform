@@ -67,6 +67,7 @@ your commit and understand the trade-off you made. Reference the ADR in
 the footer when a commit changes architecture: `Refs: docs/adr/0011-...`.
 
 Footer markers:
+
 - `Refs: #123` for issues
 - `Closes: #123` for the issue this commit closes
 - `BREAKING CHANGE: <description>` for breaking changes (also bump major)
@@ -88,12 +89,12 @@ Footer markers:
 
 ### Review SLA
 
-| Severity | First response | Merge target |
-|---|---|---|
-| Hotfix (prod-down or SEV1) | 30 min | Same business day |
-| Standard | 1 business day | 2 business days |
-| Large / architectural | 2 business days | 5 business days |
-| Documentation-only | 2 business days | 5 business days |
+| Severity                   | First response  | Merge target      |
+| -------------------------- | --------------- | ----------------- |
+| Hotfix (prod-down or SEV1) | 30 min          | Same business day |
+| Standard                   | 1 business day  | 2 business days   |
+| Large / architectural      | 2 business days | 5 business days   |
+| Documentation-only         | 2 business days | 5 business days   |
 
 ### Review focus
 

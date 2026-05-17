@@ -12,7 +12,7 @@ Consumer + merchant auth must support OAuth2/OIDC, MFA (TOTP + SMS fallback), We
 
 - AWS Cognito user pools for the heavy lifting (registration, OAuth2 flows, MFA, OIDC federation).
 - Custom session service on top for: device binding, refresh-token rotation, risk-based step-up, just-in-time elevation for admin.
-- Workforce auth (admin console) uses Okta or Google Workspace SSO — *not* Cognito — with hardware keys for prod data access.
+- Workforce auth (admin console) uses Okta or Google Workspace SSO — _not_ Cognito — with hardware keys for prod data access.
 
 ## Alternatives considered
 

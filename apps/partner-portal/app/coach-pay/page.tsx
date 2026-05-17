@@ -1,9 +1,4 @@
-import {
-  CrownIcon,
-  UsersIcon,
-  ChartIcon,
-  ShieldIcon,
-} from '@eazepay/ui/web';
+import { CrownIcon, UsersIcon, ChartIcon, ShieldIcon } from '@eazepay/ui/web';
 import { IntegrationPage } from '../../components/IntegrationPage';
 
 /**
@@ -35,14 +30,12 @@ export default function CoachPayIntegrationPage() {
         {
           icon: <ChartIcon size={18} />,
           title: 'Flexible Client Financing',
-          description:
-            'Help clients invest in their growth with affordable monthly payments',
+          description: 'Help clients invest in their growth with affordable monthly payments',
         },
         {
           icon: <ShieldIcon size={18} />,
           title: 'Simple Qualification',
-          description:
-            'Streamlined underwriting with minimal documentation for coaches',
+          description: 'Streamlined underwriting with minimal documentation for coaches',
         },
       ]}
       requirements={[

@@ -67,8 +67,8 @@ export default function EazeAffiliatePage() {
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-fg-secondary max-w-2xl">
             Join our affiliate network powered by Impact and earn commissions by referring
-            businesses to EAZE&apos;s suite of financial products. Get real-time tracking,
-            dedicated support, and competitive payouts.
+            businesses to EAZE&apos;s suite of financial products. Get real-time tracking, dedicated
+            support, and competitive payouts.
           </p>
         </div>
 
@@ -78,9 +78,22 @@ export default function EazeAffiliatePage() {
         </div>
 
         <div className="grid grid-cols-3 border-t border-border">
-          <Feature icon={<ChartIcon size={18} />} title="Multi-Channel" desc="Share via social, email, website, or content" />
-          <Feature icon={<SparkIcon size={18} />} title="Performance Tiers" desc="Unlock higher commissions as you scale" />
-          <Feature icon={<UsersIcon size={18} />} title="Dedicated Support" desc="Access to affiliate manager and resources" last />
+          <Feature
+            icon={<ChartIcon size={18} />}
+            title="Multi-Channel"
+            desc="Share via social, email, website, or content"
+          />
+          <Feature
+            icon={<SparkIcon size={18} />}
+            title="Performance Tiers"
+            desc="Unlock higher commissions as you scale"
+          />
+          <Feature
+            icon={<UsersIcon size={18} />}
+            title="Dedicated Support"
+            desc="Access to affiliate manager and resources"
+            last
+          />
         </div>
 
         <div className="grid grid-cols-3 border-t border-border">
@@ -115,7 +128,7 @@ export default function EazeAffiliatePage() {
               'No cap on earnings',
               'Monthly payouts via direct deposit',
               'Access to creative assets and banners',
-              "Real-time reporting via Impact dashboard",
+              'Real-time reporting via Impact dashboard',
             ].map((b) => (
               <li key={b} className="flex items-start gap-2.5 text-[13px] text-fg-secondary">
                 <span className="h-4 w-4 rounded-full border border-border text-fg flex items-center justify-center shrink-0 mt-0.5">
@@ -203,9 +216,7 @@ function Feature({
   return (
     <div
       className={
-        'p-5 ' +
-        (last ? '' : 'border-r border-border ') +
-        (bottom ? '' : 'border-b border-border')
+        'p-5 ' + (last ? '' : 'border-r border-border ') + (bottom ? '' : 'border-b border-border')
       }
     >
       <span className="text-fg-muted block mb-2">{icon}</span>

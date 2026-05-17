@@ -46,15 +46,15 @@ plaintext on any masked path without a valid unmask grant.
 
 ### Reason-code taxonomy
 
-| Code | Use |
-|---|---|
-| `manual_underwriting_review` | UW analyst working an application |
-| `fraud_investigation` | Risk team investigating velocity / device flag |
-| `customer_service_request` | Customer asked us to confirm what's on file |
-| `compliance_review` | SAR, OFAC match, audit response |
-| `legal_request` | Subpoena / discovery / regulator demand |
-| `reportable_matter_filing` | Filing a SAR / CTR / breach notice |
-| `notice_re_render` | Re-rendering an Adverse Action / TILA notice |
+| Code                         | Use                                            |
+| ---------------------------- | ---------------------------------------------- |
+| `manual_underwriting_review` | UW analyst working an application              |
+| `fraud_investigation`        | Risk team investigating velocity / device flag |
+| `customer_service_request`   | Customer asked us to confirm what's on file    |
+| `compliance_review`          | SAR, OFAC match, audit response                |
+| `legal_request`              | Subpoena / discovery / regulator demand        |
+| `reportable_matter_filing`   | Filing a SAR / CTR / breach notice             |
+| `notice_re_render`           | Re-rendering an Adverse Action / TILA notice   |
 
 New reason codes require an ADR amendment + Compliance signoff.
 

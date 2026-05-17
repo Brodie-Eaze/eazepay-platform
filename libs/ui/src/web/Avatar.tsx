@@ -29,7 +29,11 @@ export const AvatarImage = forwardRef<
   ElementRef<typeof RadixAvatar.Image>,
   ComponentPropsWithoutRef<typeof RadixAvatar.Image>
 >(({ className, ...props }, ref) => (
-  <RadixAvatar.Image ref={ref} className={cn('aspect-square h-full w-full object-cover', className)} {...props} />
+  <RadixAvatar.Image
+    ref={ref}
+    className={cn('aspect-square h-full w-full object-cover', className)}
+    {...props}
+  />
 ));
 AvatarImage.displayName = 'AvatarImage';
 

@@ -18,7 +18,15 @@ import {
   type NavGroup,
 } from '@eazepay/ui/web';
 
-const NextLink = ({ href, className, children }: { href: string; className?: string; children: ReactNode }) => (
+const NextLink = ({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) => (
   <Link href={href} className={className}>
     {children}
   </Link>
@@ -28,7 +36,16 @@ const groups: NavGroup[] = [
   {
     items: [
       { href: '/', label: 'Overview', icon: <HomeIcon /> },
-      { href: '/queue', label: 'Application queue', icon: <QueueIcon />, badge: <span className="text-[11px] bg-accent text-accent-fg rounded-full px-1.5 py-0.5 tabular-nums">47</span> },
+      {
+        href: '/queue',
+        label: 'Application queue',
+        icon: <QueueIcon />,
+        badge: (
+          <span className="text-[11px] bg-accent text-accent-fg rounded-full px-1.5 py-0.5 tabular-nums">
+            47
+          </span>
+        ),
+      },
       { href: '/lenders', label: 'Lender performance', icon: <ChartIcon /> },
       { href: '/processors', label: 'Processors', icon: <PackageIcon /> },
     ],
@@ -85,7 +102,8 @@ export function Shell({ children }: { children: ReactNode }) {
             EazePay ops
           </div>
           <div className="leading-snug">
-            JIT PII reads logged · 25-mo retention<br />
+            JIT PII reads logged · 25-mo retention
+            <br />
             Decline ≥ $25k → dual-control review
           </div>
         </div>

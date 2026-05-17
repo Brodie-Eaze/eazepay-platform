@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { PrismaClient, type Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import { Conflict, NotFound } from '@eazepay/shared-utils';
 import type { LoanId, PaymentMethodId, UserId } from '@eazepay/shared-types';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
@@ -130,15 +131,17 @@ export class PaymentService {
     });
   }
 
-  async listPaymentMethods(userId: UserId): Promise<Array<{
-    id: string;
-    type: string;
-    last4: string | null;
-    brand: string | null;
-    isDefault: boolean;
-    status: string;
-    createdAt: string;
-  }>> {
+  async listPaymentMethods(userId: UserId): Promise<
+    Array<{
+      id: string;
+      type: string;
+      last4: string | null;
+      brand: string | null;
+      isDefault: boolean;
+      status: string;
+      createdAt: string;
+    }>
+  > {
     const methods = await this.prisma.paymentMethod.findMany({
       where: { userId, status: { not: 'removed' } },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
@@ -154,10 +157,7 @@ export class PaymentService {
     }));
   }
 
-  async setDefaultPaymentMethod(
-    userId: UserId,
-    methodId: PaymentMethodId,
-  ): Promise<void> {
+  async setDefaultPaymentMethod(userId: UserId, methodId: PaymentMethodId): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const target = await tx.paymentMethod.findFirst({
         where: { id: methodId, userId, status: 'verified' },
@@ -277,8 +277,7 @@ export class PaymentService {
       });
       throw Conflict({
         code: 'no_verified_disbursement_account',
-        detail:
-          'consumer must add and verify a default bank account before disbursement',
+        detail: 'consumer must add and verify a default bank account before disbursement',
       });
     }
 
@@ -368,7 +367,12 @@ export class PaymentService {
           repaymentId: r.id,
           direction: 'debit',
           amountCents: remainingDue,
-          status: result.status === 'succeeded' ? 'succeeded' : result.status === 'pending' ? 'pending' : 'failed',
+          status:
+            result.status === 'succeeded'
+              ? 'succeeded'
+              : result.status === 'pending'
+                ? 'pending'
+                : 'failed',
           providerRef: result.providerRef,
           settledAt: result.status === 'succeeded' ? new Date(result.settledAt) : null,
           failureReason: result.status === 'failed' ? result.reasonCode : null,
@@ -390,10 +394,17 @@ export class PaymentService {
         data: {
           actorType: 'service',
           actorId: null,
-          action: result.status === 'succeeded' ? 'payment.repayment.collected' : 'payment.repayment.failed',
+          action:
+            result.status === 'succeeded'
+              ? 'payment.repayment.collected'
+              : 'payment.repayment.failed',
           targetType: 'Repayment',
           targetId: r.id,
-          after: { transactionId: txRow.id, providerRef: result.providerRef, status: result.status },
+          after: {
+            transactionId: txRow.id,
+            providerRef: result.providerRef,
+            status: result.status,
+          },
         },
       });
     });
@@ -457,15 +468,20 @@ export class PaymentService {
     return result;
   }
 
-  async listRepayments(userId: UserId, loanId: LoanId): Promise<Array<{
-    id: string;
-    sequence: number;
-    dueDate: string;
-    amountDueCents: bigint;
-    amountPaidCents: bigint;
-    status: string;
-    paidAt: string | null;
-  }>> {
+  async listRepayments(
+    userId: UserId,
+    loanId: LoanId,
+  ): Promise<
+    Array<{
+      id: string;
+      sequence: number;
+      dueDate: string;
+      amountDueCents: bigint;
+      amountPaidCents: bigint;
+      status: string;
+      paidAt: string | null;
+    }>
+  > {
     await this.assertLoanOwner(userId, loanId);
     const repayments = await this.prisma.repayment.findMany({
       where: { loanId },
@@ -482,7 +498,10 @@ export class PaymentService {
     }));
   }
 
-  async getLoan(userId: UserId, loanId: LoanId): Promise<{
+  async getLoan(
+    userId: UserId,
+    loanId: LoanId,
+  ): Promise<{
     id: string;
     applicationId: string;
     lenderOfRecord: string;
@@ -538,7 +557,12 @@ export class PaymentService {
           loanId: loan.id,
           direction: 'credit',
           amountCents: loan.principalCents,
-          status: result.status === 'succeeded' ? 'succeeded' : result.status === 'pending' ? 'pending' : 'failed',
+          status:
+            result.status === 'succeeded'
+              ? 'succeeded'
+              : result.status === 'pending'
+                ? 'pending'
+                : 'failed',
           providerRef: result.providerRef,
           settledAt: result.status === 'succeeded' ? new Date(result.settledAt) : null,
           failureReason: result.status === 'failed' ? result.reasonCode : null,

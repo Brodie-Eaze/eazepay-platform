@@ -52,12 +52,7 @@ export function ConsumerIdleGuard({ onExpire }: Props) {
 
   useEffect(() => {
     reset();
-    const events: Array<keyof DocumentEventMap> = [
-      'keydown',
-      'mousemove',
-      'scroll',
-      'touchstart',
-    ];
+    const events: Array<keyof DocumentEventMap> = ['keydown', 'mousemove', 'scroll', 'touchstart'];
     for (const e of events) document.addEventListener(e, reset, { passive: true });
     return () => {
       for (const e of events) document.removeEventListener(e, reset);
@@ -83,8 +78,8 @@ export function ConsumerIdleGuard({ onExpire }: Props) {
         </h2>
         <p className="mt-2 text-[14px] text-gray-700 leading-relaxed">
           For your security, this session will expire in{' '}
-          <strong className="tabular-nums">{countdown}</strong> seconds. Your form
-          information will be cleared.
+          <strong className="tabular-nums">{countdown}</strong> seconds. Your form information will
+          be cleared.
         </p>
         <div className="mt-5 flex items-center justify-end gap-2">
           <button

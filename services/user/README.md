@@ -29,7 +29,7 @@ Consumer profile + PII vault with envelope encryption.
 
 ## Notes
 
-- Default reads return *masked* values (`***-**-1234`); a clear-text
+- Default reads return _masked_ values (`***-**-1234`); a clear-text
   read writes an audit row in the same TX
 - DEK rotation is per-row — replace ciphertext + new wrapped DEK,
   KEK rotation is a separate ceremony

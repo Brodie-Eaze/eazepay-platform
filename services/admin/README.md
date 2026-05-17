@@ -32,7 +32,7 @@ Admin queue + decline override + JIT PII unmask + marketplace + team.
 
 - Dual control is enforced at the service layer, not the UI — even a
   direct API caller cannot bypass the second approver
-- Every PII unmask writes both the request *and* the eventual read to
+- Every PII unmask writes both the request _and_ the eventual read to
   audit, with the approving admin id stamped on the read row
 - Reason codes mirror `@eazepay/service-risk`'s taxonomy for
   cross-system consistency

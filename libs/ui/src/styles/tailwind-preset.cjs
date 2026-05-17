@@ -64,10 +64,10 @@ module.exports = {
         /* Status palette — matches reference status-* tokens */
         status: {
           submitted: 'rgb(var(--status-submitted-rgb) / <alpha-value>)',
-          review:    'rgb(var(--status-review-rgb) / <alpha-value>)',
-          approved:  'rgb(var(--status-approved-rgb) / <alpha-value>)',
-          declined:  'rgb(var(--status-declined-rgb) / <alpha-value>)',
-          funded:    'rgb(var(--status-funded-rgb) / <alpha-value>)',
+          review: 'rgb(var(--status-review-rgb) / <alpha-value>)',
+          approved: 'rgb(var(--status-approved-rgb) / <alpha-value>)',
+          declined: 'rgb(var(--status-declined-rgb) / <alpha-value>)',
+          funded: 'rgb(var(--status-funded-rgb) / <alpha-value>)',
         },
 
         chart: {

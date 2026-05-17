@@ -50,14 +50,26 @@ export function BrandLanding({
             </span>
           </div>
           <nav className="hidden md:flex items-center gap-7 text-[14px]">
-            <Link href="#how" className="text-fg-secondary hover:text-fg">How it works</Link>
-            <Link href="#for-business" className="text-fg-secondary hover:text-fg">For business</Link>
-            <Link href="#faq" className="text-fg-secondary hover:text-fg">FAQ</Link>
-            <Link href="/" className="text-fg-secondary hover:text-fg">EazePay home</Link>
+            <Link href="#how" className="text-fg-secondary hover:text-fg">
+              How it works
+            </Link>
+            <Link href="#for-business" className="text-fg-secondary hover:text-fg">
+              For business
+            </Link>
+            <Link href="#faq" className="text-fg-secondary hover:text-fg">
+              FAQ
+            </Link>
+            <Link href="/" className="text-fg-secondary hover:text-fg">
+              EazePay home
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">Sign in</Button>
-            <Button size="sm" trailingIcon={<ArrowRightIcon size={14} />}>Apply now</Button>
+            <Button variant="ghost" size="sm">
+              Sign in
+            </Button>
+            <Button size="sm" trailingIcon={<ArrowRightIcon size={14} />}>
+              Apply now
+            </Button>
           </div>
         </div>
       </header>
@@ -67,7 +79,9 @@ export function BrandLanding({
         <div className="absolute inset-0 bg-accent-gradient pointer-events-none" />
         <div className="absolute inset-0 bg-grid opacity-30 pointer-events-none" />
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-24">
-          <StatusPill tone="accent" icon={<SparkIcon size={12} />}>{hero.eyebrow}</StatusPill>
+          <StatusPill tone="accent" icon={<SparkIcon size={12} />}>
+            {hero.eyebrow}
+          </StatusPill>
           <h1 className="mt-5 text-[44px] md:text-[64px] font-bold leading-[1.05] tracking-tight max-w-3xl">
             {hero.title}
             <br />
@@ -77,15 +91,27 @@ export function BrandLanding({
             {hero.subhead}
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Button size="lg" trailingIcon={<ArrowRightIcon />}>Check my offers in 90 seconds</Button>
-            <Button size="lg" variant="secondary">See how it works</Button>
+            <Button size="lg" trailingIcon={<ArrowRightIcon />}>
+              Check my offers in 90 seconds
+            </Button>
+            <Button size="lg" variant="secondary">
+              See how it works
+            </Button>
           </div>
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-[13px] text-fg-muted">
-            <span className="flex items-center gap-1.5"><CheckIcon size={14} className="text-success" /> Soft pull · zero score impact</span>
-            <span className="flex items-center gap-1.5"><CheckIcon size={14} className="text-success" /> Bank-backed loans · TILA-disclosed</span>
-            <span className="flex items-center gap-1.5"><CheckIcon size={14} className="text-success" /> Same-day funding · RTP</span>
-            <span className="flex items-center gap-1.5"><CheckIcon size={14} className="text-success" />
-              <Money cents={brand.envelope.sizeMin} compact noFractions /> – <Money cents={brand.envelope.sizeMax} compact noFractions />
+            <span className="flex items-center gap-1.5">
+              <CheckIcon size={14} className="text-success" /> Soft pull · zero score impact
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckIcon size={14} className="text-success" /> Bank-backed loans · TILA-disclosed
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckIcon size={14} className="text-success" /> Same-day funding · RTP
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckIcon size={14} className="text-success" />
+              <Money cents={brand.envelope.sizeMin} compact noFractions /> –{' '}
+              <Money cents={brand.envelope.sizeMax} compact noFractions />
             </span>
           </div>
         </div>
@@ -119,16 +145,34 @@ export function BrandLanding({
           <h2 className="text-[32px] font-bold tracking-tight">A faster path to yes.</h2>
           <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
-              { icon: <BoltIcon size={18} />, title: 'Tell us about you', desc: 'A few minutes. We collect what every lender needs in one place.' },
-              { icon: <BankIcon size={18} />, title: 'Verify safely', desc: 'Confirm identity (Persona) and income (Plaid). No score impact.' },
-              { icon: <SparkIcon size={18} />, title: 'See real offers', desc: 'We route across our network and present ranked side-by-side terms.' },
-              { icon: <ChartIcon size={18} />, title: 'Pay your way', desc: 'Manage payments, payoff quotes, and hardship help in one app.' },
+              {
+                icon: <BoltIcon size={18} />,
+                title: 'Tell us about you',
+                desc: 'A few minutes. We collect what every lender needs in one place.',
+              },
+              {
+                icon: <BankIcon size={18} />,
+                title: 'Verify safely',
+                desc: 'Confirm identity (Persona) and income (Plaid). No score impact.',
+              },
+              {
+                icon: <SparkIcon size={18} />,
+                title: 'See real offers',
+                desc: 'We route across our network and present ranked side-by-side terms.',
+              },
+              {
+                icon: <ChartIcon size={18} />,
+                title: 'Pay your way',
+                desc: 'Manage payments, payoff quotes, and hardship help in one app.',
+              },
             ].map((step, i) => (
               <div key={step.title}>
                 <div className="size-10 rounded-lg bg-accent-soft text-accent flex items-center justify-center">
                   {step.icon}
                 </div>
-                <div className="mt-1 text-[11px] uppercase tracking-wider text-fg-muted font-semibold">Step {i + 1}</div>
+                <div className="mt-1 text-[11px] uppercase tracking-wider text-fg-muted font-semibold">
+                  Step {i + 1}
+                </div>
                 <h3 className="mt-1 text-[17px] font-semibold">{step.title}</h3>
                 <p className="mt-1.5 text-[13px] text-fg-muted leading-relaxed">{step.desc}</p>
               </div>
@@ -142,10 +186,12 @@ export function BrandLanding({
         <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
           <div>
             <StatusPill tone="accent">For {brand.name} businesses</StatusPill>
-            <h2 className="mt-3 text-[32px] font-bold tracking-tight">Close more sales. Skip the chase for payment.</h2>
+            <h2 className="mt-3 text-[32px] font-bold tracking-tight">
+              Close more sales. Skip the chase for payment.
+            </h2>
             <p className="mt-2 text-[15px] text-fg-muted leading-relaxed">
-              Drop in {brand.name} at point of sale and your customers see real financing offers in seconds.
-              You get paid in full, same-day, via RTP — no collections, no chargebacks.
+              Drop in {brand.name} at point of sale and your customers see real financing offers in
+              seconds. You get paid in full, same-day, via RTP — no collections, no chargebacks.
             </p>
             <div className="mt-6 flex gap-3">
               <Button trailingIcon={<ArrowRightIcon size={14} />}>Sign up your business</Button>
@@ -197,7 +243,9 @@ export function BrandLanding({
               <details key={q} className="group rounded-lg border border-border bg-bg p-4">
                 <summary className="cursor-pointer list-none flex items-center justify-between text-[15px] font-medium">
                   {q}
-                  <span className="text-fg-muted group-open:rotate-180 transition-transform">▾</span>
+                  <span className="text-fg-muted group-open:rotate-180 transition-transform">
+                    ▾
+                  </span>
                 </summary>
                 <p className="mt-3 text-[13px] text-fg-secondary leading-relaxed">{a}</p>
               </details>
@@ -210,22 +258,36 @@ export function BrandLanding({
       <footer className="border-t border-border bg-bg-elevated">
         <div className="max-w-6xl mx-auto px-6 py-10 text-[12px] text-fg-muted">
           <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-2"><Logo size={22} /></div>
+            <div className="flex items-center gap-2">
+              <Logo size={22} />
+            </div>
             <div className="flex gap-6 flex-wrap">
-              <Link href="#" className="hover:text-fg">Privacy notice (GLBA)</Link>
-              <Link href="#" className="hover:text-fg">State privacy rights</Link>
-              <Link href="#" className="hover:text-fg">Terms</Link>
-              <Link href="#" className="hover:text-fg">E-SIGN consent</Link>
-              <Link href="#" className="hover:text-fg">Licensing & disclosures</Link>
-              <Link href="#" className="hover:text-fg">CFPB complaints</Link>
+              <Link href="#" className="hover:text-fg">
+                Privacy notice (GLBA)
+              </Link>
+              <Link href="#" className="hover:text-fg">
+                State privacy rights
+              </Link>
+              <Link href="#" className="hover:text-fg">
+                Terms
+              </Link>
+              <Link href="#" className="hover:text-fg">
+                E-SIGN consent
+              </Link>
+              <Link href="#" className="hover:text-fg">
+                Licensing & disclosures
+              </Link>
+              <Link href="#" className="hover:text-fg">
+                CFPB complaints
+              </Link>
             </div>
           </div>
           <p className="mt-6 leading-relaxed max-w-4xl">
-            {brand.fullName} is a marketing program operated by EazePay, Inc. Loans surfaced through
-            {' '}{brand.name} are made by partner banks or state-licensed lenders, and may not be available
-            in all states. APRs vary by creditworthiness and product. Soft inquiries do not affect your
-            credit score; hard inquiries occur only on offer acceptance and are disclosed in your TILA box.
-            © 2026 EazePay, Inc.
+            {brand.fullName} is a marketing program operated by EazePay, Inc. Loans surfaced through{' '}
+            {brand.name} are made by partner banks or state-licensed lenders, and may not be
+            available in all states. APRs vary by creditworthiness and product. Soft inquiries do
+            not affect your credit score; hard inquiries occur only on offer acceptance and are
+            disclosed in your TILA box. © 2026 EazePay, Inc.
           </p>
         </div>
       </footer>

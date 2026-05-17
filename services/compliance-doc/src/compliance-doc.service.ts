@@ -1,11 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import {
-  NotFound,
-  OBJECT_STORAGE,
-  type ObjectStorage,
-  sha256Hex,
-} from '@eazepay/shared-utils';
+import type { PrismaClient } from '@prisma/client';
+import { NotFound, OBJECT_STORAGE, type ObjectStorage, sha256Hex } from '@eazepay/shared-utils';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { COMPLIANCE_DOC_BUCKET, PRISMA } from './internal/tokens.js';
 import { buildAdverseActionNotice } from './notices/adverse-action-builder.js';
@@ -79,9 +74,7 @@ export class ComplianceDocService {
     supersededDocumentId: string | null;
   }> {
     if (opts?.recipientOverride && !opts.supersedePrior) {
-      throw new Error(
-        'compliance-doc: recipientOverride requires supersedePrior=true',
-      );
+      throw new Error('compliance-doc: recipientOverride requires supersedePrior=true');
     }
 
     // Idempotency: return existing active notice if present AND we're
@@ -141,9 +134,7 @@ export class ComplianceDocService {
             legalName: opts.recipientOverride.legalName,
             email: app.user.email,
             phone: app.user.phoneE164,
-            ...(opts.recipientOverride.address
-              ? { address: opts.recipientOverride.address }
-              : {}),
+            ...(opts.recipientOverride.address ? { address: opts.recipientOverride.address } : {}),
           }
         : {
             legalName: 'Applicant', // anonymous render — JIT unmask path personalises

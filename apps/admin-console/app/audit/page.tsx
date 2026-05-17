@@ -32,12 +32,42 @@ export default function AuditPage() {
   });
 
   const columns: Column<Log>[] = [
-    { key: 'id', header: 'Event', cell: (l) => <span className="font-mono text-[12px]">{l.id}</span> },
-    { key: 'at', header: 'When', cell: (l) => <span className="text-[12px] text-fg-muted tabular-nums">{fmtDate(l.at)}</span> },
-    { key: 'actor', header: 'Actor', cell: (l) => l.actor.includes('@') ? <span>{l.actor}</span> : <StatusPill tone="neutral">{l.actor}</StatusPill> },
-    { key: 'action', header: 'Action', cell: (l) => <span className="font-mono text-[12px]">{l.action}</span> },
-    { key: 'target', header: 'Target', cell: (l) => <span className="text-[12px] text-fg-secondary">{l.target}</span> },
-    { key: 'hash', header: 'Hash', align: 'right', cell: () => <span className="font-mono text-[11px] text-fg-muted">sha256:f4e9…</span> },
+    {
+      key: 'id',
+      header: 'Event',
+      cell: (l) => <span className="font-mono text-[12px]">{l.id}</span>,
+    },
+    {
+      key: 'at',
+      header: 'When',
+      cell: (l) => <span className="text-[12px] text-fg-muted tabular-nums">{fmtDate(l.at)}</span>,
+    },
+    {
+      key: 'actor',
+      header: 'Actor',
+      cell: (l) =>
+        l.actor.includes('@') ? (
+          <span>{l.actor}</span>
+        ) : (
+          <StatusPill tone="neutral">{l.actor}</StatusPill>
+        ),
+    },
+    {
+      key: 'action',
+      header: 'Action',
+      cell: (l) => <span className="font-mono text-[12px]">{l.action}</span>,
+    },
+    {
+      key: 'target',
+      header: 'Target',
+      cell: (l) => <span className="text-[12px] text-fg-secondary">{l.target}</span>,
+    },
+    {
+      key: 'hash',
+      header: 'Hash',
+      align: 'right',
+      cell: () => <span className="font-mono text-[11px] text-fg-muted">sha256:f4e9…</span>,
+    },
   ];
 
   return (
@@ -50,9 +80,9 @@ export default function AuditPage() {
       />
       <PageBody>
         <Banner intent="info" className="mb-4">
-          Each event is linked to the previous via <span className="font-mono text-[12px]">prev_hash</span>{' '}
-          and persisted in DynamoDB + S3 Object Lock (7-year retention).{' '}
-          <strong>Tampering is detectable</strong> in a single pass.
+          Each event is linked to the previous via{' '}
+          <span className="font-mono text-[12px]">prev_hash</span> and persisted in DynamoDB + S3
+          Object Lock (7-year retention). <strong>Tampering is detectable</strong> in a single pass.
         </Banner>
 
         <Card padded className="mb-4">
@@ -64,20 +94,28 @@ export default function AuditPage() {
               onChange={(e) => setQuery(e.target.value)}
               className="lg:col-span-2"
             />
-            <Select label="" defaultValue="" options={[
-              { value: '', label: 'All actions' },
-              { value: 'application', label: 'application.*' },
-              { value: 'pii', label: 'pii.*' },
-              { value: 'consent', label: 'consent.*' },
-              { value: 'lender', label: 'lender.*' },
-              { value: 'admin', label: 'admin.*' },
-            ]} />
-            <Select label="" defaultValue="" options={[
-              { value: '', label: 'Last 24 hours' },
-              { value: '7d', label: 'Last 7 days' },
-              { value: '30d', label: 'Last 30 days' },
-              { value: '90d', label: 'Last 90 days' },
-            ]} />
+            <Select
+              label=""
+              defaultValue=""
+              options={[
+                { value: '', label: 'All actions' },
+                { value: 'application', label: 'application.*' },
+                { value: 'pii', label: 'pii.*' },
+                { value: 'consent', label: 'consent.*' },
+                { value: 'lender', label: 'lender.*' },
+                { value: 'admin', label: 'admin.*' },
+              ]}
+            />
+            <Select
+              label=""
+              defaultValue=""
+              options={[
+                { value: '', label: 'Last 24 hours' },
+                { value: '7d', label: 'Last 7 days' },
+                { value: '30d', label: 'Last 30 days' },
+                { value: '90d', label: 'Last 90 days' },
+              ]}
+            />
           </div>
         </Card>
 

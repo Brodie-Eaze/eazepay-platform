@@ -35,40 +35,86 @@ export default function DocsPage() {
       <PageBody>
         <Banner intent="info" className="mb-5">
           <strong>Six endpoints to integrate.</strong> Every lender adapter on the rail talks to the
-          same six routes under <code className="font-mono">https://api.eazepay.com</code>.
-          Sandbox traffic is unsigned-friendly so you can curl the endpoints before key exchange,
-          then flip on HMAC verification for staging + prod.
+          same six routes under <code className="font-mono">https://api.eazepay.com</code>. Sandbox
+          traffic is unsigned-friendly so you can curl the endpoints before key exchange, then flip
+          on HMAC verification for staging + prod.
         </Banner>
 
         <Card className="mb-5">
-          <CardHeader title="API endpoint reference" description="Click any row to jump to its sample payload." />
+          <CardHeader
+            title="API endpoint reference"
+            description="Click any row to jump to its sample payload."
+          />
           <CardBody className="p-0">
             <div className="divide-y divide-border">
               {[
-                ['POST', '/api/v1/applications', 'Create a normalised application + Idempotency-Key.'],
-                ['POST', '/api/v1/applications/{id}/submit', 'Consent + commit to orchestration. Returns evaluation_id.'],
-                ['GET', '/api/v1/applications/{id}/offers', 'Consumer-best ranked offers, aggregated across eligible adapters.'],
-                ['POST', '/api/v1/orchestration/evaluate', 'Eligibility-only check, no bureau hit.'],
-                ['POST', '/api/v1/orchestration/route', 'Run the tiered hybrid waterfall, aggregate offers.'],
-                ['POST', '/api/v1/offers/{id}/accept', 'Bind chosen offer, start TILA + e-sign flow.'],
-                ['POST', '/api/v1/lenders/{lender_id}/quote', "Reference of the request EazePay POSTs to your adapter."],
-                ['POST', '/api/v1/webhooks/lenders/{lender}', 'Inbound webhook from your adapter to EazePay.'],
-                ['GET', '/api/v1/lenders', 'Marketplace registry: every active adapter + envelope.'],
-                ['GET', '/api/v1/sample', 'Canonical sample payloads for every shape — drop into your QA suite.'],
+                [
+                  'POST',
+                  '/api/v1/applications',
+                  'Create a normalised application + Idempotency-Key.',
+                ],
+                [
+                  'POST',
+                  '/api/v1/applications/{id}/submit',
+                  'Consent + commit to orchestration. Returns evaluation_id.',
+                ],
+                [
+                  'GET',
+                  '/api/v1/applications/{id}/offers',
+                  'Consumer-best ranked offers, aggregated across eligible adapters.',
+                ],
+                [
+                  'POST',
+                  '/api/v1/orchestration/evaluate',
+                  'Eligibility-only check, no bureau hit.',
+                ],
+                [
+                  'POST',
+                  '/api/v1/orchestration/route',
+                  'Run the tiered hybrid waterfall, aggregate offers.',
+                ],
+                [
+                  'POST',
+                  '/api/v1/offers/{id}/accept',
+                  'Bind chosen offer, start TILA + e-sign flow.',
+                ],
+                [
+                  'POST',
+                  '/api/v1/lenders/{lender_id}/quote',
+                  'Reference of the request EazePay POSTs to your adapter.',
+                ],
+                [
+                  'POST',
+                  '/api/v1/webhooks/lenders/{lender}',
+                  'Inbound webhook from your adapter to EazePay.',
+                ],
+                [
+                  'GET',
+                  '/api/v1/lenders',
+                  'Marketplace registry: every active adapter + envelope.',
+                ],
+                [
+                  'GET',
+                  '/api/v1/sample',
+                  'Canonical sample payloads for every shape — drop into your QA suite.',
+                ],
               ].map(([method, path, summary]) => (
-                <div key={path as string} className="flex items-center gap-4 px-5 py-3 hover:bg-bg-muted/40">
+                <div
+                  key={path as string}
+                  className="flex items-center gap-4 px-5 py-3 hover:bg-bg-muted/40"
+                >
                   <span
                     className={
                       'text-[10px] font-bold uppercase tracking-wider rounded px-2 py-1 shrink-0 ' +
-                      (method === 'GET'
-                        ? 'bg-info-bg text-info'
-                        : 'bg-success-bg text-success')
+                      (method === 'GET' ? 'bg-info-bg text-info' : 'bg-success-bg text-success')
                     }
                   >
                     {method}
                   </span>
                   <code className="font-mono text-[12px] text-fg shrink-0">{path}</code>
-                  <span className="flex-1 text-[12px] text-fg-muted hidden md:inline">{summary}</span>
+                  <span className="flex-1 text-[12px] text-fg-muted hidden md:inline">
+                    {summary}
+                  </span>
                 </div>
               ))}
             </div>
@@ -119,7 +165,10 @@ curl -s $HOSTNAME/api/v1/sample | jq`}</CodeBlock>
             description="Required on prod traffic; optional on sandbox. Body is the raw JSON bytes EazePay sent."
           />
           <CardBody>
-            <CodeBlock language="js" filename="signing.js">{`// Outbound (we → you) and inbound (you → us) use the same scheme.
+            <CodeBlock
+              language="js"
+              filename="signing.js"
+            >{`// Outbound (we → you) and inbound (you → us) use the same scheme.
 // signature = hex(hmac_sha256(secret, timestamp + '.' + nonce + '.' + body))
 
 import crypto from 'node:crypto';
@@ -148,14 +197,29 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4">
             <Card>
-              <CardHeader title="Lifecycle (server-to-server)" description="EazePay drives the orchestration; you respond on quote, accept on bind, and disburse via the partner-bank rail." />
+              <CardHeader
+                title="Lifecycle (server-to-server)"
+                description="EazePay drives the orchestration; you respond on quote, accept on bind, and disburse via the partner-bank rail."
+              />
               <CardBody>
                 <ol className="space-y-3 text-[13px]">
                   {[
-                    ['1. /v1/partner/applications', 'EazePay POSTs a normalized applicant + bureau + bank snapshot. Respond with offer / decline / ineligible / counter within your SLA.'],
-                    ['2. /v1/partner/offers/:id/bind', 'Applicant accepted your offer. Confirm + return contract metadata (lender of record, servicer, disclosures).'],
-                    ['3. /v1/partner/loans/:id/fund', 'EazePay signals the bank-of-record disbursement window. Confirm rail (RTP / ACH same-day / wire) and amount.'],
-                    ['4. Webhook (you → us)', 'Status changes (servicing, default, hardship, payoff) flow back via your webhook URL. Same HMAC scheme as inbound.'],
+                    [
+                      '1. /v1/partner/applications',
+                      'EazePay POSTs a normalized applicant + bureau + bank snapshot. Respond with offer / decline / ineligible / counter within your SLA.',
+                    ],
+                    [
+                      '2. /v1/partner/offers/:id/bind',
+                      'Applicant accepted your offer. Confirm + return contract metadata (lender of record, servicer, disclosures).',
+                    ],
+                    [
+                      '3. /v1/partner/loans/:id/fund',
+                      'EazePay signals the bank-of-record disbursement window. Confirm rail (RTP / ACH same-day / wire) and amount.',
+                    ],
+                    [
+                      '4. Webhook (you → us)',
+                      'Status changes (servicing, default, hardship, payoff) flow back via your webhook URL. Same HMAC scheme as inbound.',
+                    ],
                   ].map(([title, body]) => (
                     <li key={title}>
                       <div className="font-mono text-[12px] font-semibold mb-0.5">{title}</div>
@@ -218,7 +282,10 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
             </Card>
 
             <Card>
-              <CardHeader title="Error model" description="RFC 7807 problem details. Stable codes. Never leak internal errors." />
+              <CardHeader
+                title="Error model"
+                description="RFC 7807 problem details. Stable codes. Never leak internal errors."
+              />
               <CardBody>
                 <CodeBlock language="json">{`{
   "type": "about:blank",
@@ -248,15 +315,19 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
               <CardHeader title="Bank-partner handshake" />
               <CardBody className="space-y-2 text-[13px]">
                 <p className="text-fg-secondary leading-relaxed">
-                  Loans you originate via EazePay are <strong>made by the chartered bank-of-record</strong>{' '}
-                  and either serviced by us or purchased by you under your warehouse / forward-flow.
+                  Loans you originate via EazePay are{' '}
+                  <strong>made by the chartered bank-of-record</strong> and either serviced by us or
+                  purchased by you under your warehouse / forward-flow.
                 </p>
                 <p className="text-fg-secondary leading-relaxed">
-                  EazePay carries the true-lender attribute structurally on every Loan record. The bank
-                  retains credit-policy ownership in form and substance, and we surface that in disclosures
-                  + audit artifacts.
+                  EazePay carries the true-lender attribute structurally on every Loan record. The
+                  bank retains credit-policy ownership in form and substance, and we surface that in
+                  disclosures + audit artifacts.
                 </p>
-                <Link href="/legal/licenses" className="flex items-center gap-1.5 text-accent text-[13px] mt-2">
+                <Link
+                  href="/legal/licenses"
+                  className="flex items-center gap-1.5 text-accent text-[13px] mt-2"
+                >
                   Read the bank-partner whitepaper <ArrowRightIcon size={12} />
                 </Link>
               </CardBody>
@@ -273,7 +344,11 @@ await fetch('https://api.eazepay.com/api/v1/lenders/lp_buzzpay_prime/quote', {
                   ['BSA/AML program', 'PDF · v2026.04', '/legal/compliance'],
                   ['Adverse Action notice templates', 'EN + ES', '/legal/disclosures'],
                 ].map(([k, v, href]) => (
-                  <Link key={k} href={href ?? '#'} className="flex items-start gap-2 hover:bg-bg-muted/40 -mx-1 px-1 py-1 rounded">
+                  <Link
+                    key={k}
+                    href={href ?? '#'}
+                    className="flex items-start gap-2 hover:bg-bg-muted/40 -mx-1 px-1 py-1 rounded"
+                  >
                     <ShieldIcon size={14} className="text-fg-muted mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <div className="font-medium">{k}</div>

@@ -1,8 +1,4 @@
-import {
-  HeartPulseIcon,
-  ShieldIcon,
-  ClockIcon,
-} from '@eazepay/ui/web';
+import { HeartPulseIcon, ShieldIcon, ClockIcon } from '@eazepay/ui/web';
 import { IntegrationPage } from '../../components/IntegrationPage';
 
 /**

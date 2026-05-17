@@ -1,13 +1,14 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { PrismaClient, type Prisma } from '@prisma/client';
-import { LenderRegistry } from '@eazepay/service-lender';
+import type { PrismaClient } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
+import type { LenderRegistry } from '@eazepay/service-lender';
 import type { LenderEvaluationContext, LenderQuoteResult } from '@eazepay/service-lender';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
-import { RiskService } from '@eazepay/service-risk';
-import { ComplianceDocService } from '@eazepay/service-compliance-doc';
+import type { RiskService } from '@eazepay/service-risk';
+import type { ComplianceDocService } from '@eazepay/service-compliance-doc';
 import { WEBHOOK_PUBLISHER, type WebhookPublisher } from '@eazepay/service-webhook';
 import { PRISMA } from './internal/tokens.js';
-import { DecisionService } from './decision/decision.service.js';
+import type { DecisionService } from './decision/decision.service.js';
 import { POLICY_VERSION, REASON_CODES } from './decision/policy.js';
 
 const QUOTE_TIMEOUT_MS = 5_000;
@@ -274,7 +275,11 @@ export class OrchestrationService {
   }
 
   private async callWithTimeout(
-    adapter: { quote: LenderEvaluationContext extends never ? never : import('@eazepay/service-lender').LenderAdapter['quote'] },
+    adapter: {
+      quote: LenderEvaluationContext extends never
+        ? never
+        : import('@eazepay/service-lender').LenderAdapter['quote'];
+    },
     ctx: LenderEvaluationContext,
     timeoutMs: number,
   ): Promise<LenderQuoteResult | { outcome: 'timeout'; reasonCodes: string[] }> {
@@ -331,7 +336,9 @@ export class OrchestrationService {
         const reasonCodes =
           r.result.outcome === 'approved'
             ? []
-            : r.result.outcome === 'declined' || r.result.outcome === 'error' || r.result.outcome === 'timeout'
+            : r.result.outcome === 'declined' ||
+                r.result.outcome === 'error' ||
+                r.result.outcome === 'timeout'
               ? r.result.reasonCodes
               : [];
         await tx.lenderRoute.create({

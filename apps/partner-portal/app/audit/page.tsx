@@ -93,7 +93,10 @@ export default function AuditPage() {
       .join('\n');
     if (typeof window !== 'undefined') {
       try {
-        const blob = new Blob([`timestamp\tactor\tactor_email\taction\ttarget\tip\toutcome\n${lines}`], { type: 'text/tab-separated-values' });
+        const blob = new Blob(
+          [`timestamp\tactor\tactor_email\taction\ttarget\tip\toutcome\n${lines}`],
+          { type: 'text/tab-separated-values' },
+        );
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -116,7 +119,11 @@ export default function AuditPage() {
         description="Append-only record of every state-changing action across the platform. 7-year retention per AU record-keeping rules."
         actions={
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={() => setExportMsg('Forwarded to siem@eazepay (mock)')}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setExportMsg('Forwarded to siem@eazepay (mock)')}
+            >
               <ExternalIcon size={12} /> Forward to SIEM
             </Button>
             <Button size="sm" variant="primary" onClick={exportLog}>
@@ -128,9 +135,19 @@ export default function AuditPage() {
       <PageBody>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           <Stat label="Total entries" value={String(totals.total)} hint="last 90 days" />
-          <Stat label="Successes" value={String(totals.success)} hint="state changes applied" tone="success" />
+          <Stat
+            label="Successes"
+            value={String(totals.success)}
+            hint="state changes applied"
+            tone="success"
+          />
           <Stat label="Warnings" value={String(totals.warning)} hint="reviewable" tone="warning" />
-          <Stat label="Failures" value={String(totals.failed)} hint="auto-retried" tone={totals.failed > 0 ? 'danger' : 'neutral'} />
+          <Stat
+            label="Failures"
+            value={String(totals.failed)}
+            hint="auto-retried"
+            tone={totals.failed > 0 ? 'danger' : 'neutral'}
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -184,16 +201,23 @@ export default function AuditPage() {
             </div>
             <ul className="divide-y divide-border">
               {slice.map((e) => (
-                <li key={e.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px] hover:bg-bg-muted/30">
+                <li
+                  key={e.id}
+                  className="grid grid-cols-12 items-center px-5 py-3 text-[12px] hover:bg-bg-muted/30"
+                >
                   <div className="col-span-2">
-                    <p className="text-fg font-mono text-[11px]">{e.ts.replace('T', ' ').slice(0, 16)}Z</p>
+                    <p className="text-fg font-mono text-[11px]">
+                      {e.ts.replace('T', ' ').slice(0, 16)}Z
+                    </p>
                     <p className="text-[10px] text-fg-muted">{relative(e.ts)}</p>
                   </div>
                   <div className="col-span-2 min-w-0">
                     <p className="font-medium text-fg truncate">{e.actor}</p>
                     <p className="text-[10px] text-fg-muted truncate">{e.actorEmail}</p>
                   </div>
-                  <div className="col-span-3 font-mono text-[11px] text-fg-secondary">{e.action}</div>
+                  <div className="col-span-3 font-mono text-[11px] text-fg-secondary">
+                    {e.action}
+                  </div>
                   <div className="col-span-3 text-fg truncate">{e.target}</div>
                   <div className="col-span-1 font-mono text-[10px] text-fg-muted">{e.ip}</div>
                   <div className="col-span-1 text-right">
@@ -206,7 +230,8 @@ export default function AuditPage() {
             </ul>
             <div className="flex items-center justify-between px-5 py-3 border-t border-border">
               <p className="text-[11px] text-fg-muted">
-                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(filtered.length, page * PAGE_SIZE)} of {filtered.length}
+                Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(filtered.length, page * PAGE_SIZE)}{' '}
+                of {filtered.length}
               </p>
               <div className="flex gap-1">
                 <button
@@ -238,7 +263,8 @@ export default function AuditPage() {
                 <div>
                   <p className="text-[13px] font-semibold text-fg">SOC 2 retention</p>
                   <p className="text-[11px] text-fg-muted leading-snug mt-0.5">
-                    7-year append-only retention per AU record-keeping rules. Hashed each hour and anchored to the chain root.
+                    7-year append-only retention per AU record-keeping rules. Hashed each hour and
+                    anchored to the chain root.
                   </p>
                 </div>
               </div>
@@ -253,7 +279,8 @@ export default function AuditPage() {
                 <div>
                   <p className="text-[13px] font-semibold text-fg">Real-time fanout</p>
                   <p className="text-[11px] text-fg-muted leading-snug mt-0.5">
-                    Each entry is also fired to the EventBridge audit stream so external SIEMs (Datadog, Splunk) stay current.
+                    Each entry is also fired to the EventBridge audit stream so external SIEMs
+                    (Datadog, Splunk) stay current.
                   </p>
                 </div>
               </div>
@@ -268,7 +295,10 @@ export default function AuditPage() {
                 <div>
                   <p className="text-[13px] font-semibold text-fg">
                     Compliance framework
-                    <Link href="/legal/compliance" className="ml-1 text-accent hover:underline inline-flex items-center gap-0.5 font-medium">
+                    <Link
+                      href="/legal/compliance"
+                      className="ml-1 text-accent hover:underline inline-flex items-center gap-0.5 font-medium"
+                    >
                       view <ArrowRightIcon size={10} />
                     </Link>
                   </p>
@@ -303,11 +333,19 @@ function Stat({
   tone?: StatusTone;
 }) {
   const accent =
-    tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-fg';
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>{value}</p>
+      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>
+        {value}
+      </p>
       {hint && <p className="text-[10px] text-fg-muted mt-1.5">{hint}</p>}
     </div>
   );

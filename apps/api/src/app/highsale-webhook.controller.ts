@@ -21,24 +21,16 @@
  *        legacy rows. There is no such reader today, so the fallback
  *        lives in the backfill script, not in production code.
  */
-import {
-  Body,
-  Controller,
-  Headers,
-  HttpCode,
-  Logger,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, Logger, Post, Req } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import { Public } from '@eazepay/service-auth';
 import { NotFound, Unauthorized } from '@eazepay/shared-utils';
-import { PiiVaultService } from '@eazepay/service-user';
+import type { PiiVaultService } from '@eazepay/service-user';
 import { z } from 'zod';
 import type { FastifyRequest } from 'fastify';
-import { PrismaService } from '../prisma/prisma.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 const TierEnum = z.enum(['prime_plus', 'prime', 'near_prime', 'sub_prime', 'no_match']);
 
@@ -53,7 +45,10 @@ const PayloadSchema = z.object({
    *  inputs (e.g. SSN-last-4 / DOB / address normalisation). Optional —
    *  if absent we compute one from the applicationId so the column is
    *  never null. */
-  inputsHash: z.string().regex(/^[0-9a-f]{64}$/i).optional(),
+  inputsHash: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i)
+    .optional(),
   /** Provider's inquiry timestamp. */
   inquiryAt: z.string().datetime(),
   /** Snapshot validity window (per Highsale policy, ~14 days). */
@@ -129,8 +124,7 @@ export class HighsaleWebhookController {
     if (!app) throw NotFound({ code: 'application_not_found' });
 
     const inputsHash =
-      payload.inputsHash ??
-      createHash('sha256').update(payload.applicationId).digest('hex');
+      payload.inputsHash ?? createHash('sha256').update(payload.applicationId).digest('hex');
 
     // Envelope-encrypt the financial payload at rest. Base64 alone was
     // the prior MVP behaviour — base64 is NOT encryption, just encoding;
@@ -157,9 +151,7 @@ export class HighsaleWebhookController {
     // "this snapshot's payload is unchanged" without ever revealing the
     // payload itself, and is stable across re-encryption (e.g. KEK
     // rotation, which changes ciphertext but not plaintext).
-    const payloadFingerprint = createHash('sha256')
-      .update(payloadJson)
-      .digest('hex');
+    const payloadFingerprint = createHash('sha256').update(payloadJson).digest('hex');
 
     const result = await this.prisma.$transaction(async (tx) => {
       const snapshot = await tx.highsaleSnapshot.upsert({
@@ -247,8 +239,7 @@ export class HighsaleWebhookController {
     // opt out via WEBHOOK_REPLAY_WINDOW_ENFORCED=false during a partner
     // rollover (NOT a long-term posture).
     const enforceReplay =
-      (process.env['WEBHOOK_REPLAY_WINDOW_ENFORCED'] ?? 'true').toLowerCase() !==
-      'false';
+      (process.env['WEBHOOK_REPLAY_WINDOW_ENFORCED'] ?? 'true').toLowerCase() !== 'false';
 
     if (enforceReplay) {
       if (!timestamp) {

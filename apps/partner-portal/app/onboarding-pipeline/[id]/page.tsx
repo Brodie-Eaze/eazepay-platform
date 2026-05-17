@@ -230,9 +230,7 @@ function Snapshot({
   const [copied, setCopied] = useState(false);
   return (
     <div className="min-w-0">
-      <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
       <p className="text-[12px] text-fg font-medium mt-0.5 flex items-center gap-1.5 truncate">
         <span className="truncate">{value}</span>
         {copyable && (
@@ -254,9 +252,7 @@ function Snapshot({
 }
 
 function KybTrackerCard({ biz }: { biz: OnboardingBusiness }) {
-  const entries = Object.entries(biz.kyb) as Array<
-    [keyof OnboardingBusiness['kyb'], CheckState]
-  >;
+  const entries = Object.entries(biz.kyb) as Array<[keyof OnboardingBusiness['kyb'], CheckState]>;
   const failing = entries.filter(([, s]) => s === 'fail' || s === 'review');
   return (
     <Card>
@@ -280,13 +276,8 @@ function KybTrackerCard({ biz }: { biz: OnboardingBusiness }) {
         )}
         <ul className="divide-y divide-border">
           {entries.map(([k, state]) => (
-            <li
-              key={k}
-              className="grid grid-cols-12 items-center px-5 py-3 hover:bg-bg-muted/40"
-            >
-              <span className="col-span-5 text-[13px] font-medium text-fg">
-                {KYB_LABEL[k]}
-              </span>
+            <li key={k} className="grid grid-cols-12 items-center px-5 py-3 hover:bg-bg-muted/40">
+              <span className="col-span-5 text-[13px] font-medium text-fg">{KYB_LABEL[k]}</span>
               <span className="col-span-3">
                 <StatusPill tone={checkTone(state)} dot>
                   {checkLabel(state)}
@@ -310,18 +301,23 @@ function KybTrackerCard({ biz }: { biz: OnboardingBusiness }) {
 
 function IntegrationsTrackerCard({ biz }: { biz: OnboardingBusiness }) {
   const entries = Object.entries(biz.integrations) as Array<
-    [keyof OnboardingBusiness['integrations'], OnboardingBusiness['integrations'][keyof OnboardingBusiness['integrations']]]
+    [
+      keyof OnboardingBusiness['integrations'],
+      OnboardingBusiness['integrations'][keyof OnboardingBusiness['integrations']],
+    ]
   >;
   const iconFor = (k: keyof OnboardingBusiness['integrations']) =>
-    k === 'highsale'
-      ? <ShieldIcon size={14} />
-      : k === 'mycamp'
-        ? <ProcessingIcon size={14} />
-        : k === 'ezCheck'
-          ? <ShieldIcon size={14} />
-          : k === 'processing'
-            ? <ProcessingIcon size={14} />
-            : <PhoneIcon size={14} />;
+    k === 'highsale' ? (
+      <ShieldIcon size={14} />
+    ) : k === 'mycamp' ? (
+      <ProcessingIcon size={14} />
+    ) : k === 'ezCheck' ? (
+      <ShieldIcon size={14} />
+    ) : k === 'processing' ? (
+      <ProcessingIcon size={14} />
+    ) : (
+      <PhoneIcon size={14} />
+    );
   return (
     <Card>
       <CardHeader
@@ -361,11 +357,21 @@ function IntegrationsTrackerCard({ biz }: { biz: OnboardingBusiness }) {
                   </StatusPill>
                 </span>
                 <span className="col-span-2 text-[11px] text-fg-muted">
-                  {state === 'completed' ? 'live' : notStarted ? 'not started' : state === 'blocked' ? 'needs help' : 'progressing'}
+                  {state === 'completed'
+                    ? 'live'
+                    : notStarted
+                      ? 'not started'
+                      : state === 'blocked'
+                        ? 'needs help'
+                        : 'progressing'}
                 </span>
                 <span className="col-span-2 text-right">
                   <Button size="sm" variant="ghost">
-                    {notStarted || blocked ? 'Nudge' : state === 'completed' ? 'Verify' : 'Open thread'}
+                    {notStarted || blocked
+                      ? 'Nudge'
+                      : state === 'completed'
+                        ? 'Verify'
+                        : 'Open thread'}
                   </Button>
                 </span>
               </li>
@@ -417,9 +423,7 @@ function DocumentsCard({ biz }: { biz: OnboardingBusiness }) {
         </form>
 
         {docs.length === 0 ? (
-          <p className="text-[12px] text-fg-muted text-center py-4">
-            No documents requested yet.
-          </p>
+          <p className="text-[12px] text-fg-muted text-center py-4">No documents requested yet.</p>
         ) : (
           <ul className="space-y-2">
             {docs.map((d) => (
@@ -430,9 +434,7 @@ function DocumentsCard({ biz }: { biz: OnboardingBusiness }) {
                 <DocIcon size={14} className="text-fg-muted shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-fg truncate">{d.name}</p>
-                  {d.note && (
-                    <p className="text-[11px] text-fg-muted truncate">{d.note}</p>
-                  )}
+                  {d.note && <p className="text-[11px] text-fg-muted truncate">{d.note}</p>}
                 </div>
                 <StatusPill
                   tone={
@@ -463,13 +465,16 @@ function DocumentsCard({ biz }: { biz: OnboardingBusiness }) {
 function ActivityTimelineCard({ biz }: { biz: OnboardingBusiness }) {
   const sorted = useMemo(
     () =>
-      [...biz.timeline, ...biz.comms.map((c) => ({
-        id: c.id,
-        at: c.at,
-        type: 'comm' as const,
-        body: `${c.channel.toUpperCase()} ${c.direction === 'outbound' ? '→' : '←'} ${c.subject ?? c.body}`,
-        actor: c.sentBy ?? 'business',
-      }))].sort((a, b) => +new Date(b.at) - +new Date(a.at)),
+      [
+        ...biz.timeline,
+        ...biz.comms.map((c) => ({
+          id: c.id,
+          at: c.at,
+          type: 'comm' as const,
+          body: `${c.channel.toUpperCase()} ${c.direction === 'outbound' ? '→' : '←'} ${c.subject ?? c.body}`,
+          actor: c.sentBy ?? 'business',
+        })),
+      ].sort((a, b) => +new Date(b.at) - +new Date(a.at)),
     [biz],
   );
   return (
@@ -526,10 +531,7 @@ function CommsComposerCard({ biz }: { biz: OnboardingBusiness }) {
       'MyCAMP onboarding incomplete — reminder',
       'Final review — confirm settlement bank',
     ],
-    sms: [
-      'Reminder: complete EazePay configuration',
-      'Quick check-in — anything blocking you?',
-    ],
+    sms: ['Reminder: complete EazePay configuration', 'Quick check-in — anything blocking you?'],
     push: [
       'Action needed — upload remaining documents',
       'Tap to resume your EazePay configuration',
@@ -599,7 +601,8 @@ function CommsComposerCard({ biz }: { biz: OnboardingBusiness }) {
           />
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-fg-muted">
-              Logged to timeline + audit chain. {biz.primaryContact.email} · {biz.primaryContact.phone}
+              Logged to timeline + audit chain. {biz.primaryContact.email} ·{' '}
+              {biz.primaryContact.phone}
             </p>
             <Button size="sm" type="submit" disabled={!body.trim()}>
               <SendIcon size={13} /> Send
@@ -668,9 +671,7 @@ function NotesCard({ biz }: { biz: OnboardingBusiness }) {
           </div>
         </form>
         {notes.length === 0 ? (
-          <p className="text-[12px] text-fg-muted text-center py-2">
-            No notes yet.
-          </p>
+          <p className="text-[12px] text-fg-muted text-center py-2">No notes yet.</p>
         ) : (
           <ul className="space-y-2">
             {notes.map((n) => (
@@ -767,10 +768,7 @@ function Toggle({
 function DangerZoneCard() {
   return (
     <Card>
-      <CardHeader
-        title="Destructive actions"
-        description="Confirmation required. Audit-logged."
-      />
+      <CardHeader title="Destructive actions" description="Confirmation required. Audit-logged." />
       <CardBody className="space-y-2">
         <Button variant="secondary" size="sm" fullWidth>
           Pause onboarding

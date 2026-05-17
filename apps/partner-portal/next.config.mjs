@@ -45,9 +45,7 @@ const nextConfig = {
   // External hostnames allowed for inlined images (QR generator on
   // the apply-share page). Anything else gets blocked.
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'api.qrserver.com' },
-    ],
+    remotePatterns: [{ protocol: 'https', hostname: 'api.qrserver.com' }],
   },
   // ────────────────────────────────────────────────────────────────────
   // Security headers (SEC-006). Applied to every route in the portal.

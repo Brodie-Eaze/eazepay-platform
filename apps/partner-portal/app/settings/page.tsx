@@ -19,7 +19,11 @@ import { PageHeader, PageBody, Card, CardBody, Button } from '@eazepay/ui/web';
  */
 
 export default function SettingsPage() {
-  const [biz, setBiz] = useState({ name: 'EAZE Partner', email: 'admin@eaze.test', phone: '(555) 555-1212' });
+  const [biz, setBiz] = useState({
+    name: 'EAZE Partner',
+    email: 'admin@eaze.test',
+    phone: '(555) 555-1212',
+  });
   const [notif, setNotif] = useState({ email: true, applicationUpdates: true, funding: true });
   const [saved, setSaved] = useState(false);
 
@@ -44,7 +48,10 @@ export default function SettingsPage() {
               <h2 className="text-[16px] font-semibold text-fg">Business Information</h2>
               <form onSubmit={save} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <Field label="Business Name">
-                  <Input value={biz.name} onChange={(e) => setBiz((s) => ({ ...s, name: e.target.value }))} />
+                  <Input
+                    value={biz.name}
+                    onChange={(e) => setBiz((s) => ({ ...s, name: e.target.value }))}
+                  />
                 </Field>
                 <Field label="Contact Email">
                   <Input

@@ -35,7 +35,9 @@ function deviceId(): string {
   if (!id) {
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
-    id = Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+    id = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
     sessionStorage.setItem(DEVICE, id);
   }
   return id;

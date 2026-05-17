@@ -73,11 +73,7 @@ export const DropdownMenuSeparator = forwardRef<
   ElementRef<typeof RadixDropdown.Separator>,
   ComponentPropsWithoutRef<typeof RadixDropdown.Separator>
 >(({ className, ...props }, ref) => (
-  <RadixDropdown.Separator
-    ref={ref}
-    className={cn('my-1 h-px bg-border', className)}
-    {...props}
-  />
+  <RadixDropdown.Separator ref={ref} className={cn('my-1 h-px bg-border', className)} {...props} />
 ));
 DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
 

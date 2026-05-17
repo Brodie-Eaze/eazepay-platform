@@ -22,8 +22,8 @@
 - [ ] api
 - [ ] workers
 - [ ] webhooks
-- [ ] services/* (list which)
-- [ ] libs/* (list which)
+- [ ] services/\* (list which)
+- [ ] libs/\* (list which)
 - [ ] design-system
 - [ ] docs only
 

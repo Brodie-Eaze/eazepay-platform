@@ -1,22 +1,13 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@eazepay/service-auth';
 import { Idempotent } from '@eazepay/shared-utils';
 import type { MerchantId, UserId } from '@eazepay/shared-types';
-import { MerchantService } from './merchant.service.js';
-import { CreateMerchantDto } from './dto/create-merchant.dto.js';
-import { AddBeneficialOwnerDto } from './dto/add-beneficial-owner.dto.js';
-import { CreateApplicationLinkDto } from './dto/create-application-link.dto.js';
+import type { MerchantService } from './merchant.service.js';
+import type { CreateMerchantDto } from './dto/create-merchant.dto.js';
+import type { AddBeneficialOwnerDto } from './dto/add-beneficial-owner.dto.js';
+import type { CreateApplicationLinkDto } from './dto/create-application-link.dto.js';
 
 @ApiTags('merchants')
 @ApiBearerAuth()

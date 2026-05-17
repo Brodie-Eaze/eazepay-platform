@@ -73,8 +73,14 @@ export default function StepReview({ state, setState, errors }: StepProps) {
       <Group title="Financial profile">
         <Row label="Bank" value={state.bankName} />
         <Row label="Account type" value={state.accountType} />
-        <Row label="Routing" value={state.routingNumber ? `••••${state.routingNumber.slice(-4)}` : ''} />
-        <Row label="Account" value={state.accountNumber ? `••••${state.accountNumber.slice(-4)}` : ''} />
+        <Row
+          label="Routing"
+          value={state.routingNumber ? `••••${state.routingNumber.slice(-4)}` : ''}
+        />
+        <Row
+          label="Account"
+          value={state.accountNumber ? `••••${state.accountNumber.slice(-4)}` : ''}
+        />
         <Row label="Monthly volume" value={state.avgMonthlyVolume} />
         <Row label="Avg ticket" value={state.avgTicket} />
         <Row label="Processing history" value={state.hasProcessingHistory ? 'Yes' : 'No'} />

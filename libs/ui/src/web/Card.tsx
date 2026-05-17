@@ -26,10 +26,7 @@ export const CardHeader: FC<{
   className?: string;
 }> = ({ title, description, action, className }) => (
   <div
-    className={cn(
-      'flex items-start justify-between gap-4 border-b border-border p-5',
-      className,
-    )}
+    className={cn('flex items-start justify-between gap-4 border-b border-border p-5', className)}
   >
     <div className="min-w-0">
       <h3 className="text-[16px] font-semibold leading-tight">{title}</h3>
@@ -49,7 +46,12 @@ export const CardFooter: FC<{ children: ReactNode; className?: string }> = ({
   children,
   className,
 }) => (
-  <div className={cn('flex items-center justify-end gap-2 border-t border-border bg-bg-muted/40 p-4 rounded-b-lg', className)}>
+  <div
+    className={cn(
+      'flex items-center justify-end gap-2 border-t border-border bg-bg-muted/40 p-4 rounded-b-lg',
+      className,
+    )}
+  >
     {children}
   </div>
 );

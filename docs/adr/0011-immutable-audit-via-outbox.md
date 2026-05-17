@@ -10,6 +10,7 @@ Every regulated mutation must produce a tamper-evident audit row.
 Auditors read these during exam; consumers' lawyers read them during
 disputes; we ourselves read them during incident response. The naive
 "log to a file" approach fails on three counts:
+
 1. Logs aren't transactional — a row state can change without a
    matching log line.
 2. Logs aren't tamper-evident — anyone with the box can edit them.
@@ -26,7 +27,7 @@ disputes; we ourselves read them during incident response. The naive
 2. **Hash-chained immutable sink** (DynamoDB hot 90d + S3 Object
    Lock cold 7y). A drain consumer (services/audit) ships rows from
    the outbox to the sink with `hash = SHA-256(prevHash ||
-   canonicalJson(row))`. Tampering with a Postgres row post-drain
+canonicalJson(row))`. Tampering with a Postgres row post-drain
    yields a chain mismatch when verified against the sink.
 
 The Postgres copy is the live, queryable view. The sink is the

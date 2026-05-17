@@ -98,9 +98,7 @@ const offers = [
 ];
 
 export default function ApplyPage({ params }: { params: { slug: string; token: string } }) {
-  const merchantName = params.slug
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (s) => s.toUpperCase());
+  const merchantName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, (s) => s.toUpperCase());
 
   // ──────────────────────────────────────────────────────────────────
   // Hardening item 5: session fingerprint binding.
@@ -273,8 +271,7 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                     <div className="font-semibold text-fg">Who we share it with</div>
                     <ul className="mt-1 list-disc pl-5 space-y-1">
                       <li>
-                        Participating lenders in our network:{' '}
-                        {PARTICIPATING_LENDERS.join(', ')}
+                        Participating lenders in our network: {PARTICIPATING_LENDERS.join(', ')}
                       </li>
                       <li>Highsale, our soft-pull credit aggregator</li>
                       <li>Identity and device fraud-prevention services</li>
@@ -342,7 +339,10 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
               </div>
             </CardBody>
             <CardFooter>
-              <Button trailingIcon={<ArrowRightIcon size={14} />} onClick={() => setStep('address')}>
+              <Button
+                trailingIcon={<ArrowRightIcon size={14} />}
+                onClick={() => setStep('address')}
+              >
                 Continue
               </Button>
             </CardFooter>
@@ -354,8 +354,8 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
             <CardBody>
               <h1 className="text-[24px] font-semibold mb-1">Your address</h1>
               <p className="text-[14px] text-fg-muted mb-5">
-                Required for state APR rules and bank-partner export. We verify against USPS and
-                the identity bureau.
+                Required for state APR rules and bank-partner export. We verify against USPS and the
+                identity bureau.
               </p>
               <div className="grid grid-cols-1 gap-3">
                 <Input
@@ -459,9 +459,12 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
               </div>
 
               <p className="mt-3 text-[12px] text-fg-muted">
-                Prefer to upload statements? <a href="#" className="text-accent">Use the manual path.</a>
-                {' '}If you enter routing/account by hand, the routing number is visible; the
-                account number is masked on blur and stored encrypted in our PiiVault.
+                Prefer to upload statements?{' '}
+                <a href="#" className="text-accent">
+                  Use the manual path.
+                </a>{' '}
+                If you enter routing/account by hand, the routing number is visible; the account
+                number is masked on blur and stored encrypted in our PiiVault.
               </p>
             </CardBody>
             <CardFooter>
@@ -499,14 +502,14 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                   <>
                     <p>
                       You authorize EazePay, Inc. and its partner banks and lenders to obtain
-                      consumer reports and information from credit bureaus, banks, and other
-                      sources for the purpose of evaluating your application and any subsequent
+                      consumer reports and information from credit bureaus, banks, and other sources
+                      for the purpose of evaluating your application and any subsequent
                       transactions. This is a <strong>soft inquiry</strong> and is not reported to
                       other lenders.
                     </p>
                     <p className="mt-2">
-                      If you accept an offer, a hard inquiry may occur. The terms of the offer
-                      (APR, fees, payments) will be disclosed in a TILA Truth-in-Lending box{' '}
+                      If you accept an offer, a hard inquiry may occur. The terms of the offer (APR,
+                      fees, payments) will be disclosed in a TILA Truth-in-Lending box{' '}
                       <em>before</em> you sign.
                     </p>
                     <p className="mt-2">
@@ -571,8 +574,8 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
         {step === 'offers' && (
           <>
             <Banner intent="success" className="mb-4" title="3 offers, best to worst by total cost">
-              You can see <strong>real terms</strong> from EazePay&apos;s network. No impact to
-              your credit until you accept. Offers expire in 7 days.
+              You can see <strong>real terms</strong> from EazePay&apos;s network. No impact to your
+              credit until you accept. Offers expire in 7 days.
             </Banner>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {offers.map((o) => (
@@ -615,9 +618,7 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                         setStep('offer-detail');
                       }}
                     >
-                      {o.id === selectedOfferId
-                        ? 'Continue with this offer'
-                        : 'Select this offer'}
+                      {o.id === selectedOfferId ? 'Continue with this offer' : 'Select this offer'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -704,10 +705,7 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                     <DataRow label="Prepayment" value="No prepayment penalty" />
                     <DataRow label="Lender of record" value={o.lenderOfRecord} />
                     <DataRow label="Servicer" value="EazePay Servicing LLC" />
-                    <DataRow
-                      label="Disbursement to"
-                      value="Pacific Solar Co. (your merchant)"
-                    />
+                    <DataRow label="Disbursement to" value="Pacific Solar Co. (your merchant)" />
                   </CardBody>
                   <CardFooter>
                     <Button variant="ghost" onClick={() => setStep('offers')}>
@@ -754,10 +752,10 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                     <p className="mt-2">
                       I authorize Cross River Bank, EazePay Servicing LLC, and their servicing
                       processors, including HighSale (EZ Check / RCC + Web-debit) and MiCamp
-                      (card-on-file backup), to initiate ACH or card debits in accordance with
-                      Nacha rules and Reg E. I understand I may revoke this authorization at any
-                      time by providing written notice at least 3 business days prior to the next
-                      scheduled debit.
+                      (card-on-file backup), to initiate ACH or card debits in accordance with Nacha
+                      rules and Reg E. I understand I may revoke this authorization at any time by
+                      providing written notice at least 3 business days prior to the next scheduled
+                      debit.
                     </p>
                     <p className="mt-2">
                       Pre-debit notices are sent at least 10 days before each scheduled payment. If
@@ -810,8 +808,8 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                   Marcus Tahir
                 </div>
                 <p className="mt-3 text-[12px] text-fg-muted text-center">
-                  Your signature is captured electronically under the E-SIGN Act and your state
-                  UETA equivalent.
+                  Your signature is captured electronically under the E-SIGN Act and your state UETA
+                  equivalent.
                 </p>
               </div>
             </CardBody>
@@ -857,11 +855,7 @@ export default function ApplyPage({ params }: { params: { slug: string; token: s
                 <DataRow label="First payment" value="June 14, 2026 . $384.55" />
                 <DataRow label="Manage in app" value="EazePay (iOS / Android)" />
               </div>
-              <Button
-                size="lg"
-                className="mt-7"
-                trailingIcon={<ArrowRightIcon size={14} />}
-              >
+              <Button size="lg" className="mt-7" trailingIcon={<ArrowRightIcon size={14} />}>
                 Download EazePay app
               </Button>
               <p className="mt-4 text-[12px] text-fg-muted">

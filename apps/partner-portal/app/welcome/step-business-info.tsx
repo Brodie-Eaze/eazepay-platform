@@ -9,8 +9,9 @@ import { US_STATES, type StepProps } from './state';
  * (SoS good-standing, IRS TIN match) run on the backend.
  */
 export default function StepBusinessInfo({ state, setState, errors }: StepProps) {
-  const set = (k: keyof typeof state) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setState((s) => ({ ...s, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof state) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setState((s) => ({ ...s, [k]: e.target.value }));
 
   return (
     <div className="space-y-5">
@@ -25,11 +26,7 @@ export default function StepBusinessInfo({ state, setState, errors }: StepProps)
           />
         </Field>
         <Field label="DBA / trading name" hint="Leave blank if same as legal name.">
-          <TextInput
-            placeholder="Acme"
-            value={state.dba}
-            onChange={set('dba')}
-          />
+          <TextInput placeholder="Acme" value={state.dba} onChange={set('dba')} />
         </Field>
         <Field label="Federal EIN" required error={errors['ein']} hint="Format: XX-XXXXXXX">
           <TextInput
@@ -59,7 +56,12 @@ export default function StepBusinessInfo({ state, setState, errors }: StepProps)
             type="url"
           />
         </Field>
-        <Field label="Address line 1" required error={errors['addressLine1']} className="md:col-span-2">
+        <Field
+          label="Address line 1"
+          required
+          error={errors['addressLine1']}
+          className="md:col-span-2"
+        >
           <TextInput
             placeholder="Street address"
             value={state.addressLine1}
@@ -100,7 +102,13 @@ export default function StepBusinessInfo({ state, setState, errors }: StepProps)
             ))}
           </SelectInput>
         </Field>
-        <Field label="ZIP" required error={errors['zip']} hint="Format: 90210 or 90210-1234" className="md:col-span-2">
+        <Field
+          label="ZIP"
+          required
+          error={errors['zip']}
+          hint="Format: 90210 or 90210-1234"
+          className="md:col-span-2"
+        >
           <TextInput
             placeholder="90210"
             value={state.zip}

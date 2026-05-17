@@ -22,14 +22,25 @@ export default function PoliciesPage() {
       <PageBody>
         <Banner intent="info" className="mb-4">
           Rule changes ship through PR with compliance + risk reviewer signoff. A 24h shadow window
-          compares old vs. new decision distribution before live promotion. <strong>No silent edits.</strong>
+          compares old vs. new decision distribution before live promotion.{' '}
+          <strong>No silent edits.</strong>
         </Banner>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <Card>
-            <CardHeader title="Active orchestration policy" action={<StatusPill tone="success" dot>Live</StatusPill>} />
+            <CardHeader
+              title="Active orchestration policy"
+              action={
+                <StatusPill tone="success" dot>
+                  Live
+                </StatusPill>
+              }
+            />
             <CardBody>
-              <DataRow label="Version" value={<span className="font-mono text-[12px]">orch_v_2026_05_a</span>} />
+              <DataRow
+                label="Version"
+                value={<span className="font-mono text-[12px]">orch_v_2026_05_a</span>}
+              />
               <DataRow label="Promoted" value="2026-05-01 09:00 ET" />
               <DataRow label="Author" value="rules-pack-pr-#412" />
               <DataRow label="Shadow window decisions" value="14,228 — Δ approval ≤ 0.4pp" />
@@ -50,9 +61,15 @@ export default function PoliciesPage() {
           </Card>
 
           <Card className="xl:col-span-2">
-            <CardHeader title="Knockout rule (sample)" description="Declarative rule pack — same source of truth in dev, staging, and prod." />
+            <CardHeader
+              title="Knockout rule (sample)"
+              description="Declarative rule pack — same source of truth in dev, staging, and prod."
+            />
             <CardBody>
-              <CodeBlock language="yaml" filename="orch/knockouts.yml">{`# Orchestration knockouts — evaluated before any lender call.
+              <CodeBlock
+                language="yaml"
+                filename="orch/knockouts.yml"
+              >{`# Orchestration knockouts — evaluated before any lender call.
 # Returns immediate ineligible with reason code; no soft pull, no spend.
 
 - id: ko_age_minor

@@ -27,7 +27,14 @@ export default function RootNavigator() {
 
   if (state === 'unknown') {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: lightColors.bgDefault }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: lightColors.bgDefault,
+        }}
+      >
         <ActivityIndicator color={lightColors.accentDefault} size="large" />
       </View>
     );
@@ -44,18 +51,46 @@ export default function RootNavigator() {
       >
         {state === 'unauthenticated' ? (
           <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Sign up' }} />
+            <Stack.Screen
+              name="Welcome"
+              component={WelcomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{ title: 'Sign up' }}
+            />
             <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Sign in' }} />
-            <Stack.Screen name="VerifyOtp" component={VerifyOtpScreen} options={{ title: 'Verify' }} />
+            <Stack.Screen
+              name="VerifyOtp"
+              component={VerifyOtpScreen}
+              options={{ title: 'Verify' }}
+            />
           </>
         ) : (
           <>
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ title: 'Quick KYC' }} />
+            <Stack.Screen
+              name="Onboarding"
+              component={OnboardingScreen}
+              options={{ title: 'Quick KYC' }}
+            />
             <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'EazePay' }} />
-            <Stack.Screen name="NewApplication" component={NewApplicationScreen} options={{ title: 'New application' }} />
-            <Stack.Screen name="Offers" component={OffersScreen} options={{ title: 'Your offers' }} />
-            <Stack.Screen name="AcceptedOffer" component={AcceptedOfferScreen} options={{ title: 'All set' }} />
+            <Stack.Screen
+              name="NewApplication"
+              component={NewApplicationScreen}
+              options={{ title: 'New application' }}
+            />
+            <Stack.Screen
+              name="Offers"
+              component={OffersScreen}
+              options={{ title: 'Your offers' }}
+            />
+            <Stack.Screen
+              name="AcceptedOffer"
+              component={AcceptedOfferScreen}
+              options={{ title: 'All set' }}
+            />
           </>
         )}
       </Stack.Navigator>

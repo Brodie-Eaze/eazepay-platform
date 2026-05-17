@@ -35,14 +35,28 @@ export default function WelcomeScreen({ navigation }: Props) {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: lightColors.bgDefault, padding: spacing.xxl, justifyContent: 'space-between' },
+  safe: {
+    flex: 1,
+    backgroundColor: lightColors.bgDefault,
+    padding: spacing.xxl,
+    justifyContent: 'space-between',
+  },
   body: { marginTop: spacing.giant },
-  h1: { fontSize: fontSizes.h1, fontWeight: '700', color: lightColors.textPrimary, marginBottom: spacing.lg },
+  h1: {
+    fontSize: fontSizes.h1,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+    marginBottom: spacing.lg,
+  },
   tagline: { fontSize: fontSizes.bodyLg, color: lightColors.textSecondary, lineHeight: 26 },
   actions: { gap: spacing.md, marginBottom: spacing.xxl },
   btn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   primary: { backgroundColor: lightColors.accentDefault },
   primaryText: { color: lightColors.textOnAccent, fontSize: fontSizes.body, fontWeight: '600' },
-  secondary: { backgroundColor: lightColors.bgElevated, borderWidth: 1, borderColor: lightColors.borderDefault },
+  secondary: {
+    backgroundColor: lightColors.bgElevated,
+    borderWidth: 1,
+    borderColor: lightColors.borderDefault,
+  },
   secondaryText: { color: lightColors.textPrimary, fontSize: fontSizes.body, fontWeight: '600' },
 });

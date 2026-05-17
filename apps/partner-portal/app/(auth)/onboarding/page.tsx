@@ -26,14 +26,7 @@ import {
 } from '@eazepay/ui/web';
 import { BRAND_ORDER, BRANDS, type BrandCode } from '@eazepay/shared-types';
 
-type Step =
-  | 'business'
-  | 'financial'
-  | 'products'
-  | 'kyb'
-  | 'agreement'
-  | 'keys'
-  | 'done';
+type Step = 'business' | 'financial' | 'products' | 'kyb' | 'agreement' | 'keys' | 'done';
 
 const STEPS: Array<{ key: Step; label: string; description: string }> = [
   { key: 'business', label: 'Business profile', description: 'Legal entity + signers' },
@@ -116,8 +109,8 @@ export default function OnboardingPage() {
           Let's get your team plugged into EazePay.
         </h1>
         <p className="mt-2 text-[14px] text-fg-muted max-w-2xl">
-          Typical onboarding takes 6 business days. You can save progress at any point and we'll email a
-          resume link to the workspace owner.
+          Typical onboarding takes 6 business days. You can save progress at any point and we'll
+          email a resume link to the workspace owner.
         </p>
 
         <Stepper items={STEPS} activeIndex={idx} className="mt-8 mb-8" />
@@ -174,7 +167,8 @@ export default function OnboardingPage() {
             <CardBody>
               <h2 className="text-[20px] font-semibold mb-1">Financial profile</h2>
               <p className="text-[13px] text-fg-muted mb-5">
-                Helps us route appropriate volume, confirm capital availability, and shape your audit pack.
+                Helps us route appropriate volume, confirm capital availability, and shape your
+                audit pack.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Select
@@ -186,7 +180,10 @@ export default function OnboardingPage() {
                     { value: 'hybrid', label: 'Hybrid · bank-partner + state-licensed fallback' },
                   ]}
                 />
-                <Input label="Bank-of-record (if applicable)" placeholder="Cross River Bank · NMLS 409249" />
+                <Input
+                  label="Bank-of-record (if applicable)"
+                  placeholder="Cross River Bank · NMLS 409249"
+                />
                 <Select
                   label="Capital structure"
                   defaultValue="balance-sheet"
@@ -238,9 +235,9 @@ export default function OnboardingPage() {
             <CardBody>
               <h2 className="text-[20px] font-semibold mb-1">Which brands will you serve?</h2>
               <p className="text-[13px] text-fg-muted mb-5">
-                Pick one or more. You can adjust eligibility, capacity, and APR windows per brand once
-                you're inside. Each brand is its own routing surface — partners are paired with brands they're
-                a fit for, not all four.
+                Pick one or more. You can adjust eligibility, capacity, and APR windows per brand
+                once you're inside. Each brand is its own routing surface — partners are paired with
+                brands they're a fit for, not all four.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {BRAND_ORDER.map((code) => {
@@ -249,14 +246,21 @@ export default function OnboardingPage() {
                   return (
                     <button
                       key={code}
-                      onClick={() => setSelectedBrands((prev) => ({ ...prev, [code]: !prev[code] }))}
+                      onClick={() =>
+                        setSelectedBrands((prev) => ({ ...prev, [code]: !prev[code] }))
+                      }
                       className={`text-left rounded-lg border-2 p-4 transition-colors ${
-                        on ? 'border-accent bg-accent-soft/40' : 'border-border bg-bg-elevated hover:border-border-strong'
+                        on
+                          ? 'border-accent bg-accent-soft/40'
+                          : 'border-border bg-bg-elevated hover:border-border-strong'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2">
-                          <span className="size-3 rounded-full" style={{ background: b.accentHex }} />
+                          <span
+                            className="size-3 rounded-full"
+                            style={{ background: b.accentHex }}
+                          />
                           <span className="text-[15px] font-semibold">{b.name}</span>
                         </div>
                         <span
@@ -267,10 +271,15 @@ export default function OnboardingPage() {
                           {on && <CheckIcon size={12} />}
                         </span>
                       </div>
-                      <p className="mt-2 text-[12px] text-fg-secondary leading-relaxed">{b.tagline}</p>
+                      <p className="mt-2 text-[12px] text-fg-secondary leading-relaxed">
+                        {b.tagline}
+                      </p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {b.verticals.slice(0, 4).map((v) => (
-                          <span key={v} className="text-[11px] bg-bg-muted rounded-full px-2 py-0.5">
+                          <span
+                            key={v}
+                            className="text-[11px] bg-bg-muted rounded-full px-2 py-0.5"
+                          >
                             {v}
                           </span>
                         ))}
@@ -290,9 +299,9 @@ export default function OnboardingPage() {
                 })}
               </div>
               <Banner intent="info" className="mt-4">
-                Selecting <strong>All products</strong> just speeds up review. Final brand activation requires a
-                fit check by our partner-success team — some brands have minimum FICO floors or state-licensing
-                requirements that won't match every firm.
+                Selecting <strong>All products</strong> just speeds up review. Final brand
+                activation requires a fit check by our partner-success team — some brands have
+                minimum FICO floors or state-licensing requirements that won't match every firm.
               </Banner>
             </CardBody>
             <CardFooter>
@@ -315,8 +324,8 @@ export default function OnboardingPage() {
             <CardBody>
               <h2 className="text-[20px] font-semibold mb-1">KYB & sanctions</h2>
               <p className="text-[13px] text-fg-muted mb-5">
-                We run CIP, OFAC, PEP, and FinCEN BOI checks on your entity, beneficial owners (≥25%), and any
-                authorized signers. Most checks complete inside 60 seconds.
+                We run CIP, OFAC, PEP, and FinCEN BOI checks on your entity, beneficial owners
+                (≥25%), and any authorized signers. Most checks complete inside 60 seconds.
               </p>
               <div className="space-y-3">
                 {[
@@ -324,10 +333,19 @@ export default function OnboardingPage() {
                   ['Secretary of State good-standing', 'Confirms your entity is in good standing.'],
                   ['OFAC + sanctions screen', 'Entity, beneficial owners, signers.'],
                   ['PEP screen', 'Politically-exposed-person check via ComplyAdvantage.'],
-                  ['FinCEN BOI (CTA)', 'Beneficial Ownership Information per the Corporate Transparency Act.'],
-                  ['Adverse media + enforcement history', 'CFPB, FTC, state AG actions in last 7 years.'],
+                  [
+                    'FinCEN BOI (CTA)',
+                    'Beneficial Ownership Information per the Corporate Transparency Act.',
+                  ],
+                  [
+                    'Adverse media + enforcement history',
+                    'CFPB, FTC, state AG actions in last 7 years.',
+                  ],
                 ].map(([title, desc]) => (
-                  <div key={title} className="flex items-start gap-3 rounded-md border border-border bg-bg-elevated p-3">
+                  <div
+                    key={title}
+                    className="flex items-start gap-3 rounded-md border border-border bg-bg-elevated p-3"
+                  >
                     <span className="size-7 rounded-full bg-success-bg text-success flex items-center justify-center shrink-0">
                       <CheckIcon size={14} />
                     </span>
@@ -342,9 +360,9 @@ export default function OnboardingPage() {
                 ))}
               </div>
               <Banner intent="warning" className="mt-4">
-                For each beneficial owner ≥ 25%, we'll request government ID + DOB + residential address. Files
-                are encrypted at rest and stored only for the retention period required (5 years post account
-                closure under BSA).
+                For each beneficial owner ≥ 25%, we'll request government ID + DOB + residential
+                address. Files are encrypted at rest and stored only for the retention period
+                required (5 years post account closure under BSA).
               </Banner>
             </CardBody>
             <CardFooter>
@@ -363,14 +381,17 @@ export default function OnboardingPage() {
             <CardBody>
               <h2 className="text-[20px] font-semibold mb-1">Master partner agreement</h2>
               <p className="text-[13px] text-fg-muted mb-5">
-                Outlines the partnership terms — service levels, audit rights, data handling, fair-lending
-                obligations, and incident response. Counter-signed by EazePay's CFO and your authorized signer.
+                Outlines the partnership terms — service levels, audit rights, data handling,
+                fair-lending obligations, and incident response. Counter-signed by EazePay's CFO and
+                your authorized signer.
               </p>
               <div className="rounded-lg border border-border bg-bg-muted/40 p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <ShieldIcon size={16} />
-                    <span className="font-semibold text-[14px]">EazePay Master Partner Agreement</span>
+                    <span className="font-semibold text-[14px]">
+                      EazePay Master Partner Agreement
+                    </span>
                   </div>
                   <StatusPill tone="info">v2026.05 · 24 pages</StatusPill>
                 </div>
@@ -394,8 +415,8 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <Banner intent="success" className="mt-4">
-                When your signer applies their e-signature, EazePay's CFO is auto-notified for counter-signature.
-                Median time to fully executed: 2 business days.
+                When your signer applies their e-signature, EazePay's CFO is auto-notified for
+                counter-signature. Median time to fully executed: 2 business days.
               </Banner>
             </CardBody>
             <CardFooter>
@@ -414,8 +435,8 @@ export default function OnboardingPage() {
             <CardBody>
               <h2 className="text-[20px] font-semibold mb-1">Issue your API keys</h2>
               <p className="text-[13px] text-fg-muted mb-5">
-                One sandbox key for build-time, one live key for production. Both are HMAC-signed and scoped to
-                your account. Live keys are only revealed once.
+                One sandbox key for build-time, one live key for production. Both are HMAC-signed
+                and scoped to your account. Live keys are only revealed once.
               </p>
               <div className="space-y-3">
                 <div className="rounded-lg border border-border bg-bg-elevated p-4">
@@ -429,7 +450,8 @@ export default function OnboardingPage() {
                     ep_test_R8mQp_5fA9c2e1d4b7e9f1c3a2b4d5e6f7a8b9c0
                   </code>
                   <p className="mt-2 text-[12px] text-fg-muted">
-                    Drives the same orchestration engine as production, against synthetic applicants.
+                    Drives the same orchestration engine as production, against synthetic
+                    applicants.
                   </p>
                 </div>
                 <div className="rounded-lg border border-border bg-bg-elevated p-4">
@@ -443,14 +465,15 @@ export default function OnboardingPage() {
                     ep_live_••••••••••••••••••••••••••••••••
                   </code>
                   <p className="mt-2 text-[12px] text-fg-muted">
-                    Revealed once after fit-check approval. Store in a secrets manager (AWS / GCP / HashiCorp).
+                    Revealed once after fit-check approval. Store in a secrets manager (AWS / GCP /
+                    HashiCorp).
                   </p>
                 </div>
               </div>
               <Banner intent="info" className="mt-4">
-                After clicking <strong>Finish</strong> you'll land on your live dashboard with sandbox already
-                connected. A partner-success manager will reach out within one business day to walk through
-                your first routed application.
+                After clicking <strong>Finish</strong> you'll land on your live dashboard with
+                sandbox already connected. A partner-success manager will reach out within one
+                business day to walk through your first routed application.
               </Banner>
             </CardBody>
             <CardFooter>
@@ -472,8 +495,8 @@ export default function OnboardingPage() {
               </div>
               <h2 className="text-[24px] font-semibold">Welcome to EazePay.</h2>
               <p className="mt-2 text-[14px] text-fg-muted max-w-md mx-auto">
-                Your workspace is provisioned. Your partner-success manager has been paged and will email you
-                within one business day to coordinate the first routed application.
+                Your workspace is provisioned. Your partner-success manager has been paged and will
+                email you within one business day to coordinate the first routed application.
               </p>
 
               {isSingleBrand ? (
@@ -482,8 +505,9 @@ export default function OnboardingPage() {
                     className="size-2 rounded-full"
                     style={{ background: BRANDS[activeBrands[0]!].accentHex }}
                   />
-                  Landing in your <strong className="text-fg">{BRANDS[activeBrands[0]!].name}</strong>{' '}
-                  portal — single-vertical scope.
+                  Landing in your{' '}
+                  <strong className="text-fg">{BRANDS[activeBrands[0]!].name}</strong> portal —
+                  single-vertical scope.
                 </div>
               ) : activeBrands.length > 1 ? (
                 <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-bg-elevated px-3 py-1.5 text-[12px] text-fg-secondary">

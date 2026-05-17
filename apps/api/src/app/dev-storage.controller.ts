@@ -1,19 +1,7 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Headers,
-  Param,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { BadRequestException, Controller, Get, Headers, Param, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@eazepay/service-auth';
-import {
-  LocalFsObjectStorage,
-  NotFound,
-  Unauthorized,
-} from '@eazepay/shared-utils';
+import { LocalFsObjectStorage, NotFound, Unauthorized } from '@eazepay/shared-utils';
 import type { FastifyReply } from 'fastify';
 import { OBJECT_STORAGE } from '@eazepay/shared-utils';
 import { Inject } from '@nestjs/common';
@@ -103,9 +91,7 @@ export class DevStorageController {
       .header('content-type', 'application/octet-stream')
       .header(
         'content-disposition',
-        safeFilename
-          ? `attachment; filename="${safeFilename}"`
-          : 'attachment',
+        safeFilename ? `attachment; filename="${safeFilename}"` : 'attachment',
       )
       .send(bytes);
   }

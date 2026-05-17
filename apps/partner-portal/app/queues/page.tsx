@@ -42,14 +42,78 @@ interface QueueRow {
 }
 
 const QUEUES_SEED: QueueRow[] = [
-  { name: 'application.decisioning',      waiting: 4,   active: 2,  completed24h: 1284, failed24h: 7,  workers: 6, status: 'healthy'  },
-  { name: 'webhook.delivery',             waiting: 18,  active: 4,  completed24h: 8421, failed24h: 23, workers: 8, status: 'healthy'  },
-  { name: 'payout.dispatch',              waiting: 0,   active: 1,  completed24h: 142,  failed24h: 0,  workers: 3, status: 'healthy'  },
-  { name: 'aan.delivery',                 waiting: 11,  active: 1,  completed24h: 64,   failed24h: 2,  workers: 2, status: 'healthy'  },
-  { name: 'kyb.reverify',                 waiting: 2,   active: 0,  completed24h: 18,   failed24h: 0,  workers: 1, status: 'healthy'  },
-  { name: 'document.archive',             waiting: 412, active: 0,  completed24h: 2104, failed24h: 41, workers: 4, status: 'degraded' },
-  { name: 'audit.fanout',                 waiting: 0,   active: 0,  completed24h: 9817, failed24h: 0,  workers: 2, status: 'healthy'  },
-  { name: 'lender.marketplace.sync',      waiting: 0,   active: 0,  completed24h: 24,   failed24h: 0,  workers: 1, status: 'healthy'  },
+  {
+    name: 'application.decisioning',
+    waiting: 4,
+    active: 2,
+    completed24h: 1284,
+    failed24h: 7,
+    workers: 6,
+    status: 'healthy',
+  },
+  {
+    name: 'webhook.delivery',
+    waiting: 18,
+    active: 4,
+    completed24h: 8421,
+    failed24h: 23,
+    workers: 8,
+    status: 'healthy',
+  },
+  {
+    name: 'payout.dispatch',
+    waiting: 0,
+    active: 1,
+    completed24h: 142,
+    failed24h: 0,
+    workers: 3,
+    status: 'healthy',
+  },
+  {
+    name: 'aan.delivery',
+    waiting: 11,
+    active: 1,
+    completed24h: 64,
+    failed24h: 2,
+    workers: 2,
+    status: 'healthy',
+  },
+  {
+    name: 'kyb.reverify',
+    waiting: 2,
+    active: 0,
+    completed24h: 18,
+    failed24h: 0,
+    workers: 1,
+    status: 'healthy',
+  },
+  {
+    name: 'document.archive',
+    waiting: 412,
+    active: 0,
+    completed24h: 2104,
+    failed24h: 41,
+    workers: 4,
+    status: 'degraded',
+  },
+  {
+    name: 'audit.fanout',
+    waiting: 0,
+    active: 0,
+    completed24h: 9817,
+    failed24h: 0,
+    workers: 2,
+    status: 'healthy',
+  },
+  {
+    name: 'lender.marketplace.sync',
+    waiting: 0,
+    active: 0,
+    completed24h: 24,
+    failed24h: 0,
+    workers: 1,
+    status: 'healthy',
+  },
 ];
 
 export default function QueuesPage() {
@@ -81,7 +145,11 @@ export default function QueuesPage() {
             <Button size="sm" variant="secondary" onClick={() => flash('Stats refreshed')}>
               Refresh
             </Button>
-            <Button size="sm" variant="primary" onClick={() => flash('Paused all non-critical workers')}>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => flash('Paused all non-critical workers')}
+            >
               Pause workers
             </Button>
           </div>
@@ -89,14 +157,25 @@ export default function QueuesPage() {
       />
       <PageBody>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <Stat label="Waiting jobs" value={totals.waiting.toLocaleString()} tone={totals.waiting > 200 ? 'warning' : 'neutral'} />
+          <Stat
+            label="Waiting jobs"
+            value={totals.waiting.toLocaleString()}
+            tone={totals.waiting > 200 ? 'warning' : 'neutral'}
+          />
           <Stat label="Active jobs" value={String(totals.active)} />
           <Stat label="Completed (24h)" value={totals.completed.toLocaleString()} tone="success" />
-          <Stat label="Failed (24h)" value={String(totals.failed)} tone={totals.failed > 50 ? 'danger' : 'neutral'} />
+          <Stat
+            label="Failed (24h)"
+            value={String(totals.failed)}
+            tone={totals.failed > 50 ? 'danger' : 'neutral'}
+          />
         </div>
 
         <Card>
-          <CardHeader title="Queue inspector" description="Click a queue to drain, retry failed jobs, or scale workers." />
+          <CardHeader
+            title="Queue inspector"
+            description="Click a queue to drain, retry failed jobs, or scale workers."
+          />
           <CardBody className="p-0">
             <div className="grid grid-cols-12 px-5 py-2.5 text-[10px] uppercase tracking-wider font-semibold text-fg-muted border-b border-border bg-bg-muted/40">
               <span className="col-span-4">Queue</span>
@@ -110,20 +189,40 @@ export default function QueuesPage() {
             </div>
             <ul className="divide-y divide-border">
               {QUEUES_SEED.map((q) => {
-                const tone = q.status === 'healthy' ? 'success' : q.status === 'degraded' ? 'warning' : 'danger';
+                const tone =
+                  q.status === 'healthy'
+                    ? 'success'
+                    : q.status === 'degraded'
+                      ? 'warning'
+                      : 'danger';
                 return (
                   <li key={q.name} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
                     <div className="col-span-4 font-mono text-fg">{q.name}</div>
-                    <div className="col-span-1 text-right tabular-nums">{q.waiting.toLocaleString()}</div>
+                    <div className="col-span-1 text-right tabular-nums">
+                      {q.waiting.toLocaleString()}
+                    </div>
                     <div className="col-span-1 text-right tabular-nums">{q.active}</div>
-                    <div className="col-span-2 text-right tabular-nums text-fg-secondary">{q.completed24h.toLocaleString()}</div>
-                    <div className="col-span-1 text-right tabular-nums text-danger">{q.failed24h}</div>
+                    <div className="col-span-2 text-right tabular-nums text-fg-secondary">
+                      {q.completed24h.toLocaleString()}
+                    </div>
+                    <div className="col-span-1 text-right tabular-nums text-danger">
+                      {q.failed24h}
+                    </div>
                     <div className="col-span-1 text-right tabular-nums">{q.workers}</div>
                     <div className="col-span-1">
-                      <StatusPill tone={tone as 'success' | 'warning' | 'danger'} dot>{q.status}</StatusPill>
+                      <StatusPill tone={tone as 'success' | 'warning' | 'danger'} dot>
+                        {q.status}
+                      </StatusPill>
                     </div>
                     <div className="col-span-1 text-right">
-                      <button onClick={() => flash(`Retried ${q.failed24h} failed job${q.failed24h === 1 ? '' : 's'} in ${q.name}`)} className="text-[11px] text-accent hover:underline inline-flex items-center gap-1">
+                      <button
+                        onClick={() =>
+                          flash(
+                            `Retried ${q.failed24h} failed job${q.failed24h === 1 ? '' : 's'} in ${q.name}`,
+                          )
+                        }
+                        className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
+                      >
                         Retry <ArrowRightIcon size={10} />
                       </button>
                     </div>
@@ -145,13 +244,29 @@ export default function QueuesPage() {
   );
 }
 
-function Stat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'success' | 'danger' | 'warning' | 'neutral' }) {
+function Stat({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  tone?: 'success' | 'danger' | 'warning' | 'neutral';
+}) {
   const accent =
-    tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-fg';
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>{value}</p>
+      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>
+        {value}
+      </p>
     </div>
   );
 }

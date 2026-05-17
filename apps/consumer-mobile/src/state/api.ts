@@ -41,7 +41,9 @@ async function ensureDeviceId(): Promise<string> {
     const bytes = new Uint8Array(16);
     if (typeof crypto !== 'undefined') crypto.getRandomValues(bytes);
     else for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
-    id = Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+    id = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
     await SecureStore.setItemAsync(DEVICE_ID_KEY, id);
   }
   return id;

@@ -1,6 +1,14 @@
 'use client';
 import { useState } from 'react';
-import { PageHeader, PageBody, Card, CardBody, Button, ExternalIcon, LinkIcon } from '@eazepay/ui/web';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardBody,
+  Button,
+  ExternalIcon,
+  LinkIcon,
+} from '@eazepay/ui/web';
 
 /**
  * Service Marketplace — direct port of the Lovable `/marketplace`
@@ -77,7 +85,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'Apex Tax Solutions',
     category: 'Accounting & Tax',
-    description: 'Strategic tax planning and preparation for businesses in financial services and lending.',
+    description:
+      'Strategic tax planning and preparation for businesses in financial services and lending.',
     highlights: ['Tax strategy', 'Entity structuring', 'Quarterly planning'],
     website: 'https://apextax.example',
     email: 'hello@apextax.example',
@@ -85,7 +94,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'PeakCover Insurance',
     category: 'Insurance',
-    description: 'Tailored business insurance packages for lending companies, ISOs, and payment processors.',
+    description:
+      'Tailored business insurance packages for lending companies, ISOs, and payment processors.',
     highlights: ['Business liability', 'Cyber insurance', 'Professional indemnity'],
     website: 'https://peakcover.example',
     email: 'hello@peakcover.example',
@@ -93,7 +103,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'EliteHire Sales',
     category: 'HR & Staffing',
-    description: 'Sales placement agency connecting businesses with proven closers and appointment setters.',
+    description:
+      'Sales placement agency connecting businesses with proven closers and appointment setters.',
     highlights: ['Sales rep placement', 'Setter & closer teams', '90-day guarantee'],
     website: 'https://elitehire.example',
     email: 'hello@elitehire.example',
@@ -101,7 +112,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'GrowthPulse Marketing',
     category: 'Marketing',
-    description: 'Performance marketing for financial services — paid ads, funnels, and lead generation at scale.',
+    description:
+      'Performance marketing for financial services — paid ads, funnels, and lead generation at scale.',
     highlights: ['Paid media management', 'Funnel optimization', 'Lead gen campaigns'],
     website: 'https://growthpulse.example',
     email: 'hello@growthpulse.example',
@@ -109,7 +121,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'Forge Studio',
     category: 'Branding & Design',
-    description: 'Premium brand identity and visual design for fintech, lending, and SaaS companies.',
+    description:
+      'Premium brand identity and visual design for fintech, lending, and SaaS companies.',
     highlights: ['Visual identity systems', 'Pitch deck design', 'Website design'],
     website: 'https://forgestudio.example',
     email: 'hello@forgestudio.example',
@@ -117,7 +130,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'NeuralEdge AI',
     category: 'Consulting',
-    description: 'AI consulting and automation solutions — chatbots, workflow automation, and data intelligence.',
+    description:
+      'AI consulting and automation solutions — chatbots, workflow automation, and data intelligence.',
     highlights: ['AI chatbots', 'Process automation', 'Data analytics'],
     website: 'https://neuraledge.example',
     email: 'hello@neuraledge.example',
@@ -125,7 +139,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'ShieldGuard Insurance',
     category: 'Insurance',
-    description: 'Business insurance solutions including general liability, E&O, and workers compensation.',
+    description:
+      'Business insurance solutions including general liability, E&O, and workers compensation.',
     highlights: ['General liability', 'E&O coverage', 'Workers comp'],
     website: 'https://shieldguard.example',
     email: 'hello@shieldguard.example',
@@ -133,7 +148,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'TaxPro Advisors',
     category: 'Accounting & Tax',
-    description: 'Full-service accounting and tax preparation for small businesses and independent contractors.',
+    description:
+      'Full-service accounting and tax preparation for small businesses and independent contractors.',
     highlights: ['Tax preparation', 'Bookkeeping', 'Quarterly filings'],
     website: 'https://taxpro.example',
     email: 'hello@taxpro.example',
@@ -141,7 +157,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'ComplianceFirst',
     category: 'Legal & Compliance',
-    description: 'Regulatory compliance consulting for lending, financing, and payment processing businesses.',
+    description:
+      'Regulatory compliance consulting for lending, financing, and payment processing businesses.',
     highlights: ['Lending compliance', 'Payment regulations', 'Policy audits'],
     website: 'https://compliancefirst.example',
     email: 'hello@compliancefirst.example',
@@ -149,7 +166,8 @@ const LISTINGS: ServiceListing[] = [
   {
     name: 'BrandForge Creative',
     category: 'Branding & Design',
-    description: 'Logo design, brand identity, and marketing collateral for financial services companies.',
+    description:
+      'Logo design, brand identity, and marketing collateral for financial services companies.',
     highlights: ['Logo design', 'Brand identity', 'Print & digital assets'],
     website: 'https://brandforge.example',
     email: 'hello@brandforge.example',

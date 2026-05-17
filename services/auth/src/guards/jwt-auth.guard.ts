@@ -1,14 +1,9 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PrismaClient } from '@prisma/client';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { PrismaClient } from '@prisma/client';
 import { Unauthorized } from '@eazepay/shared-utils';
-import { TokenService } from '../internal/token.service.js';
+import type { TokenService } from '../internal/token.service.js';
 import { IS_PUBLIC_KEY } from './public.decorator.js';
 import { PRISMA } from '../internal/tokens.js';
 import type { SessionContext } from '../auth.types.js';
@@ -70,10 +65,10 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean | undefined>(
-      IS_PUBLIC_KEY,
-      [ctx.getHandler(), ctx.getClass()],
-    );
+    const isPublic = this.reflector.getAllAndOverride<boolean | undefined>(IS_PUBLIC_KEY, [
+      ctx.getHandler(),
+      ctx.getClass(),
+    ]);
     if (isPublic) return true;
 
     const req = ctx.switchToHttp().getRequest<{
@@ -144,10 +139,7 @@ export class JwtAuthGuard implements CanActivate {
       // also implies the access token shouldn't outlive its session,
       // even though the JWT exp check passed. (The refresh-token
       // lifetime is the outer bound on a session's existence.)
-      isLive =
-        session !== null &&
-        session.revokedAt === null &&
-        session.expiresAt.getTime() > now;
+      isLive = session !== null && session.revokedAt === null && session.expiresAt.getTime() > now;
     } catch (err) {
       // Fail closed — see class-level comment. Log loudly so we can
       // see DB-availability incidents in dashboards.

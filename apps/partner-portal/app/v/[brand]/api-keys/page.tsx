@@ -60,7 +60,13 @@ const keysFor = (brand: BrandCode): BrandKey[] => [
     name: `${BRANDS[brand].name} live`,
     prefix: `ep_live_${brand}_••••••`,
     env: 'live',
-    scopes: ['applications:read', 'applications:write', 'offers:read', 'offers:accept', 'documents:write'],
+    scopes: [
+      'applications:read',
+      'applications:write',
+      'offers:read',
+      'offers:accept',
+      'documents:write',
+    ],
     lastUsedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
   },
 ];
@@ -208,7 +214,16 @@ export default function BrandApiKeysPage() {
                     </div>
                   </div>
                   <div className="col-span-2">
-                    <StatusPill tone={w.status === 'active' ? 'success' : w.status === 'failing' ? 'danger' : 'warning'} dot>
+                    <StatusPill
+                      tone={
+                        w.status === 'active'
+                          ? 'success'
+                          : w.status === 'failing'
+                            ? 'danger'
+                            : 'warning'
+                      }
+                      dot
+                    >
                       {w.status}
                     </StatusPill>
                   </div>

@@ -26,11 +26,26 @@ export class MockKybAdapter implements KybProvider {
     const upper = input.legalName.toUpperCase();
     const missingSsn = input.beneficialOwners.some((o) => !o.pii.ssnLast4);
     const result: KybStatusResult = upper.startsWith('XR')
-      ? { outcome: 'rejected', reasonCodes: ['mock_reject_legal_name'], ofac: 'cleared', ein: 'verified' }
+      ? {
+          outcome: 'rejected',
+          reasonCodes: ['mock_reject_legal_name'],
+          ofac: 'cleared',
+          ein: 'verified',
+        }
       : upper.startsWith('X')
-        ? { outcome: 'manual_review', reasonCodes: ['mock_review_legal_name'], ofac: 'cleared', ein: 'verified' }
+        ? {
+            outcome: 'manual_review',
+            reasonCodes: ['mock_review_legal_name'],
+            ofac: 'cleared',
+            ein: 'verified',
+          }
         : missingSsn
-          ? { outcome: 'manual_review', reasonCodes: ['bo_missing_ssn_last4'], ofac: 'cleared', ein: 'verified' }
+          ? {
+              outcome: 'manual_review',
+              reasonCodes: ['bo_missing_ssn_last4'],
+              ofac: 'cleared',
+              ein: 'verified',
+            }
           : { outcome: 'approved', reasonCodes: [], ofac: 'cleared', ein: 'verified' };
     this.results.set(ref, result);
     this.logger.warn(

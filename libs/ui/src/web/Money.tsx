@@ -39,8 +39,4 @@ export const Apr: FC<{ bps: number; decimals?: number; className?: string }> = (
   bps,
   decimals = 2,
   className,
-}) => (
-  <span className={cn('tabular-nums', className)}>
-    {(bps / 100).toFixed(decimals)}%
-  </span>
-);
+}) => <span className={cn('tabular-nums', className)}>{(bps / 100).toFixed(decimals)}%</span>;

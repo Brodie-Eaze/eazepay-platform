@@ -143,7 +143,8 @@ export default function EzCheckOnboardingPage() {
       if (!state.crmPlatform) e['crmPlatform'] = 'Required';
       if (!state.crmUrl.trim()) e['crmUrl'] = 'Required';
       if (!state.contactName.trim()) e['contactName'] = 'Required';
-      if (!state.contactEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e['contactEmail'] = 'Invalid email';
+      if (!state.contactEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
+        e['contactEmail'] = 'Invalid email';
       if (!state.contactPhone.match(/^\+?1?[\d\s\-().]{10,}$/)) e['contactPhone'] = 'Invalid phone';
     }
     if (stepKey === 'funnel') {
@@ -253,8 +254,11 @@ export default function EzCheckOnboardingPage() {
                 </span>
                 <span
                   className={
-                    (active ? 'text-fg font-semibold' : done ? 'text-fg-secondary' : 'text-fg-muted') +
-                    ' whitespace-nowrap'
+                    (active
+                      ? 'text-fg font-semibold'
+                      : done
+                        ? 'text-fg-secondary'
+                        : 'text-fg-muted') + ' whitespace-nowrap'
                   }
                 >
                   {STEP_LABEL[k]}
@@ -324,7 +328,15 @@ interface StepProps {
   errors: Record<string, string>;
 }
 
-function StepHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
+function StepHeader({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
   return (
     <div className="flex items-start gap-3 mb-5">
       <div className="h-9 w-9 rounded-lg bg-[#0d1530] text-white flex items-center justify-center shrink-0">
@@ -346,7 +358,10 @@ function Label({ children, error }: { children: React.ReactNode; error?: string 
   );
 }
 
-function Input({ invalid, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
+function Input({
+  invalid,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
   return (
     <input
       {...props}
@@ -445,7 +460,10 @@ function FunnelStep({ state, setState, errors }: StepProps) {
   const togglePlacement = (id: string) => {
     setState((s) => {
       const has = s.placements.includes(id);
-      return { ...s, placements: has ? s.placements.filter((p) => p !== id) : [...s.placements, id] };
+      return {
+        ...s,
+        placements: has ? s.placements.filter((p) => p !== id) : [...s.placements, id],
+      };
     });
   };
   return (
@@ -463,7 +481,9 @@ function FunnelStep({ state, setState, errors }: StepProps) {
               key={p.id}
               className={
                 'flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-all text-[14px] ' +
-                (checked ? 'border-[#0d1530] bg-bg-muted' : 'border-border bg-bg-elevated hover:border-border-strong')
+                (checked
+                  ? 'border-[#0d1530] bg-bg-muted'
+                  : 'border-border bg-bg-elevated hover:border-border-strong')
               }
             >
               <input
@@ -477,7 +497,9 @@ function FunnelStep({ state, setState, errors }: StepProps) {
           );
         })}
       </div>
-      {errors['placements'] && <p className="mt-2 text-[12px] text-fg font-semibold">{errors['placements']}</p>}
+      {errors['placements'] && (
+        <p className="mt-2 text-[12px] text-fg font-semibold">{errors['placements']}</p>
+      )}
       <div className="mt-5">
         <Label>Funnel / Page URLs (one per line)</Label>
         <textarea
@@ -648,7 +670,10 @@ function BookStep({ state, setState, errors }: StepProps) {
         {/* Time slots */}
         <div>
           <Label error={errors['time']}>
-            Select a time{state.selectedDate ? ` — ${new Date(state.selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+            Select a time
+            {state.selectedDate
+              ? ` — ${new Date(state.selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+              : ''}
           </Label>
           <div className="grid grid-cols-2 gap-2 max-h-[340px] overflow-y-auto rounded-lg border border-border bg-bg-elevated p-3">
             {TIME_SLOTS.map((t) => {
@@ -720,13 +745,20 @@ function ReviewStep({ state }: { state: State }) {
             ['Platform', state.crmPlatform || '—'],
             ['Subdomain / URL', state.crmUrl || '—'],
             ['API key', state.apiKey ? '••••••••' : '—'],
-            ['Technical contact', state.contactName ? `${state.contactName} · ${state.contactEmail}` : '—'],
+            [
+              'Technical contact',
+              state.contactName ? `${state.contactName} · ${state.contactEmail}` : '—',
+            ],
             ['Contact phone', state.contactPhone || '—'],
           ]}
         />
         <SummaryCard
           label="Funnel Placement"
-          rows={placementLabels.length > 0 ? placementLabels.map((p) => ['', p]) : [['', 'No funnel placements selected']]}
+          rows={
+            placementLabels.length > 0
+              ? placementLabels.map((p) => ['', p])
+              : [['', 'No funnel placements selected']]
+          }
         />
         <SummaryCard
           label="Configuration"
@@ -741,7 +773,11 @@ function ReviewStep({ state }: { state: State }) {
         />
         <SummaryCard
           label="Install Call"
-          rows={installDate && state.selectedTime ? [['', `${installDate} at ${state.selectedTime}`]] : [['', 'No call scheduled']]}
+          rows={
+            installDate && state.selectedTime
+              ? [['', `${installDate} at ${state.selectedTime}`]]
+              : [['', 'No call scheduled']]
+          }
           highlight={!!(installDate && state.selectedTime)}
         />
       </div>
@@ -767,7 +803,12 @@ function SummaryCard({
         {rows.map(([k, v], i) => (
           <div key={i} className="flex items-center justify-between gap-3">
             {k ? <dt className="text-[12px] text-fg-muted">{k}</dt> : <span />}
-            <dd className={'text-[13px] ' + (highlight ? 'text-fg font-semibold flex items-center gap-2' : 'text-fg text-right')}>
+            <dd
+              className={
+                'text-[13px] ' +
+                (highlight ? 'text-fg font-semibold flex items-center gap-2' : 'text-fg text-right')
+              }
+            >
               {highlight && <CheckIcon size={12} />}
               {v}
             </dd>

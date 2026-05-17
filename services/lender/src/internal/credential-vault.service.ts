@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { PRISMA } from './tokens.js';
 
 /**
@@ -46,9 +46,7 @@ export class CredentialVaultService {
       );
     }
     if (hex.length !== 64) {
-      throw new Error(
-        `LOCAL_KEK_HEX must be 64 hex characters (32 bytes); got ${hex.length}.`,
-      );
+      throw new Error(`LOCAL_KEK_HEX must be 64 hex characters (32 bytes); got ${hex.length}.`);
     }
     this.kek = Buffer.from(hex, 'hex');
   }
@@ -64,10 +62,7 @@ export class CredentialVaultService {
     const iv = randomBytes(12);
     const cipher = createCipheriv('aes-256-gcm', dek, iv);
     cipher.setAAD(Buffer.from(aad, 'utf8'));
-    const ciphertext = Buffer.concat([
-      cipher.update(plaintext, 'utf8'),
-      cipher.final(),
-    ]);
+    const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     const tag = cipher.getAuthTag();
 
     // 3. encrypt DEK with KEK

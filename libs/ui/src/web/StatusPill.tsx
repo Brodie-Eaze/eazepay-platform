@@ -1,13 +1,7 @@
 import type { FC, ReactNode } from 'react';
 import { cn } from './cn';
 
-export type StatusTone =
-  | 'neutral'
-  | 'info'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'accent';
+export type StatusTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'accent';
 
 const toneClasses: Record<StatusTone, string> = {
   neutral: 'bg-bg-muted text-fg-secondary border-border',

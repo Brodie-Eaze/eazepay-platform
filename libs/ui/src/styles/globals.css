@@ -67,60 +67,60 @@
        --card              HSL 0   0%  100%   → rgb(255 255 255)
        --sidebar-background HSL 228 45% 13%   → rgb(18 24 47)
    */
-  --bg:           244 245 248;
-  --bg-elevated:  255 255 255;
-  --bg-muted:     232 234 240;  /* HSL 228 18% 93% — secondary / muted */
-  --bg-inverse:   18 24 47;     /* HSL 228 45% 13% — sidebar */
+  --bg: 244 245 248;
+  --bg-elevated: 255 255 255;
+  --bg-muted: 232 234 240; /* HSL 228 18% 93% — secondary / muted */
+  --bg-inverse: 18 24 47; /* HSL 228 45% 13% — sidebar */
   --surface-overlay: 255 255 255;
 
   /* Text — RGB conversions of Lovable's HSL tokens.
        --foreground        HSL 228 45% 13%  → rgb(18 24 47)
        --muted-foreground  HSL 228 12% 50%  → rgb(112 119 142) */
-  --fg:           18 24 47;
+  --fg: 18 24 47;
   --fg-secondary: 50 60 100;
   /* `fg-muted` is used heavily for body copy + table sub-labels. The
      prior value (rgb(112,119,142)) sat at ~4.0:1 against the light
      `--bg`, which fails WCAG AA for body text (4.5:1). Darkening to
      rgb(90,96,116) lifts contrast to ~5.3:1 while preserving the
      visual hierarchy vs. `--fg` and `--fg-secondary`. */
-  --fg-muted:     90 96 116;
+  --fg-muted: 90 96 116;
   --fg-on-accent: 255 255 255;
-  --fg-inverse:   244 245 248;
-  --fg-link:      18 24 47;     /* navy link on light surface */
+  --fg-inverse: 244 245 248;
+  --fg-link: 18 24 47; /* navy link on light surface */
 
   /* Borders.
        --border            HSL 228 18% 89%  → rgb(222 225 232) */
-  --border:        222 225 232;
+  --border: 222 225 232;
   --border-strong: 198 205 215;
-  --border-focus:  18 24 47;    /* foreground / primary navy */
+  --border-focus: 18 24 47; /* foreground / primary navy */
 
   /* Brand accent — Lovable's --primary is HSL 228 45% 18% → navy
      (NOT indigo — re-verified live). Hover bumps a touch darker. */
-  --accent:        25 33 66;
+  --accent: 25 33 66;
   --accent-strong: 18 24 47;
-  --accent-soft:   232 234 240;
-  --accent-fg:     255 255 255;
+  --accent-soft: 232 234 240;
+  --accent-fg: 255 255 255;
 
   /* intent — neutralised to navy + grey only (no decorative colour
      inside the partner portal; the public /apply pages keep their
      per-industry theme because they inline `rgb(${theme.accent})`
      from `brandTheme()` and never read these tokens). */
-  --success:    18 24 47;       /* navy — used for "on / active / paid" */
-  --success-bg: 232 234 240;    /* light grey wash */
-  --warning:    112 119 142;    /* mid grey — used for "needs attention" */
+  --success: 18 24 47; /* navy — used for "on / active / paid" */
+  --success-bg: 232 234 240; /* light grey wash */
+  --warning: 112 119 142; /* mid grey — used for "needs attention" */
   --warning-bg: 232 234 240;
-  --danger:     18 24 47;       /* dark navy — used for genuinely destructive copy */
-  --danger-bg:  232 234 240;
-  --info:       50 60 100;      /* secondary navy — used for neutral info */
-  --info-bg:    232 234 240;
+  --danger: 18 24 47; /* dark navy — used for genuinely destructive copy */
+  --danger-bg: 232 234 240;
+  --info: 50 60 100; /* secondary navy — used for neutral info */
+  --info-bg: 232 234 240;
 
   /* status palette — navy + grey shades only. Visual depth (dark navy
      vs mid grey vs light grey) replaces hue to convey state. */
-  --status-submitted-rgb: 50 60 100;   /* navy-secondary */
-  --status-review-rgb:    112 119 142; /* mid grey */
-  --status-approved-rgb:  18 24 47;    /* full navy */
-  --status-declined-rgb:  112 119 142; /* mid grey */
-  --status-funded-rgb:    18 24 47;    /* full navy */
+  --status-submitted-rgb: 50 60 100; /* navy-secondary */
+  --status-review-rgb: 112 119 142; /* mid grey */
+  --status-approved-rgb: 18 24 47; /* full navy */
+  --status-declined-rgb: 112 119 142; /* mid grey */
+  --status-funded-rgb: 18 24 47; /* full navy */
 
   /* Sidebar — RGB conversions of Lovable's exact HSL tokens.
        --sidebar-background    HSL 228 45% 13%  → rgb(18 24 47)
@@ -128,10 +128,10 @@
        --sidebar-accent        HSL 228 35% 19%  → rgb(31 41 65)
        --sidebar-accent-fg     HSL 0   0%  98%  → rgb(250 250 250)
        --sidebar-border        HSL 228 30% 19%  → rgb(34 41 63) */
-  --sidebar-bg:         18 24 47;
-  --sidebar-fg:         184 188 198;
-  --sidebar-accent-bg:  31 41 65;
-  --sidebar-accent-fg:  250 250 250;
+  --sidebar-bg: 18 24 47;
+  --sidebar-fg: 184 188 198;
+  --sidebar-accent-bg: 31 41 65;
+  --sidebar-accent-fg: 250 250 250;
   /* Section labels were rgb(130 137 156) on the dark navy sidebar
      which fell to ~4.3:1 contrast — short of WCAG AA's 4.5:1 body
      threshold. rgb(155 162 180) sits at ~6.0:1 and keeps the labels
@@ -141,16 +141,16 @@
 
   /* charts — sequential 8-step navy + grey scale. Visual depth alone
      conveys the dimension; no decorative colour inside the portal. */
-  --chart-1: 18 24 47;       /* navy (darkest) */
+  --chart-1: 18 24 47; /* navy (darkest) */
   --chart-2: 50 60 100;
   --chart-3: 80 90 130;
   --chart-4: 112 119 142;
   --chart-5: 138 145 170;
   --chart-6: 168 175 192;
   --chart-7: 198 205 215;
-  --chart-8: 222 225 232;    /* light grey (lightest) */
+  --chart-8: 222 225 232; /* light grey (lightest) */
 
-  --radius:    12px;
+  --radius: 12px;
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
@@ -158,7 +158,7 @@
 
   --shadow-sm: 0 1px 2px rgb(18 24 48 / 0.05);
   --shadow-md: 0 4px 12px rgb(18 24 48 / 0.07), 0 1px 3px rgb(18 24 48 / 0.05);
-  --shadow-lg: 0 12px 32px rgb(18 24 48 / 0.10), 0 2px 6px rgb(18 24 48 / 0.06);
+  --shadow-lg: 0 12px 32px rgb(18 24 48 / 0.1), 0 2px 6px rgb(18 24 48 / 0.06);
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', monospace;
@@ -201,47 +201,47 @@
   --status-declined: 0 70% 58%;
   --status-funded: 258 60% 62%;
 
-  --bg:           9 12 21;       /* 228 40% 6% */
-  --bg-elevated:  15 18 31;      /* 228 35% 9% — card */
-  --bg-muted:     19 23 39;      /* 228 25% 13% — muted */
-  --bg-inverse:   244 245 248;
+  --bg: 9 12 21; /* 228 40% 6% */
+  --bg-elevated: 15 18 31; /* 228 35% 9% — card */
+  --bg-muted: 19 23 39; /* 228 25% 13% — muted */
+  --bg-inverse: 244 245 248;
   --surface-overlay: 15 18 31;
 
-  --fg:           235 236 239;   /* 228 10% 93% */
+  --fg: 235 236 239; /* 228 10% 93% */
   --fg-secondary: 168 178 195;
   /* See light-mode comment — same WCAG AA contrast bump in dark
      mode. rgb(155,162,180) gives ~5.8:1 against the dark `--bg`. */
-  --fg-muted:     155 162 180;
+  --fg-muted: 155 162 180;
   --fg-on-accent: 18 24 48;
-  --fg-inverse:   18 24 48;
-  --fg-link:      114 133 240;
+  --fg-inverse: 18 24 48;
+  --fg-link: 114 133 240;
 
-  --border:        29 33 48;     /* 228 22% 14% */
+  --border: 29 33 48; /* 228 22% 14% */
   --border-strong: 60 70 88;
-  --border-focus:  208 213 230;
+  --border-focus: 208 213 230;
 
-  --accent:        208 213 230;
+  --accent: 208 213 230;
   --accent-strong: 230 234 246;
-  --accent-soft:   24 28 45;
-  --accent-fg:     18 24 48;
+  --accent-soft: 24 28 45;
+  --accent-fg: 18 24 48;
 
-  --success:    66 187 122;
+  --success: 66 187 122;
   --success-bg: 14 60 41;
-  --warning:    241 168 47;
+  --warning: 241 168 47;
   --warning-bg: 57 39 12;
-  --danger:     220 80 80;
-  --danger-bg:  60 18 18;
-  --info:       80 117 240;
-  --info-bg:    26 35 71;
+  --danger: 220 80 80;
+  --danger-bg: 60 18 18;
+  --info: 80 117 240;
+  --info-bg: 26 35 71;
 
   --status-submitted-rgb: 80 117 240;
-  --status-review-rgb:    246 138 42;
-  --status-approved-rgb:  66 187 122;
-  --status-declined-rgb:  235 84 84;
-  --status-funded-rgb:    138 102 224;
+  --status-review-rgb: 246 138 42;
+  --status-approved-rgb: 66 187 122;
+  --status-declined-rgb: 235 84 84;
+  --status-funded-rgb: 138 102 224;
 
-  --sidebar-bg:        7 10 19;
-  --sidebar-fg:        158 167 188;
+  --sidebar-bg: 7 10 19;
+  --sidebar-fg: 158 167 188;
   --sidebar-accent-bg: 21 26 44;
   --sidebar-accent-fg: 250 250 252;
   --sidebar-border-rgb: 22 26 42;
@@ -256,8 +256,8 @@
   --chart-8: 17 94 89;
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.40), 0 1px 3px rgb(0 0 0 / 0.30);
-  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.50), 0 2px 6px rgb(0 0 0 / 0.40);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.4);
 }
 
 * {
@@ -333,8 +333,12 @@ textarea {
   background-clip: padding-box;
 }
 
-.font-mono { font-family: var(--font-mono); }
-.tabular-nums { font-variant-numeric: tabular-nums; }
+.font-mono {
+  font-family: var(--font-mono);
+}
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
 
 :focus-visible {
   outline: 2px solid rgb(var(--border-focus));
@@ -357,7 +361,7 @@ textarea {
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.20);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
   transform: translateY(-200%);
   transition: transform 120ms ease-out;
 }
@@ -403,8 +407,12 @@ textarea {
 }
 
 @keyframes shimmer {
-  0% { background-position: -800px 0; }
-  100% { background-position: 800px 0; }
+  0% {
+    background-position: -800px 0;
+  }
+  100% {
+    background-position: 800px 0;
+  }
 }
 .shimmer {
   background: linear-gradient(

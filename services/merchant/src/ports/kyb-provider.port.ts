@@ -1,10 +1,6 @@
 import type { BoPiiV1 } from '../bo-pii.types.js';
 
-export type KybOutcome =
-  | 'pending'
-  | 'approved'
-  | 'manual_review'
-  | 'rejected';
+export type KybOutcome = 'pending' | 'approved' | 'manual_review' | 'rejected';
 
 export interface KybInitiateInput {
   merchantId: string;

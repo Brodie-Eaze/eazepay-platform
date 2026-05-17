@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { PrismaClient, type Prisma } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
 import { sha256Hex } from '@eazepay/shared-utils';
@@ -7,14 +8,8 @@ import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
 import { WEBHOOK_PUBLISHER, type WebhookPublisher } from '@eazepay/service-webhook';
 import { PRISMA } from './internal/tokens.js';
 import { POST_SUBMIT_HOOK, type PostSubmitHook } from './ports/post-submit.port.js';
-import {
-  CONTRACTED_HOOK,
-  type ContractedHook,
-} from './ports/contracted-hook.port.js';
-import {
-  ESIGN_PROVIDER,
-  type ESignProvider,
-} from './ports/esign-provider.port.js';
+import { CONTRACTED_HOOK, type ContractedHook } from './ports/contracted-hook.port.js';
+import { ESIGN_PROVIDER, type ESignProvider } from './ports/esign-provider.port.js';
 import { applyTransition } from './state-machine.js';
 import type {
   ApplicationEvent,
@@ -197,7 +192,10 @@ export class ApplicationService {
     }));
   }
 
-  async list(userId: UserId, opts: { cursor?: string; limit: number }): Promise<{
+  async list(
+    userId: UserId,
+    opts: { cursor?: string; limit: number },
+  ): Promise<{
     items: ApplicationSnapshot[];
     nextCursor: string | null;
   }> {
@@ -234,7 +232,9 @@ export class ApplicationService {
     // designed to be re-driven idempotently from `submitted` state.
     void this.postSubmit
       .onSubmitted(result.id, ctx)
-      .catch((err) => this.logger.error({ err, applicationId: result.id }, 'post-submit hook failed'));
+      .catch((err) =>
+        this.logger.error({ err, applicationId: result.id }, 'post-submit hook failed'),
+      );
 
     return result;
   }
@@ -468,10 +468,7 @@ export class ApplicationService {
           select: { id: true },
         });
       } catch (err) {
-        if (
-          err instanceof Error &&
-          (err as { code?: string }).code === 'P2002'
-        ) {
+        if (err instanceof Error && (err as { code?: string }).code === 'P2002') {
           this.logger.warn(
             { applicationId: app.id, offerId: offer.id },
             'loan_already_exists_idempotent — concurrent CONTRACT_SIGNED collapsed by UNIQUE(offer_id)',

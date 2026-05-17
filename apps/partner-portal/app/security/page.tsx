@@ -49,18 +49,79 @@ interface SessionRow {
 }
 
 const SESSIONS_SEED: SessionRow[] = [
-  { id: 's_001', device: 'MacBook Pro',  browser: 'Chrome 138',  os: 'macOS 14.7', city: 'Sydney, AU',   ip: '203.0.113.41',  lastActive: 'now',      isCurrent: true  },
-  { id: 's_002', device: 'iPhone 16',    browser: 'Safari Mobile', os: 'iOS 17.4',  city: 'Sydney, AU',   ip: '49.181.22.118', lastActive: '2h ago',   isCurrent: false },
-  { id: 's_003', device: 'iPad Air',     browser: 'Safari 17',   os: 'iPadOS 17.4', city: 'Sydney, AU',   ip: '49.181.22.118', lastActive: '3d ago',   isCurrent: false },
-  { id: 's_004', device: 'Windows PC',   browser: 'Edge 138',    os: 'Windows 11',  city: 'Brisbane, AU', ip: '101.119.4.88',  lastActive: '12d ago',  isCurrent: false },
+  {
+    id: 's_001',
+    device: 'MacBook Pro',
+    browser: 'Chrome 138',
+    os: 'macOS 14.7',
+    city: 'Sydney, AU',
+    ip: '203.0.113.41',
+    lastActive: 'now',
+    isCurrent: true,
+  },
+  {
+    id: 's_002',
+    device: 'iPhone 16',
+    browser: 'Safari Mobile',
+    os: 'iOS 17.4',
+    city: 'Sydney, AU',
+    ip: '49.181.22.118',
+    lastActive: '2h ago',
+    isCurrent: false,
+  },
+  {
+    id: 's_003',
+    device: 'iPad Air',
+    browser: 'Safari 17',
+    os: 'iPadOS 17.4',
+    city: 'Sydney, AU',
+    ip: '49.181.22.118',
+    lastActive: '3d ago',
+    isCurrent: false,
+  },
+  {
+    id: 's_004',
+    device: 'Windows PC',
+    browser: 'Edge 138',
+    os: 'Windows 11',
+    city: 'Brisbane, AU',
+    ip: '101.119.4.88',
+    lastActive: '12d ago',
+    isCurrent: false,
+  },
 ];
 
 const SIGN_INS = [
-  { ts: '2026-05-14T22:14:00Z', city: 'Sydney, AU',   ip: '203.0.113.41',  outcome: 'success' as const },
-  { ts: '2026-05-14T08:01:00Z', city: 'Sydney, AU',   ip: '49.181.22.118', outcome: 'success' as const },
-  { ts: '2026-05-13T19:42:00Z', city: 'Brisbane, AU', ip: '101.119.4.88',  outcome: 'success' as const },
-  { ts: '2026-05-12T03:18:00Z', city: 'Unknown',      ip: '185.220.101.17', outcome: 'blocked' as const },
-  { ts: '2026-05-11T15:09:00Z', city: 'Sydney, AU',   ip: '203.0.113.41',  outcome: 'success' as const },
+  {
+    ts: '2026-05-14T22:14:00Z',
+    city: 'Sydney, AU',
+    ip: '203.0.113.41',
+    outcome: 'success' as const,
+  },
+  {
+    ts: '2026-05-14T08:01:00Z',
+    city: 'Sydney, AU',
+    ip: '49.181.22.118',
+    outcome: 'success' as const,
+  },
+  {
+    ts: '2026-05-13T19:42:00Z',
+    city: 'Brisbane, AU',
+    ip: '101.119.4.88',
+    outcome: 'success' as const,
+  },
+  {
+    ts: '2026-05-12T03:18:00Z',
+    city: 'Unknown',
+    ip: '185.220.101.17',
+    outcome: 'blocked' as const,
+  },
+  {
+    ts: '2026-05-11T15:09:00Z',
+    city: 'Sydney, AU',
+    ip: '203.0.113.41',
+    outcome: 'success' as const,
+  },
 ];
 
 export default function SecurityPage() {
@@ -91,14 +152,23 @@ export default function SecurityPage() {
         title="Security & 2FA"
         description="Two-factor authentication, device sessions, recovery codes, and recent sign-in activity for this operator account."
         actions={
-          <Button size="sm" variant="secondary" onClick={() => flash('Account lock requires 2-of-3 admin approval')}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => flash('Account lock requires 2-of-3 admin approval')}
+          >
             <AlertIcon size={12} /> Lock account
           </Button>
         }
       />
       <PageBody>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <Stat label="2FA status" value={tfa ? 'Enabled' : 'Disabled'} tone={tfa ? 'success' : 'danger'} hint={tfa ? 'authenticator app' : 'turn on now'} />
+          <Stat
+            label="2FA status"
+            value={tfa ? 'Enabled' : 'Disabled'}
+            tone={tfa ? 'success' : 'danger'}
+            hint={tfa ? 'authenticator app' : 'turn on now'}
+          />
           <Stat label="Active sessions" value={String(sessions.length)} hint="across all devices" />
           <Stat label="Sign-ins (30d)" value="42" hint="0 anomalies" tone="success" />
           <Stat label="Last password change" value="42d ago" hint="2026-04-03" />
@@ -139,7 +209,11 @@ export default function SecurityPage() {
                   <Button size="sm" variant="secondary" onClick={() => setShowRecovery((v) => !v)}>
                     <KeyIcon size={12} /> {showRecovery ? 'Hide' : 'Show'} recovery codes
                   </Button>
-                  <Button size="sm" variant="secondary" onClick={() => flash('New TOTP secret generated, scan the QR')}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => flash('New TOTP secret generated, scan the QR')}
+                  >
                     Regenerate authenticator
                   </Button>
                 </div>
@@ -149,8 +223,19 @@ export default function SecurityPage() {
                       8 single-use recovery codes
                     </p>
                     <div className="grid grid-cols-2 gap-1 font-mono text-[11px]">
-                      {['4HX9-2QPN', 'KM3W-LRT8', 'P7VR-9BCQ', '5JKD-XN24', 'WT8P-3MQR', '9NHA-BFLS', 'QC4D-7K2T', 'X5R3-MWPH'].map((c) => (
-                        <span key={c} className="px-2 py-1 rounded bg-bg-muted text-fg">{c}</span>
+                      {[
+                        '4HX9-2QPN',
+                        'KM3W-LRT8',
+                        'P7VR-9BCQ',
+                        '5JKD-XN24',
+                        'WT8P-3MQR',
+                        '9NHA-BFLS',
+                        'QC4D-7K2T',
+                        'X5R3-MWPH',
+                      ].map((c) => (
+                        <span key={c} className="px-2 py-1 rounded bg-bg-muted text-fg">
+                          {c}
+                        </span>
                       ))}
                     </div>
                     <p className="text-[10px] text-fg-muted mt-2">
@@ -172,7 +257,11 @@ export default function SecurityPage() {
               <PasswordRow label="New password" placeholder="Min 16 characters" />
               <PasswordRow label="Confirm new password" placeholder="Repeat new password" />
               <div className="pt-2 border-t border-border flex justify-end">
-                <Button size="sm" variant="primary" onClick={() => flash('Password change recorded (audit logged)')}>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => flash('Password change recorded (audit logged)')}
+                >
                   Update password
                 </Button>
               </div>
@@ -185,7 +274,12 @@ export default function SecurityPage() {
             title={`Active sessions (${sessions.length})`}
             description="Devices currently signed in to this operator account."
             action={
-              <Button size="sm" variant="secondary" onClick={revokeAll} disabled={sessions.length <= 1}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={revokeAll}
+                disabled={sessions.length <= 1}
+              >
                 Sign out all other devices
               </Button>
             }
@@ -204,7 +298,11 @@ export default function SecurityPage() {
                 <li key={s.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
                   <div className="col-span-3 font-medium text-fg flex items-center gap-2">
                     {s.device}
-                    {s.isCurrent && <StatusPill tone="success" dot>This device</StatusPill>}
+                    {s.isCurrent && (
+                      <StatusPill tone="success" dot>
+                        This device
+                      </StatusPill>
+                    )}
                   </div>
                   <div className="col-span-3 text-fg-secondary">
                     {s.browser}
@@ -215,7 +313,10 @@ export default function SecurityPage() {
                   <div className="col-span-1 text-fg-muted">{s.lastActive}</div>
                   <div className="col-span-1 text-right">
                     {!s.isCurrent && (
-                      <button onClick={() => revokeSession(s.id)} className="text-[11px] text-danger hover:underline">
+                      <button
+                        onClick={() => revokeSession(s.id)}
+                        className="text-[11px] text-danger hover:underline"
+                      >
                         Revoke
                       </button>
                     )}
@@ -231,7 +332,10 @@ export default function SecurityPage() {
             title="Recent sign-in activity"
             description="Last 5 sign-in attempts. Anomalies surface here first."
             action={
-              <Link href="/audit?action=user.login" className="text-[12px] text-accent hover:underline inline-flex items-center gap-1">
+              <Link
+                href="/audit?action=user.login"
+                className="text-[12px] text-accent hover:underline inline-flex items-center gap-1"
+              >
                 Open full audit log <ArrowRightIcon size={11} />
               </Link>
             }
@@ -241,7 +345,12 @@ export default function SecurityPage() {
               {SIGN_INS.map((s, i) => (
                 <li key={i} className="flex items-center justify-between px-5 py-3 text-[12px]">
                   <div className="flex items-center gap-3">
-                    <span className={'size-2 rounded-full ' + (s.outcome === 'success' ? 'bg-success' : 'bg-danger')} />
+                    <span
+                      className={
+                        'size-2 rounded-full ' +
+                        (s.outcome === 'success' ? 'bg-success' : 'bg-danger')
+                      }
+                    />
                     <span className="text-fg font-medium">{s.city}</span>
                     <span className="text-fg-muted">·</span>
                     <span className="font-mono text-[11px] text-fg-muted">{s.ip}</span>
@@ -272,13 +381,31 @@ export default function SecurityPage() {
   );
 }
 
-function Stat({ label, value, hint, tone = 'neutral' }: { label: string; value: string; hint?: string; tone?: StatusTone }) {
+function Stat({
+  label,
+  value,
+  hint,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: StatusTone;
+}) {
   const accent =
-    tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-fg';
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${accent}`}>{value}</p>
+      <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${accent}`}>
+        {value}
+      </p>
       {hint && <p className="text-[10px] text-fg-muted mt-1.5">{hint}</p>}
     </div>
   );
@@ -325,7 +452,9 @@ function ToggleRow({
 function PasswordRow({ label, placeholder }: { label: string; placeholder: string }) {
   return (
     <label className="block">
-      <span className="block text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted mb-1.5">{label}</span>
+      <span className="block text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted mb-1.5">
+        {label}
+      </span>
       <input
         type="password"
         placeholder={placeholder}

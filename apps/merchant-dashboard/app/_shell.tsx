@@ -19,7 +19,15 @@ import {
 } from '@eazepay/ui/web';
 import { merchantOrg } from '../lib/mock-data';
 
-const NextLink = ({ href, className, children }: { href: string; className?: string; children: ReactNode }) => (
+const NextLink = ({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) => (
   <Link href={href} className={className}>
     {children}
   </Link>
@@ -43,9 +51,7 @@ const groups: NavGroup[] = [
   },
   {
     label: 'Performance',
-    items: [
-      { href: '/analytics', label: 'Analytics', icon: <ChartIcon /> },
-    ],
+    items: [{ href: '/analytics', label: 'Analytics', icon: <ChartIcon /> }],
   },
   {
     label: 'Integration',
@@ -94,8 +100,13 @@ export function Shell({ children }: { children: ReactNode }) {
             {merchantOrg.displayName}
           </div>
           <div className="leading-snug">
-            KYB verified · MDR 285 bps<br />
-            Live since {new Date(merchantOrg.liveSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+            KYB verified · MDR 285 bps
+            <br />
+            Live since{' '}
+            {new Date(merchantOrg.liveSince).toLocaleDateString('en-US', {
+              month: 'short',
+              year: 'numeric',
+            })}
           </div>
         </div>
       }

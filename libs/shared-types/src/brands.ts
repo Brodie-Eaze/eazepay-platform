@@ -57,7 +57,13 @@ export const BRANDS: Record<BrandCode, BrandSpec> = {
     fullName: 'CoachPay by EazePay',
     name: 'CoachPay',
     tagline: 'Pay-over-time for coaching, certifications, and professional development.',
-    verticals: ['Executive coaching', 'Certifications', 'Bootcamps', 'Career programs', 'Online courses'],
+    verticals: [
+      'Executive coaching',
+      'Certifications',
+      'Bootcamps',
+      'Career programs',
+      'Online courses',
+    ],
     envelope: { sizeMin: 500_00, sizeMax: 30_000_00, termMin: 6, termMax: 60 },
     // Electric indigo (gradient endpoint w/ violet on landing) — matches CoachPay landing.
     accentHex: '#6366F1',

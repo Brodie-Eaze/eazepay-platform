@@ -17,7 +17,11 @@ import {
  */
 
 export async function POST(req: NextRequest, ctx: { params: { lender: string } }) {
-  const lender = SAMPLE_LENDERS.find((l) => l.id === ctx.params.lender || l.display_name.toLowerCase() === ctx.params.lender.toLowerCase());
+  const lender = SAMPLE_LENDERS.find(
+    (l) =>
+      l.id === ctx.params.lender ||
+      l.display_name.toLowerCase() === ctx.params.lender.toLowerCase(),
+  );
   if (!lender) {
     return problem({
       title: 'Not Found',

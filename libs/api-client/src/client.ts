@@ -54,7 +54,11 @@ export class EazePayApiClient {
     phone?: string;
     password: string;
     marketingConsent?: boolean;
-  }): Promise<{ userId: string; requiresVerification: 'email' | 'phone'; challenge: AuthChallenge }> {
+  }): Promise<{
+    userId: string;
+    requiresVerification: 'email' | 'phone';
+    challenge: AuthChallenge;
+  }> {
     return this.request('POST', '/v1/auth/register', input, {
       idempotencyKey: cryptoRandomKey('reg'),
     });
@@ -103,9 +107,14 @@ export class EazePayApiClient {
   }
 
   submitApplication(applicationId: string): Promise<ApplicationSnapshot> {
-    return this.request('POST', `/v1/applications/${applicationId}/submit`, {}, {
-      idempotencyKey: cryptoRandomKey('sub'),
-    });
+    return this.request(
+      'POST',
+      `/v1/applications/${applicationId}/submit`,
+      {},
+      {
+        idempotencyKey: cryptoRandomKey('sub'),
+      },
+    );
   }
 
   getApplication(applicationId: string): Promise<ApplicationSnapshot> {

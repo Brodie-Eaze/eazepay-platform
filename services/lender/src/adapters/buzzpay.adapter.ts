@@ -51,7 +51,7 @@ export class BuzzPayAdapter implements LenderAdapter {
     const principal = ctx.requestedAmountCents;
     const fees = (principal * BigInt(ORIGINATION_FEE_BPS)) / 10_000n;
     const interestApprox =
-      (principal * BigInt(APR_BPS) * BigInt(ctx.termMonths)) / (TWO_HUNDRED * 12n * 100n / 100n);
+      (principal * BigInt(APR_BPS) * BigInt(ctx.termMonths)) / ((TWO_HUNDRED * 12n * 100n) / 100n);
     // Above is an approximation only — real APR amortization happens in
     // the contract service. Adapters return indicative totals; final
     // disclosures are computed once the consumer accepts.

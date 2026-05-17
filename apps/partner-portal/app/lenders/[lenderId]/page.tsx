@@ -21,9 +21,7 @@ import { SAMPLE_LENDERS, offerFor } from '../../../lib/api-v1/shared';
  */
 
 const fmtAmount = (cents: number) =>
-  cents >= 100_000_00
-    ? `$${Math.round(cents / 100_000) / 10}M`
-    : `$${Math.round(cents / 1000)}k`;
+  cents >= 100_000_00 ? `$${Math.round(cents / 100_000) / 10}M` : `$${Math.round(cents / 1000)}k`;
 
 const fmtApr = (bps: { min: number; max: number }) =>
   `${(bps.min / 100).toFixed(1)}% – ${(bps.max / 100).toFixed(1)}%`;
@@ -91,7 +89,10 @@ export default function LenderDetailPage({ params }: { params: { lenderId: strin
     <main className="min-h-screen bg-white text-gray-900">
       <header className="border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-6 lg:px-10 h-[64px] flex items-center justify-between">
-          <Link href="/lenders" className="text-[13px] font-semibold text-gray-700 hover:text-gray-900 inline-flex items-center gap-1.5">
+          <Link
+            href="/lenders"
+            className="text-[13px] font-semibold text-gray-700 hover:text-gray-900 inline-flex items-center gap-1.5"
+          >
             <ArrowRightIcon size={13} className="rotate-180" /> Lender marketplace
           </Link>
           <Link
@@ -130,7 +131,10 @@ export default function LenderDetailPage({ params }: { params: { lenderId: strin
           <Stat label="Brands" value={lender!.brands.join(' · ')} />
           <Stat label="Tiers served" value={lender!.serves_tiers.join(', ')} />
           <Stat label="APR band" value={fmtApr(lender!.apr_band_bps)} />
-          <Stat label="Envelope" value={`${fmtAmount(lender!.min_amount_cents)} – ${fmtAmount(lender!.max_amount_cents)}`} />
+          <Stat
+            label="Envelope"
+            value={`${fmtAmount(lender!.min_amount_cents)} – ${fmtAmount(lender!.max_amount_cents)}`}
+          />
           <Stat label="P95 SLA" value={`${lender!.sla_p95_ms}ms`} />
           <Stat label="Integration" value={lender!.integration_type} />
           <Stat label="Webhook" value={new URL(lender!.webhook_url).host} mono />
@@ -178,7 +182,8 @@ export default function LenderDetailPage({ params }: { params: { lenderId: strin
             Request from EazePay
           </p>
           <h2 className="mt-2 text-[22px] font-bold tracking-tight text-[#0d1530]">
-            What we send to your <code className="font-mono text-[18px] bg-gray-100 rounded px-1.5">quote</code> endpoint
+            What we send to your{' '}
+            <code className="font-mono text-[18px] bg-gray-100 rounded px-1.5">quote</code> endpoint
           </h2>
           <CodeBlock code={requestSample} filename="request.json" />
         </div>
@@ -210,7 +215,9 @@ export default function LenderDetailPage({ params }: { params: { lenderId: strin
           </div>
           <p className="text-[13px] text-gray-700 leading-relaxed">
             Every payload (inbound + outbound) is signed with{' '}
-            <code className="font-mono bg-gray-100 rounded px-1">HMAC-SHA256(secret, timestamp + '.' + nonce + '.' + body)</code>
+            <code className="font-mono bg-gray-100 rounded px-1">
+              HMAC-SHA256(secret, timestamp + '.' + nonce + '.' + body)
+            </code>
             . Timestamp must be within a 5-minute window; nonce must be unique across the last 24
             hours. Failed verification returns RFC 7807{' '}
             <code className="font-mono bg-gray-100 rounded px-1">401 signature_invalid</code> with a
@@ -257,9 +264,13 @@ export default function LenderDetailPage({ params }: { params: { lenderId: strin
 function Stat({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
-      <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500">{label}</div>
+      <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-gray-500">
+        {label}
+      </div>
       <div
-        className={'mt-1.5 text-[13px] text-[#0d1530] font-semibold ' + (mono ? 'font-mono text-[12px]' : '')}
+        className={
+          'mt-1.5 text-[13px] text-[#0d1530] font-semibold ' + (mono ? 'font-mono text-[12px]' : '')
+        }
       >
         {value}
       </div>
@@ -278,12 +289,13 @@ function EndpointCard({
   summary: string;
   accent: 'emerald' | 'blue';
 }) {
-  const tone =
-    accent === 'emerald' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700';
+  const tone = accent === 'emerald' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700';
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5">
       <div className="flex items-center gap-3">
-        <span className={'text-[10px] font-bold uppercase tracking-wider rounded px-2 py-1 ' + tone}>
+        <span
+          className={'text-[10px] font-bold uppercase tracking-wider rounded px-2 py-1 ' + tone}
+        >
           {method}
         </span>
         <code className="font-mono text-[13px] text-[#0d1530]">{path}</code>

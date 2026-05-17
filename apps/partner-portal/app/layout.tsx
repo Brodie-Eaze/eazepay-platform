@@ -23,7 +23,10 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
     <html lang="en" data-theme="light" className={inter.variable}>
       <body
         className="bg-bg text-fg"
-        style={{ fontFamily: 'var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif' }}
+        style={{
+          fontFamily:
+            'var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif',
+        }}
       >
         <Providers>
           <Shell>{children}</Shell>

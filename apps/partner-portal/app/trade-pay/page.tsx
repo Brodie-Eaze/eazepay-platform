@@ -1,9 +1,4 @@
-import {
-  BankIcon,
-  HomeIcon,
-  ChartIcon,
-  ShieldIcon,
-} from '@eazepay/ui/web';
+import { BankIcon, HomeIcon, ChartIcon, ShieldIcon } from '@eazepay/ui/web';
 import { IntegrationPage } from '../../components/IntegrationPage';
 
 /**
@@ -27,20 +22,17 @@ export default function TradePayIntegrationPage() {
         {
           icon: <HomeIcon size={18} />,
           title: 'Home Improvement',
-          description:
-            'HVAC, roofing, plumbing, electrical, remodeling, and general contracting',
+          description: 'HVAC, roofing, plumbing, electrical, remodeling, and general contracting',
         },
         {
           icon: <ChartIcon size={18} />,
           title: 'Project Financing',
-          description:
-            'Help homeowners finance large projects with affordable monthly payments',
+          description: 'Help homeowners finance large projects with affordable monthly payments',
         },
         {
           icon: <ShieldIcon size={18} />,
           title: 'Contractor Verified',
-          description:
-            'Licensed and bonded contractors get priority access and better terms',
+          description: 'Licensed and bonded contractors get priority access and better terms',
         },
       ]}
       requirements={[

@@ -140,10 +140,7 @@ export async function captureConsent(args: {
   // value via the browser console.
   try {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(
-        `eazepay.consent.${args.applicationId}`,
-        JSON.stringify(receipt),
-      );
+      window.localStorage.setItem(`eazepay.consent.${args.applicationId}`, JSON.stringify(receipt));
     }
   } catch {
     // Quota exceeded or privacy-mode block. Non-fatal — the POST below

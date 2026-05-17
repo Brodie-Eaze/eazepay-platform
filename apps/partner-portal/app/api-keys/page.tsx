@@ -60,7 +60,9 @@ const buildColumns = (
     align: 'right',
     cell: (k) =>
       k.lastUsedAt ? (
-        <span className="text-[12px] text-fg-muted tabular-nums">{new Date(k.lastUsedAt).toLocaleString('en-US')}</span>
+        <span className="text-[12px] text-fg-muted tabular-nums">
+          {new Date(k.lastUsedAt).toLocaleString('en-US')}
+        </span>
       ) : (
         <span className="text-fg-muted">never</span>
       ),
@@ -90,7 +92,20 @@ export default function ApiKeysPage() {
     setTimeout(() => setToast(null), 3000);
   }
   function rotate(id: string) {
-    setRows((prev) => prev.map((k) => (k.id === id ? { ...k, prefix: k.prefix.replace(/_[a-zA-Z0-9]+/, '_' + Math.random().toString(36).slice(2, 7)), lastUsedAt: null } : k)));
+    setRows((prev) =>
+      prev.map((k) =>
+        k.id === id
+          ? {
+              ...k,
+              prefix: k.prefix.replace(
+                /_[a-zA-Z0-9]+/,
+                '_' + Math.random().toString(36).slice(2, 7),
+              ),
+              lastUsedAt: null,
+            }
+          : k,
+      ),
+    );
     flash('Key rotated — old key disabled in 60s grace window');
   }
   function revoke(id: string) {
@@ -101,7 +116,16 @@ export default function ApiKeysPage() {
     const env: ApiKey['env'] = 'sandbox';
     const id = 'key_new_' + Date.now().toString(36);
     setRows((prev) => [
-      { id, name: 'New sandbox key', prefix: `ep_test_${id.slice(-6)}...`, env, scopes: ['applications:read'], createdAt: new Date().toISOString(), lastUsedAt: null, revoked: false },
+      {
+        id,
+        name: 'New sandbox key',
+        prefix: `ep_test_${id.slice(-6)}...`,
+        env,
+        scopes: ['applications:read'],
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        revoked: false,
+      },
       ...prev,
     ]);
     flash('New sandbox key created — copy secret immediately, only shown once');
@@ -113,18 +137,26 @@ export default function ApiKeysPage() {
         breadcrumbs={[{ label: 'Partner Portal', href: '/' }, { label: 'API keys' }]}
         title="API keys"
         description="Server-to-server credentials for EazePay's lender adapter API. Keys are HMAC-signed and bound to scopes; secrets are only shown at creation."
-        actions={<Button leadingIcon={<KeyIcon size={16} />} onClick={generate}>Generate key</Button>}
+        actions={
+          <Button leadingIcon={<KeyIcon size={16} />} onClick={generate}>
+            Generate key
+          </Button>
+        }
       />
       <PageBody>
         <Banner intent="warning" className="mb-4" title="Treat live keys like production secrets">
           Rotate after any team member with access leaves. We auto-expire keys with no usage in 180
-          days. All requests are logged to your audit chain with IP, scope, and replay-protection nonce.
+          days. All requests are logged to your audit chain with IP, scope, and replay-protection
+          nonce.
         </Banner>
 
         <DataTable columns={columns} rows={rows} rowKey={(k) => k.id} className="mb-6" />
 
         <Card>
-          <CardHeader title="Authentication reference" description="HMAC-SHA256 of the request body using your shared secret, with timestamp + nonce to prevent replay." />
+          <CardHeader
+            title="Authentication reference"
+            description="HMAC-SHA256 of the request body using your shared secret, with timestamp + nonce to prevent replay."
+          />
           <CardBody>
             <CodeBlock language="bash" filename="curl">{`# All requests require the headers below.
 # The signature is hex(hmac_sha256(secret, timestamp + '.' + nonce + '.' + body)).

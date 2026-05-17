@@ -63,26 +63,92 @@ const ROLE_DESCRIPTION: Record<MemberRole, string> = {
   master_admin: 'Everything, including managing this team and rotating credentials.',
   admin: 'Operate the platform, approve merchants, manage partners — cannot rotate the master KEK.',
   underwriter: 'Review applications, approve up to $50k, escalate above that.',
-  compliance: 'Read-only on financials; full access to audit + SAR queues + JIT PII unmask requests.',
+  compliance:
+    'Read-only on financials; full access to audit + SAR queues + JIT PII unmask requests.',
   support: 'Scoped to the active ticket; PII purpose-bound.',
   read_only: 'Audit-log only; cannot mutate any state.',
 };
 
 const SEED_MEMBERS: TeamMember[] = [
-  { id: 'u_brodie',  displayName: 'Brodie Eaze',     email: 'brodie@eaze.test',    role: 'master_admin', status: 'active',   lastSignInAt: '2026-05-04T18:42Z', invitedBy: null,         invitedAt: '2025-12-04T09:00Z' },
-  { id: 'u_priya',   displayName: 'Priya Vasquez',   email: 'priya@eaze.test',     role: 'underwriter',  status: 'active',   lastSignInAt: '2026-05-04T17:18Z', invitedBy: 'u_brodie',   invitedAt: '2026-01-12T11:30Z' },
-  { id: 'u_devon',   displayName: 'Devon Lin',       email: 'devon@eaze.test',     role: 'compliance',   status: 'active',   lastSignInAt: '2026-05-04T15:11Z', invitedBy: 'u_brodie',   invitedAt: '2026-01-18T10:14Z' },
-  { id: 'u_kai',     displayName: 'Kai Nakamura',    email: 'kai@eaze.test',       role: 'admin',        status: 'active',   lastSignInAt: '2026-05-03T22:08Z', invitedBy: 'u_brodie',   invitedAt: '2026-02-02T09:00Z' },
-  { id: 'u_sloane',  displayName: 'Sloane Whitaker', email: 'sloane@eaze.test',    role: 'support',      status: 'active',   lastSignInAt: '2026-05-04T11:02Z', invitedBy: 'u_kai',      invitedAt: '2026-02-19T14:48Z' },
-  { id: 'u_evan',    displayName: 'Evan Mireles',    email: 'evan@eaze.test',      role: 'support',      status: 'invited',  lastSignInAt: null,                 invitedBy: 'u_kai',      invitedAt: '2026-05-02T16:30Z' },
-  { id: 'u_marcus',  displayName: 'Marcus Bell',     email: 'marcus@eaze.test',    role: 'read_only',    status: 'disabled', lastSignInAt: '2026-04-08T09:10Z', invitedBy: 'u_brodie',   invitedAt: '2025-12-22T13:11Z' },
+  {
+    id: 'u_brodie',
+    displayName: 'Brodie Eaze',
+    email: 'brodie@eaze.test',
+    role: 'master_admin',
+    status: 'active',
+    lastSignInAt: '2026-05-04T18:42Z',
+    invitedBy: null,
+    invitedAt: '2025-12-04T09:00Z',
+  },
+  {
+    id: 'u_priya',
+    displayName: 'Priya Vasquez',
+    email: 'priya@eaze.test',
+    role: 'underwriter',
+    status: 'active',
+    lastSignInAt: '2026-05-04T17:18Z',
+    invitedBy: 'u_brodie',
+    invitedAt: '2026-01-12T11:30Z',
+  },
+  {
+    id: 'u_devon',
+    displayName: 'Devon Lin',
+    email: 'devon@eaze.test',
+    role: 'compliance',
+    status: 'active',
+    lastSignInAt: '2026-05-04T15:11Z',
+    invitedBy: 'u_brodie',
+    invitedAt: '2026-01-18T10:14Z',
+  },
+  {
+    id: 'u_kai',
+    displayName: 'Kai Nakamura',
+    email: 'kai@eaze.test',
+    role: 'admin',
+    status: 'active',
+    lastSignInAt: '2026-05-03T22:08Z',
+    invitedBy: 'u_brodie',
+    invitedAt: '2026-02-02T09:00Z',
+  },
+  {
+    id: 'u_sloane',
+    displayName: 'Sloane Whitaker',
+    email: 'sloane@eaze.test',
+    role: 'support',
+    status: 'active',
+    lastSignInAt: '2026-05-04T11:02Z',
+    invitedBy: 'u_kai',
+    invitedAt: '2026-02-19T14:48Z',
+  },
+  {
+    id: 'u_evan',
+    displayName: 'Evan Mireles',
+    email: 'evan@eaze.test',
+    role: 'support',
+    status: 'invited',
+    lastSignInAt: null,
+    invitedBy: 'u_kai',
+    invitedAt: '2026-05-02T16:30Z',
+  },
+  {
+    id: 'u_marcus',
+    displayName: 'Marcus Bell',
+    email: 'marcus@eaze.test',
+    role: 'read_only',
+    status: 'disabled',
+    lastSignInAt: '2026-04-08T09:10Z',
+    invitedBy: 'u_brodie',
+    invitedAt: '2025-12-22T13:11Z',
+  },
 ];
 
 const fmtSignIn = (iso: string | null) =>
-  !iso ? 'Never' : new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  !iso
+    ? 'Never'
+    : new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
 const lookupById = (id: string | null, members: TeamMember[]) =>
-  id ? members.find((m) => m.id === id)?.displayName ?? 'Unknown' : '—';
+  id ? (members.find((m) => m.id === id)?.displayName ?? 'Unknown') : '—';
 
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>(SEED_MEMBERS);
@@ -126,40 +192,45 @@ export default function TeamPage() {
 
   const removeMember = useCallback((id: string) => {
     setMembers((prev) => prev.filter((m) => m.id !== id));
-    void fetch(`/api/admin/team/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => undefined);
+    void fetch(`/api/admin/team/${id}`, { method: 'DELETE', credentials: 'include' }).catch(
+      () => undefined,
+    );
     setConfirmRemoveId(null);
   }, []);
 
-  const addMember = useCallback(async (input: { displayName: string; email: string; role: MemberRole }) => {
-    const optimistic: TeamMember = {
-      id: `u_${Date.now().toString(36)}`,
-      displayName: input.displayName || input.email.split('@')[0] || input.email,
-      email: input.email,
-      role: input.role,
-      status: 'invited',
-      lastSignInAt: null,
-      invitedBy: 'u_brodie',
-      invitedAt: new Date().toISOString(),
-    };
-    setMembers((prev) => [optimistic, ...prev]);
-    setInviteOpen(false);
-    try {
-      const res = await fetch('/api/admin/team', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data = (await res.json()) as { member: TeamMember };
-        if (data?.member) {
-          setMembers((prev) => prev.map((m) => (m.id === optimistic.id ? data.member : m)));
+  const addMember = useCallback(
+    async (input: { displayName: string; email: string; role: MemberRole }) => {
+      const optimistic: TeamMember = {
+        id: `u_${Date.now().toString(36)}`,
+        displayName: input.displayName || input.email.split('@')[0] || input.email,
+        email: input.email,
+        role: input.role,
+        status: 'invited',
+        lastSignInAt: null,
+        invitedBy: 'u_brodie',
+        invitedAt: new Date().toISOString(),
+      };
+      setMembers((prev) => [optimistic, ...prev]);
+      setInviteOpen(false);
+      try {
+        const res = await fetch('/api/admin/team', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = (await res.json()) as { member: TeamMember };
+          if (data?.member) {
+            setMembers((prev) => prev.map((m) => (m.id === optimistic.id ? data.member : m)));
+          }
         }
+      } catch {
+        /* keep optimistic */
       }
-    } catch {
-      /* keep optimistic */
-    }
-  }, []);
+    },
+    [],
+  );
 
   const columns: Column<TeamMember>[] = [
     {
@@ -168,7 +239,13 @@ export default function TeamPage() {
       cell: (m) => (
         <div className="flex items-center gap-3">
           <Avatar size={32}>
-            <AvatarFallback>{m.displayName.split(' ').map((s) => s[0]).slice(0, 2).join('')}</AvatarFallback>
+            <AvatarFallback>
+              {m.displayName
+                .split(' ')
+                .map((s) => s[0])
+                .slice(0, 2)
+                .join('')}
+            </AvatarFallback>
           </Avatar>
           <div>
             <div className="font-medium">{m.displayName}</div>
@@ -183,7 +260,9 @@ export default function TeamPage() {
       cell: (m) => (
         <div>
           <div className="text-[13px] font-medium">{ROLE_LABEL[m.role]}</div>
-          <div className="text-[11px] text-fg-muted line-clamp-1 max-w-[260px]">{ROLE_DESCRIPTION[m.role]}</div>
+          <div className="text-[11px] text-fg-muted line-clamp-1 max-w-[260px]">
+            {ROLE_DESCRIPTION[m.role]}
+          </div>
         </div>
       ),
     },
@@ -192,9 +271,13 @@ export default function TeamPage() {
       header: 'Status',
       cell: (m) =>
         m.status === 'active' ? (
-          <StatusPill tone="success" dot>Active</StatusPill>
+          <StatusPill tone="success" dot>
+            Active
+          </StatusPill>
         ) : m.status === 'invited' ? (
-          <StatusPill tone="info" dot>Invited</StatusPill>
+          <StatusPill tone="info" dot>
+            Invited
+          </StatusPill>
         ) : (
           <StatusPill tone="neutral">Disabled</StatusPill>
         ),
@@ -203,18 +286,24 @@ export default function TeamPage() {
       key: 'last',
       header: 'Last sign-in',
       align: 'right',
-      cell: (m) => <span className="text-[12px] text-fg-muted tabular-nums">{fmtSignIn(m.lastSignInAt)}</span>,
+      cell: (m) => (
+        <span className="text-[12px] text-fg-muted tabular-nums">{fmtSignIn(m.lastSignInAt)}</span>
+      ),
     },
     {
       key: 'invited',
       header: 'Invited by',
-      cell: (m) => <span className="text-[12px] text-fg-muted">{lookupById(m.invitedBy, members)}</span>,
+      cell: (m) => (
+        <span className="text-[12px] text-fg-muted">{lookupById(m.invitedBy, members)}</span>
+      ),
     },
     {
       key: 'actions',
       header: '',
       align: 'right',
-      cell: (m) => <RowActions member={m} onUpdate={updateMember} onRemove={() => setConfirmRemoveId(m.id)} />,
+      cell: (m) => (
+        <RowActions member={m} onUpdate={updateMember} onRemove={() => setConfirmRemoveId(m.id)} />
+      ),
     },
   ];
 
@@ -226,10 +315,16 @@ export default function TeamPage() {
         description="People with access to the EazePay command centre. Invite, change roles, disable — every change is written to the audit chain."
         meta={
           <>
-            <StatusPill tone="success" dot>{members.filter((m) => m.status === 'active').length} active</StatusPill>
-            <StatusPill tone="info">{members.filter((m) => m.status === 'invited').length} pending invites</StatusPill>
+            <StatusPill tone="success" dot>
+              {members.filter((m) => m.status === 'active').length} active
+            </StatusPill>
+            <StatusPill tone="info">
+              {members.filter((m) => m.status === 'invited').length} pending invites
+            </StatusPill>
             {members.filter((m) => m.status === 'disabled').length > 0 && (
-              <StatusPill tone="neutral">{members.filter((m) => m.status === 'disabled').length} disabled</StatusPill>
+              <StatusPill tone="neutral">
+                {members.filter((m) => m.status === 'disabled').length} disabled
+              </StatusPill>
             )}
           </>
         }
@@ -244,8 +339,9 @@ export default function TeamPage() {
       />
       <PageBody>
         <Banner intent="info" className="mb-4">
-          Hardware-key MFA is required for <strong>Master admin</strong> and <strong>Admin</strong> roles. PII reads
-          stay JIT-gated regardless of role. Removing someone instantly revokes their refresh tokens.
+          Hardware-key MFA is required for <strong>Master admin</strong> and <strong>Admin</strong>{' '}
+          roles. PII reads stay JIT-gated regardless of role. Removing someone instantly revokes
+          their refresh tokens.
         </Banner>
 
         <Card padded className="mb-4">
@@ -261,7 +357,9 @@ export default function TeamPage() {
                     : 'border-border text-fg-secondary hover:border-border-strong')
                 }
               >
-                {f === 'all' ? `All (${members.length})` : `${f.charAt(0).toUpperCase()}${f.slice(1)} (${members.filter((m) => m.status === f).length})`}
+                {f === 'all'
+                  ? `All (${members.length})`
+                  : `${f.charAt(0).toUpperCase()}${f.slice(1)} (${members.filter((m) => m.status === f).length})`}
               </button>
             ))}
           </div>
@@ -272,7 +370,10 @@ export default function TeamPage() {
         </Card>
 
         {/* Remove confirmation */}
-        <Dialog open={confirmRemoveId !== null} onOpenChange={(v) => !v && setConfirmRemoveId(null)}>
+        <Dialog
+          open={confirmRemoveId !== null}
+          onOpenChange={(v) => !v && setConfirmRemoveId(null)}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Remove team member?</DialogTitle>
@@ -317,7 +418,9 @@ function RowActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="ghost">···</Button>
+        <Button size="sm" variant="ghost">
+          ···
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>{member.displayName}</DropdownMenuLabel>
@@ -377,8 +480,8 @@ function InviteDialog({
       <DialogHeader>
         <DialogTitle>Invite an internal team member</DialogTitle>
         <DialogDescription>
-          They'll receive an email with a one-time link to set their password and enrol in MFA. Until they
-          accept, the row shows as <strong>Invited</strong>.
+          They'll receive an email with a one-time link to set their password and enrol in MFA.
+          Until they accept, the row shows as <strong>Invited</strong>.
         </DialogDescription>
       </DialogHeader>
       <div className="grid grid-cols-1 gap-3 py-2">

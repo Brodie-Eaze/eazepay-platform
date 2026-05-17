@@ -1,31 +1,15 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Headers,
-  HttpCode,
-  Ip,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Ip, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { CurrentUser, Public } from '@eazepay/service-auth';
 import { Idempotent } from '@eazepay/shared-utils';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
-import { MerchantService } from '@eazepay/service-merchant';
-import { ApplicationService } from '@eazepay/service-application';
+import type { MerchantService } from '@eazepay/service-merchant';
+import type { ApplicationService } from '@eazepay/service-application';
 
 const RedeemSchema = z.object({
-  category: z.enum([
-    'auto',
-    'home_improvement',
-    'medical',
-    'retail',
-    'personal',
-    'consolidation',
-  ]),
+  category: z.enum(['auto', 'home_improvement', 'medical', 'retail', 'personal', 'consolidation']),
   requestedAmountCents: z
     .union([z.number().int().positive(), z.string().regex(/^\d+$/)])
     .transform((v) => BigInt(v)),
@@ -59,10 +43,7 @@ export class ApplicationLinkController {
   @Public()
   @Get(':slug/:token')
   @ApiOperation({ summary: 'Public — return merchant context for the apply page' })
-  context(
-    @Param('slug') slug: string,
-    @Param('token') token: string,
-  ): Promise<unknown> {
+  context(@Param('slug') slug: string, @Param('token') token: string): Promise<unknown> {
     return this.merchants.getLinkContext(slug, token);
   }
 

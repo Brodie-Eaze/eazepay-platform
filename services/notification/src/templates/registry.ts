@@ -27,7 +27,8 @@ const fmt = (vars: Record<string, unknown>, key: string, fallback = ''): string 
 };
 
 const fmtMoney = (cents: unknown): string => {
-  if (typeof cents !== 'string' && typeof cents !== 'number' && typeof cents !== 'bigint') return '$0.00';
+  if (typeof cents !== 'string' && typeof cents !== 'number' && typeof cents !== 'bigint')
+    return '$0.00';
   const n = typeof cents === 'bigint' ? Number(cents) : Number(cents);
   return `$${(n / 100).toFixed(2)}`;
 };

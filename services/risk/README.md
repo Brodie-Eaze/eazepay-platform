@@ -29,7 +29,7 @@ Composite risk scoring + RiskFlag taxonomy + decision policy hooks.
 
 ## Notes
 
-- Reason codes here are *the* source of truth — `service-orchestration`
+- Reason codes here are _the_ source of truth — `service-orchestration`
   and `service-compliance-doc` both import from this package
 - Policy is data, not code branches — rules can be edited in the
   admin console without a deploy

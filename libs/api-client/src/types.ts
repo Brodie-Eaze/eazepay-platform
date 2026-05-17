@@ -92,14 +92,7 @@ export interface Repayment {
   dueDate: string;
   amountDueCents: string;
   amountPaidCents: string;
-  status:
-    | 'scheduled'
-    | 'due'
-    | 'paid'
-    | 'partial'
-    | 'late'
-    | 'charged_off'
-    | 'waived';
+  status: 'scheduled' | 'due' | 'paid' | 'partial' | 'late' | 'charged_off' | 'waived';
   paidAt: string | null;
 }
 

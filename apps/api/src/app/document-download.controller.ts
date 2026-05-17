@@ -3,8 +3,8 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@eazepay/service-auth';
 import type { ApplicationId, UserId } from '@eazepay/shared-types';
 import { Forbidden } from '@eazepay/shared-utils';
-import { ComplianceDocService } from '@eazepay/service-compliance-doc';
-import { PrismaService } from '../prisma/prisma.service.js';
+import type { ComplianceDocService } from '@eazepay/service-compliance-doc';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 /**
  * Consumer-facing document download. Restricted: a user can only see
@@ -39,9 +39,7 @@ export class ConsumerDocumentDownloadController {
       select: { id: true },
     });
     if (!app) throw Forbidden({ code: 'application_not_owned' });
-    const notice = await this.compliance.findAdverseActionForApplication(
-      id as ApplicationId,
-    );
+    const notice = await this.compliance.findAdverseActionForApplication(id as ApplicationId);
     if (!notice) {
       // Not yet generated — treat as 404-ish via Forbidden so we don't
       // disclose document existence beyond the user's own scope.

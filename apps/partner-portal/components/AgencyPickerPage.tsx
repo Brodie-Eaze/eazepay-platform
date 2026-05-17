@@ -47,7 +47,18 @@ export interface AgencyPickerPageProps {
 }
 
 export function AgencyPickerPage(props: AgencyPickerPageProps) {
-  const { category = 'SERVICE', name, icon, heading, body, stats, features, whatsIncluded, verticals, pickHeading = 'Choose Your Agency' } = props;
+  const {
+    category = 'SERVICE',
+    name,
+    icon,
+    heading,
+    body,
+    stats,
+    features,
+    whatsIncluded,
+    verticals,
+    pickHeading = 'Choose Your Agency',
+  } = props;
   return (
     <div className="px-8 py-6 max-w-4xl">
       <p className="text-[11px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
@@ -67,7 +78,11 @@ export function AgencyPickerPage(props: AgencyPickerPageProps) {
         <div
           className={
             'grid border-t border-border ' +
-            (stats.length === 2 ? 'grid-cols-2' : stats.length === 3 ? 'grid-cols-3' : 'grid-cols-4')
+            (stats.length === 2
+              ? 'grid-cols-2'
+              : stats.length === 3
+                ? 'grid-cols-3'
+                : 'grid-cols-4')
           }
         >
           {stats.map((s, i) => (

@@ -23,7 +23,11 @@ export class MockPaymentAdapter implements PaymentProvider {
   async disburse(input: DisburseInput): Promise<ProviderResult> {
     if (this.shouldFail(input.amountCents)) {
       this.logger.warn(`[DEV-ONLY] mock disburse FORCED FAIL key=${input.idempotencyKey}`);
-      return { status: 'failed', providerRef: `mock-${input.idempotencyKey}`, reasonCode: 'mock_force_fail' };
+      return {
+        status: 'failed',
+        providerRef: `mock-${input.idempotencyKey}`,
+        reasonCode: 'mock_force_fail',
+      };
     }
     this.logger.warn(
       `[DEV-ONLY] mock disburse $${(Number(input.amountCents) / 100).toFixed(2)} loan=${input.loanId} key=${input.idempotencyKey}`,
@@ -37,7 +41,11 @@ export class MockPaymentAdapter implements PaymentProvider {
 
   async debit(input: DebitInput): Promise<ProviderResult> {
     if (this.shouldFail(input.amountCents)) {
-      return { status: 'failed', providerRef: `mock-${input.idempotencyKey}`, reasonCode: 'mock_force_fail' };
+      return {
+        status: 'failed',
+        providerRef: `mock-${input.idempotencyKey}`,
+        reasonCode: 'mock_force_fail',
+      };
     }
     return {
       status: 'succeeded',

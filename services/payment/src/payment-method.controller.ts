@@ -15,7 +15,7 @@ import { z } from 'zod';
 import { CurrentUser } from '@eazepay/service-auth';
 import { Idempotent } from '@eazepay/shared-utils';
 import type { PaymentMethodId, UserId } from '@eazepay/shared-types';
-import { PaymentService } from './payment.service.js';
+import type { PaymentService } from './payment.service.js';
 
 const AddBankAccountSchema = z.object({
   publicToken: z.string().min(8).max(2048),
@@ -40,10 +40,7 @@ export class PaymentMethodController {
   @ApiOperation({
     summary: 'Add a bank account by exchanging a Link public token (Plaid-shape)',
   })
-  addBankAccount(
-    @CurrentUser() userId: UserId,
-    @Body() dto: AddBankAccountDto,
-  ): Promise<unknown> {
+  addBankAccount(@CurrentUser() userId: UserId, @Body() dto: AddBankAccountDto): Promise<unknown> {
     return this.payments.addBankAccount(userId, dto);
   }
 

@@ -25,15 +25,31 @@ export default function RiskFlagsPage() {
       />
       <PageBody>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <KpiCard label="Open flags" value={riskFlags.length} delta={{ value: '+1', direction: 'up', isGood: false }} />
-          <KpiCard label="High severity" value={riskFlags.filter((r) => r.severity === 'high').length} hint="Compliance review opens automatically" />
-          <KpiCard label="Mean time to close" value="38m" delta={{ value: '-12m', direction: 'down', isGood: true }} />
-          <KpiCard label="Fraud net loss (30d)" value="$2,140" delta={{ value: '-31%', direction: 'down', isGood: true }} />
+          <KpiCard
+            label="Open flags"
+            value={riskFlags.length}
+            delta={{ value: '+1', direction: 'up', isGood: false }}
+          />
+          <KpiCard
+            label="High severity"
+            value={riskFlags.filter((r) => r.severity === 'high').length}
+            hint="Compliance review opens automatically"
+          />
+          <KpiCard
+            label="Mean time to close"
+            value="38m"
+            delta={{ value: '-12m', direction: 'down', isGood: true }}
+          />
+          <KpiCard
+            label="Fraud net loss (30d)"
+            value="$2,140"
+            delta={{ value: '-31%', direction: 'down', isGood: true }}
+          />
         </div>
 
         <Banner intent="warning" className="mb-4" title="Sterling Direct circuit breaker tripped">
-          50.4% error rate over the last 60s window. Adapter excluded from routing automatically. Page
-          sent to on-call SRE. Sterling support contacted.
+          50.4% error rate over the last 60s window. Adapter excluded from routing automatically.
+          Page sent to on-call SRE. Sterling support contacted.
         </Banner>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -48,7 +64,15 @@ export default function RiskFlagsPage() {
                 }
                 description={`Subject: ${r.subject} · raised ${fmtDate(r.raisedAt)}`}
                 action={
-                  <StatusPill tone={r.severity === 'high' ? 'danger' : r.severity === 'medium' ? 'warning' : 'neutral'}>
+                  <StatusPill
+                    tone={
+                      r.severity === 'high'
+                        ? 'danger'
+                        : r.severity === 'medium'
+                          ? 'warning'
+                          : 'neutral'
+                    }
+                  >
                     {r.severity}
                   </StatusPill>
                 }

@@ -20,10 +20,7 @@ export interface LenderAdapter {
 
   /** Real quote. Adapter should respect the timeout signal — orchestrator
    *  enforces a hard timeout on top regardless. */
-  quote(
-    ctx: LenderEvaluationContext,
-    opts: { signal: AbortSignal },
-  ): Promise<LenderQuoteResult>;
+  quote(ctx: LenderEvaluationContext, opts: { signal: AbortSignal }): Promise<LenderQuoteResult>;
 }
 
 export const LENDER_ADAPTERS = Symbol('LENDER_ADAPTERS');

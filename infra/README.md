@@ -38,16 +38,18 @@ apply. Production applies require two reviewers per CODEOWNERS.
 
 Per ARCHITECTURE.md, six AWS accounts under Organizations:
 `prod`, `staging`, `dev`, `sandbox`, `audit` (write-once CloudTrail
-+ Config landing zone), `security` (GuardDuty + Security Hub
-delegated administrator), `shared-services`. Cross-account roles
-defined in `modules/iam-cross-account` (lands when bank-partner
-diligence demands it).
+
+- Config landing zone), `security` (GuardDuty + Security Hub
+  delegated administrator), `shared-services`. Cross-account roles
+  defined in `modules/iam-cross-account` (lands when bank-partner
+  diligence demands it).
 
 ## What's here vs. NOT here
 
 These modules are **scaffolds**. Variable contracts, resource
 shape, naming, and tags are correct and production-ready in
 structure. What's missing:
+
 - Real account ids / KMS key arns (placeholders)
 - Actual subnet CIDRs (using `var.cidr_block`)
 - WAF rule sets beyond the AWS-managed baseline

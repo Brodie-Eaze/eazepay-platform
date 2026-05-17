@@ -22,9 +22,7 @@ function makeConsoleAdapter(
     private readonly logger = new Logger(`${name}:${channel}`);
 
     async send(input: ChannelDeliverInput): Promise<ChannelDeliverResult> {
-      this.logger.warn(
-        `[DEV-ONLY] ${channel} → ${input.to} | ${input.title}\n${input.body}`,
-      );
+      this.logger.warn(`[DEV-ONLY] ${channel} → ${input.to} | ${input.title}\n${input.body}`);
       return { status: 'sent', providerRef: `console-${input.notificationId}` };
     }
   })();

@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { NotFound, BadRequest, Forbidden } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
-import { PiiVaultService } from './internal/pii-vault.service.js';
+import type { PiiVaultService } from './internal/pii-vault.service.js';
 import { KYC_PROVIDER, type KycProvider } from './ports/kyc-provider.port.js';
 import type { PiiV1 } from './pii.types.js';
 
@@ -80,10 +80,7 @@ export class UserService {
     @Inject(KYC_PROVIDER) private readonly kyc: KycProvider,
   ) {}
 
-  async getMe(
-    userId: UserId,
-    options: GetMeOptions = { reveal: 'masked' },
-  ): Promise<MeResponse> {
+  async getMe(userId: UserId, options: GetMeOptions = { reveal: 'masked' }): Promise<MeResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { consumerProfile: true },
@@ -130,10 +127,8 @@ export class UserService {
       kyc: {
         status: user.consumerProfile?.kycStatus ?? 'not_started',
         pep: user.consumerProfile?.pepStatus ?? 'unknown',
-        sanctions:
-          user.consumerProfile?.sanctionsCheckedAt ? 'cleared' : 'unknown',
-        completedAt:
-          user.consumerProfile?.kycCompletedAt?.toISOString() ?? null,
+        sanctions: user.consumerProfile?.sanctionsCheckedAt ? 'cleared' : 'unknown',
+        completedAt: user.consumerProfile?.kycCompletedAt?.toISOString() ?? null,
       },
       profile,
       profileVisibility: visibility,
@@ -197,9 +192,7 @@ export class UserService {
           kekId: sealed.kekId,
           piiSchemaVersion: sealed.schemaVersion,
           residentState: pii.address.state,
-          ...(requiresRekyc
-            ? { kycStatus: 'not_started', kycCompletedAt: null }
-            : {}),
+          ...(requiresRekyc ? { kycStatus: 'not_started', kycCompletedAt: null } : {}),
         },
       });
 

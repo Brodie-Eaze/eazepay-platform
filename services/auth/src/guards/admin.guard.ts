@@ -1,12 +1,7 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PrismaClient } from '@prisma/client';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { PrismaClient } from '@prisma/client';
 import { Forbidden, Unauthorized } from '@eazepay/shared-utils';
 import { ADMIN_ONLY_KEY } from './admin.decorator.js';
 import { PRISMA } from '../internal/tokens.js';
@@ -30,10 +25,10 @@ export class AdminGuard implements CanActivate {
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<boolean | undefined>(
-      ADMIN_ONLY_KEY,
-      [ctx.getHandler(), ctx.getClass()],
-    );
+    const required = this.reflector.getAllAndOverride<boolean | undefined>(ADMIN_ONLY_KEY, [
+      ctx.getHandler(),
+      ctx.getClass(),
+    ]);
     if (!required) return true;
 
     const req = ctx.switchToHttp().getRequest<{ user?: SessionContext }>();

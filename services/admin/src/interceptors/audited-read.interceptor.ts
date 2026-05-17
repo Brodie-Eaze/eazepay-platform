@@ -1,20 +1,12 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PrismaClient, Prisma } from '@prisma/client';
-import { Observable } from 'rxjs';
+import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { PRISMA } from '../internal/tokens.js';
-import {
-  AUDITED_READ_KEY,
-  type AuditedReadOptions,
-} from '../decorators/audited-read.decorator.js';
+import { AUDITED_READ_KEY, type AuditedReadOptions } from '../decorators/audited-read.decorator.js';
 
 /**
  * SEC-018 — writes an audit row for every successful admin read that
@@ -71,7 +63,7 @@ export class AuditedReadInterceptor implements NestInterceptor {
     // it inside `tap` we'd capture whatever state the response cycle
     // left behind, which on Fastify can be stripped/recycled.
     const actorId = req.user?.userId ?? null;
-    const targetId = meta.idParam ? req.params?.[meta.idParam] ?? 'list' : 'list';
+    const targetId = meta.idParam ? (req.params?.[meta.idParam] ?? 'list') : 'list';
     const action = `admin.${meta.targetType}.read`;
     const filter = req.query && Object.keys(req.query).length > 0 ? req.query : null;
     const ipAddress = req.ip ?? null;
@@ -109,9 +101,7 @@ export class AuditedReadInterceptor implements NestInterceptor {
                 // in as `Record<string, unknown>` from Fastify; at
                 // runtime they're always JSON-serialisable strings/
                 // arrays, but TS doesn't know that.
-                after: filter
-                  ? ({ filter } as unknown as Prisma.InputJsonValue)
-                  : Prisma.JsonNull,
+                after: filter ? ({ filter } as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
                 ipAddress,
                 userAgent,
               },

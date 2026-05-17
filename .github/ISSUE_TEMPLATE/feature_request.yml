@@ -1,7 +1,7 @@
 name: Feature request
 description: Propose new functionality, a UX improvement, or a platform capability.
-title: "[feat] <one-line summary>"
-labels: ["enhancement", "triage"]
+title: '[feat] <one-line summary>'
+labels: ['enhancement', 'triage']
 body:
   - type: markdown
     attributes:
