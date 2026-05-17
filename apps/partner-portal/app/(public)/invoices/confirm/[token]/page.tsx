@@ -8,9 +8,9 @@ import {
   setConfirmState,
   readInvoiceOverrides,
   computeInvoiceForPartner,
-} from '../../../../lib/invoicing';
-import { partners as MASTER_PARTNERS } from '../../../../lib/master-data';
-import { BillingApi, BillingApiError, isBillingApiAvailable } from '../../../../lib/billing-api';
+} from '../../../../../lib/invoicing';
+import { partners as MASTER_PARTNERS } from '../../../../../lib/master-data';
+import { BillingApi, BillingApiError, isBillingApiAvailable } from '../../../../../lib/billing-api';
 
 /**
  * Recipient confirm/dispute page — what the business owner lands on

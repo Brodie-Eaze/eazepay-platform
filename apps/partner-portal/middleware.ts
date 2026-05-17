@@ -33,6 +33,7 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/lenders', // public lender developer hub — prospective lenders preview the marketplace + endpoints
   '/docs', // public lender integration docs
   '/landing', // public per-vertical marketing landing pages (MedPay / TradePay / CoachPay)
+  '/invoices/confirm', // recipient confirm/dispute page — token IS the credential, no session needed
 ];
 
 const isPublic = (pathname: string): boolean => {
