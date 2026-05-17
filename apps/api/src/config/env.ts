@@ -133,6 +133,16 @@ const EnvSchema = z
       .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
       .transform((v) => v === true || v === 'true' || v === '1')
       .default(false),
+    /**
+     * Real-time event bus + SSE streams (master fleet + per-app).
+     * When false, the module registers no controllers + no Redis
+     * subscriber. Flip on per-env once Redis is reachable and the
+     * Live Activity strip / sales-rep ticker are ready to consume.
+     */
+    EVENTS_ENABLED: z
+      .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
+      .transform((v) => v === true || v === 'true' || v === '1')
+      .default(false),
     OTEL_SERVICE_NAME: z.string().default('eazepay-api'),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     /**

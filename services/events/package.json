@@ -1,5 +1,5 @@
 {
-  "name": "@eazepay/service-billing",
+  "name": "@eazepay/service-events",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@eazepay/service-audit": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
-    "@eazepay/service-events": "workspace:*",
     "@eazepay/service-user": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
@@ -20,6 +18,7 @@
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^5.22.0",
+    "ioredis": "^5.4.1",
     "nestjs-zod": "^4.0.0",
     "reflect-metadata": "^0.2.2",
     "zod": "^3.23.0"

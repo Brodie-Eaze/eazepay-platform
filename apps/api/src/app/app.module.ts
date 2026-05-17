@@ -18,6 +18,7 @@ import { PaymentModule } from '@eazepay/service-payment';
 import { RiskModule } from '@eazepay/service-risk';
 import { WebhookModule } from '@eazepay/service-webhook';
 import { BillingModule } from '@eazepay/service-billing';
+import { EventsModule } from '@eazepay/service-events';
 import { HealthController } from '../health/health.controller.js';
 import { loadEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
@@ -126,6 +127,17 @@ const env = loadEnv();
       // to boot with 'mock' outside development (see billing.module.ts).
       activitySource: 'mock',
       isDevelopment: env.NODE_ENV === 'development',
+    }),
+    EventsModule.forRoot({
+      // Real-time event bus + SSE streams (master fleet + per-app).
+      // Off by default — see env.EVENTS_ENABLED. While off, the
+      // module registers nothing: no SSE controllers, no Redis
+      // subscriber, no listeners. Other services can still depend on
+      // EventsService at compile-time but their `publish()` calls
+      // become no-ops via the EventsService.publish() guard.
+      enabled: env.EVENTS_ENABLED,
+      prismaToken: PrismaService,
+      redisToken: RedisService,
     }),
     OrchestrationModule.forRoot({ prismaToken: PrismaService }),
     ScheduleModule.forRoot(),

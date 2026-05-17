@@ -1670,3 +1670,94 @@ model ConfirmToken {
   @@index([expiresAt])
   @@map("confirm_tokens")
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Events — fleet-wide real-time activity log + audit replay source.
+// ─────────────────────────────────────────────────────────────────────
+// Append-only event log that backs the live-activity SSE streams.
+// Every state-changing operation that's visible to a partner OR the
+// master operator publishes an event here INSIDE the same Prisma
+// transaction as the state change, then a Redis pub/sub broadcast
+// fans it out to all live SSE subscribers.
+//
+// Two subscription scopes:
+//   - master   — admin-only, sees every event across every tenant
+//   - partner  — sees only events where merchant_id matches the
+//                caller's MerchantUser scope
+//
+// PII posture:
+//   - `payload` carries IDs (applicationId, merchantId, lenderId, etc.)
+//     never raw PII. UI fetches PII separately via JIT-unmask.
+//   - `payload_pii_enc` is reserved for cases where a small amount of
+//     bound free-text needs to ride along (e.g. dispute reason) —
+//     envelope-encrypted with AAD = `event:{id}` so it can't be
+//     ciphertext-swapped between rows.
+//
+// Replay:
+//   - Clients send `Last-Event-ID: <id>` on SSE reconnect; the handler
+//     queries event_log WHERE id > last AND (scope matches) and
+//     replays before switching to the live Redis subscription.
+//
+// Retention:
+//   - 90 days hot (this table). After that, rows are archived to S3
+//     by a daily cron and deleted from Postgres. Hot retention is
+//     enough for the Live Activity feed + reconnect replay; cold
+//     archive serves audit/compliance queries (joined with audit_outbox).
+
+enum EventKind {
+  application_opened
+  application_submitted
+  application_viewed
+  application_abandoned
+  offer_received
+  offer_selected
+  contract_signed
+  funding_released
+  invoice_generated
+  invoice_sent
+  invoice_confirmed
+  invoice_disputed
+  invoice_paid
+  config_changed
+  auth_signin_failed
+}
+
+model EventLog {
+  id           BigInt    @id @default(autoincrement())
+  /// External UUID exposed in `id:` SSE frames + Last-Event-ID
+  /// replay. Indexed for O(1) lookup on reconnect. The BigInt PK
+  /// stays internal so we can preserve strict monotonic ordering
+  /// without exposing it (which could leak event throughput).
+  uuid         String    @unique @default(uuid()) @db.Uuid
+  kind         EventKind
+  /// Tenant scope. NULL = master-only event (e.g. auth_signin_failed
+  /// for unknown users). When non-null, partner SSE subscribers
+  /// whose JWT.merchantId matches this value see the event.
+  merchantId   String?   @db.Uuid @map("merchant_id")
+  /// Entity primary id this event is about (application, invoice,
+  /// merchant, etc.). UI uses this to deep-link.
+  targetType   String    @map("target_type")
+  targetId     String    @map("target_id")
+  /// Actor who caused the event. NULL for system / cron sources.
+  actorId      String?   @db.Uuid @map("actor_id")
+  /// Human label for the actor — operator email, "system",
+  /// "recipient" (for confirm/dispute), etc. Mirrors invoice_activity.
+  actorLabel   String    @map("actor_label")
+  /// JSON payload — IDs and small primitive fields only. Pass any
+  /// free-text PII through `payload_pii_enc` instead.
+  payload      Json
+  /// Envelope-encrypted free-text payload (PiiVaultService.sealOpaque
+  /// with AAD `event:<uuid>`). NULL when the event has no free-text
+  /// PII. Decryption requires master-tier access; partner SSE never
+  /// surfaces this field.
+  payloadPiiEnc String?  @map("payload_pii_enc")
+  at           DateTime  @default(now()) @db.Timestamptz(6)
+
+  /// Indexes are sized for the dominant SSE-replay query (recent N
+  /// events scoped to a merchant, ordered by id desc).
+  @@index([merchantId, id(sort: Desc)])
+  @@index([kind, id(sort: Desc)])
+  @@index([targetType, targetId])
+  @@index([at])
+  @@map("event_log")
+}

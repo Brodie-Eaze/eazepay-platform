@@ -128,6 +128,9 @@ importers:
       '@eazepay/service-compliance-doc':
         specifier: workspace:*
         version: link:../../services/compliance-doc
+      '@eazepay/service-events':
+        specifier: workspace:*
+        version: link:../../services/events
       '@eazepay/service-lender':
         specifier: workspace:*
         version: link:../../services/lender
@@ -744,6 +747,9 @@ importers:
       '@eazepay/service-auth':
         specifier: workspace:*
         version: link:../auth
+      '@eazepay/service-events':
+        specifier: workspace:*
+        version: link:../events
       '@eazepay/service-user':
         specifier: workspace:*
         version: link:../user
@@ -830,6 +836,52 @@ importers:
       '@types/pdfkit':
         specifier: ^0.13.4
         version: 0.13.9
+
+  services/events:
+    dependencies:
+      '@eazepay/service-auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@eazepay/service-user':
+        specifier: workspace:*
+        version: link:../user
+      '@eazepay/shared-types':
+        specifier: workspace:*
+        version: link:../../libs/shared-types
+      '@eazepay/shared-utils':
+        specifier: workspace:*
+        version: link:../../libs/shared-utils
+      '@nestjs/common':
+        specifier: 10.4.22
+        version: 10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/core':
+        specifier: 10.4.22
+        version: 10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/swagger':
+        specifier: ^7.4.0
+        version: 7.4.2(@fastify/static@7.0.4)(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)
+      '@nestjs/throttler':
+        specifier: ^6.4.0
+        version: 6.5.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.10.1
+      nestjs-zod:
+        specifier: ^4.0.0
+        version: 4.3.1(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/swagger@7.4.2(@fastify/static@7.0.4)(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22(@nestjs/common@10.4.22(class-transformer@0.5.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(class-transformer@0.5.1)(reflect-metadata@0.2.2))(zod@3.25.76)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.39)(terser@5.46.2)
 
   services/lender:
     dependencies:
