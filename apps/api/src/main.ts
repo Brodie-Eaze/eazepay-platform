@@ -26,6 +26,11 @@ const { FastifyAdapter } = await import('@nestjs/platform-fastify');
 const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
 const { ValidationPipe, Logger } = await import('@nestjs/common');
 const { Logger: PinoLogger } = await import('nestjs-pino');
+// SEC-117: nestjs-zod's pipe is the only thing that actually invokes
+// `schema.safeParse` on `createZodDto(...)` bodies. Without it, the
+// stock ValidationPipe doesn't touch Zod schemas — extra fields aren't
+// stripped, ranges aren't enforced, the raw JSON is passed to services.
+const { ZodValidationPipe } = await import('nestjs-zod');
 const { AppModule } = await import('./app/app.module.js');
 // @fastify/helmet lives at the underlying Fastify instance, not Nest —
 // dynamic import keeps the module graph aligned with the rest of this file.
@@ -100,7 +105,14 @@ const bootstrap = async (): Promise<void> => {
     });
 
   app.setGlobalPrefix('v1');
+  // SEC-117: pipe ordering matters. ZodValidationPipe runs FIRST so
+  // every controller method whose DTO came from `createZodDto(...)`
+  // gets its schema invoked — that's the only path that enforces our
+  // `.strict()` / `.min()` / `.max()` / enum constraints. The stock
+  // ValidationPipe runs second to cover the (few) remaining DTOs that
+  // still use class-validator decorators (legacy from pre-Zod days).
   app.useGlobalPipes(
+    new ZodValidationPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
