@@ -10,11 +10,9 @@ import {
   CardBody,
   KpiCard,
   BarChart,
-  Sparkline,
   StatusPill,
   Banner,
   Button,
-  DataRow,
   DataTable,
   Money,
   Apr,
@@ -55,10 +53,13 @@ import {
  *   8.  Vintage delinquency heatmap (last 12 months × DPD buckets)
  *   9.  APR distribution histogram (brand vs. industry median annotations)
  *  10.  Brand-specific top decline reasons with vertical copy
- *  11.  Fair-lending deep dive (DI matrix, EO delta, postcodes, overrides, AAN latency)
- *  12.  Decisioning agent health (7 AUREAN agents — actions/hr, status, last error)
- *  13.  Recent decisions sample (last 20, rows linked to /v/{brand}/applications/{id})
- *  14.  Brand-specific anomaly callouts (narrative panel)
+ *  11.  Recent decisions sample (last 20, rows linked to /v/{brand}/applications/{id})
+ *
+ *  Sections 11 (Fair-lending deep dive), 12 (Decisioning agent
+ *  health), and a "brand-anomalies + vintage rolling" grid were
+ *  removed from the per-brand portal in 2026-05 — they're operator
+ *  metrics, not partner-merchant metrics. The master /insights surface
+ *  still renders them for cross-tenant oversight.
  */
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -714,135 +715,10 @@ function recentDecisionsFor(brand: Exclude<BrandCode, 'direct'>): RecentDecision
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 7 AUREAN agents (decisioning-agent health table)
-// ────────────────────────────────────────────────────────────────────────────
-
-type AgentHealth = {
-  code: 'PRISM' | 'VEGA' | 'ORACLE' | 'HELIX' | 'NEXUS' | 'FLUX' | 'ECHO';
-  role: string;
-  actionsLastHour: number;
-  status: 'healthy' | 'degraded' | 'paused';
-  p95Ms: number;
-  lastError: string | null;
-  lastActionAt: string;
-};
-
-function agentHealthFor(brand: Exclude<BrandCode, 'direct'>): AgentHealth[] {
-  const mult = brand === 'tradepay' ? 2.6 : brand === 'medpay' ? 1.4 : 0.8;
-  const now = new Date(Date.now() - 60_000).toISOString();
-  return [
-    {
-      code: 'PRISM',
-      role: 'Apply-flow choreographer',
-      actionsLastHour: Math.round(214 * mult),
-      status: 'healthy',
-      p95Ms: 121,
-      lastError: null,
-      lastActionAt: now,
-    },
-    {
-      code: 'VEGA',
-      role: 'Enrichment fan-out',
-      actionsLastHour: Math.round(186 * mult),
-      status: 'healthy',
-      p95Ms: 248,
-      lastError: null,
-      lastActionAt: now,
-    },
-    {
-      code: 'ORACLE',
-      role: 'Propensity + cashflow scoring',
-      actionsLastHour: Math.round(168 * mult),
-      status: 'healthy',
-      p95Ms: 312,
-      lastError: null,
-      lastActionAt: now,
-    },
-    {
-      code: 'HELIX',
-      role: 'Rep + clinic match routing',
-      actionsLastHour: Math.round(141 * mult),
-      status: brand === 'tradepay' ? 'degraded' : 'healthy',
-      p95Ms: 162,
-      lastError:
-        brand === 'tradepay'
-          ? '1 of 14 region pods reported 502 from rep-capacity service @ 18:04Z'
-          : null,
-      lastActionAt: now,
-    },
-    {
-      code: 'NEXUS',
-      role: 'Lender marketplace router',
-      actionsLastHour: Math.round(132 * mult),
-      status: 'healthy',
-      p95Ms: 281,
-      lastError: null,
-      lastActionAt: now,
-    },
-    {
-      code: 'FLUX',
-      role: 'Payment + reconciliation',
-      actionsLastHour: Math.round(108 * mult),
-      status: 'healthy',
-      p95Ms: 198,
-      lastError: null,
-      lastActionAt: now,
-    },
-    {
-      code: 'ECHO',
-      role: 'Attribution + signal feedback',
-      actionsLastHour: Math.round(84 * mult),
-      status: 'healthy',
-      p95Ms: 226,
-      lastError: null,
-      lastActionAt: now,
-    },
-  ];
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// Disparate-impact grid (protected-class × outcome) — same shape per brand,
-// numbers gently differ.
-// ────────────────────────────────────────────────────────────────────────────
-
-type DiCell = { label: string; delta: number; note: string; ok: boolean };
-
-function diGridFor(brand: Exclude<BrandCode, 'direct'>): DiCell[][] {
-  // 4 metrics × 3 protected-class axes
-  const offset = brand === 'tradepay' ? 0.4 : brand === 'medpay' ? 0.1 : -0.2;
-  const grid: DiCell[][] = [
-    [
-      { label: 'Approval ratio', delta: 0.91 - offset / 10, note: 'AIR vs majority', ok: true },
-      { label: 'False-positive Δ', delta: 0.018 + offset / 50, note: 'ΔFPR', ok: true },
-      { label: 'False-negative Δ', delta: 0.022 + offset / 60, note: 'ΔFNR', ok: true },
-      { label: 'AAN latency p95', delta: 18.4, note: 'days, target <30', ok: true },
-    ],
-    [
-      { label: 'Approval ratio', delta: 0.93 - offset / 11, note: 'AIR vs majority', ok: true },
-      { label: 'False-positive Δ', delta: 0.014 + offset / 70, note: 'ΔFPR', ok: true },
-      { label: 'False-negative Δ', delta: 0.019 + offset / 80, note: 'ΔFNR', ok: true },
-      { label: 'AAN latency p95', delta: 16.8, note: 'days, target <30', ok: true },
-    ],
-    [
-      { label: 'Approval ratio', delta: 0.86 - offset / 7, note: 'AIR vs majority', ok: false },
-      { label: 'False-positive Δ', delta: 0.026 + offset / 50, note: 'ΔFPR', ok: true },
-      { label: 'False-negative Δ', delta: 0.029 + offset / 40, note: 'ΔFNR', ok: true },
-      { label: 'AAN latency p95', delta: 21.2, note: 'days, target <30', ok: true },
-    ],
-  ];
-  return grid;
-}
-
-const diRowLabels = ['Sex (M vs F)', 'Age (≥62 vs <62)', 'Race proxy (BISG quintile 1 vs 5)'];
-
 // Formatters
 const pct = (n: number, decimals = 1) => `${(n * 100).toFixed(decimals)}%`;
 const pctPoint = (n: number, decimals = 1) => `${n.toFixed(decimals)}pp`;
 const numFmt = (n: number) => Intl.NumberFormat('en-US').format(n);
-const fmtTime = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-};
 const fmtDur = (ms: number) => (ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`);
 
 // Heat shading helper for vintage + matrix cells (single-hue, lower opacity for null).
@@ -917,8 +793,6 @@ export default function BrandInsightsPage() {
   const persona = PERSONAS[brand];
   const lenderRows = lendersForBrand(brand);
   const recent = recentDecisionsFor(brand);
-  const agents = agentHealthFor(brand);
-  const diGrid = diGridFor(brand);
 
   // Volume + flow funnel — compute drop-off % from the partner-scoped profile.
   const funnelSteps = [
@@ -1081,66 +955,6 @@ export default function BrandInsightsPage() {
         );
       },
       width: '10%',
-    },
-  ];
-
-  // Agent table columns
-  const agentCols: Column<AgentHealth>[] = [
-    {
-      key: 'code',
-      header: 'Agent',
-      cell: (r) => (
-        <div className="flex flex-col">
-          <span className="font-mono text-[13px] font-semibold tracking-wider">{r.code}</span>
-          <span className="text-[11px] text-fg-muted">{r.role}</span>
-        </div>
-      ),
-      width: '24%',
-    },
-    {
-      key: 'actions',
-      header: 'Actions / hr',
-      align: 'right',
-      cell: (r) => <span className="text-[13px] tabular-nums">{numFmt(r.actionsLastHour)}</span>,
-      width: '12%',
-    },
-    {
-      key: 'p95',
-      header: 'p95 latency',
-      align: 'right',
-      cell: (r) => <span className="text-[13px] tabular-nums">{fmtDur(r.p95Ms)}</span>,
-      width: '12%',
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (r) => (
-        <StatusPill
-          tone={r.status === 'healthy' ? 'success' : r.status === 'degraded' ? 'warning' : 'danger'}
-          dot
-        >
-          {r.status}
-        </StatusPill>
-      ),
-      width: '12%',
-    },
-    {
-      key: 'lastErr',
-      header: 'Last error',
-      cell: (r) =>
-        r.lastError ? (
-          <span className="text-[12px] text-warning">{r.lastError}</span>
-        ) : (
-          <span className="text-[12px] text-fg-muted">—</span>
-        ),
-      width: '32%',
-    },
-    {
-      key: 'when',
-      header: 'Last action',
-      align: 'right',
-      cell: (r) => <span className="text-[12px] text-fg-muted">{fmtTime(r.lastActionAt)}</span>,
-      width: '8%',
     },
   ];
 
@@ -1687,189 +1501,6 @@ export default function BrandInsightsPage() {
           </CardBody>
         </Card>
 
-        {/* ───────────────────────── I. Fair-lending deep dive ───────────────────────── */}
-        <Card className="mb-4">
-          <CardHeader
-            title={`${spec.name} fair-lending deep dive`}
-            description="Disparate-impact matrix, equalised-odds delta, sensitive-postcode coverage, override audit, and Reg B 30-day AAN window compliance."
-            action={
-              <StatusPill tone="success" dot>
-                All controls within tolerance
-              </StatusPill>
-            }
-          />
-          <CardBody className="space-y-5">
-            {/* 4 × 3 disparate-impact matrix */}
-            <div>
-              <div className="text-[12px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
-                Disparate-impact matrix — protected class × metric
-              </div>
-              <table className="w-full border-collapse text-[11px]">
-                <thead>
-                  <tr>
-                    <th className="text-left text-fg-muted text-[10px] uppercase tracking-wider pb-2 pr-3">
-                      Protected class
-                    </th>
-                    {diGrid[0]!.map((c) => (
-                      <th
-                        key={c.label}
-                        className="text-left text-fg-muted text-[10px] uppercase tracking-wider pb-2 px-2"
-                      >
-                        {c.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {diGrid.map((row, i) => (
-                    <tr key={diRowLabels[i]} className="border-t border-border">
-                      <td className="py-2 pr-3 text-[12px] font-medium">{diRowLabels[i]}</td>
-                      {row.map((c, j) => (
-                        <td key={j} className="py-2 px-2">
-                          <div className="flex flex-col">
-                            <span className="text-[13px] font-semibold tabular-nums">
-                              {c.label === 'Approval ratio'
-                                ? c.delta.toFixed(2)
-                                : c.label === 'AAN latency p95'
-                                  ? `${c.delta.toFixed(1)}d`
-                                  : c.delta.toFixed(3)}
-                            </span>
-                            <span
-                              className={
-                                c.ok
-                                  ? 'text-[10px] text-fg-muted'
-                                  : 'text-[10px] text-warning font-medium'
-                              }
-                            >
-                              {c.ok ? c.note : `${c.note} · watch`}
-                            </span>
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="mt-2 text-[11px] text-fg-muted leading-relaxed">
-                Adverse impact ratio (AIR) is computed weekly on decisioned applications. The 4/5
-                rule threshold is 0.80; any class falling below triggers a soft alert + compliance
-                review (no auto-policy change).
-              </div>
-            </div>
-
-            {/* Equalised-odds delta table per class */}
-            <div>
-              <div className="text-[12px] font-semibold uppercase tracking-wider text-fg-muted mb-2">
-                Equalised-odds delta — per class
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {diRowLabels.map((cls, i) => (
-                  <div
-                    key={cls}
-                    className="rounded-md border border-border bg-bg-muted/20 p-3 flex flex-col gap-1.5"
-                  >
-                    <div className="text-[11px] uppercase tracking-wider text-fg-muted">{cls}</div>
-                    <div className="flex items-center gap-3 text-[13px]">
-                      <span className="tabular-nums">ΔTPR</span>
-                      <span className="tabular-nums font-medium">
-                        {(0.018 + i * 0.004).toFixed(3)}
-                      </span>
-                      <span className="text-fg-muted ml-auto text-[11px]">≤ 0.03</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[13px]">
-                      <span className="tabular-nums">ΔFPR</span>
-                      <span className="tabular-nums font-medium">
-                        {(0.014 + i * 0.003).toFixed(3)}
-                      </span>
-                      <span className="text-fg-muted ml-auto text-[11px]">≤ 0.02</span>
-                    </div>
-                    <div className="mt-1 h-1 rounded-full bg-bg-elevated overflow-hidden">
-                      <div
-                        className="h-full bg-success/70 rounded-full"
-                        style={{ width: `${72 - i * 8}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Postcode coverage + override + AAN latency */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex flex-col gap-1.5">
-                <div className="text-[11px] uppercase tracking-wider text-fg-muted">
-                  Sensitive postcodes
-                </div>
-                <div className="text-[18px] font-semibold tabular-nums">100% coverage</div>
-                <div className="text-[12px] text-fg-muted leading-relaxed">
-                  All HMDA-sensitive census tracts inside live states are routed through the same
-                  decisioning policy. Zero outliers in the last 90 days.
-                </div>
-              </div>
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex flex-col gap-1.5">
-                <div className="text-[11px] uppercase tracking-wider text-fg-muted">
-                  Override sample audit (14d)
-                </div>
-                <div className="text-[18px] font-semibold tabular-nums">
-                  {brand === 'tradepay' ? '34 / 34' : brand === 'medpay' ? '21 / 21' : '12 / 12'}
-                </div>
-                <div className="text-[12px] text-fg-muted leading-relaxed">
-                  100% of manual overrides reviewed by compliance QA within the 14-day window. Mean
-                  review latency 3.4 days. Zero deviations from documented rationale.
-                </div>
-              </div>
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex flex-col gap-1.5">
-                <div className="text-[11px] uppercase tracking-wider text-fg-muted">
-                  AAN latency (Reg B 30-day)
-                </div>
-                <div className="text-[18px] font-semibold tabular-nums">
-                  p95 = 18.4d · max = 24.1d
-                </div>
-                <div className="text-[12px] text-fg-muted leading-relaxed">
-                  All Adverse Action Notices delivered inside the Reg B 30-day window for the last
-                  365 days. Vendor-delivered (Lob) with delivery receipts archived for 7 years.
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-border pt-3 space-y-1">
-              <DataRow label="Protected-class features" value="0 direct · 0 proxy candidates" />
-              <DataRow
-                label="Disparate impact"
-                value="Within 4/5 rule across age, sex, race proxy"
-              />
-              <DataRow label="Equalised odds" value="ΔTPR ≤ 0.03 · ΔFPR ≤ 0.02" />
-              <DataRow label="Sensitive postcodes" value="Coverage check — 100%" />
-              <DataRow label="Override sample audit" value="100% of overrides QA-reviewed in 14d" />
-              <DataRow label="Adverse-action latency" value="p95 18.4 days (Reg B 30-day target)" />
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* ───────────────────────── J. Decisioning agent health ───────────────────────── */}
-        <Card className="mb-4">
-          <CardHeader
-            title={`Decisioning agent health — ${spec.name} surface`}
-            description="The 7 AUREAN orchestration agents handling this brand. Action counts and latency are filtered to brand-scoped traffic."
-            action={
-              <StatusPill
-                tone={agents.some((a) => a.status === 'degraded') ? 'warning' : 'success'}
-                dot
-              >
-                {agents.filter((a) => a.status === 'healthy').length} / 7 healthy
-              </StatusPill>
-            }
-          />
-          <CardBody padded={false}>
-            <DataTable<AgentHealth>
-              columns={agentCols}
-              rows={agents}
-              rowKey={(r) => r.code}
-              dense
-            />
-          </CardBody>
-        </Card>
-
         {/* ───────────────────────── K. Recent decisions sample (click to open) ───────────────────────── */}
         <Card className="mb-4">
           <CardHeader
@@ -1893,119 +1524,6 @@ export default function BrandInsightsPage() {
             />
           </CardBody>
         </Card>
-
-        {/* ───────────────────────── L. Brand-specific anomaly callouts + vintage rolling ───────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <Card className="xl:col-span-2">
-            <CardHeader
-              title={`${spec.name} signal anomalies — last 7 days`}
-              description="Auto-detected deviations from the rolling baseline. Each anomaly links to the underlying cohort + policy snapshot for diff review."
-            />
-            <CardBody className="space-y-3">
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex items-start gap-3">
-                <div className="mt-0.5">
-                  <StatusPill tone="success" dot>
-                    Up
-                  </StatusPill>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">
-                    {spec.name} 660-699 cohort approval is up 5.4pp vs. last quarter
-                  </div>
-                  <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    Driven by Plaid cashflow-stability score additions in {brand}_v_2026_05 policy.
-                    The 660-699 band approval rate moved from 52.4% → 57.8%. Net lift on ORACLE is
-                    +0.9pp.
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex items-start gap-3">
-                <div className="mt-0.5">
-                  <StatusPill tone="warning" dot>
-                    Watch
-                  </StatusPill>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">
-                    DTI threshold tightening on lender_07 — 3.2% of {persona.applicant} now routing
-                    to backup
-                  </div>
-                  <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    {lenderRows[0]?.lender.displayName ?? 'Primary lender'} tightened DTI ceiling
-                    from 50 → 45 overnight. NEXUS reroutes affected cohorts to backup tier; stip
-                    rate on the backup is 1.4pp higher. No customer-facing impact.
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex items-start gap-3">
-                <div className="mt-0.5">
-                  <StatusPill tone="warning" dot>
-                    Watch
-                  </StatusPill>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">
-                    Q1 2026 vintage tracking +40bps above peer cohorts — monitoring
-                  </div>
-                  <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    30-DPD on the Jan-Mar 2026 cohorts is running 40 bps above the rolling-4Q
-                    baseline. ORACLE drift sensor remains green; risk team scheduled a Q2 readout
-                    for May 28.
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex items-start gap-3">
-                <div className="mt-0.5">
-                  <StatusPill tone="info" dot>
-                    Info
-                  </StatusPill>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium">
-                    {persona.applicantSingular === 'patient'
-                      ? 'Fertility vertical pulled ahead of dental in volume share for the first time'
-                      : persona.applicantSingular === 'homeowner'
-                        ? 'Solar + roofing combined cap was lifted to 65% of allocated capital — new bookings re-enabled'
-                        : 'Bootcamp programs grew 18% MoM — Atlas Career Cap approval rate held at 78%'}
-                  </div>
-                  <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    Surface-level shift; no policy implications. Logged for trend-watching only.
-                    Drill into the underlying cohort via the brand vertical filter.
-                  </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader
-              title={`${spec.name} vintage approval — 12-month rolling`}
-              description="Daily approval rate, smoothed."
-            />
-            <CardBody>
-              <div className="text-accent">
-                <Sparkline data={profile.approvalSeries} height={88} width={360} />
-              </div>
-              <div className="mt-3 space-y-1">
-                <DataRow label="Rolling 30d" value={pct(profile.approvalRate, 1)} />
-                <DataRow label="Rolling 90d" value={pct(profile.approvalRate - 0.008, 1)} />
-                <DataRow label="Trailing 12 mo" value={pct(profile.approvalRate - 0.024, 1)} />
-                <DataRow label="Cohorts ≥ 25 apps" value="Yes" />
-                <DataRow
-                  label="Drift sensor"
-                  value={
-                    <StatusPill tone="success" dot>
-                      Stable
-                    </StatusPill>
-                  }
-                />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
       </PageBody>
     </>
   );

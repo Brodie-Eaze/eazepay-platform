@@ -1,38 +1,28 @@
-import {
-  CardIcon,
-  ShieldIcon,
-  PhoneIcon,
-  PackageIcon,
-  BoltIcon,
-  ChartIcon,
-} from '@eazepay/ui/web';
+import { CardIcon, ShieldIcon, PhoneIcon, PackageIcon, BoltIcon, ChartIcon } from '@eazepay/ui/web';
 import { IntegrationPage } from '../../components/IntegrationPage';
 
 /**
- * EAZE Processing — direct port of Lovable's `/eaze-processing` page,
- * with Lumino → MyCamp swap per the latest brand decision.
+ * EAZE Processing — MiCamp-powered acquiring.
  *
- * Three stat columns, three pillar features (PCI / In-Call / Multi),
- * three BNPL provider cards (Klarna / Splitit / Payva), three deeper
- * features (Payment Processing / Built-in BNPL / Split Payments),
- * REQUIREMENTS checklist, and a Connect button.
- *
- * Note: Lovable's reference page mentions "Lumino" as the underlying
- * processor. We're routing on MyCamp instead — the copy is updated
- * accordingly here. The BNPL partner roster (Klarna / Splitit /
- * Payva) is kept verbatim.
+ * Rebrand notes (2026-05):
+ *   - MyCamp → MiCamp (typography fix)
+ *   - Dropped BNPL line entirely. Klarna / Splitit / Payva are not
+ *     part of the offering anymore. EAZE Processing is acquiring only.
+ *   - Added "Dual Payment" — customer covers processing fees at
+ *     checkout (surcharging where allowed; cash-discount otherwise).
+ *   - Rate card starts at 2.3% (risk-tiered).
  */
 export default function EazeProcessingPage() {
   return (
     <IntegrationPage
       name="EAZE Processing"
       icon={<CardIcon size={22} />}
-      heading="MyCamp — Payment Processing & BNPL"
-      body="Powered by MyCamp, EAZE Processing provides full merchant payment processing with built-in access to consumer BNPL solutions. Accept payments, manage transactions, and offer flexible pay-later options — all through a single integration."
+      heading="MiCamp — Payment Processing"
+      body="Powered by MiCamp, EAZE Processing provides full merchant payment processing — cards, ACH, and digital wallets. No BNPL component; this is an acquiring rail. Rates start at 2.3% and tier up based on risk profile. Optional Dual Payment passes processing fees to the customer at checkout."
       stats={[
-        { label: 'Order Range', value: '$2K – $15K' },
+        { label: 'Rates from', value: '2.3%' },
         { label: 'Approval', value: 'Instant' },
-        { label: 'Installments', value: '4 – 24 pay' },
+        { label: 'Settlement', value: 'Next-day' },
       ]}
       features={[
         {
@@ -52,18 +42,21 @@ export default function EazeProcessingPage() {
         },
         {
           icon: <PackageIcon size={18} />,
-          title: 'Payment Processing',
-          description: 'Full merchant processing — accept cards, ACH, and digital wallets through MyCamp',
+          title: 'Dual Payment',
+          description:
+            'Customer covers processing fees at checkout — surcharging (where allowed) or cash-discount programs',
         },
         {
           icon: <BoltIcon size={18} />,
-          title: 'Built-in BNPL',
-          description: 'Offer customers flexible pay-later options via Klarna, Splitit, and Payva',
+          title: 'Risk-Tiered Rates',
+          description:
+            'Rates start at 2.3% and scale with risk profile, MCC, average ticket, and chargeback history',
         },
         {
           icon: <ChartIcon size={18} />,
           title: 'Split Payments',
-          description: 'Automatic recurring payments — 4-pay, 6-pay, or custom installment schedules',
+          description:
+            'Automatic recurring payments — 4-pay, 6-pay, or custom installment schedules',
         },
       ]}
       requirements={[

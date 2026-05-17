@@ -89,15 +89,18 @@ function buildSpec(slug: IntegrationSlug, brand: BrandCode): IntegrationPageProp
       };
 
     case 'processing':
+      // Rebrand 2026-05: MyCamp → MiCamp, no BNPL, added Dual Payment,
+      // rate-card starts at 2.3% (risk-tiered). Mirrors the master
+      // /eaze-processing page.
       return {
         name: `${brandName} Processing`,
         icon: <CardIcon size={22} />,
-        heading: 'MyCamp — Payment Processing & BNPL',
-        body: `Powered by MyCamp, ${brandName} Processing provides full merchant payment processing with built-in access to consumer BNPL solutions. Accept payments, manage transactions, and offer flexible pay-later options — all through a single integration scoped to your ${brandName} portal.`,
+        heading: 'MiCamp — Payment Processing',
+        body: `Powered by MiCamp, ${brandName} Processing provides full merchant payment processing — cards, ACH, and digital wallets. No BNPL component; this is an acquiring rail scoped to your ${brandName} portal. Rates start at 2.3% and tier up based on risk profile. Optional Dual Payment passes processing fees to the customer at checkout.`,
         stats: [
-          { label: 'Order Range', value: '$2K – $15K' },
+          { label: 'Rates from', value: '2.3%' },
           { label: 'Approval', value: 'Instant' },
-          { label: 'Installments', value: '4 – 24 pay' },
+          { label: 'Settlement', value: 'Next-day' },
         ],
         features: [
           {
@@ -117,15 +120,15 @@ function buildSpec(slug: IntegrationSlug, brand: BrandCode): IntegrationPageProp
           },
           {
             icon: <PackageIcon size={18} />,
-            title: 'Payment Processing',
+            title: 'Dual Payment',
             description:
-              'Full merchant processing — accept cards, ACH, and digital wallets through MyCamp',
+              'Customer covers processing fees at checkout — surcharging (where allowed) or cash-discount programs',
           },
           {
             icon: <BoltIcon size={18} />,
-            title: 'Built-in BNPL',
+            title: 'Risk-Tiered Rates',
             description:
-              'Offer customers flexible pay-later options via Klarna, Splitit, and Payva',
+              'Rates start at 2.3% and scale with risk profile, MCC, average ticket, and chargeback history',
           },
           {
             icon: <ChartIcon size={18} />,

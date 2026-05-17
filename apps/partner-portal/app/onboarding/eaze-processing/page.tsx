@@ -5,7 +5,7 @@ import { BrandOnboardingWizard } from '../../../components/brand-onboarding/Bran
 /**
  * Processing — Connect. Card-processing onboarding. Surface stays
  * brand-neutral "Processing"; the BFF proxy maps brand=processing to
- * MyCamp on the backend (MID provisioning + boarding files).
+ * MiCamp on the backend (MID provisioning + boarding files).
  */
 export default function ProcessingOnboardingPage() {
   return (
@@ -21,7 +21,7 @@ export default function ProcessingOnboardingPage() {
           {
             id: 'merchant-app',
             title: 'Merchant Processing Application',
-            description: 'MyCamp boarding application (we send this for e-sign)',
+            description: 'MiCamp boarding application (we send this for e-sign)',
           },
           {
             id: 'voided-check',

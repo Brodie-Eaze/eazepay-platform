@@ -11,7 +11,7 @@ import { CheckIcon, BoltIcon } from '@eazepay/ui/web';
  * The wizard pushes to `?brand=<slug>` so the right product name and
  * next-step copy lights up here. Provider routing on the backend is
  * already implied by the brand:
- *   • Processing → MyCamp
+ *   • Processing → MiCamp
  *   • EZ Check   → HighSale (separate route, not this page)
  *   • Brand pay  → EAZE lender orchestration
  */
@@ -20,8 +20,8 @@ const NAMES: Record<string, { title: string; backHref: string; subtitle: string 
   'coach-pay': { title: 'CoachPay', backHref: '/coach-pay', subtitle: 'coaching & consulting' },
   'trade-pay': { title: 'TradePay', backHref: '/trade-pay', subtitle: 'trade & contractor' },
   'med-pay': { title: 'MedPay', backHref: '/med-pay', subtitle: 'medical & dental patient' },
-  'dialerpay': { title: 'DialerPay', backHref: '/dialerpay', subtitle: 'in-call payment capture' },
-  'processing': { title: 'Processing', backHref: '/processing', subtitle: 'card processing' },
+  dialerpay: { title: 'DialerPay', backHref: '/dialerpay', subtitle: 'in-call payment capture' },
+  processing: { title: 'Processing', backHref: '/processing', subtitle: 'card processing' },
 };
 
 function Content() {
@@ -56,15 +56,15 @@ function Content() {
           {info.title} application submitted
         </h1>
         <p className="mt-3 text-[14px] text-fg-secondary leading-relaxed">
-          Thanks for applying for {info.title} {info.subtitle} financing. Our underwriting team
-          is reviewing your business — you'll hear back within one business day.
+          Thanks for applying for {info.title} {info.subtitle} financing. Our underwriting team is
+          reviewing your business — you'll hear back within one business day.
         </p>
 
         <ol className="mt-8 text-left space-y-3 rounded-xl border border-border bg-bg-elevated p-5">
           {[
             isProcessing
               ? {
-                  t: 'MyCamp underwriting',
+                  t: 'MiCamp underwriting',
                   d: 'MID provisioned typically within 24 business hours; you get a confirmation email with your assigned MID.',
                 }
               : isDialer
