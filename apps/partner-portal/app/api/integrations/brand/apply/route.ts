@@ -68,6 +68,12 @@ const BodySchema = z.object({
   inviteToken: z.string().min(1).optional(),
 });
 
+// SEC-115: never `console.log(body)` or `console.log(parsed.data)` in
+// this file. Owner SSN-last-4 + DOB + owner phone/email all live on
+// the parsed payload. If you add diagnostic logging, route it through
+// `lib/safe-log.ts` (`safeLog.info(...)`), which deep-redacts every
+// field whose key includes ssn/dob/email/phone/etc. before emit.
+
 /**
  * SEC — CSRF wrapping scope.
  *
@@ -188,10 +194,8 @@ export async function POST(req: NextRequest) {
       }
       const json = (await res.json()) as { applicationId?: string };
       if (inviteIsValid && parsed.data.inviteToken) {
-        await redeemInvite(
-          parsed.data.inviteToken,
-          json.applicationId ?? `app_${Date.now().toString(36)}`,
-        );
+        // SEC-112: collision-free fallback when the backend doesn't return an id.
+        await redeemInvite(parsed.data.inviteToken, json.applicationId ?? `app_${randomUUID()}`);
       }
       return NextResponse.json(json);
     } catch {
