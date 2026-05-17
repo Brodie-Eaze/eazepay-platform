@@ -261,6 +261,21 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       ],
     },
     {
+      // Services — direct duplicate of the master Services group, made
+      // available to every partner regardless of vertical (medpay,
+      // tradepay, coachpay). Each link goes to the SAME shared
+      // marketing surface as the master operator's view; there's no
+      // per-brand-scoped variant of these pages because they're
+      // group-wide offerings.
+      label: 'Services',
+      items: [
+        { href: '/eaze-affiliate', label: 'Eaze Affiliate', icon: <SparkIcon /> },
+        { href: '/marketing-consult', label: 'Marketing Consult', icon: <BoltIcon /> },
+        { href: '/sales-recruitment', label: 'Sales Recruitment', icon: <UsersIcon /> },
+        { href: '/marketplace', label: 'Marketplace', icon: <StoreIcon /> },
+      ],
+    },
+    {
       // API keys are master-operator concerns — not exposed in the merchant-scoped
       // portal. Master operators access keys at /api-keys.
       label: 'Account',
