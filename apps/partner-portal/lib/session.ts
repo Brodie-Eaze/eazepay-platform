@@ -32,6 +32,7 @@ import type { NextRequest } from 'next/server';
 import type { BrandCode } from '@eazepay/shared-types';
 import { partners as MASTER_PARTNERS, type PartnerSummary } from './master-data';
 import { readSignedDemoPreset } from './demo-cookie';
+import { readSignedAccountSession, ACCOUNT_COOKIE } from './account-cookie';
 
 type DemoPreset =
   | 'admin'
@@ -75,6 +76,15 @@ export type SessionContext =
       brand: BrandCode | null;
     }
   | {
+      /** Account-cookie session: a real business or teammate signed in
+       *  with a password after completing onboarding / invite-accept.
+       *  Scoped to exactly one brand + one partnerId — never operator. */
+      mode: 'account';
+      userId: string;
+      brand: 'medpay' | 'tradepay' | 'coachpay';
+      partnerId: string;
+    }
+  | {
       mode: 'real';
       /** TODO(SEC-101 follow-up): populate from /v1/me when wired. */
       placeholder: true;
@@ -87,6 +97,21 @@ export type SessionContext =
  * verification uses Web Crypto subtle.
  */
 export async function getSessionContext(req: NextRequest): Promise<SessionContext> {
+  // Real account-session cookie has top priority: it's the strongest
+  // identity claim (HMAC-signed, embedded expiry, userId + partnerId).
+  const accountCookie = req.cookies.get(ACCOUNT_COOKIE.name)?.value;
+  if (accountCookie) {
+    const verifiedAccount = await readSignedAccountSession(accountCookie);
+    if (verifiedAccount) {
+      return {
+        mode: 'account',
+        userId: verifiedAccount.userId,
+        brand: verifiedAccount.brand,
+        partnerId: verifiedAccount.partnerId,
+      };
+    }
+  }
+
   const at = req.cookies.get('eazepay_at')?.value;
   if (at) {
     // eslint-disable-next-line no-console
@@ -125,6 +150,12 @@ export function allowedPartnerIdsForBrand(
 ): string[] {
   if (session.mode === 'none') return [];
   if (session.mode === 'real') return partnersForBrand(brand).map((p) => p.id);
+  if (session.mode === 'account') {
+    // Account sessions are strictly single-partner. Cross-brand
+    // requests return empty — no leakage from a teammate's Helio
+    // account into Orion or Atlas data.
+    return session.brand === brand ? [session.partnerId] : [];
+  }
   if (session.isOperator) return partnersForBrand(brand).map((p) => p.id);
   if (session.brand === brand) return partnersForBrand(brand).map((p) => p.id);
   return [];

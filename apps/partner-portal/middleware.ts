@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { mintCsrfToken, setCsrfCookie, CSRF_CONSTANTS } from './lib/csrf.js';
 import { readSignedDemoPreset } from './lib/demo-cookie.js';
+import { readSignedAccountSession, ACCOUNT_COOKIE } from './lib/account-cookie.js';
 
 /**
  * Three jobs at the edge, before any route handler or React Server
@@ -25,7 +26,7 @@ import { readSignedDemoPreset } from './lib/demo-cookie.js';
 
 const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/sign-in',
-  '/welcome',
+  '/welcome', // matches /welcome AND /welcome/<brand> — new-account password-set landing
   '/onboarding',
   '/forgot-password',
   '/create-account',
@@ -35,6 +36,7 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/docs', // public lender integration docs
   '/landing', // public per-vertical marketing landing pages (MedPay / TradePay / CoachPay)
   '/invoices/confirm', // recipient confirm/dispute page — token IS the credential, no session needed
+  '/accept', // team-invite accept landing (/accept/<brand>?token=...)
 ];
 
 const isPublic = (pathname: string): boolean => {
@@ -73,7 +75,16 @@ export async function middleware(req: NextRequest) {
       hasDemoSession = verified !== null;
     }
   }
-  const hasSession = hasRealSession || hasDemoSession;
+  // Real account-session cookie (set after a business completes
+  // onboarding + password setup, or a teammate accepts an invite).
+  // Verified the same way as the demo cookie — HMAC + embedded expiry.
+  let hasAccountSession = false;
+  const accountCookie = req.cookies.get(ACCOUNT_COOKIE.name)?.value;
+  if (accountCookie) {
+    const verified = await readSignedAccountSession(accountCookie);
+    hasAccountSession = verified !== null;
+  }
+  const hasSession = hasRealSession || hasDemoSession || hasAccountSession;
 
   if (!hasSession && !isPublic(pathname)) {
     const url = req.nextUrl.clone();

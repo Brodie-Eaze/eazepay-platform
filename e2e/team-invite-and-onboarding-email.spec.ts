@@ -70,7 +70,10 @@ test.describe('team-invite + branded email', () => {
     expect(result.body['recipientEmail']).toBe('lena.park@example.test');
     expect(result.body['role']).toBe('Admin');
     expect(result.body['status']).toBe('active');
-    expect(String(result.body['acceptUrl'])).toMatch(/^\/v\/medpay\/team\/accept\?token=/);
+    // Accept URL is a public top-level route — recipient may have
+    // no cookie when they click the email, so it can't sit inside
+    // the /v/<brand>/ auth fence.
+    expect(String(result.body['acceptUrl'])).toMatch(/^\/accept\/medpay\?token=/);
   });
 
   test('cross-brand isolation: tradepay session does NOT see medpay invites', async ({ page }) => {

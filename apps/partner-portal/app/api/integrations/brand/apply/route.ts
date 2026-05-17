@@ -3,6 +3,17 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { redeemInvite, getInvite, BRAND_FROM_CONFIG_SLUG } from '../../../../../lib/invites-store';
 import { sendWelcomeEmail } from '../../../../../lib/server-email';
+import { createInvitedAccount, type AccountBrand } from '../../../../../lib/accounts-store';
+
+/** Map BrandCode → the first demo partnerId for the brand. New
+ *  businesses are bound to the brand's demo partner for now; when
+ *  apps/api lands, we mint a real Merchant row per business and
+ *  attach the user to it. */
+const DEMO_PARTNER_BY_BRAND: Record<AccountBrand, string> = {
+  medpay: 'p_helio',
+  tradepay: 'p_orion',
+  coachpay: 'p_atlas',
+};
 import { enforceCsrf } from '../../../../../lib/csrf.js';
 import { enforce as enforceEdgeRateLimit } from '../../../../../lib/edge-rate-limit.js';
 
@@ -224,13 +235,32 @@ export async function POST(req: NextRequest) {
       ? (parsed.data.brand as 'medpay' | 'tradepay' | 'coachpay')
       : null);
   if (brandCode) {
+    // Mint an invited Owner account for this business. The welcome
+    // email's portal link carries the userId so the recipient can
+    // set a password + sign in. Lookup is idempotent at email-per-brand
+    // so a retry of the same onboarding doesn't clobber an existing
+    // account.
+    const partnerId = DEMO_PARTNER_BY_BRAND[brandCode];
+    const { userId } = await createInvitedAccount({
+      email: parsed.data.ownerEmail,
+      displayName: parsed.data.ownerName,
+      brand: brandCode,
+      partnerId,
+      role: 'Owner',
+    });
+
     const origin = req.headers.get('origin') ?? `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-    const portalUrl = `${origin}/v/${brandCode}/welcome?application=${applicationId}`;
+    // Welcome link carries the userId (NOT the email — userId is the
+    // stable identifier; email could change). The /welcome/<brand>
+    // page is a public route (outside the /v/<brand>/ auth fence) so
+    // a recipient who has no cookie can land here and set a password.
+    // POSTs { userId, newPassword } to /api/account/set-password.
+    const portalUrl = `${origin}/welcome/${brandCode}?u=${userId}`;
     try {
       await sendWelcomeEmail({
         brand: brandCode,
         to: parsed.data.ownerEmail,
-        idempotencyKey: `welcome-${applicationId}`,
+        idempotencyKey: `welcome-${userId}`,
         vars: {
           recipientName: parsed.data.ownerName.split(' ')[0] ?? parsed.data.ownerName,
           merchantBusinessName: parsed.data.legalName,
@@ -244,6 +274,7 @@ export async function POST(req: NextRequest) {
           level: 'error',
           event: 'onboarding.welcome_email_failed',
           applicationId,
+          userId,
           msg: (err as Error).message,
         }),
       );

@@ -76,10 +76,18 @@ const KNOWN_DEMO_PRESETS: ReadonlySet<string> = new Set<string>([
 ]);
 
 export type BrandAccessResult =
-  | { allowed: true; via: 'demo_operator' | 'demo_brand_match' | 'real_session_deferred' }
+  | {
+      allowed: true;
+      via: 'demo_operator' | 'demo_brand_match' | 'real_session_deferred' | 'account_brand_match';
+    }
   | {
       allowed: false;
-      reason: 'no_session' | 'unknown_brand_slug' | 'demo_preset_unknown' | 'demo_brand_mismatch';
+      reason:
+        | 'no_session'
+        | 'unknown_brand_slug'
+        | 'demo_preset_unknown'
+        | 'demo_brand_mismatch'
+        | 'account_brand_mismatch';
     };
 
 export interface BrandAccessInputs {
@@ -90,6 +98,10 @@ export interface BrandAccessInputs {
    *  failed / expired. Caller MUST verify the signed cookie before
    *  passing the preset — this module does not verify HMAC. */
   verifiedDemoPreset: string | null;
+  /** The verified account-cookie brand, or null. Caller MUST verify
+   *  the HMAC before passing the brand. An account session that owns
+   *  brand A cannot view brand B — strict 1:1 match. */
+  verifiedAccountBrand: string | null;
 }
 
 export function brandCodeFromSlug(slug: string): BrandCode | null {
@@ -103,6 +115,18 @@ export function resolveBrandAccess(
 ): BrandAccessResult {
   if (!brandCodeFromSlug(brandSlug)) {
     return { allowed: false, reason: 'unknown_brand_slug' };
+  }
+
+  // Account-session check first — strongest identity claim. The
+  // verified-account-brand carried in the cookie payload MUST match
+  // the URL brand slug exactly. Cross-brand attempts (account scoped
+  // to medpay hitting /v/tradepay/*) are denied with a distinct
+  // reason code so deny logs stay diagnosable.
+  if (inputs.verifiedAccountBrand) {
+    if (inputs.verifiedAccountBrand === brandSlug) {
+      return { allowed: true, via: 'account_brand_match' };
+    }
+    return { allowed: false, reason: 'account_brand_mismatch' };
   }
 
   if (inputs.hasRealSession) {

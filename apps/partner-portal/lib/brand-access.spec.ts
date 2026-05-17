@@ -19,7 +19,11 @@ describe('brand-access', () => {
   describe('resolveBrandAccess — unknown brand', () => {
     it('denies any unknown brand slug before reading session inputs', () => {
       expect(
-        resolveBrandAccess('attacker', { hasRealSession: false, verifiedDemoPreset: 'medpay' }),
+        resolveBrandAccess('attacker', {
+          hasRealSession: false,
+          verifiedDemoPreset: 'medpay',
+          verifiedAccountBrand: null,
+        }),
       ).toEqual({ allowed: false, reason: 'unknown_brand_slug' });
     });
   });
@@ -27,26 +31,42 @@ describe('brand-access', () => {
   describe('resolveBrandAccess — demo cookie path', () => {
     it('allows matching brand preset on matching brand route', () => {
       expect(
-        resolveBrandAccess('medpay', { hasRealSession: false, verifiedDemoPreset: 'medpay' }),
+        resolveBrandAccess('medpay', {
+          hasRealSession: false,
+          verifiedDemoPreset: 'medpay',
+          verifiedAccountBrand: null,
+        }),
       ).toEqual({ allowed: true, via: 'demo_brand_match' });
     });
 
     it('denies cross-brand access (medpay preset → tradepay route)', () => {
       expect(
-        resolveBrandAccess('tradepay', { hasRealSession: false, verifiedDemoPreset: 'medpay' }),
+        resolveBrandAccess('tradepay', {
+          hasRealSession: false,
+          verifiedDemoPreset: 'medpay',
+          verifiedAccountBrand: null,
+        }),
       ).toEqual({ allowed: false, reason: 'demo_brand_mismatch' });
     });
 
     it('denies cross-brand access (coachpay preset → medpay route)', () => {
       expect(
-        resolveBrandAccess('medpay', { hasRealSession: false, verifiedDemoPreset: 'coachpay' }),
+        resolveBrandAccess('medpay', {
+          hasRealSession: false,
+          verifiedDemoPreset: 'coachpay',
+          verifiedAccountBrand: null,
+        }),
       ).toEqual({ allowed: false, reason: 'demo_brand_mismatch' });
     });
 
     it('allows master demo preset on any brand', () => {
       for (const slug of ['medpay', 'tradepay', 'coachpay']) {
         expect(
-          resolveBrandAccess(slug, { hasRealSession: false, verifiedDemoPreset: 'master' }),
+          resolveBrandAccess(slug, {
+            hasRealSession: false,
+            verifiedDemoPreset: 'master',
+            verifiedAccountBrand: null,
+          }),
         ).toEqual({ allowed: true, via: 'demo_operator' });
       }
     });
@@ -58,6 +78,7 @@ describe('brand-access', () => {
             resolveBrandAccess(slug, {
               hasRealSession: false,
               verifiedDemoPreset: preset,
+              verifiedAccountBrand: null,
             }),
           ).toEqual({ allowed: true, via: 'demo_operator' });
         }
@@ -69,13 +90,18 @@ describe('brand-access', () => {
         resolveBrandAccess('medpay', {
           hasRealSession: false,
           verifiedDemoPreset: 'attacker-role',
+          verifiedAccountBrand: null,
         }),
       ).toEqual({ allowed: false, reason: 'demo_preset_unknown' });
     });
 
     it('denies when verifiedDemoPreset is null and no real session', () => {
       expect(
-        resolveBrandAccess('medpay', { hasRealSession: false, verifiedDemoPreset: null }),
+        resolveBrandAccess('medpay', {
+          hasRealSession: false,
+          verifiedDemoPreset: null,
+          verifiedAccountBrand: null,
+        }),
       ).toEqual({ allowed: false, reason: 'no_session' });
     });
   });
@@ -95,6 +121,7 @@ describe('brand-access', () => {
       const result = resolveBrandAccess('medpay', {
         hasRealSession: true,
         verifiedDemoPreset: null,
+        verifiedAccountBrand: null,
       });
       expect(result).toEqual({ allowed: true, via: 'real_session_deferred' });
       expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -108,9 +135,42 @@ describe('brand-access', () => {
       const result = resolveBrandAccess('attacker', {
         hasRealSession: true,
         verifiedDemoPreset: null,
+        verifiedAccountBrand: null,
       });
       expect(result).toEqual({ allowed: false, reason: 'unknown_brand_slug' });
       expect(warnSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resolveBrandAccess — account-session path', () => {
+    it('allows when verifiedAccountBrand matches the URL brand', () => {
+      expect(
+        resolveBrandAccess('medpay', {
+          hasRealSession: false,
+          verifiedDemoPreset: null,
+          verifiedAccountBrand: 'medpay',
+        }),
+      ).toEqual({ allowed: true, via: 'account_brand_match' });
+    });
+
+    it('denies when verifiedAccountBrand does not match (cross-brand)', () => {
+      expect(
+        resolveBrandAccess('tradepay', {
+          hasRealSession: false,
+          verifiedDemoPreset: null,
+          verifiedAccountBrand: 'medpay',
+        }),
+      ).toEqual({ allowed: false, reason: 'account_brand_mismatch' });
+    });
+
+    it('account session takes priority over demo cookie', () => {
+      expect(
+        resolveBrandAccess('medpay', {
+          hasRealSession: false,
+          verifiedDemoPreset: 'master', // would normally grant operator
+          verifiedAccountBrand: 'medpay',
+        }),
+      ).toEqual({ allowed: true, via: 'account_brand_match' });
     });
   });
 });
