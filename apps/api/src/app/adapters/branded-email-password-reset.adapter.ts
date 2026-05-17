@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { PasswordResetEmailDispatcher } from '@eazepay/service-auth';
-import type { BrandedEmailService } from '@eazepay/service-email';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { BrandedEmailService } from '@eazepay/service-email';
 
 /**
  * Adapter that bridges service-auth's `PasswordResetEmailDispatcher`
