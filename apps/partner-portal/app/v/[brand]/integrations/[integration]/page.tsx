@@ -1,461 +1,232 @@
-'use client';
-import { useState } from 'react';
-import { useParams, notFound } from 'next/navigation';
-import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import {
-  PageHeader,
-  PageBody,
-  Card,
-  CardBody,
-  Button,
-  StatusPill,
   ShieldIcon,
-  CardIcon,
+  SearchIcon,
+  ChartIcon,
+  GaugeIcon,
+  RouteIcon,
   PhoneIcon,
-  CheckIcon,
-  ArrowRightIcon,
+  CardIcon,
+  BoltIcon,
+  UsersIcon,
+  PackageIcon,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
-import type { ComponentType, SVGProps } from 'react';
-
-type IconC = ComponentType<SVGProps<SVGSVGElement> & { size?: number }>;
+import {
+  IntegrationPage,
+  type IntegrationPageProps,
+} from '../../../../../components/IntegrationPage';
 
 /**
- * Per-brand integration configuration page.
+ * Per-brand integration intro page — renders the same Lovable-spec
+ * layout as the master operator's `/eaze-processing`, `/dialerpay`,
+ * and `/ez-check` pages (shared `IntegrationPage` component), with
+ * the brand baked into the name + CTA so it stays scoped to the
+ * partner's portal.
  *
- * Lives at `/v/<brand>/integrations/<integration>` — eg.
- * `/v/medpay/integrations/ez-check` is the MedPay merchant's EZ Check
- * panel. A medical merchant configures EZ Check MedPay, MedPay
- * Processing, and DialerPay all from inside their own portal and
- * never sees TradePay or CoachPay variants.
+ * URL: `/v/<brand>/integrations/<integration>`
  *
- * Each integration exposes:
- *   - Connection status (connected / pending / not connected)
- *   - Brand-specific configuration (key fields, routing rules)
- *   - Test + revoke actions
- *   - Recent activity + delivery stats
- *
- * Three integrations × three brands = nine surfaces, all driven from
- * one component so the UX stays consistent.
+ * Brand-locked URLs only — no link inside this page resolves to the
+ * master operator's `/eaze-processing`, `/dialerpay`, or `/ez-check`
+ * routes. The "Connect" CTA lands at `/v/<brand>/onboarding/...` so
+ * partners stay inside their portal end-to-end.
  */
 
-type IntegrationCode = 'ez-check' | 'processing' | 'dialerpay';
+type IntegrationSlug = 'ez-check' | 'processing' | 'dialerpay';
 
-interface IntegrationSpec {
-  code: IntegrationCode;
-  /** Eyebrow label, eg. "PRE-QUALIFICATION ENGINE". */
-  eyebrow: string;
-  /** Card heading — accepts a `{brand}` placeholder, eg. "Connect EZ Check {brand}". */
-  title: (brandName: string) => string;
-  /** Description paragraph. */
-  description: (brandName: string) => string;
-  /** Lucide-ish icon. */
-  icon: IconC;
-  /** Pill colour for the icon tile, eg. teal for ez-check. */
-  accent: string;
-  /** Capabilities surfaced as feature rows. */
-  capabilities: { title: string; body: string }[];
-  /** Fields the merchant configures. */
-  fields: { key: string; label: string; placeholder: string; type?: 'text' | 'password' | 'select'; options?: string[]; help?: string }[];
-  /** Headline metrics across the top. */
-  metrics: { label: string; value: string }[];
-  /** Footer CTA copy. */
-  ctaLabel: string;
+function buildSpec(slug: IntegrationSlug, brand: BrandCode): IntegrationPageProps {
+  const brandName = BRANDS[brand].name;
+  const brandSlug = BRANDS[brand].slug;
+
+  switch (slug) {
+    case 'ez-check':
+      return {
+        name: `EZ Check ${brandName}`,
+        icon: <ShieldIcon size={22} />,
+        heading: `Pre-Qualify ${brandName} Applicants Instantly`,
+        body: `EZ Check is a pre-qualification engine that evaluates ${brandName} applicants before they're submitted to lenders. Using soft credit pulls, income analysis, and proprietary fundability scoring, EZ Check determines each applicant's financing tier and automatically routes them to the correct ${brandName} product — saving time, protecting credit scores, and dramatically improving approval rates. Install the EZ Check widget directly into your CRM, landing page, or sales funnel to start qualifying leads in real-time.`,
+        stats: [
+          { label: 'Qualification Time', value: '<10 sec' },
+          { label: 'Approval Lift', value: '+42%' },
+          { label: 'Integration', value: '1-Click' },
+        ],
+        features: [
+          {
+            icon: <SearchIcon size={18} />,
+            title: 'Soft Credit Qualification',
+            description:
+              "Pre-qualify applicants with a soft credit pull that won't impact their score — get instant insights into creditworthiness before submitting to lenders.",
+          },
+          {
+            icon: <ChartIcon size={18} />,
+            title: 'Income Capacity Analysis',
+            description:
+              'Analyze applicant income data to determine affordability and repayment capacity, ensuring better match rates with lender requirements.',
+          },
+          {
+            icon: <GaugeIcon size={18} />,
+            title: 'Fundability Tier Scoring',
+            description:
+              'Proprietary scoring system that categorizes applicants into fundability tiers, helping you understand approval likelihood before submission.',
+          },
+          {
+            icon: <RouteIcon size={18} />,
+            title: 'Lender Routing Logic',
+            description: `Intelligent routing automatically directs applicants to the best-fit ${brandName} lender based on their profile, maximizing approval rates and minimizing declines.`,
+          },
+        ],
+        howItWorks: [
+          'Applicant fills out a short pre-qualification form on your website or funnel',
+          'EZ Check runs a soft credit pull and income capacity analysis in seconds',
+          'Applicant receives a fundability tier score with estimated approval likelihood',
+          `Qualified applicants are automatically routed to the best-matched ${brandName} lender`,
+          'You receive real-time notifications on qualification results and next steps',
+        ],
+        cta: {
+          label: `Connect EZ Check ${brandName}`,
+          href: `/v/${brandSlug}/onboarding/ez-check`,
+        },
+      };
+
+    case 'processing':
+      return {
+        name: `${brandName} Processing`,
+        icon: <CardIcon size={22} />,
+        heading: 'MyCamp — Payment Processing & BNPL',
+        body: `Powered by MyCamp, ${brandName} Processing provides full merchant payment processing with built-in access to consumer BNPL solutions. Accept payments, manage transactions, and offer flexible pay-later options — all through a single integration scoped to your ${brandName} portal.`,
+        stats: [
+          { label: 'Order Range', value: '$2K – $15K' },
+          { label: 'Approval', value: 'Instant' },
+          { label: 'Installments', value: '4 – 24 pay' },
+        ],
+        features: [
+          {
+            icon: <ShieldIcon size={18} />,
+            title: 'PCI Compliant',
+            description: 'End-to-end encrypted payment capture',
+          },
+          {
+            icon: <PhoneIcon size={18} />,
+            title: 'In-Call Payments',
+            description: 'Take payments without leaving the call',
+          },
+          {
+            icon: <CardIcon size={18} />,
+            title: 'Multi-Method',
+            description: 'Accept cards, ACH, and digital wallets',
+          },
+          {
+            icon: <PackageIcon size={18} />,
+            title: 'Payment Processing',
+            description:
+              'Full merchant processing — accept cards, ACH, and digital wallets through MyCamp',
+          },
+          {
+            icon: <BoltIcon size={18} />,
+            title: 'Built-in BNPL',
+            description:
+              'Offer customers flexible pay-later options via Klarna, Splitit, and Payva',
+          },
+          {
+            icon: <ChartIcon size={18} />,
+            title: 'Split Payments',
+            description:
+              'Automatic recurring payments — 4-pay, 6-pay, or custom installment schedules',
+          },
+        ],
+        requirements: [
+          'Active merchant account',
+          'Minimum $5K monthly transaction volume',
+          'US-based business',
+          'Compatible POS or e-commerce platform',
+        ],
+        cta: {
+          label: `Connect ${brandName} Processing`,
+          href: `/v/${brandSlug}/onboarding/processing`,
+        },
+      };
+
+    case 'dialerpay':
+      return {
+        name: 'DialerPay',
+        icon: <PhoneIcon size={22} />,
+        heading: 'Connect DialerPay',
+        body: `DialerPay is a secure, PCI-compliant payment capture system built for ${brandName}'s phone-based sales teams. It allows your agents to collect payments in real-time during live calls — no need to redirect customers to external links or follow up with invoices. Whether you're closing deals over the phone, collecting deposits, or processing recurring payments, DialerPay integrates directly into your call workflow to maximize conversions and reduce friction.`,
+        stats: [
+          { label: 'Avg Close Rate', value: '+34%' },
+          { label: 'Processing Time', value: '<3 sec' },
+          { label: 'Payment Methods', value: '5+' },
+        ],
+        features: [
+          {
+            icon: <ShieldIcon size={18} />,
+            title: 'PCI Compliant',
+            description:
+              'End-to-end encrypted payment capture ensures sensitive cardholder data is never exposed during calls',
+          },
+          {
+            icon: <PhoneIcon size={18} />,
+            title: 'In-Call Payments',
+            description:
+              'Seamlessly collect payments without transferring callers or interrupting the conversation flow',
+          },
+          {
+            icon: <CardIcon size={18} />,
+            title: 'Multi-Method',
+            description:
+              'Accept credit cards, debit cards, ACH bank transfers, and digital wallets all in one system',
+          },
+          {
+            icon: <BoltIcon size={18} />,
+            title: 'Instant Processing',
+            description:
+              'Payments are authorized and processed in real-time during the call, reducing drop-off and improving close rates.',
+          },
+          {
+            icon: <UsersIcon size={18} />,
+            title: 'Team Management',
+            description:
+              'Assign agents, track individual performance, and manage permissions across your entire sales team from one dashboard.',
+          },
+          {
+            icon: <ChartIcon size={18} />,
+            title: 'Reporting & Analytics',
+            description:
+              'Full visibility into transaction volumes, success rates, agent performance, and revenue metrics with exportable reports.',
+          },
+        ],
+        howItWorks: [
+          'Agent initiates a payment request during a live call',
+          'Customer provides payment details over a secure, encrypted channel',
+          'Payment is processed instantly with real-time confirmation',
+          'Receipt is automatically sent to the customer via email or SMS',
+          'Transaction is logged and visible in your DialerPay dashboard',
+        ],
+        cta: {
+          label: 'Connect DialerPay',
+          href: `/v/${brandSlug}/onboarding/dialerpay`,
+        },
+      };
+  }
 }
 
-const INTEGRATIONS: Record<IntegrationCode, IntegrationSpec> = {
-  'ez-check': {
-    code: 'ez-check',
-    eyebrow: 'PRE-QUALIFICATION ENGINE',
-    title: (b) => `EZ Check ${b}`,
-    description: (b) =>
-      `Soft-pull pre-qualification for every ${b} applicant before they hit a hard pull. Drops the EZ Check widget on your booking page or sales funnel — applicants get an instant fundability tier and are routed straight to the right ${b} lender.`,
-    icon: ShieldIcon,
-    accent: '#12182f',
-    capabilities: [
-      {
-        title: 'Soft credit qualification',
-        body: 'Returns an applicant tier in under 10 seconds without affecting credit score.',
-      },
-      {
-        title: 'Income capacity analysis',
-        body: 'Plaid Income + cashflow signals scored against the brand affordability rule.',
-      },
-      {
-        title: 'Auto-route to brand lenders',
-        body: 'Qualified applicants are routed only to lenders enabled on your brand portal.',
-      },
-    ],
-    fields: [
-      {
-        key: 'widgetDomain',
-        label: 'Embed domain',
-        placeholder: 'patients.yourpractice.com',
-        help: 'Domain where the EZ Check widget will be embedded.',
-      },
-      {
-        key: 'fallbackEmail',
-        label: 'Notification email',
-        placeholder: 'finance@yourpractice.com',
-        help: 'We email this address whenever a qualified lead drops off.',
-      },
-      {
-        key: 'minTier',
-        label: 'Minimum tier to route',
-        placeholder: 'Tier 3 (default)',
-        type: 'select',
-        options: ['Tier 1 — prime only', 'Tier 2 — prime + near-prime', 'Tier 3 — all eligible', 'Tier 4 — incl. subprime'],
-      },
-    ],
-    metrics: [
-      { label: 'Qualification time', value: '< 10 sec' },
-      { label: 'Approval lift', value: '+42%' },
-      { label: 'Pull type', value: 'Soft' },
-    ],
-    ctaLabel: 'Save and connect EZ Check',
-  },
-  processing: {
-    code: 'processing',
-    eyebrow: 'CARD ACQUIRING',
-    title: (b) => `${b} Processing`,
-    description: (b) =>
-      `Accept card payments under the ${b} acquiring stack — deposit cards, co-pays, deductibles, and one-off charges. Tokenising PSP path keeps you on SAQ A, with same-day settlement to the bank account on file.`,
-    icon: CardIcon,
-    accent: '#12182f',
-    capabilities: [
-      {
-        title: 'Tokenising checkout',
-        body: 'PAN never touches your systems — Stripe / Adyen hosted fields keep you on SAQ A.',
-      },
-      {
-        title: 'Same-day settlement',
-        body: 'RTP / FedNow rail; ACH fallback. Sweep schedule configurable per merchant.',
-      },
-      {
-        title: 'Chargeback workbench',
-        body: 'Reason code library, evidence templates, and Nacha return-rate monitoring.',
-      },
-    ],
-    fields: [
-      {
-        key: 'settlementAccount',
-        label: 'Settlement bank account',
-        placeholder: 'Verified Plaid Auth — Chase •••• 4421',
-        help: 'Account funds settle to. Verified via Plaid Auth or micro-deposit.',
-      },
-      {
-        key: 'mcc',
-        label: 'Merchant category code (MCC)',
-        placeholder: 'Auto-detected from KYB',
-        help: 'Used for risk tier + interchange routing.',
-      },
-      {
-        key: 'rail',
-        label: 'Preferred payout rail',
-        placeholder: 'RTP (default)',
-        type: 'select',
-        options: ['RTP — instant (recommended)', 'FedNow — instant', 'Same-day ACH', 'Next-day ACH'],
-      },
-    ],
-    metrics: [
-      { label: 'Settlement', value: 'Same-day' },
-      { label: 'PCI scope', value: 'SAQ A' },
-      { label: 'Decline retry', value: 'Smart' },
-    ],
-    ctaLabel: 'Save and connect Processing',
-  },
-  dialerpay: {
-    code: 'dialerpay',
-    eyebrow: 'PAY-BY-PHONE DIALLER',
-    title: () => 'DialerPay',
-    description: (b) =>
-      `Outbound dialler that lets your ${b} reps take a card or ACH payment mid-call without leaving the script. PCI-DSS-compliant DTMF capture, biometric voice auth, and full call-recording lineage attached to the application.`,
-    icon: PhoneIcon,
-    accent: '#12182f',
-    capabilities: [
-      {
-        title: 'DTMF card capture',
-        body: 'Suppresses card-digit audio + masks the PAN from the agent — PCI compliant.',
-      },
-      {
-        title: 'Voice auth + signature',
-        body: 'Biometric voice ID + recorded ACH authorisation that survives a Reg E dispute.',
-      },
-      {
-        title: 'CRM hand-off',
-        body: 'Auto-creates the application + attaches the call recording + transcript.',
-      },
-    ],
-    fields: [
-      {
-        key: 'callerId',
-        label: 'Outbound caller ID',
-        placeholder: '+1 (555) 0123-4567',
-        help: 'Must be a Twilio-verified number. 10DLC registration required for US SMS.',
-      },
-      {
-        key: 'crmWebhook',
-        label: 'CRM hand-off webhook',
-        placeholder: 'https://your-crm/webhooks/dialerpay',
-        help: 'We POST signed events here when a card or ACH auth is captured.',
-      },
-      {
-        key: 'recordingRetention',
-        label: 'Recording retention',
-        placeholder: '7 years (default)',
-        type: 'select',
-        options: ['90 days', '1 year', '7 years (default — FCRA/BSA)', 'Forever'],
-      },
-    ],
-    metrics: [
-      { label: 'Avg call handle', value: '< 4 min' },
-      { label: 'PCI capture', value: 'DTMF mask' },
-      { label: 'Disposition rate', value: '+38%' },
-    ],
-    ctaLabel: 'Save and connect DialerPay',
-  },
-};
-
-export default function BrandIntegrationConfigPage() {
-  const { brand: brandSlug, integration } = useParams<{ brand: string; integration: string }>();
-  const brand = BRAND_ORDER.find((b) => BRANDS[b].slug === brandSlug) as BrandCode | undefined;
-  if (!brand) notFound();
-  const spec = INTEGRATIONS[integration as IntegrationCode];
-  if (!spec) notFound();
-
-  const brandName = BRANDS[brand!].name;
-  const Icon = spec.icon;
-
-  // Local-state-only form. In production this PATCHes
-  // /v1/merchants/:id/integrations/:code with the partner-scoped JWT
-  // and the BFF rotates the actual provider credentials behind it.
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [connected, setConnected] = useState(false);
-
-  return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { label: 'Master', href: `/v/${brandSlug}` },
-          { label: brandName, href: `/v/${brandSlug}` },
-          { label: 'Integrations' },
-          { label: spec.title(brandName) },
-        ]}
-        title={spec.title(brandName)}
-        description={spec.description(brandName)}
-        actions={
-          <StatusPill tone={connected ? 'success' : 'neutral'} dot>
-            {connected ? 'Connected' : 'Not connected'}
-          </StatusPill>
-        }
-      />
-
-      <PageBody>
-        {/* ── eyebrow + icon tile ── */}
-        <div className="mb-6 flex items-center gap-3">
-          <span
-            className="size-12 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: `${spec.accent}1a`, color: spec.accent }}
-          >
-            <Icon size={22} />
-          </span>
-          <div className="flex-1">
-            <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-fg-muted">
-              {spec.eyebrow}
-            </p>
-            <p className="text-[13px] text-fg-secondary">
-              Configured inside your <span className="font-semibold">{brandName} portal</span> — never
-              leaks to other verticals.
-            </p>
-          </div>
-          <Link
-            href={`/v/${brandSlug}/integrations/ez-check`}
-            className="text-[12px] text-fg-muted hover:text-fg flex items-center gap-1"
-          >
-            Other integrations <ArrowRightIcon size={12} />
-          </Link>
-        </div>
-
-        {/* ── metrics ── */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {spec.metrics.map((m) => (
-            <Card key={m.label}>
-              <CardBody className="py-3 px-4">
-                <p className="text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
-                  {m.label}
-                </p>
-                <p className="text-[20px] font-semibold tracking-tight text-fg mt-1">{m.value}</p>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* ── left: capabilities ── */}
-          <div className="lg:col-span-2 space-y-5">
-            <Card>
-              <CardBody>
-                <h2 className="text-[14px] font-semibold text-fg mb-3">Capabilities</h2>
-                <ul className="space-y-3">
-                  {spec.capabilities.map((c) => (
-                    <li key={c.title} className="flex gap-3">
-                      <span
-                        className="size-6 rounded-md flex items-center justify-center shrink-0 mt-0.5"
-                        style={{ background: `${spec.accent}1a`, color: spec.accent }}
-                      >
-                        <CheckIcon size={14} />
-                      </span>
-                      <div>
-                        <p className="text-[13px] font-medium text-fg">{c.title}</p>
-                        <p className="text-[12px] text-fg-muted leading-snug">{c.body}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <h2 className="text-[14px] font-semibold text-fg mb-3">
-                  Configure {spec.title(brandName)}
-                </h2>
-                <form
-                  className="space-y-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setConnected(true);
-                  }}
-                >
-                  {spec.fields.map((f) => (
-                    <div key={f.key}>
-                      <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
-                        {f.label}
-                      </label>
-                      {f.type === 'select' ? (
-                        <select
-                          className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
-                          value={values[f.key] ?? ''}
-                          onChange={(e) =>
-                            setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                          }
-                        >
-                          <option value="" disabled>
-                            {f.placeholder}
-                          </option>
-                          {(f.options ?? []).map((o) => (
-                            <option key={o} value={o}>
-                              {o}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type={f.type ?? 'text'}
-                          placeholder={f.placeholder}
-                          className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
-                          value={values[f.key] ?? ''}
-                          onChange={(e) =>
-                            setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                          }
-                        />
-                      )}
-                      {f.help && (
-                        <p className="text-[11px] text-fg-muted mt-1 leading-snug">{f.help}</p>
-                      )}
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between pt-2">
-                    <p className="text-[11px] text-fg-muted">
-                      Changes are sandboxed until you click <strong>Save</strong>.
-                    </p>
-                    <Button size="sm" type="submit">
-                      {connected ? 'Update settings' : spec.ctaLabel}
-                    </Button>
-                  </div>
-                </form>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* ── right: switcher + activity ── */}
-          <div className="space-y-5">
-            <Card>
-              <CardBody>
-                <h3 className="text-[13px] font-semibold text-fg mb-2">
-                  {brandName} integrations
-                </h3>
-                <ul className="space-y-1">
-                  {(['ez-check', 'processing', 'dialerpay'] as IntegrationCode[]).map((code) => {
-                    const s = INTEGRATIONS[code];
-                    const ItemIcon = s.icon;
-                    const active = code === spec.code;
-                    return (
-                      <li key={code}>
-                        <Link
-                          href={`/v/${brandSlug}/integrations/${code}`}
-                          className={
-                            'flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] ' +
-                            (active
-                              ? 'bg-bg-muted text-fg font-semibold'
-                              : 'text-fg-secondary hover:bg-bg-muted/60')
-                          }
-                        >
-                          <span
-                            className="size-5 rounded-md flex items-center justify-center"
-                            style={{ background: `${s.accent}1a`, color: s.accent }}
-                          >
-                            <ItemIcon size={11} />
-                          </span>
-                          <span className="flex-1 truncate">{s.title(brandName)}</span>
-                          {code === spec.code && connected && (
-                            <CheckIcon size={12} className="text-fg" />
-                          )}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <h3 className="text-[13px] font-semibold text-fg mb-2">Recent activity</h3>
-                <ul className="space-y-2 text-[12px] text-fg-secondary">
-                  <li className="flex justify-between">
-                    <span>Delivery rate (24h)</span>
-                    <span className="font-semibold text-fg tabular-nums">99.8%</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>P95 latency</span>
-                    <span className="font-semibold text-fg tabular-nums">412ms</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Errors (24h)</span>
-                    <span className="font-semibold text-fg tabular-nums">0</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Last sync</span>
-                    <span className="font-semibold text-fg">2 min ago</span>
-                  </li>
-                </ul>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <h3 className="text-[13px] font-semibold text-fg mb-1.5">Brand-locked</h3>
-                <p className="text-[12px] text-fg-muted leading-snug">
-                  These credentials are scoped to your <strong>{brandName}</strong> portal. They
-                  never sync to other vertical portals on the same parent organisation — partners
-                  on TradePay, MedPay, and CoachPay each maintain their own connections.
-                </p>
-              </CardBody>
-            </Card>
-          </div>
-        </div>
-      </PageBody>
-    </>
+export function generateStaticParams() {
+  const brands = BRAND_ORDER.filter((b) => b !== 'direct') as BrandCode[];
+  const slugs: IntegrationSlug[] = ['ez-check', 'processing', 'dialerpay'];
+  return brands.flatMap((b) =>
+    slugs.map((integration) => ({ brand: BRANDS[b].slug, integration })),
   );
+}
+
+export default function BrandIntegrationPage({
+  params,
+}: {
+  params: { brand: string; integration: string };
+}) {
+  const brand = BRAND_ORDER.find((b) => BRANDS[b].slug === params.brand);
+  if (!brand) notFound();
+  const slug = params.integration as IntegrationSlug;
+  if (!['ez-check', 'processing', 'dialerpay'].includes(slug)) notFound();
+  const spec = buildSpec(slug, brand);
+  return <IntegrationPage {...spec} />;
 }

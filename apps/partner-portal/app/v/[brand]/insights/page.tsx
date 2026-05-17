@@ -139,9 +139,15 @@ type BrandProfile = {
 const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
   medpay: {
     approvalRate: 0.648,
-    approvalSeries: [62, 63, 64, 63, 65, 64, 65, 66, 64, 65, 65, 64, 65, 65, 66, 65, 64, 65, 66, 65, 64, 65, 66, 65, 64, 65, 65, 66, 65, 64.8],
+    approvalSeries: [
+      62, 63, 64, 63, 65, 64, 65, 66, 64, 65, 65, 64, 65, 65, 66, 65, 64, 65, 66, 65, 64, 65, 66,
+      65, 64, 65, 65, 66, 65, 64.8,
+    ],
     latencyMs: 481,
-    latencySeries: [510, 504, 498, 495, 490, 488, 486, 484, 482, 481, 480, 481, 483, 482, 481, 480, 479, 481, 482, 481, 480, 481, 482, 481, 481, 480, 481, 482, 481, 481],
+    latencySeries: [
+      510, 504, 498, 495, 490, 488, 486, 484, 482, 481, 480, 481, 483, 482, 481, 480, 479, 481, 482,
+      481, 480, 481, 482, 481, 481, 480, 481, 482, 481, 481,
+    ],
     decisionToFundMedian: '1h 48m',
     takeUpRate: 0.412,
     fundedLoans30d: 612,
@@ -185,8 +191,18 @@ const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
       { cohort: '2026-01', d30: 2.5, d60: 1.3, d90: 0.7 },
       { cohort: '2026-02', d30: 2.4, d60: 1.3, d90: 0.6 },
       { cohort: '2026-03', d30: 2.3, d60: 1.2, d90: null as unknown as number },
-      { cohort: '2026-04', d30: 2.2, d60: null as unknown as number, d90: null as unknown as number },
-      { cohort: '2026-05', d30: null as unknown as number, d60: null as unknown as number, d90: null as unknown as number },
+      {
+        cohort: '2026-04',
+        d30: 2.2,
+        d60: null as unknown as number,
+        d90: null as unknown as number,
+      },
+      {
+        cohort: '2026-05',
+        d30: null as unknown as number,
+        d60: null as unknown as number,
+        d90: null as unknown as number,
+      },
     ],
     aprHistogram: [
       { label: '6-8', value: 28 },
@@ -201,21 +217,62 @@ const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
     aprBrandMedian: 13.9,
     aprIndustryMedian: 15.7,
     declineReasons: [
-      { code: 'min_fico_floor', label: 'FICO below floor', pct: 24, copy: 'Patient FICO below partner clinic’s prime-only lender minimum (660). Routed to sub-prime tier where eligible.' },
-      { code: 'insurance_verification_failed', label: 'Insurance verification failed', pct: 19, copy: 'Eligibility ping to payer returned non-active coverage; patient cost-share could not be reconciled before decisioning timed out.' },
-      { code: 'debt_to_income_high', label: 'DTI > policy', pct: 17, copy: 'DTI > 50% under MedPay v2026.05 policy; common in elective dental + fertility cohorts.' },
-      { code: 'recent_delinquency_60d', label: 'Recent 60-day delinquency', pct: 14, copy: 'Open 60-day delinquency on Bureau tradeline reported within last 6 months.' },
-      { code: 'treatment_plan_unverified', label: 'Treatment plan unverified', pct: 12, copy: 'Procedure code + clinic NPI mismatch — verification re-queued to clinic admin.' },
-      { code: 'insufficient_stability', label: 'Insufficient stability', pct: 8, copy: 'Cashflow stability score below 55 on Plaid asset report.' },
-      { code: 'other', label: 'Other', pct: 6, copy: 'Includes ID document quality, address mismatch, and fraud flags.' },
+      {
+        code: 'min_fico_floor',
+        label: 'FICO below floor',
+        pct: 24,
+        copy: 'Patient FICO below partner clinic’s prime-only lender minimum (660). Routed to sub-prime tier where eligible.',
+      },
+      {
+        code: 'insurance_verification_failed',
+        label: 'Insurance verification failed',
+        pct: 19,
+        copy: 'Eligibility ping to payer returned non-active coverage; patient cost-share could not be reconciled before decisioning timed out.',
+      },
+      {
+        code: 'debt_to_income_high',
+        label: 'DTI > policy',
+        pct: 17,
+        copy: 'DTI > 50% under MedPay v2026.05 policy; common in elective dental + fertility cohorts.',
+      },
+      {
+        code: 'recent_delinquency_60d',
+        label: 'Recent 60-day delinquency',
+        pct: 14,
+        copy: 'Open 60-day delinquency on Bureau tradeline reported within last 6 months.',
+      },
+      {
+        code: 'treatment_plan_unverified',
+        label: 'Treatment plan unverified',
+        pct: 12,
+        copy: 'Procedure code + clinic NPI mismatch — verification re-queued to clinic admin.',
+      },
+      {
+        code: 'insufficient_stability',
+        label: 'Insufficient stability',
+        pct: 8,
+        copy: 'Cashflow stability score below 55 on Plaid asset report.',
+      },
+      {
+        code: 'other',
+        label: 'Other',
+        pct: 6,
+        copy: 'Includes ID document quality, address mismatch, and fraud flags.',
+      },
     ],
     lenderSlugs: [],
   },
   tradepay: {
     approvalRate: 0.581,
-    approvalSeries: [55, 56, 56, 57, 57, 58, 57, 58, 58, 58, 59, 58, 57, 58, 58, 58, 58, 58, 59, 58, 58, 58, 59, 58, 58, 58, 58, 58, 58, 58.1],
+    approvalSeries: [
+      55, 56, 56, 57, 57, 58, 57, 58, 58, 58, 59, 58, 57, 58, 58, 58, 58, 58, 59, 58, 58, 58, 59,
+      58, 58, 58, 58, 58, 58, 58.1,
+    ],
     latencyMs: 612,
-    latencySeries: [702, 688, 681, 674, 668, 660, 654, 648, 642, 636, 630, 624, 618, 612, 614, 612, 611, 610, 612, 614, 611, 610, 612, 614, 612, 611, 612, 614, 612, 612],
+    latencySeries: [
+      702, 688, 681, 674, 668, 660, 654, 648, 642, 636, 630, 624, 618, 612, 614, 612, 611, 610, 612,
+      614, 611, 610, 612, 614, 612, 611, 612, 614, 612, 612,
+    ],
     decisionToFundMedian: '2h 41m',
     takeUpRate: 0.389,
     fundedLoans30d: 1148,
@@ -259,8 +316,18 @@ const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
       { cohort: '2026-01', d30: 3.2, d60: 1.8, d90: 1.0 },
       { cohort: '2026-02', d30: 3.1, d60: 1.7, d90: 0.9 },
       { cohort: '2026-03', d30: 3.0, d60: 1.6, d90: null as unknown as number },
-      { cohort: '2026-04', d30: 2.9, d60: null as unknown as number, d90: null as unknown as number },
-      { cohort: '2026-05', d30: null as unknown as number, d60: null as unknown as number, d90: null as unknown as number },
+      {
+        cohort: '2026-04',
+        d30: 2.9,
+        d60: null as unknown as number,
+        d90: null as unknown as number,
+      },
+      {
+        cohort: '2026-05',
+        d30: null as unknown as number,
+        d60: null as unknown as number,
+        d90: null as unknown as number,
+      },
     ],
     aprHistogram: [
       { label: '6-8', value: 41 },
@@ -275,21 +342,62 @@ const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
     aprBrandMedian: 13.4,
     aprIndustryMedian: 15.1,
     declineReasons: [
-      { code: 'dti_high', label: 'DTI above policy', pct: 26, copy: 'Combined housing + installment debt exceeds 45% on trades cohort — typically homeowners with active HELOC.' },
-      { code: 'lien_position_concern', label: 'Lien position concerns', pct: 18, copy: 'Subject property has open mechanics lien or recorded second mortgage; routes to BuzzPay only.' },
-      { code: 'min_fico_floor', label: 'FICO below floor', pct: 17, copy: 'Homeowner FICO below Orion Capital floor (700); reroutes to Kestrel (620+) if state-eligible.' },
-      { code: 'recent_delinquency_60d', label: 'Recent 60-day delinquency', pct: 13, copy: 'Open mortgage or auto delinquency within 12 months — Reg B-mapped reason code dq_60.' },
-      { code: 'income_unverified', label: 'Income unverified', pct: 11, copy: 'Self-employed contractor income could not be verified via Plaid; W-2 stub fallback failed parsing.' },
-      { code: 'job_scope_unverified', label: 'Job scope unverified', pct: 9, copy: 'Contractor SOW PDF rejected at OCR — line items did not match category cap on TradePay HVAC product.' },
-      { code: 'other', label: 'Other', pct: 6, copy: 'Includes state-eligibility, identity-document quality, and consortium fraud flags.' },
+      {
+        code: 'dti_high',
+        label: 'DTI above policy',
+        pct: 26,
+        copy: 'Combined housing + installment debt exceeds 45% on trades cohort — typically homeowners with active HELOC.',
+      },
+      {
+        code: 'lien_position_concern',
+        label: 'Lien position concerns',
+        pct: 18,
+        copy: 'Subject property has open mechanics lien or recorded second mortgage; routes to BuzzPay only.',
+      },
+      {
+        code: 'min_fico_floor',
+        label: 'FICO below floor',
+        pct: 17,
+        copy: 'Homeowner FICO below Orion Capital floor (700); reroutes to Kestrel (620+) if state-eligible.',
+      },
+      {
+        code: 'recent_delinquency_60d',
+        label: 'Recent 60-day delinquency',
+        pct: 13,
+        copy: 'Open mortgage or auto delinquency within 12 months — Reg B-mapped reason code dq_60.',
+      },
+      {
+        code: 'income_unverified',
+        label: 'Income unverified',
+        pct: 11,
+        copy: 'Self-employed contractor income could not be verified via Plaid; W-2 stub fallback failed parsing.',
+      },
+      {
+        code: 'job_scope_unverified',
+        label: 'Job scope unverified',
+        pct: 9,
+        copy: 'Contractor SOW PDF rejected at OCR — line items did not match category cap on TradePay HVAC product.',
+      },
+      {
+        code: 'other',
+        label: 'Other',
+        pct: 6,
+        copy: 'Includes state-eligibility, identity-document quality, and consortium fraud flags.',
+      },
     ],
     lenderSlugs: [],
   },
   coachpay: {
     approvalRate: 0.714,
-    approvalSeries: [69, 70, 70, 71, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71.4],
+    approvalSeries: [
+      69, 70, 70, 71, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71, 71, 72, 71,
+      71, 72, 71, 71, 72, 71, 71.4,
+    ],
     latencyMs: 446,
-    latencySeries: [495, 488, 482, 476, 470, 464, 460, 456, 452, 450, 448, 446, 446, 446, 446, 446, 445, 446, 447, 446, 446, 445, 446, 447, 446, 446, 446, 446, 446, 446],
+    latencySeries: [
+      495, 488, 482, 476, 470, 464, 460, 456, 452, 450, 448, 446, 446, 446, 446, 446, 445, 446, 447,
+      446, 446, 445, 446, 447, 446, 446, 446, 446, 446, 446,
+    ],
     decisionToFundMedian: '1h 12m',
     takeUpRate: 0.537,
     fundedLoans30d: 384,
@@ -333,8 +441,18 @@ const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
       { cohort: '2026-01', d30: 2.7, d60: 1.4, d90: 0.8 },
       { cohort: '2026-02', d30: 2.6, d60: 1.4, d90: 0.7 },
       { cohort: '2026-03', d30: 2.5, d60: 1.3, d90: null as unknown as number },
-      { cohort: '2026-04', d30: 2.4, d60: null as unknown as number, d90: null as unknown as number },
-      { cohort: '2026-05', d30: null as unknown as number, d60: null as unknown as number, d90: null as unknown as number },
+      {
+        cohort: '2026-04',
+        d30: 2.4,
+        d60: null as unknown as number,
+        d90: null as unknown as number,
+      },
+      {
+        cohort: '2026-05',
+        d30: null as unknown as number,
+        d60: null as unknown as number,
+        d90: null as unknown as number,
+      },
     ],
     aprHistogram: [
       { label: '6-8', value: 12 },
@@ -349,13 +467,48 @@ const PROFILES: Record<Exclude<BrandCode, 'direct'>, BrandProfile> = {
     aprBrandMedian: 13.1,
     aprIndustryMedian: 16.4,
     declineReasons: [
-      { code: 'income_variability', label: 'Income variability (coaching biz)', pct: 23, copy: 'Self-employed coach income volatility exceeds policy variance; routes to ClearPath for sub-prime if eligible.' },
-      { code: 'min_fico_floor', label: 'FICO below floor', pct: 19, copy: 'Student FICO below Atlas Career Capital prime floor (700); reroutes to ClearPath (600+).' },
-      { code: 'program_unaccredited', label: 'Program not on approved list', pct: 16, copy: 'CoachPay only finances programs on the curated school list; submission re-queued to compliance for whitelist review.' },
-      { code: 'dti_high', label: 'DTI above policy', pct: 14, copy: 'Combined student debt + installment exceeds 50%; especially common for bootcamp + certification stacking.' },
-      { code: 'thin_file', label: 'Thin credit file', pct: 11, copy: '<24 months of credit history; alt-data fallback (rent + utilities) did not return enough signal.' },
-      { code: 'enrollment_unverified', label: 'Enrollment unverified', pct: 10, copy: 'Program admin did not confirm enrollment within decision SLA — retry queued.' },
-      { code: 'other', label: 'Other', pct: 7, copy: 'Includes ID-document quality, address mismatch, and OFAC flags.' },
+      {
+        code: 'income_variability',
+        label: 'Income variability (coaching biz)',
+        pct: 23,
+        copy: 'Self-employed coach income volatility exceeds policy variance; routes to ClearPath for sub-prime if eligible.',
+      },
+      {
+        code: 'min_fico_floor',
+        label: 'FICO below floor',
+        pct: 19,
+        copy: 'Student FICO below Atlas Career Capital prime floor (700); reroutes to ClearPath (600+).',
+      },
+      {
+        code: 'program_unaccredited',
+        label: 'Program not on approved list',
+        pct: 16,
+        copy: 'CoachPay only finances programs on the curated school list; submission re-queued to compliance for whitelist review.',
+      },
+      {
+        code: 'dti_high',
+        label: 'DTI above policy',
+        pct: 14,
+        copy: 'Combined student debt + installment exceeds 50%; especially common for bootcamp + certification stacking.',
+      },
+      {
+        code: 'thin_file',
+        label: 'Thin credit file',
+        pct: 11,
+        copy: '<24 months of credit history; alt-data fallback (rent + utilities) did not return enough signal.',
+      },
+      {
+        code: 'enrollment_unverified',
+        label: 'Enrollment unverified',
+        pct: 10,
+        copy: 'Program admin did not confirm enrollment within decision SLA — retry queued.',
+      },
+      {
+        code: 'other',
+        label: 'Other',
+        pct: 7,
+        copy: 'Includes ID-document quality, address mismatch, and OFAC flags.',
+      },
     ],
     lenderSlugs: [],
   },
@@ -384,8 +537,7 @@ function lendersForBrand(brand: BrandCode): LenderPerfRow[] {
   return filtered.map((lender, idx) => {
     const mkt = marketplaces.find((m) => m.id === lender.marketplaceId);
     const seed = (lender.id.length * 31 + idx * 7) % 100;
-    const appsBase =
-      brand === 'tradepay' ? 420 : brand === 'medpay' ? 240 : 120;
+    const appsBase = brand === 'tradepay' ? 420 : brand === 'medpay' ? 240 : 120;
     return {
       lender,
       marketplaceName: mkt?.displayName ?? 'unknown',
@@ -466,11 +618,28 @@ type RecentDecision = {
 
 function recentDecisionsFor(brand: Exclude<BrandCode, 'direct'>): RecentDecision[] {
   const initials = [
-    'J.M.', 'D.K.', 'A.R.', 'S.P.', 'L.W.', 'R.B.', 'M.T.', 'E.H.', 'P.S.', 'O.G.',
-    'K.N.', 'T.W.', 'C.B.', 'F.J.', 'B.L.', 'N.R.', 'Q.A.', 'I.S.', 'V.O.', 'Y.D.',
+    'J.M.',
+    'D.K.',
+    'A.R.',
+    'S.P.',
+    'L.W.',
+    'R.B.',
+    'M.T.',
+    'E.H.',
+    'P.S.',
+    'O.G.',
+    'K.N.',
+    'T.W.',
+    'C.B.',
+    'F.J.',
+    'B.L.',
+    'N.R.',
+    'Q.A.',
+    'I.S.',
+    'V.O.',
+    'Y.D.',
   ];
-  const baseSizeCents =
-    brand === 'tradepay' ? 14_000_00 : brand === 'medpay' ? 6_400_00 : 3_500_00;
+  const baseSizeCents = brand === 'tradepay' ? 14_000_00 : brand === 'medpay' ? 6_400_00 : 3_500_00;
   const baseLenders =
     brand === 'tradepay'
       ? ['Orion Capital', 'Kestrel', 'BuzzPay', 'Summit Premier']
@@ -639,8 +808,7 @@ type DiCell = { label: string; delta: number; note: string; ok: boolean };
 
 function diGridFor(brand: Exclude<BrandCode, 'direct'>): DiCell[][] {
   // 4 metrics × 3 protected-class axes
-  const offset =
-    brand === 'tradepay' ? 0.4 : brand === 'medpay' ? 0.1 : -0.2;
+  const offset = brand === 'tradepay' ? 0.4 : brand === 'medpay' ? 0.1 : -0.2;
   const grid: DiCell[][] = [
     [
       { label: 'Approval ratio', delta: 0.91 - offset / 10, note: 'AIR vs majority', ok: true },
@@ -697,7 +865,7 @@ export default function BrandInsightsPage() {
   // When present, this turns the insights page into a partner-scoped
   // view — same drill the master `/control-panel/[partnerId]` applications
   // tab shows, so the cross-link from /reports lands consistently.
-  const partnerCtx = partnerIdParam ? findPartner(partnerIdParam) ?? null : null;
+  const partnerCtx = partnerIdParam ? (findPartner(partnerIdParam) ?? null) : null;
   const partnerApps = partnerCtx ? applicationsForPartner(partnerCtx.id) : [];
   const brandCode = BRAND_ORDER.find((b) => BRANDS[b].slug === brandSlug) as BrandCode | undefined;
   if (!brandCode || brandCode === 'direct') notFound();
@@ -760,14 +928,16 @@ export default function BrandInsightsPage() {
       key: 'decision',
       header: 'Decision',
       cell: (r) => {
-        const tone: Record<RecentDecision['decision'], 'success' | 'warning' | 'danger' | 'info' | 'neutral'> =
-          {
-            approved: 'success',
-            funded: 'success',
-            declined: 'danger',
-            manual_review: 'warning',
-            pending: 'info',
-          };
+        const tone: Record<
+          RecentDecision['decision'],
+          'success' | 'warning' | 'danger' | 'info' | 'neutral'
+        > = {
+          approved: 'success',
+          funded: 'success',
+          declined: 'danger',
+          manual_review: 'warning',
+          pending: 'info',
+        };
         return (
           <StatusPill tone={tone[r.decision]} dot>
             {r.decision.replace('_', ' ')}
@@ -779,9 +949,7 @@ export default function BrandInsightsPage() {
     {
       key: 'reason',
       header: 'Top reason',
-      cell: (r) => (
-        <span className="font-mono text-[11px] text-fg-muted">{r.topReasonCode}</span>
-      ),
+      cell: (r) => <span className="font-mono text-[11px] text-fg-muted">{r.topReasonCode}</span>,
       width: '17%',
     },
     {
@@ -794,7 +962,9 @@ export default function BrandInsightsPage() {
       key: 'ttd',
       header: 'TTD',
       align: 'right',
-      cell: (r) => <span className="text-[12px] tabular-nums text-fg-muted">{fmtDur(r.decisionedMs)}</span>,
+      cell: (r) => (
+        <span className="text-[12px] tabular-nums text-fg-muted">{fmtDur(r.decisionedMs)}</span>
+      ),
       width: '8%',
     },
   ];
@@ -949,7 +1119,9 @@ export default function BrandInsightsPage() {
         meta={
           <>
             <StatusPill tone="success">Bias review — within tolerance</StatusPill>
-            <StatusPill tone="info">{spec.name} policy {brand}_v_2026_05</StatusPill>
+            <StatusPill tone="info">
+              {spec.name} policy {brand}_v_2026_05
+            </StatusPill>
             <StatusPill tone="neutral">Policy version orch_v_2026_05_a</StatusPill>
           </>
         }
@@ -968,17 +1140,22 @@ export default function BrandInsightsPage() {
                 <p className="text-[13px] font-semibold text-fg truncate">
                   {partnerCtx.legalName}{' '}
                   <span className="font-normal text-fg-muted">
-                    · {partnerApps.length} application{partnerApps.length === 1 ? '' : 's'} on this brand
+                    · {partnerApps.length} application{partnerApps.length === 1 ? '' : 's'} on this
+                    brand
                   </span>
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {/* Partner control page is a master-operator surface — partner
+                  portals don't link out to it. The portal-internal team
+                  + settings pages cover everything a brand merchant
+                  needs from inside their /v/<brand>/ scope. */}
               <Link
-                href={`/control-panel/${partnerCtx.id}`}
+                href={`/v/${brandSlug}/team`}
                 className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
               >
-                Open partner control page
+                Manage team &amp; roles
               </Link>
               <Link
                 href={`/v/${brandSlug}/insights`}
@@ -1066,7 +1243,11 @@ export default function BrandInsightsPage() {
           <CardHeader
             title={`${spec.name} volume + flow funnel — last 30 days`}
             description={`Every ${persona.applicantSingular} application that hit the ${spec.name} surface. Drop-off % is relative to the prior step.`}
-            action={<StatusPill tone="neutral">{numFmt(profile.funnel.applications)} applications</StatusPill>}
+            action={
+              <StatusPill tone="neutral">
+                {numFmt(profile.funnel.applications)} applications
+              </StatusPill>
+            }
           />
           <CardBody>
             <div className="flex flex-col gap-2">
@@ -1074,7 +1255,7 @@ export default function BrandInsightsPage() {
                 const widthPct = (step.value / funnelMax) * 100;
                 const prev = idx === 0 ? null : funnelSteps[idx - 1]!.value;
                 const drop = prev == null ? null : 1 - step.value / prev;
-                const conversion = (step.value / funnelMax);
+                const conversion = step.value / funnelMax;
                 return (
                   <div key={step.key} className="flex items-center gap-3">
                     <div className="w-44 shrink-0 text-[12px] font-medium">{step.label}</div>
@@ -1106,25 +1287,33 @@ export default function BrandInsightsPage() {
             </div>
             <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
               <div className="rounded-md border border-border bg-bg-muted/20 p-3">
-                <div className="text-fg-muted text-[10px] uppercase tracking-wider">Pre-qual rate</div>
+                <div className="text-fg-muted text-[10px] uppercase tracking-wider">
+                  Pre-qual rate
+                </div>
                 <div className="text-[14px] font-semibold tabular-nums mt-1">
                   {pct(profile.funnel.prequalPassed / profile.funnel.applications, 1)}
                 </div>
               </div>
               <div className="rounded-md border border-border bg-bg-muted/20 p-3">
-                <div className="text-fg-muted text-[10px] uppercase tracking-wider">KYC pass-through</div>
+                <div className="text-fg-muted text-[10px] uppercase tracking-wider">
+                  KYC pass-through
+                </div>
                 <div className="text-[14px] font-semibold tabular-nums mt-1">
                   {pct(profile.funnel.kycVerified / profile.funnel.prequalPassed, 1)}
                 </div>
               </div>
               <div className="rounded-md border border-border bg-bg-muted/20 p-3">
-                <div className="text-fg-muted text-[10px] uppercase tracking-wider">Decision approval</div>
+                <div className="text-fg-muted text-[10px] uppercase tracking-wider">
+                  Decision approval
+                </div>
                 <div className="text-[14px] font-semibold tabular-nums mt-1">
                   {pct(profile.funnel.approved / profile.funnel.decisioned, 1)}
                 </div>
               </div>
               <div className="rounded-md border border-border bg-bg-muted/20 p-3">
-                <div className="text-fg-muted text-[10px] uppercase tracking-wider">Offer → fund</div>
+                <div className="text-fg-muted text-[10px] uppercase tracking-wider">
+                  Offer → fund
+                </div>
                 <div className="text-[14px] font-semibold tabular-nums mt-1">
                   {pct(profile.funnel.funded / profile.funnel.approved, 1)}
                 </div>
@@ -1149,7 +1338,8 @@ export default function BrandInsightsPage() {
               </div>
               <div className="mt-3 text-[12px] text-fg-muted leading-relaxed">
                 The 660–699 cohort approval is up 5.4pp vs. last quarter, driven by Plaid cashflow
-                additions. ECOA non-discrimination notice + reason codes are enforced on every decline.
+                additions. ECOA non-discrimination notice + reason codes are enforced on every
+                decline.
               </div>
             </CardBody>
           </Card>
@@ -1164,13 +1354,16 @@ export default function BrandInsightsPage() {
                 <BarChart
                   data={profile.declineReasons
                     .filter((r) => r.code !== 'other')
-                    .map((r) => ({ label: r.label.split(' ').slice(0, 2).join(' '), value: r.pct }))}
+                    .map((r) => ({
+                      label: r.label.split(' ').slice(0, 2).join(' '),
+                      value: r.pct,
+                    }))}
                   height={170}
                 />
               </div>
               <div className="mt-3 text-[12px] text-fg-muted leading-relaxed">
-                Reason taxonomy maps to Reg B § 1002 examples and is reviewed quarterly with compliance.
-                Each notice is reproducible from input snapshot + policy version.
+                Reason taxonomy maps to Reg B § 1002 examples and is reviewed quarterly with
+                compliance. Each notice is reproducible from input snapshot + policy version.
               </div>
             </CardBody>
           </Card>
@@ -1215,10 +1408,15 @@ export default function BrandInsightsPage() {
                   const max = band.prequal || 1;
                   return (
                     <div key={band.band} className="flex items-center gap-3">
-                      <div className="w-16 shrink-0 text-[12px] font-medium tabular-nums">{band.band}</div>
+                      <div className="w-16 shrink-0 text-[12px] font-medium tabular-nums">
+                        {band.band}
+                      </div>
                       <div className="flex-1 grid grid-cols-4 gap-1 h-7">
                         <div className="bg-bg-muted/50 rounded-sm relative overflow-hidden">
-                          <div className="absolute inset-y-0 left-0 bg-fg/30" style={{ width: '100%' }} />
+                          <div
+                            className="absolute inset-y-0 left-0 bg-fg/30"
+                            style={{ width: '100%' }}
+                          />
                           <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium tabular-nums">
                             {numFmt(band.prequal)}
                           </span>
@@ -1318,9 +1516,10 @@ export default function BrandInsightsPage() {
                 </tbody>
               </table>
               <div className="mt-4 text-[11px] text-fg-muted leading-relaxed">
-                Cells with fewer than 25 decisioned applications are suppressed to protect inference.
-                Heat shading uses a single accent hue (no red/green) to avoid alarm-by-colour. Sorted high
-                FICO → low FICO so higher approval bands sit at the top.
+                Cells with fewer than 25 decisioned applications are suppressed to protect
+                inference. Heat shading uses a single accent hue (no red/green) to avoid
+                alarm-by-colour. Sorted high FICO → low FICO so higher approval bands sit at the
+                top.
               </div>
             </CardBody>
           </Card>
@@ -1377,8 +1576,8 @@ export default function BrandInsightsPage() {
                 </tbody>
               </table>
               <div className="mt-4 text-[11px] text-fg-muted leading-relaxed">
-                Q1 2026 cohort is tracking +40bps above peer-of-record cohort — monitoring. No policy change
-                under consideration; ORACLE drift sensor is green.
+                Q1 2026 cohort is tracking +40bps above peer-of-record cohort — monitoring. No
+                policy change under consideration; ORACLE drift sensor is green.
               </div>
             </CardBody>
           </Card>
@@ -1397,23 +1596,29 @@ export default function BrandInsightsPage() {
                 <div className="mt-3 flex items-center gap-4 text-[11px]">
                   <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-sm bg-accent" />
-                    <span className="font-medium">{spec.name} median {profile.aprBrandMedian.toFixed(1)}%</span>
+                    <span className="font-medium">
+                      {spec.name} median {profile.aprBrandMedian.toFixed(1)}%
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-sm bg-fg/40" />
-                    <span className="text-fg-muted">Industry median {profile.aprIndustryMedian.toFixed(1)}%</span>
+                    <span className="text-fg-muted">
+                      Industry median {profile.aprIndustryMedian.toFixed(1)}%
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 ml-auto">
                     <span className="text-fg-muted">Δ</span>
                     <span className="font-medium text-success">
-                      −{(profile.aprIndustryMedian - profile.aprBrandMedian).toFixed(1)}pp vs. industry
+                      −{(profile.aprIndustryMedian - profile.aprBrandMedian).toFixed(1)}pp vs.
+                      industry
                     </span>
                   </div>
                 </div>
               </div>
               <div className="mt-3 text-[12px] text-fg-muted leading-relaxed">
-                Histogram is on accepted offers only (e-signed). Quoted-but-declined APRs are excluded so
-                this reflects what {persona.applicant} actually pay. Bracket bins are 200 bps wide.
+                Histogram is on accepted offers only (e-signed). Quoted-but-declined APRs are
+                excluded so this reflects what {persona.applicant} actually pay. Bracket bins are
+                200 bps wide.
               </div>
             </CardBody>
           </Card>
@@ -1439,7 +1644,10 @@ export default function BrandInsightsPage() {
                   <div className="text-[13px] font-medium">{r.label}</div>
                   <div className="text-[12px] text-fg-muted leading-relaxed">{r.copy}</div>
                   <div className="mt-1 h-1.5 rounded-full bg-bg-elevated overflow-hidden">
-                    <div className="h-full bg-accent/70 rounded-full" style={{ width: `${r.pct * 3}%` }} />
+                    <div
+                      className="h-full bg-accent/70 rounded-full"
+                      style={{ width: `${r.pct * 3}%` }}
+                    />
                   </div>
                 </div>
               ))}
@@ -1511,9 +1719,9 @@ export default function BrandInsightsPage() {
                 </tbody>
               </table>
               <div className="mt-2 text-[11px] text-fg-muted leading-relaxed">
-                Adverse impact ratio (AIR) is computed weekly on decisioned applications. The 4/5 rule
-                threshold is 0.80; any class falling below triggers a soft alert + compliance review (no
-                auto-policy change).
+                Adverse impact ratio (AIR) is computed weekly on decisioned applications. The 4/5
+                rule threshold is 0.80; any class falling below triggers a soft alert + compliance
+                review (no auto-policy change).
               </div>
             </div>
 
@@ -1574,8 +1782,8 @@ export default function BrandInsightsPage() {
                   {brand === 'tradepay' ? '34 / 34' : brand === 'medpay' ? '21 / 21' : '12 / 12'}
                 </div>
                 <div className="text-[12px] text-fg-muted leading-relaxed">
-                  100% of manual overrides reviewed by compliance QA within the 14-day window. Mean review
-                  latency 3.4 days. Zero deviations from documented rationale.
+                  100% of manual overrides reviewed by compliance QA within the 14-day window. Mean
+                  review latency 3.4 days. Zero deviations from documented rationale.
                 </div>
               </div>
               <div className="rounded-md border border-border bg-bg-muted/20 p-3 flex flex-col gap-1.5">
@@ -1586,15 +1794,18 @@ export default function BrandInsightsPage() {
                   p95 = 18.4d · max = 24.1d
                 </div>
                 <div className="text-[12px] text-fg-muted leading-relaxed">
-                  All Adverse Action Notices delivered inside the Reg B 30-day window for the last 365
-                  days. Vendor-delivered (Lob) with delivery receipts archived for 7 years.
+                  All Adverse Action Notices delivered inside the Reg B 30-day window for the last
+                  365 days. Vendor-delivered (Lob) with delivery receipts archived for 7 years.
                 </div>
               </div>
             </div>
 
             <div className="border-t border-border pt-3 space-y-1">
               <DataRow label="Protected-class features" value="0 direct · 0 proxy candidates" />
-              <DataRow label="Disparate impact" value="Within 4/5 rule across age, sex, race proxy" />
+              <DataRow
+                label="Disparate impact"
+                value="Within 4/5 rule across age, sex, race proxy"
+              />
               <DataRow label="Equalised odds" value="ΔTPR ≤ 0.03 · ΔFPR ≤ 0.02" />
               <DataRow label="Sensitive postcodes" value="Coverage check — 100%" />
               <DataRow label="Override sample audit" value="100% of overrides QA-reviewed in 14d" />
@@ -1670,8 +1881,9 @@ export default function BrandInsightsPage() {
                     {spec.name} 660-699 cohort approval is up 5.4pp vs. last quarter
                   </div>
                   <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    Driven by Plaid cashflow-stability score additions in {brand}_v_2026_05 policy. The
-                    660-699 band approval rate moved from 52.4% → 57.8%. Net lift on ORACLE is +0.9pp.
+                    Driven by Plaid cashflow-stability score additions in {brand}_v_2026_05 policy.
+                    The 660-699 band approval rate moved from 52.4% → 57.8%. Net lift on ORACLE is
+                    +0.9pp.
                   </div>
                 </div>
               </div>
@@ -1684,12 +1896,13 @@ export default function BrandInsightsPage() {
                 </div>
                 <div className="flex-1">
                   <div className="text-[13px] font-medium">
-                    DTI threshold tightening on lender_07 — 3.2% of {persona.applicant} now routing to backup
+                    DTI threshold tightening on lender_07 — 3.2% of {persona.applicant} now routing
+                    to backup
                   </div>
                   <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    {lenderRows[0]?.lender.displayName ?? 'Primary lender'} tightened DTI ceiling from 50 → 45
-                    overnight. NEXUS reroutes affected cohorts to backup tier; stip rate on the backup is
-                    1.4pp higher. No customer-facing impact.
+                    {lenderRows[0]?.lender.displayName ?? 'Primary lender'} tightened DTI ceiling
+                    from 50 → 45 overnight. NEXUS reroutes affected cohorts to backup tier; stip
+                    rate on the backup is 1.4pp higher. No customer-facing impact.
                   </div>
                 </div>
               </div>
@@ -1705,8 +1918,9 @@ export default function BrandInsightsPage() {
                     Q1 2026 vintage tracking +40bps above peer cohorts — monitoring
                   </div>
                   <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    30-DPD on the Jan-Mar 2026 cohorts is running 40 bps above the rolling-4Q baseline.
-                    ORACLE drift sensor remains green; risk team scheduled a Q2 readout for May 28.
+                    30-DPD on the Jan-Mar 2026 cohorts is running 40 bps above the rolling-4Q
+                    baseline. ORACLE drift sensor remains green; risk team scheduled a Q2 readout
+                    for May 28.
                   </div>
                 </div>
               </div>
@@ -1726,8 +1940,8 @@ export default function BrandInsightsPage() {
                         : 'Bootcamp programs grew 18% MoM — Atlas Career Cap approval rate held at 78%'}
                   </div>
                   <div className="text-[12px] text-fg-muted mt-1 leading-relaxed">
-                    Surface-level shift; no policy implications. Logged for trend-watching only. Drill into
-                    the underlying cohort via the brand vertical filter.
+                    Surface-level shift; no policy implications. Logged for trend-watching only.
+                    Drill into the underlying cohort via the brand vertical filter.
                   </div>
                 </div>
               </div>
@@ -1745,18 +1959,16 @@ export default function BrandInsightsPage() {
               </div>
               <div className="mt-3 space-y-1">
                 <DataRow label="Rolling 30d" value={pct(profile.approvalRate, 1)} />
-                <DataRow
-                  label="Rolling 90d"
-                  value={pct(profile.approvalRate - 0.008, 1)}
-                />
-                <DataRow
-                  label="Trailing 12 mo"
-                  value={pct(profile.approvalRate - 0.024, 1)}
-                />
+                <DataRow label="Rolling 90d" value={pct(profile.approvalRate - 0.008, 1)} />
+                <DataRow label="Trailing 12 mo" value={pct(profile.approvalRate - 0.024, 1)} />
                 <DataRow label="Cohorts ≥ 25 apps" value="Yes" />
                 <DataRow
                   label="Drift sensor"
-                  value={<StatusPill tone="success" dot>Stable</StatusPill>}
+                  value={
+                    <StatusPill tone="success" dot>
+                      Stable
+                    </StatusPill>
+                  }
                 />
               </div>
             </CardBody>
