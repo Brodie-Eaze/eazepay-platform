@@ -33,6 +33,16 @@ import { getSessionContext } from '../../../../lib/session';
 // retry from the same session is idempotent but two separate sessions
 // agreeing on behalf of the same applicationId are both captured (a red
 // flag that gets routed to fraud review).
+//
+// SEC-105: two caps prevent unbounded memory growth.
+//   * MAX_RECEIPTS_TOTAL — global FIFO cap; oldest evicted on insert
+//   * MAX_RECEIPTS_PER_APPLICATION — defends against single-applicationId
+//     amplification (an attacker forging session IDs in a loop). Five
+//     receipts per app is enough for legit retry/refresh; anything
+//     beyond is fraud-signal anyway.
+const MAX_RECEIPTS_TOTAL = 5_000;
+const MAX_RECEIPTS_PER_APPLICATION = 5;
+
 const RECEIPTS = new Map<
   string,
   {
@@ -45,6 +55,27 @@ const RECEIPTS = new Map<
     userAgent: string;
   }
 >();
+
+function pruneReceiptsForApplication(applicationId: string): void {
+  // Map iteration order = insertion order. Oldest matching entry is
+  // the first one encountered when iterating.
+  const matching: string[] = [];
+  for (const [key, rec] of RECEIPTS) {
+    if (rec.applicationId === applicationId) matching.push(key);
+  }
+  while (matching.length >= MAX_RECEIPTS_PER_APPLICATION) {
+    const oldest = matching.shift();
+    if (oldest) RECEIPTS.delete(oldest);
+  }
+}
+
+function pruneReceiptsGlobal(): void {
+  while (RECEIPTS.size >= MAX_RECEIPTS_TOTAL) {
+    const oldest = RECEIPTS.keys().next().value;
+    if (!oldest) return;
+    RECEIPTS.delete(oldest);
+  }
+}
 
 interface ConsentBody {
   applicationId: string;
@@ -115,7 +146,15 @@ export async function POST(req: NextRequest) {
     userAgent,
   };
 
-  RECEIPTS.set(`${body.applicationId}:${body.sessionId}`, receipt);
+  // SEC-105: enforce caps before insert. Retries with the same
+  // composite key overwrite in place and don't grow the map, so the
+  // per-application prune only fires for genuinely new sessions.
+  const key = `${body.applicationId}:${body.sessionId}`;
+  if (!RECEIPTS.has(key)) {
+    pruneReceiptsForApplication(body.applicationId);
+    pruneReceiptsGlobal();
+  }
+  RECEIPTS.set(key, receipt);
 
   return NextResponse.json(
     {
