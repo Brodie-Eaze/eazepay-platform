@@ -399,6 +399,9 @@ importers:
       '@eazepay/api-client':
         specifier: workspace:*
         version: link:../../libs/api-client
+      '@eazepay/service-email':
+        specifier: workspace:*
+        version: link:../../services/email
       '@eazepay/shared-types':
         specifier: workspace:*
         version: link:../../libs/shared-types

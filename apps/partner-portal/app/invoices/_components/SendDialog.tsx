@@ -13,6 +13,7 @@ import {
 import { ensureConfirmToken, appendActivity } from '../../../lib/invoicing';
 import { getBillingConfig, resolvePaymentLink } from '../../../lib/billing-config';
 import { pushNotificationWithMasterMirror } from '../../../lib/notifications';
+import { csrfHeaders } from '../../../lib/client-csrf';
 
 const inputCn =
   'mt-1 w-full h-9 rounded-md border border-border bg-bg-elevated px-2.5 text-[13px] outline-none focus:ring-2 focus:ring-border-focus';
@@ -77,6 +78,11 @@ export function SendDialog({ target, onClose, onSent }: Props) {
   const [confirmUrl, setConfirmUrl] = useState<string>('');
   const [payUrl, setPayUrl] = useState<string | undefined>(undefined);
   const [email, setEmail] = useState('');
+  // Hooks-first: declare BEFORE the early `if (!target)` return so
+  // react-hooks/rules-of-hooks stays happy across renders. The state
+  // is harmless when no target is set; nothing reads it until send().
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const config = useMemo(
     () => (target ? getBillingConfig(target.partnerId) : null),
@@ -101,20 +107,68 @@ export function SendDialog({ target, onClose, onSent }: Props) {
 
   if (!target) return <Dialog open={false} onOpenChange={() => onClose()} />;
 
-  const send = () => {
-    const params = `?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const href = `mailto:${encodeURIComponent(email)}${params}`;
-    if (typeof window !== 'undefined') window.location.href = href;
+  const send = async () => {
+    if (!target) return;
+    setSending(true);
+    setSendError(null);
+
+    const brandSlug = guessBrandSlug(target.vertical) as 'medpay' | 'tradepay' | 'coachpay';
+
+    // Phase B: dispatch the branded invoice email via the BFF.
+    // Falls back to the local `mailto:` composer if the BFF returns
+    // a non-2xx (e.g. RESEND_API_KEY unset + mock would 200 anyway;
+    // this fallback is for true server-side failures).
+    let dispatched = false;
+    try {
+      const res = await fetch('/api/invoices/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+        credentials: 'include',
+        body: JSON.stringify({
+          brand: brandSlug,
+          to: email,
+          invoiceNo: target.invoiceNo,
+          merchantBusinessName: target.merchant,
+          recipientName: target.merchant,
+          periodLabel: target.periodLabel,
+          grossFundedCents: target.grossFundedCents,
+          feePct: target.feePct,
+          amountDueCents: target.amountCents,
+          dueDate: target.dueDate,
+          confirmUrl,
+          ...(payUrl ? { payUrl } : {}),
+        }),
+      });
+      if (res.ok) {
+        dispatched = true;
+      } else {
+        const body = (await res.json().catch(() => ({}))) as { detail?: string };
+        setSendError(body.detail ?? `HTTP ${res.status}`);
+      }
+    } catch (err) {
+      setSendError((err as Error).message);
+    }
+
+    if (!dispatched) {
+      // Last-resort fallback: open the local mail composer so the
+      // operator can still deliver manually if the BFF failed.
+      const params = `?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const href = `mailto:${encodeURIComponent(email)}${params}`;
+      if (typeof window !== 'undefined') window.location.href = href;
+    }
+
     appendActivity(target.invoiceNo, {
       kind: 'send',
       by: ACTOR,
-      summary: `Composed email to ${email}${payUrl ? ' · with pay link' : ''}`,
+      summary: dispatched
+        ? `Sent branded invoice email to ${email}${payUrl ? ' · with pay link' : ''}`
+        : `Composed local email to ${email} (BFF dispatch failed)`,
     });
-    // Push to the recipient partner's NotificationBell + mirror to
-    // master so the operator sees what they dispatched. Deep-link
-    // takes the partner straight to their per-brand billing surface
-    // where this invoice now appears with status 'sent'.
-    const partnerHref = `/v/${guessBrandSlug(target.vertical)}/billing`;
+
+    // In-portal notification regardless of email outcome — the
+    // partner's bell is the source of truth for "you have an invoice
+    // waiting." Email is the second channel.
+    const partnerHref = `/v/${brandSlug}/billing`;
     pushNotificationWithMasterMirror({
       recipient: target.partnerId,
       kind: 'invoice_sent',
@@ -124,7 +178,8 @@ export function SendDialog({ target, onClose, onSent }: Props) {
       masterTitle: `Sent ${target.invoiceNo} to ${target.merchant}`,
       masterBody: `${target.periodLabel} · ${fmtUsd(target.amountCents)} · recipient: ${email}`,
     });
-    onSent(target.invoiceNo);
+    setSending(false);
+    if (dispatched) onSent(target.invoiceNo);
   };
 
   /** Convert a vertical product label (e.g. "MedPay") into the URL
@@ -200,19 +255,23 @@ export function SendDialog({ target, onClose, onSent }: Props) {
           </div>
 
           <p className="text-[11px] text-fg-muted">
-            Opens your mail client with the content pre-filled. In Phase B (Resend wired), this
-            sends directly without opening the local composer.
+            Sends the branded {target?.vertical} invoice email directly via Resend (or logs to the
+            dev console when RESEND_API_KEY is unset). Falls back to the local mail composer only if
+            the BFF dispatch fails.
           </p>
+          {sendError && (
+            <p className="text-[11px] text-red-600 font-medium">Send error: {sendError}</p>
+          )}
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" disabled={sending}>
               Cancel
             </Button>
           </DialogClose>
-          <Button size="sm" onClick={send}>
-            Send via mail composer
+          <Button size="sm" onClick={() => void send()} disabled={sending}>
+            {sending ? 'Sending…' : `Send to ${target?.email ?? 'recipient'}`}
           </Button>
         </DialogFooter>
       </DialogContent>

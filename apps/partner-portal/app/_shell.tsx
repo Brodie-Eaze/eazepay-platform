@@ -120,20 +120,17 @@ const masterGroups: NavGroup[] = [
     ],
   },
   {
+    // Pipeline now carries Billing only — the platform invoices merchants
+    // for the platform-fee % on funded volume (varies by vertical). The
+    // /invoices workspace is a 3-tab Monthly/Collections/Automation page.
+    // /payouts deep-links here so old bookmarks still resolve.
+    //
+    // 2026-05 reorder: "All Applications" moved into the Submit
+    // Application group so the application surfaces (submit + queue)
+    // are visually adjacent. /applications still works at its direct
+    // URL for anyone with the deep link.
     label: 'Pipeline',
-    items: [
-      // All Applications covers both the application queue AND the
-      // settlement view (linked from the Applications header), so
-      // "Settlements" no longer needs its own top-level nav entry.
-      // /settlements remains accessible at its direct URL.
-      { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
-      // Billing — the platform invoices merchants for the platform-fee
-      // % on funded volume (varies by vertical). The old "Payouts" framing
-      // was incorrect: EazePay never pays merchants. /payouts and
-      // /invoices both resolve here so deep links survive. The workspace
-      // itself is a 3-tab Monthly/Collections/Automation page.
-      { href: '/invoices', label: 'Billing', icon: <DollarIcon /> },
-    ],
+    items: [{ href: '/invoices', label: 'Billing', icon: <DollarIcon /> }],
   },
   {
     // Lender Network is intentionally two items:
@@ -150,8 +147,12 @@ const masterGroups: NavGroup[] = [
     ],
   },
   {
+    // 2026-05 reorder: "All Applications" lives at the top of this
+    // group now, alongside the per-brand application links. Keeps the
+    // "show me apps / submit an app" surface visually together.
     label: 'Submit Application',
     items: [
+      { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
       { href: '/submit/coach-pay', label: 'CoachPay Application', icon: <SendIcon /> },
       { href: '/submit/med-pay', label: 'MedPay Application', icon: <HeartPulseIcon /> },
       { href: '/submit/trade-pay', label: 'TradePay Application', icon: <BankIcon /> },
@@ -235,25 +236,23 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       ],
     },
     {
+      // 2026-05 reorder: Applications lives alongside Submit + Send
+      // Application Link so the "apps I've sent, apps I'm reviewing"
+      // surfaces sit together.
       label: 'Submit Application',
       items: [
+        { href: `${base}/applications`, label: 'Applications', icon: <DocIcon /> },
         { href: `${base}/submit`, label: brandSubmitLabel, icon: brandSubmitIcon },
         { href: `${base}/send-link`, label: 'Send Application Link', icon: <LinkIcon /> },
       ],
     },
     {
-      // Trimmed deliberately — the per-brand merchant does NOT process
-      // cards through EazePay (MiCamp handles their gateway, on a
-      // separate platform), so Transactions + Settlements were removed
-      // to avoid implying we own that surface. What stays:
-      //   - Applications: the finance applications they originate
-      //     (live offer ticker per app lands in PR #26)
-      //   - Billing: our platform-fee invoices to them + pay-link
+      // Billing stays under Payments — the per-brand merchant doesn't
+      // process cards through EazePay (MiCamp handles their gateway
+      // separately) so this group is just the platform-fee invoice
+      // surface today.
       label: 'Payments',
-      items: [
-        { href: `${base}/applications`, label: 'Applications', icon: <DocIcon /> },
-        { href: `${base}/billing`, label: 'Billing', icon: <DollarIcon /> },
-      ],
+      items: [{ href: `${base}/billing`, label: 'Billing', icon: <DollarIcon /> }],
     },
     {
       label: 'Integrations',

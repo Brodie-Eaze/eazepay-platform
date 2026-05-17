@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import {
   PageHeader,
@@ -16,6 +16,7 @@ import {
   CheckIcon,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
+import { csrfHeaders } from '../../../../lib/client-csrf';
 
 /**
  * Per-brand team & roles management.
@@ -95,22 +96,113 @@ const SEED: TeamMember[] = [
   },
 ];
 
-const ROLE_DESCRIPTIONS: Record<TeamMember['role'], { tone: 'accent' | 'success' | 'warning' | 'info' | 'neutral'; desc: string }> = {
+const ROLE_DESCRIPTIONS: Record<
+  TeamMember['role'],
+  { tone: 'accent' | 'success' | 'warning' | 'info' | 'neutral'; desc: string }
+> = {
   Owner: { tone: 'accent', desc: 'Full control · billing · contracts · cannot be removed' },
   Admin: { tone: 'success', desc: 'Approve · invite · configure integrations · audit log' },
   Operator: { tone: 'info', desc: 'Approve applications · view PII · resolve exceptions' },
   Viewer: { tone: 'neutral', desc: 'Read-only · masked PII · no write actions' },
-  Compliance: { tone: 'warning', desc: 'Audit log access · adverse action review · cannot mutate financial state' },
+  Compliance: {
+    tone: 'warning',
+    desc: 'Audit log access · adverse action review · cannot mutate financial state',
+  },
 };
 
+interface PendingInvite {
+  token: string;
+  recipientEmail: string;
+  role: TeamMember['role'];
+  expiresAt: string;
+  status: 'active' | 'accepted' | 'expired' | 'revoked';
+}
+
 export default function BrandTeamPage() {
+  // All hooks declared FIRST — react-hooks/rules-of-hooks requires
+  // every render to call the same hooks in the same order. The brand
+  // resolution + notFound() check happens AFTER all hooks so an
+  // unknown slug still passes the hook-order rule (notFound() throws
+  // inside the render which unmounts; that's fine).
   const { brand: brandSlug } = useParams<{ brand: string }>();
+  const [team, setTeam] = useState<TeamMember[]>(SEED);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+
+  // Invite-form state
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<TeamMember['role']>('Operator');
+  const [inviteNote, setInviteNote] = useState('');
+  const [inviteSubmitting, setInviteSubmitting] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+
+  // Load the partner's existing invites from the BFF.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/v/${brandSlug}/team/invite`, {
+          credentials: 'include',
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as { invites: PendingInvite[] };
+        if (!cancelled) setPendingInvites(body.invites ?? []);
+      } catch {
+        /* swallow — list stays empty */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [brandSlug]);
+
+  // Brand resolution after all hooks (rules-of-hooks).
   const brand = BRAND_ORDER.find((b) => BRANDS[b].slug === brandSlug) as BrandCode | undefined;
   if (!brand) notFound();
   const spec = BRANDS[brand!];
 
-  const [team, setTeam] = useState<TeamMember[]>(SEED);
-  const [inviteOpen, setInviteOpen] = useState(false);
+  // Use the signed-in Owner's email/name as the inviter. In real
+  // auth this comes from /api/auth/session; today it's the team
+  // page's hard-coded Owner row.
+  const inviter = team.find((m) => m.role === 'Owner') ?? team[0];
+
+  const submitInvite = async () => {
+    setInviteError(null);
+    setInviteSuccess(null);
+    setInviteSubmitting(true);
+    try {
+      const res = await fetch(`/api/v/${brandSlug}/team/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+        credentials: 'include',
+        body: JSON.stringify({
+          recipientEmail: inviteEmail.trim().toLowerCase(),
+          role: inviteRole,
+          inviterEmail: inviter?.email ?? '',
+          inviterName: inviter?.name ?? 'EazePay Admin',
+          ...(inviteNote.trim() ? { inviterNote: inviteNote.trim() } : {}),
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          detail?: string;
+          code?: string;
+        };
+        setInviteError(body.detail ?? body.code ?? `HTTP ${res.status}`);
+        return;
+      }
+      const body = (await res.json()) as PendingInvite;
+      setPendingInvites((prev) => [body, ...prev]);
+      setInviteSuccess(`Invite sent to ${body.recipientEmail}.`);
+      setInviteEmail('');
+      setInviteNote('');
+    } catch (err) {
+      setInviteError((err as Error).message);
+    } finally {
+      setInviteSubmitting(false);
+    }
+  };
 
   const counts = team.reduce(
     (acc, m) => {
@@ -147,39 +239,114 @@ export default function BrandTeamPage() {
       <PageBody>
         <Banner intent="info" className="mb-5">
           <strong>{spec.name} portal scope.</strong> These permissions only apply inside the{' '}
-          {spec.name} portal — your team's TradePay or CoachPay portal access is managed
-          separately under each brand's Team page.
+          {spec.name} portal — your team's TradePay or CoachPay portal access is managed separately
+          under each brand's Team page.
         </Banner>
 
         {inviteOpen && (
           <Card className="mb-5">
             <CardBody>
               <h2 className="text-[14px] font-semibold mb-3">Invite a teammate to {spec.name}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 <input
                   type="email"
                   placeholder="teammate@yourpractice.com"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  disabled={inviteSubmitting}
                   className="rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                 />
-                <select className="rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]">
-                  <option>Operator (default)</option>
-                  <option>Admin</option>
-                  <option>Viewer</option>
-                  <option>Compliance</option>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as TeamMember['role'])}
+                  disabled={inviteSubmitting}
+                  className="rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
+                >
+                  <option value="Operator">Operator (default)</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Viewer">Viewer</option>
+                  <option value="Compliance">Compliance</option>
                 </select>
-                <Button size="sm" onClick={() => setInviteOpen(false)}>
-                  Send invitation
+                <Button
+                  size="sm"
+                  onClick={() => void submitInvite()}
+                  disabled={inviteSubmitting || !inviteEmail.trim()}
+                >
+                  {inviteSubmitting ? 'Sending…' : 'Send invitation'}
                 </Button>
               </div>
-              <p className="text-[11px] text-fg-muted mt-2">
-                Invites expire in 72 hours and require MFA enrolment on first login.
+              <textarea
+                placeholder="Optional note for the invite email (e.g. 'See you Monday')"
+                value={inviteNote}
+                onChange={(e) => setInviteNote(e.target.value)}
+                disabled={inviteSubmitting}
+                rows={2}
+                className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[12px] mb-2"
+              />
+              <p className="text-[11px] text-fg-muted">
+                Invites expire in 7 days. The teammate gets a branded {spec.name} email and lands in
+                the {spec.name} portal on accept.
               </p>
+              {inviteError && (
+                <Banner intent="danger" className="mt-3">
+                  {inviteError}
+                </Banner>
+              )}
+              {inviteSuccess && (
+                <Banner intent="success" className="mt-3">
+                  {inviteSuccess}
+                </Banner>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {pendingInvites.length > 0 && (
+          <Card className="mb-5">
+            <CardHeader
+              title="Pending invites"
+              description={`Sent from your ${spec.name} portal — recipients haven't accepted yet.`}
+            />
+            <CardBody className="p-0">
+              <ul className="divide-y divide-border">
+                {pendingInvites.map((inv) => (
+                  <li
+                    key={inv.token}
+                    className="grid grid-cols-12 items-center px-5 py-3 text-[13px]"
+                  >
+                    <span className="col-span-5 truncate">{inv.recipientEmail}</span>
+                    <span className="col-span-2 text-fg-secondary">{inv.role}</span>
+                    <span className="col-span-3">
+                      <StatusPill
+                        tone={
+                          inv.status === 'accepted'
+                            ? 'success'
+                            : inv.status === 'expired'
+                              ? 'warning'
+                              : inv.status === 'revoked'
+                                ? 'neutral'
+                                : 'info'
+                        }
+                        dot
+                      >
+                        {inv.status}
+                      </StatusPill>
+                    </span>
+                    <span className="col-span-2 text-right text-[11px] text-fg-muted">
+                      expires {new Date(inv.expiresAt).toLocaleDateString()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </CardBody>
           </Card>
         )}
 
         <Card className="mb-5">
-          <CardHeader title="Members" description={`${counts.active} active · ${counts.total - counts.active} invited / suspended`} />
+          <CardHeader
+            title="Members"
+            description={`${counts.active} active · ${counts.total - counts.active} invited / suspended`}
+          />
           <CardBody className="p-0">
             <div className="grid grid-cols-12 px-5 py-3 text-[10px] uppercase tracking-wider font-semibold text-fg-muted bg-bg-muted border-b border-border">
               <span className="col-span-4">Member</span>
@@ -210,22 +377,35 @@ export default function BrandTeamPage() {
                       onChange={(e) =>
                         setTeam((prev) =>
                           prev.map((u) =>
-                            u.id === m.id ? { ...u, role: e.target.value as TeamMember['role'] } : u,
+                            u.id === m.id
+                              ? { ...u, role: e.target.value as TeamMember['role'] }
+                              : u,
                           ),
                         )
                       }
                       className="rounded-md border border-border bg-bg-elevated px-2 py-1 text-[12px]"
                       disabled={m.role === 'Owner'}
                     >
-                      {(['Owner', 'Admin', 'Operator', 'Viewer', 'Compliance'] as const).map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
+                      {(['Owner', 'Admin', 'Operator', 'Viewer', 'Compliance'] as const).map(
+                        (r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ),
+                      )}
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <StatusPill tone={m.status === 'active' ? 'success' : m.status === 'invited' ? 'info' : 'warning'} dot>
+                    <StatusPill
+                      tone={
+                        m.status === 'active'
+                          ? 'success'
+                          : m.status === 'invited'
+                            ? 'info'
+                            : 'warning'
+                      }
+                      dot
+                    >
                       {m.status}
                     </StatusPill>
                   </div>
@@ -238,7 +418,9 @@ export default function BrandTeamPage() {
                       <span className="text-[11px] text-fg-muted">Enrolment required</span>
                     )}
                   </div>
-                  <div className="col-span-2 text-right text-[12px] text-fg-muted">{m.lastSeen}</div>
+                  <div className="col-span-2 text-right text-[12px] text-fg-muted">
+                    {m.lastSeen}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -267,7 +449,9 @@ export default function BrandTeamPage() {
                         )}
                         {r}
                       </span>
-                      <StatusPill tone={d.tone}>{r === 'Owner' ? 'Cannot delete' : 'Configurable'}</StatusPill>
+                      <StatusPill tone={d.tone}>
+                        {r === 'Owner' ? 'Cannot delete' : 'Configurable'}
+                      </StatusPill>
                     </div>
                     <p className="text-[12px] text-fg-muted leading-snug">{d.desc}</p>
                   </li>

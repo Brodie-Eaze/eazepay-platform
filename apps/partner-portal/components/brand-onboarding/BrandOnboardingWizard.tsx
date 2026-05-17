@@ -33,7 +33,7 @@ type IconProps = { size?: number; className?: string };
  *   • document list (each brand requires different docs — coaching
  *     cert vs contractor license vs provider/DEA, etc.)
  *   • submit endpoint (BFF proxies map each brand to the right
- *     provider — e.g. EZ Check → HighSale, Processing → MyCamp)
+ *     provider — e.g. EZ Check → HighSale, Processing → MiCamp)
  *   • icon used in the brand block
  *
  * Wizard state is held here; each step is a pure-input slice. Step
@@ -284,8 +284,11 @@ export function BrandOnboardingWizard({
                 </span>
                 <span
                   className={
-                    (active ? 'text-fg font-semibold' : done ? 'text-fg-secondary' : 'text-fg-muted') +
-                    ' whitespace-nowrap'
+                    (active
+                      ? 'text-fg font-semibold'
+                      : done
+                        ? 'text-fg-secondary'
+                        : 'text-fg-muted') + ' whitespace-nowrap'
                   }
                 >
                   {label}
@@ -359,7 +362,10 @@ function Label({ children, error }: { children: React.ReactNode; error?: string 
   );
 }
 
-function Input({ invalid, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
+function Input({
+  invalid,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
   return (
     <input
       {...props}
@@ -374,7 +380,15 @@ function Input({ invalid, ...props }: React.InputHTMLAttributes<HTMLInputElement
   );
 }
 
-function StepHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
+function StepHeader({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+}) {
   return (
     <div className="flex items-start gap-3 mb-5">
       <div className="h-9 w-9 rounded-lg bg-[#0d1530] text-white flex items-center justify-center shrink-0">
@@ -396,12 +410,7 @@ interface StepProps {
   errors: Record<string, string>;
 }
 
-function BusinessInfo({
-  state,
-  setState,
-  errors,
-  icon,
-}: StepProps & { icon: React.ReactNode }) {
+function BusinessInfo({ state, setState, errors, icon }: StepProps & { icon: React.ReactNode }) {
   const set = (k: keyof State) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setState((s) => ({ ...s, [k]: e.target.value }));
   return (
@@ -444,15 +453,33 @@ function BusinessInfo({
         </div>
         <div>
           <Label error={errors['city']}>City</Label>
-          <Input placeholder="Los Angeles" value={state.city} onChange={set('city')} invalid={!!errors['city']} />
+          <Input
+            placeholder="Los Angeles"
+            value={state.city}
+            onChange={set('city')}
+            invalid={!!errors['city']}
+          />
         </div>
         <div>
           <Label error={errors['state']}>State</Label>
-          <Input placeholder="CA" value={state.state} onChange={set('state')} invalid={!!errors['state']} maxLength={2} />
+          <Input
+            placeholder="CA"
+            value={state.state}
+            onChange={set('state')}
+            invalid={!!errors['state']}
+            maxLength={2}
+          />
         </div>
         <div>
           <Label error={errors['zip']}>ZIP Code</Label>
-          <Input placeholder="90001" value={state.zip} onChange={set('zip')} invalid={!!errors['zip']} inputMode="numeric" maxLength={10} />
+          <Input
+            placeholder="90001"
+            value={state.zip}
+            onChange={set('zip')}
+            invalid={!!errors['zip']}
+            inputMode="numeric"
+            maxLength={10}
+          />
         </div>
         <div>
           <Label error={errors['yearsInBusiness']}>Years in Business</Label>
@@ -657,7 +684,10 @@ function Review({ state, documents }: { state: State; documents: BrandDocSpec[] 
             ['Legal name', fmt(state.legalName)],
             ['DBA', fmt(state.dba)],
             ['EIN', fmt(state.ein)],
-            ['Address', [state.address, state.city, state.state, state.zip].filter(Boolean).join(', ')],
+            [
+              'Address',
+              [state.address, state.city, state.state, state.zip].filter(Boolean).join(', '),
+            ],
             ['Years in business', fmt(state.yearsInBusiness)],
             ['Avg monthly revenue', fmt(state.avgMonthlyRevenue)],
           ]}

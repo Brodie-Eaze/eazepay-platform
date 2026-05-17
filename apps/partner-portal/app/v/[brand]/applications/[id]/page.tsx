@@ -123,6 +123,13 @@ interface LiveStatusBody {
 }
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../../../lib/master-data';
+import {
+  readSubmittedAppsForPartner,
+  readCurrentPartnerIdFromDemoCookie,
+  DEMO_PARTNER_BY_BRAND,
+  toLegacyRow,
+} from '../../../../../lib/submitted-applications';
+import { findPartner } from '../../../../../lib/master-data';
 import { LiveOfferTicker } from '../../../../../components/LiveOfferTicker';
 import {
   lookupHighsaleSnapshot,
@@ -592,11 +599,41 @@ function buildWaterfall(app: ApplicationRow, tier: CreditTier | null): Waterfall
 
 export default function DealDetailPage() {
   const { brand: brandSlug, id } = useParams<{ brand: string; id: string }>();
+
+  // Lookup hydrates from two sources, in order:
+  //   1. master-data seed (10+15 historical apps; partner-scoped)
+  //   2. local-storage submitted apps minted via the brand wizard
+  // useMemo so the lookup runs every render unconditionally
+  // (rules-of-hooks). On SSR window is absent and we fall back to
+  // seed only — the React client render re-computes once hydrated.
+  const submittedApp = useMemo<ApplicationRow | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const cookiePartner = readCurrentPartnerIdFromDemoCookie();
+      const fallback =
+        brandSlug === 'medpay' || brandSlug === 'tradepay' || brandSlug === 'coachpay'
+          ? DEMO_PARTNER_BY_BRAND[brandSlug]
+          : null;
+      const partnerId = cookiePartner ?? fallback;
+      if (!partnerId) return null;
+      const legalName = findPartner(partnerId)?.legalName ?? partnerId;
+      const matching = readSubmittedAppsForPartner(partnerId).find((a) => a.id === id);
+      return matching ? toLegacyRow(matching, legalName) : null;
+    } catch {
+      return null;
+    }
+  }, [brandSlug, id]);
+
   const brand = slugToBrand(brandSlug);
   if (!brand) notFound();
   const spec = BRANDS[brand];
 
-  const app = applications.find((a) => a.id === id);
+  const seedApp = applications.find((a) => a.id === id);
+  const app = seedApp ?? submittedApp;
+  // Before the fix this branch fired for any submitted-app click +
+  // bounced the user to root not-found.tsx → master OS via "Go home".
+  // Two-part fix: lookup expansion above + brand-scoped not-found at
+  // /v/[brand]/not-found.tsx so the "Go home" stays inside /v/<brand>/.
   if (!app) notFound();
 
   const highsale = lookupHighsaleSnapshot(app.id);

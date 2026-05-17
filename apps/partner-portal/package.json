@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@eazepay/api-client": "workspace:*",
+    "@eazepay/service-email": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/ui": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
