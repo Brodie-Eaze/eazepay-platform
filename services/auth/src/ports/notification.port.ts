@@ -2,7 +2,7 @@ export interface OtpDeliveryInput {
   channel: 'sms' | 'email';
   to: string; // email or E.164 phone
   code: string; // plaintext code; never logged in production adapters
-  purpose: 'register_verify' | 'login_mfa' | 'step_up';
+  purpose: 'register_verify' | 'login_mfa' | 'step_up' | 'password_reset';
   ttlSeconds: number;
 }
 

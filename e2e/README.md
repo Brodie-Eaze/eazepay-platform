@@ -13,6 +13,18 @@ directory; the config is `playwright.config.ts` at the repo root.
 - `landings.spec.ts` — `/landing/medpay`, `/landing/tradepay`,
   `/landing/coachpay` render with brand styling, primary CTA visible,
   no console errors, no failed network requests.
+- `wall-up.spec.ts` (added with PR #34/#35) — every per-brand portal
+  walls cross-brand access; Services/Integrations links scoped to
+  `/v/<brand>/`; signed-cookie auth fence works; `/api/auth/demo`
+  rejects cross-origin POSTs.
+- `integrations-visual.spec.ts` — all 9 per-brand integration pages
+  (3 brands × {ez-check, processing, dialerpay}) render with the
+  shared `IntegrationPage` component, brand-flavored copy, and a CTA
+  that stays inside `/v/<brand>/`.
+- `password-reset.spec.ts` — `/v1/auth/forgot-password` returns 202
+  with anti-enumeration; throttle fires after 3 calls/min/IP;
+  reset-password rejects invalid OTP + password shapes via the global
+  ZodValidationPipe.
 
 Each spec runs against both projects in `playwright.config.ts`:
 

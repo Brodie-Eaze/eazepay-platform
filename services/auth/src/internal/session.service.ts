@@ -34,10 +34,7 @@ export class SessionService {
 
   constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
 
-  async create(
-    input: CreateSessionInput,
-    tx?: Prisma.TransactionClient,
-  ): Promise<SessionId> {
+  async create(input: CreateSessionInput, tx?: Prisma.TransactionClient): Promise<SessionId> {
     const client = tx ?? this.prisma;
     const session = await client.session.create({
       data: {
@@ -153,5 +150,26 @@ export class SessionService {
       where: { id: sessionId },
       data: { revokedAt: new Date() },
     });
+  }
+
+  /**
+   * Revoke every live (non-revoked, non-expired) session for a user.
+   * Used by password reset to force re-auth everywhere the user is
+   * currently signed in — a stolen JWT can't outlive the reset.
+   *
+   * `updateMany` is a single SQL UPDATE so partial application is
+   * impossible. Returns the count for callers that want to surface
+   * "signed out of N devices" UX.
+   */
+  async revokeAllForUser(userId: UserId): Promise<{ revokedCount: number }> {
+    const result = await this.prisma.session.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { revokedAt: new Date() },
+    });
+    return { revokedCount: result.count };
   }
 }

@@ -30,6 +30,15 @@ export interface IdentityProvider {
    * secret comparison; returns user id on success, throws on mismatch.
    */
   checkPassword(input: IdentityCheckPasswordInput): Promise<UserId>;
+
+  /**
+   * Replace the stored password hash for an existing user. Used by the
+   * password-reset flow AFTER the OTP challenge has been verified — the
+   * port itself does NOT enforce that prerequisite; the calling service
+   * (AuthService.resetPassword) is responsible for ordering. Throws
+   * NotFound if the userId doesn't exist.
+   */
+  setPassword(input: { userId: UserId; newPassword: string }): Promise<void>;
 }
 
 export const IDENTITY_PROVIDER = Symbol('IDENTITY_PROVIDER');
