@@ -187,6 +187,17 @@ export interface InvoiceActivity {
   summary: string;
 }
 
+export type ConfirmState = 'pending' | 'confirmed' | 'disputed';
+
+export interface ConfirmRecord {
+  token: string;
+  state: ConfirmState;
+  /** ISO timestamp the recipient acted (confirmed or disputed). */
+  actedAt?: string;
+  /** Reason given on dispute. */
+  disputeReason?: string;
+}
+
 export interface InvoiceOverride {
   status?: InvoiceStatus;
   customFeeCents?: number;
@@ -195,6 +206,12 @@ export interface InvoiceOverride {
   voidReason?: string;
   payments?: InvoicePayment[];
   activity?: InvoiceActivity[];
+  /**
+   * Confirm/dispute link state — the Send composer mints a token,
+   * the recipient clicks the link in the email and lands on
+   * /invoices/confirm/<token> where they Confirm or Dispute.
+   */
+  confirm?: ConfirmRecord;
 }
 
 // SSR-safe runtime guard for tag values like InvoiceStatus / PaymentMethod.
@@ -229,6 +246,22 @@ function parsePayments(input: unknown): InvoicePayment[] | undefined {
     });
   }
   return out;
+}
+
+function parseConfirm(input: unknown): ConfirmRecord | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const c = input as Record<string, unknown>;
+  if (typeof c.token !== 'string' || !c.token) return undefined;
+  const state =
+    c.state === 'pending' || c.state === 'confirmed' || c.state === 'disputed'
+      ? (c.state as ConfirmState)
+      : 'pending';
+  return {
+    token: c.token,
+    state,
+    actedAt: typeof c.actedAt === 'string' ? c.actedAt : undefined,
+    disputeReason: typeof c.disputeReason === 'string' ? c.disputeReason : undefined,
+  };
 }
 
 function parseActivity(input: unknown): InvoiceActivity[] | undefined {
@@ -295,6 +328,8 @@ export function readInvoiceOverrides(): Record<string, InvoiceOverride> {
       if (payments) next.payments = payments;
       const activity = parseActivity(ov.activity);
       if (activity) next.activity = activity;
+      const confirm = parseConfirm(ov.confirm);
+      if (confirm) next.confirm = confirm;
       out[k] = next;
     }
     return out;
@@ -410,4 +445,68 @@ export function totalPaidCents(
 ): number {
   const o = overrides ?? readInvoiceOverrides();
   return (o[invoiceNo]?.payments ?? []).reduce((s, p) => s + p.amountCents, 0);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ *  Confirm/dispute link
+ * ──────────────────────────────────────────────────────────────────
+ *  The Send composer mints a token before sending the email; the
+ *  recipient lands on /invoices/confirm/<token> to either confirm
+ *  the invoice (default action) or dispute it with a reason. State
+ *  feeds the Collections tab and the per-invoice activity log.
+ */
+
+function makeToken(invoiceNo: string): string {
+  return `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}_${invoiceNo.length}`;
+}
+
+export function ensureConfirmToken(invoiceNo: string): string {
+  const cur = readInvoiceOverrides()[invoiceNo];
+  if (cur?.confirm?.token) return cur.confirm.token;
+  const token = makeToken(invoiceNo);
+  setInvoiceOverride(invoiceNo, {
+    confirm: { token, state: 'pending' },
+  });
+  return token;
+}
+
+export function findInvoiceByConfirmToken(
+  token: string,
+): { invoiceNo: string; record: ConfirmRecord } | null {
+  if (!token) return null;
+  const all = readInvoiceOverrides();
+  for (const [invoiceNo, ov] of Object.entries(all)) {
+    if (ov.confirm?.token === token) {
+      return { invoiceNo, record: ov.confirm };
+    }
+  }
+  return null;
+}
+
+export function setConfirmState(
+  invoiceNo: string,
+  next: ConfirmState,
+  by: string,
+  disputeReason?: string,
+): void {
+  const cur = readInvoiceOverrides()[invoiceNo];
+  const token = cur?.confirm?.token ?? makeToken(invoiceNo);
+  setInvoiceOverride(invoiceNo, {
+    confirm: {
+      token,
+      state: next,
+      actedAt: new Date().toISOString(),
+      disputeReason: next === 'disputed' ? disputeReason : undefined,
+    },
+  });
+  appendActivity(invoiceNo, {
+    kind: 'status',
+    by,
+    summary:
+      next === 'confirmed'
+        ? 'Recipient confirmed invoice'
+        : next === 'disputed'
+          ? `Recipient disputed${disputeReason ? ` · ${disputeReason}` : ''}`
+          : 'Confirm/dispute reset',
+  });
 }
