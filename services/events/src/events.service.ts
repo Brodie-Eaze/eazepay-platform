@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Prisma, PrismaClient } from '@prisma/client';
 import type { Redis } from 'ioredis';
-import type { PiiVaultService } from '@eazepay/service-user';
+// Value import (not type-only): NestJS DI resolves constructor params
+// via emitted decorator metadata, which requires a runtime reference.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { PiiVaultService } from '@eazepay/service-user';
 import { EVENT_CHANNEL, PRISMA, REDIS_PUB } from './internal/tokens.js';
 import { assertSafePayload } from './internal/sanitiser.js';
 import type { PublishInput, PublishedEvent, EventKind } from './events.types.js';
