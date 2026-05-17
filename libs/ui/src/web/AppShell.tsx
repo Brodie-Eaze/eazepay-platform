@@ -99,8 +99,13 @@ export const AppShell: FC<{
           </svg>
         </div>
         <div className="leading-tight min-w-0">
-          <div className="text-white font-extrabold text-[16px] tracking-tight truncate">EAZE</div>
-          <div className="text-[9px] uppercase tracking-[0.22em] font-semibold text-sidebar-fg truncate mt-0.5">
+          {/* Wordmark sized to match EazePay Intelligence: 17px,
+              semibold (600), tracking-tight. Lighter weight than the
+              old extrabold reads more refined alongside the Inter
+              stylistic-set glyphs (cv11/ss01) globals.css already
+              opts into. */}
+          <div className="text-white font-semibold text-[17px] tracking-tight truncate">EAZE</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold text-sidebar-fg truncate mt-1">
             {product}
           </div>
         </div>
@@ -273,7 +278,7 @@ const NavGroupBlock: FC<{
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={`nav-group-${group.label.replace(/\s+/g, '-').toLowerCase()}`}
-          className="w-full px-4 mb-1 text-[9px] uppercase tracking-[0.16em] font-semibold text-sidebar-section-fg hover:text-sidebar-fg flex items-center justify-between"
+          className="w-full px-4 mb-1.5 text-[10px] uppercase tracking-[0.16em] font-semibold text-sidebar-section-fg hover:text-sidebar-fg flex items-center justify-between"
         >
           <span>{group.label}</span>
           <ChevronDownIcon
@@ -328,10 +333,14 @@ const NavRow: FC<{
           aria-expanded={open}
           aria-controls={childrenId}
           className={cn(
-            'w-full mx-1.5 flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-all',
+            // Typography mirrors EazePay Intelligence: 13px,
+            // tracking-tight, font-normal default + font-medium
+            // active; py-2/rounded-lg padding shape; gap-3 between
+            // icon and label.
+            'w-full mx-1.5 flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-[13px] tracking-tight transition-all',
             active
-              ? 'bg-white/[0.1] text-white'
-              : 'text-sidebar-fg hover:bg-white/[0.05] hover:text-slate-200',
+              ? 'bg-white/[0.1] text-white font-medium'
+              : 'text-sidebar-fg font-normal hover:bg-white/[0.05] hover:text-slate-200',
           )}
           style={{ width: 'calc(100% - 0.75rem)' }}
         >
@@ -376,10 +385,13 @@ const NavRow: FC<{
     <Link
       href={item.href}
       className={cn(
-        'mx-1.5 flex items-center justify-between gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-all',
+        // Leaf nav row — same typography pattern as the collapsible
+        // parent above (13px tracking-tight, font-medium when active,
+        // font-normal otherwise, py-2/rounded-lg).
+        'mx-1.5 flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-[13px] tracking-tight transition-all',
         active
-          ? 'bg-white/[0.1] text-white'
-          : 'text-sidebar-fg hover:bg-white/[0.05] hover:text-slate-200',
+          ? 'bg-white/[0.1] text-white font-medium'
+          : 'text-sidebar-fg font-normal hover:bg-white/[0.05] hover:text-slate-200',
       )}
     >
       <span className="flex items-center gap-2">
