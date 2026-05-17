@@ -1719,8 +1719,11 @@ const TRADEPAY_APPLY_CSS = `
   box-shadow: 0 0 6px rgba(255,255,255,0.9);
 }
 .tradepay-root .tp-offer-card-cta {
-  margin: 14px 18px 18px;
-  width: calc(100% - 36px);
+  /* Cap the CTA at a readable button width on wide desktops. */
+  margin: 14px auto 18px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
   justify-content: center;
   padding: 12px;
   font-size: 13px;
@@ -1836,7 +1839,8 @@ const TRADEPAY_APPLY_CSS = `
   padding: 40px 0 80px;
 }
 .tradepay-root .tp-apply-container {
-  max-width: 720px;
+  /* Tighter on desktop so offers + form columns don't sprawl. */
+  max-width: 640px;
   margin: 0 auto;
   padding: 0 24px;
   position: relative; z-index: 1;

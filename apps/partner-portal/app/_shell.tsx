@@ -107,7 +107,11 @@ const masterGroups: NavGroup[] = [
     label: 'Pipeline',
     items: [
       { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
-      { href: '/payouts', label: 'Payouts', icon: <DollarIcon /> },
+      // Invoices — the platform invoices merchants for the platform-fee
+      // % on funded volume (varies by vertical). The old "Payouts" framing
+      // was incorrect: EazePay never pays merchants. /payouts now
+      // redirects to /invoices so old deep links survive.
+      { href: '/invoices', label: 'Invoices', icon: <DollarIcon /> },
       { href: '/settlements', label: 'Settlements', icon: <BankIcon /> },
     ],
   },
