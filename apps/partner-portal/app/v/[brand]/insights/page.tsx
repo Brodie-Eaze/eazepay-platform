@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useParams, useSearchParams, notFound } from 'next/navigation';
+import { useMemo } from 'react';
+import { useParams, notFound } from 'next/navigation';
 import {
   PageHeader,
   PageBody,
@@ -21,13 +22,13 @@ import {
   type Column,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
+import { ficoBandApproval } from '../../../../lib/mock-data';
+import { applicationsForPartner } from '../../../../lib/master-data';
 import {
-  approval30d,
-  latency30d,
-  declineReasonDistribution,
-  ficoBandApproval,
-} from '../../../../lib/mock-data';
-import { findPartner, applicationsForPartner } from '../../../../lib/master-data';
+  currentPartnerForBrand,
+  partnerShareOfBrand,
+  partnerVariance,
+} from '../../../../lib/partner-profile';
 import {
   marketplaceLenders,
   marketplaces,
@@ -859,26 +860,67 @@ function heatShade(v: number | null | undefined, min: number, max: number): stri
 
 export default function BrandInsightsPage() {
   const { brand: brandSlug } = useParams<{ brand: string }>();
-  const searchParams = useSearchParams();
-  const partnerIdParam = searchParams?.get('partnerId') ?? null;
-  // Resolve to the canonical master partner (handles slug bridging too).
-  // When present, this turns the insights page into a partner-scoped
-  // view — same drill the master `/control-panel/[partnerId]` applications
-  // tab shows, so the cross-link from /reports lands consistently.
-  const partnerCtx = partnerIdParam ? (findPartner(partnerIdParam) ?? null) : null;
-  const partnerApps = partnerCtx ? applicationsForPartner(partnerCtx.id) : [];
   const brandCode = BRAND_ORDER.find((b) => BRANDS[b].slug === brandSlug) as BrandCode | undefined;
   if (!brandCode || brandCode === 'direct') notFound();
   const brand = brandCode as Exclude<BrandCode, 'direct'>;
   const spec = BRANDS[brand];
-  const profile = PROFILES[brand];
+
+  // Tenant isolation: this page renders the SIGNED-IN partner's
+  // insights only. Pre-fix, the `?partnerId=` query string let any
+  // viewer scope to any partner's data; the default view rendered
+  // brand-wide aggregates that leaked cross-tenant volume. Now the
+  // partner is resolved from session (demo cookie today, JWT.merchantId
+  // tomorrow) and there is NO way to override.
+  const partnerCtx = currentPartnerForBrand(brand);
+  if (!partnerCtx) notFound();
+  const partnerApps = applicationsForPartner(partnerCtx.id);
+
+  // Per-partner scaled profile. Volume metrics (funnel, fundedLoans30d,
+  // dollars) are scaled down by partner share of brand volume; rates
+  // (approval %, latency, take-up) get a small deterministic variance
+  // off the brand mean so different partners don't read identically.
+  const brandProfile = PROFILES[brand];
+  const partnerShare = partnerShareOfBrand(partnerCtx, brand);
+  const profile = useMemo(() => {
+    const scaleInt = (n: number): number => Math.round(n * partnerShare);
+    const scaleBig = (cents: number): number => Math.round(cents * partnerShare);
+    const rateOffset = partnerVariance(partnerCtx.id, 0.04); // ±4pp on rates
+    const latencyOffset = Math.round(partnerVariance(partnerCtx.id, 60)); // ±60ms
+    return {
+      ...brandProfile,
+      approvalRate: Math.max(0, Math.min(1, brandProfile.approvalRate + rateOffset)),
+      latencyMs: Math.max(100, brandProfile.latencyMs + latencyOffset),
+      takeUpRate: Math.max(0, Math.min(1, brandProfile.takeUpRate + rateOffset / 2)),
+      manualReviewRate: Math.max(0, brandProfile.manualReviewRate + rateOffset / 8),
+      fundedLoans30d: scaleInt(brandProfile.fundedLoans30d),
+      fundedDollars30dCents: scaleBig(brandProfile.fundedDollars30dCents),
+      funnel: {
+        applications: scaleInt(brandProfile.funnel.applications),
+        prequalPassed: scaleInt(brandProfile.funnel.prequalPassed),
+        kycVerified: scaleInt(brandProfile.funnel.kycVerified),
+        decisioned: scaleInt(brandProfile.funnel.decisioned),
+        approved: scaleInt(brandProfile.funnel.approved),
+        funded: scaleInt(brandProfile.funnel.funded),
+      },
+      ficoBandFunnel: brandProfile.ficoBandFunnel.map((row) => ({
+        ...row,
+        prequal: scaleInt(row.prequal),
+        kyc: scaleInt(row.kyc),
+        approved: scaleInt(row.approved),
+        funded: scaleInt(row.funded),
+      })),
+      // Histograms + heatmaps stay rate-shaped (no absolute volume),
+      // so we keep them — they describe the SAME risk distribution the
+      // partner's loans roll up into.
+    };
+  }, [brandProfile, partnerCtx.id, partnerShare]);
   const persona = PERSONAS[brand];
   const lenderRows = lendersForBrand(brand);
   const recent = recentDecisionsFor(brand);
   const agents = agentHealthFor(brand);
   const diGrid = diGridFor(brand);
 
-  // Volume + flow funnel — compute drop-off %
+  // Volume + flow funnel — compute drop-off % from the partner-scoped profile.
   const funnelSteps = [
     { key: 'applications', label: 'Applications received', value: profile.funnel.applications },
     { key: 'prequalPassed', label: 'Pre-qual passed', value: profile.funnel.prequalPassed },
@@ -887,7 +929,7 @@ export default function BrandInsightsPage() {
     { key: 'approved', label: 'Approved', value: profile.funnel.approved },
     { key: 'funded', label: 'Funded', value: profile.funnel.funded },
   ];
-  const funnelMax = funnelSteps[0]!.value;
+  const funnelMax = Math.max(funnelSteps[0]!.value, 1);
 
   // Recent-decisions table columns
   const recentCols: Column<RecentDecision>[] = [
@@ -1106,8 +1148,8 @@ export default function BrandInsightsPage() {
     <>
       <PageHeader
         breadcrumbs={[{ label: spec.name, href: `/v/${brandSlug}` }, { label: 'Insights' }]}
-        title={`${spec.name} insights`}
-        description={`Brand-scoped approval, decline, latency, lender mix, vintage, and fair-lending cuts. Every chart reproducible to the active policy version + input snapshot. Scoped to ${persona.applicant} routed under the ${spec.name} surface.`}
+        title={`${partnerCtx.legalName} · Insights`}
+        description={`Approval, decline, latency, lender mix, vintage, and fair-lending cuts for ${partnerCtx.legalName} on ${spec.name}. Scoped to this account only — master operators see the full ${spec.name} network.`}
         actions={
           <>
             <Button variant="ghost" leadingIcon={<ChartIcon size={16} />}>
@@ -1127,45 +1169,35 @@ export default function BrandInsightsPage() {
         }
       />
       <PageBody>
-        {partnerCtx && (
-          <div className="mb-4 rounded-lg border border-border bg-bg-elevated px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="size-9 rounded-full bg-bg-muted text-fg flex items-center justify-center font-semibold text-[12px] shrink-0">
-                {partnerCtx.initials}
+        {/* Tenant-isolation banner — every figure below is for this
+            business only. partnerCtx is non-null by construction (the
+            page notFound()s above if resolution fails). */}
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-bg-muted/40 px-4 py-3">
+          <span
+            className="size-9 rounded-full bg-fg text-bg-elevated flex items-center justify-center font-semibold text-[12px] tracking-wider shrink-0"
+            aria-hidden
+          >
+            {partnerCtx.initials}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-fg-muted">
+              Your business view
+            </p>
+            <p className="text-[13px] font-semibold text-fg truncate">
+              {partnerCtx.legalName}
+              <span className="ml-2 font-normal text-fg-muted">
+                · {spec.name} merchant · {partnerApps.length} application
+                {partnerApps.length === 1 ? '' : 's'} · scoped to this account only
               </span>
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
-                  Partner-scoped view
-                </p>
-                <p className="text-[13px] font-semibold text-fg truncate">
-                  {partnerCtx.legalName}{' '}
-                  <span className="font-normal text-fg-muted">
-                    · {partnerApps.length} application{partnerApps.length === 1 ? '' : 's'} on this
-                    brand
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Partner control page is a master-operator surface — partner
-                  portals don't link out to it. The portal-internal team
-                  + settings pages cover everything a brand merchant
-                  needs from inside their /v/<brand>/ scope. */}
-              <Link
-                href={`/v/${brandSlug}/team`}
-                className="text-[11px] text-accent hover:underline inline-flex items-center gap-1"
-              >
-                Manage team &amp; roles
-              </Link>
-              <Link
-                href={`/v/${brandSlug}/insights`}
-                className="h-8 px-3 rounded-md border border-border bg-bg-elevated text-[11px] font-medium text-fg-secondary hover:bg-bg-muted inline-flex items-center"
-              >
-                Clear filter
-              </Link>
-            </div>
+            </p>
           </div>
-        )}
+          <Link
+            href={`/v/${brandSlug}/team`}
+            className="text-[11px] text-accent hover:underline inline-flex items-center gap-1 shrink-0"
+          >
+            Manage team &amp; roles
+          </Link>
+        </div>
         <Banner intent="info" className="mb-5">
           The fair-lending monitoring engine evaluates disparate impact + equalised odds on each
           decisioned {spec.name} cohort weekly. Quarterly written review is exported to your

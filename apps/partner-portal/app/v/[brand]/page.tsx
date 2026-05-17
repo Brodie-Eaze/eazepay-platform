@@ -21,6 +21,7 @@ import {
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../lib/master-data';
+import { currentPartnerForBrand, partnerShareOfBrand } from '../../../lib/partner-profile';
 
 /**
  * Brand portal — Dashboard.
@@ -37,13 +38,6 @@ import { applications, type ApplicationRow } from '../../../lib/master-data';
 
 const slugToBrand = (slug: string): BrandCode | null =>
   BRAND_ORDER.find((b) => BRANDS[b].slug === slug) ?? null;
-
-const productCodeForBrand = (b: BrandCode): 'med-pay' | 'trade-pay' | 'coach-pay' | null => {
-  if (b === 'medpay') return 'med-pay';
-  if (b === 'tradepay') return 'trade-pay';
-  if (b === 'coachpay') return 'coach-pay';
-  return null;
-};
 
 const productLabelForBrand = (b: BrandCode): string => {
   if (b === 'medpay') return 'MedPay';
@@ -664,19 +658,68 @@ export default function BrandHomePage() {
     brand === 'medpay' || brand === 'tradepay' || brand === 'coachpay' ? brand : 'tradepay';
 
   const spec = BRANDS[brand];
-  const snapshot = BRAND_SNAPSHOTS[productBrand];
 
-  // Combine the master-data rows that belong to this brand with the
-  // synthesised set, then take the most-recent 6 by date.
+  // SEC + tenant isolation: the dashboard renders the SIGNED-IN
+  // partner's data ONLY. The previous build rendered brand-aggregate
+  // snapshots (BRAND_SNAPSHOTS[productBrand]) which leaked cross-
+  // tenant volume — every TradePay merchant saw every other TradePay
+  // merchant's funded total. Now we resolve the partner from session
+  // and scale the brand snapshot down to the partner's share.
+  const partner = useMemo(() => currentPartnerForBrand(productBrand), [productBrand]);
+  const partnerShare = useMemo(
+    () => (partner ? partnerShareOfBrand(partner, productBrand) : 0),
+    [partner, productBrand],
+  );
+  const brandSnapshot = BRAND_SNAPSHOTS[productBrand];
+
+  /**
+   * The dashboard snapshot, scaled down from brand-aggregate to the
+   * signed-in partner's slice. Volumes (submitted / approved / funded
+   * / declined / dollars / monthly bars) are scaled by partnerShare;
+   * rates and credit-mix percentages stay unchanged because they're
+   * already partner-invariant.
+   */
+  const snapshot = useMemo(() => {
+    if (!partner) return brandSnapshot;
+    const scaleInt = (n: number): number => Math.round(n * partnerShare);
+    const scaleBig = (cents: number): number => Math.round(cents * partnerShare);
+    return {
+      ...brandSnapshot,
+      totalSubmitted: scaleInt(brandSnapshot.totalSubmitted),
+      approved: scaleInt(brandSnapshot.approved),
+      funded: scaleInt(brandSnapshot.funded),
+      declined: scaleInt(brandSnapshot.declined),
+      totalFundedCents: scaleBig(brandSnapshot.totalFundedCents),
+      pendingPayoutCents: scaleBig(brandSnapshot.pendingPayoutCents),
+      monthlySubmissions: brandSnapshot.monthlySubmissions.map((d) => ({
+        ...d,
+        value: scaleInt(d.value),
+      })),
+      monthlyFunded: brandSnapshot.monthlyFunded.map((d) => ({
+        ...d,
+        value: scaleInt(d.value),
+      })),
+      // Credit mix is partner-invariant (the rate distribution doesn't
+      // change just because we're looking at one partner), but the
+      // COUNTS should be scaled down so the donut total feels right
+      // for the partner's volume.
+      creditMix: brandSnapshot.creditMix.map((c) => ({ ...c, count: scaleInt(c.count) })),
+    };
+  }, [brandSnapshot, partner, partnerShare]);
+
+  // Recent applications — scoped to the signed-in partner. Filter
+  // master-data + synthesised rows by partner.legalName (the `partner`
+  // string field on ApplicationRow). Both datasets are pre-tagged.
   const recent = useMemo(() => {
-    const code = productCodeForBrand(brand);
-    const fromMaster = code ? applications.filter((a) => a.product === code) : [];
+    if (!partner) return [];
     const synth = synthesisedFor(productBrand);
-    return [...synth, ...fromMaster]
+    const fromMaster = applications.filter((a) => a.partner === partner.legalName);
+    const fromSynth = synth.filter((a) => a.partner === partner.legalName);
+    return [...fromSynth, ...fromMaster]
       .slice()
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .slice(0, 6);
-  }, [brand, productBrand]);
+  }, [partner, productBrand]);
 
   // Donut palette. Prime gets the brand accent so each portal feels
   // tinted without recolouring the whole chart.
@@ -705,8 +748,40 @@ export default function BrandHomePage() {
 
   return (
     <>
-      <PageHeader breadcrumbs={[{ label: 'Overview' }]} title="Dashboard" />
+      <PageHeader
+        breadcrumbs={[{ label: 'Overview' }]}
+        title={partner ? `${partner.legalName} · Dashboard` : 'Dashboard'}
+        description={
+          partner
+            ? `Showing data for ${partner.legalName} only. Master operators see the full ${spec.name} network.`
+            : undefined
+        }
+      />
       <PageBody>
+        {/* Tenant-isolation banner — makes it obvious the user is
+            looking at THEIR business, not aggregated network data.
+            See lib/partner-profile.ts for the scoping mechanics. */}
+        {partner && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-border bg-bg-muted/40 px-4 py-3">
+            <span
+              className="size-8 rounded-full bg-fg text-bg-elevated flex items-center justify-center font-semibold text-[11px] tracking-wider shrink-0"
+              aria-hidden
+            >
+              {partner.initials}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-fg-muted">
+                Your business view
+              </p>
+              <p className="text-[13px] font-semibold text-fg truncate">
+                {partner.legalName}
+                <span className="ml-2 font-normal text-fg-muted">
+                  · {spec.name} merchant · scoped to this account only
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
         {/* ─── 6-KPI grid ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
           <KpiTile
