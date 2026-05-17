@@ -8,6 +8,6 @@
   "exports": { ".": "./src/index.ts" },
   "dependencies": {
     "@eazepay/shared-types": "workspace:*",
-    "zod": "^3.23.0"
+    "zod": "^4.4.3"
   }
 }
