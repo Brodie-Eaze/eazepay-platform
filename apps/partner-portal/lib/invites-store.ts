@@ -80,8 +80,23 @@ export const BRAND_FROM_CONFIG_SLUG: Record<string, InviteBrand> = {
 
 const STORE_FILE = path.join(process.cwd(), '.next', 'invites.json');
 
+/** SEC-105: cap the in-process map so an attacker can't disk-fill or
+ *  OOM the BFF by calling /api/onboarding/invite in a tight loop. The
+ *  oldest invite is evicted FIFO on insert when the map is full.
+ *  10k entries × ~500 bytes ≈ 5 MB ceiling — fine for in-process; the
+ *  Prisma swap removes the cap entirely. */
+const MAX_INVITES = 10_000;
+
 const invites = new Map<string, InviteRecord>();
 let loaded = false;
+
+function pruneInvitesGlobal(): void {
+  while (invites.size >= MAX_INVITES) {
+    const oldest = invites.keys().next().value;
+    if (!oldest) return;
+    invites.delete(oldest);
+  }
+}
 
 async function loadIfNeeded() {
   if (loaded) return;
@@ -158,6 +173,7 @@ export async function createInvite(input: CreateInviteInput): Promise<InviteWith
     redeemedAt: null,
     redeemedApplicationId: null,
   };
+  pruneInvitesGlobal();
   invites.set(token, rec);
   await persist();
   return withStatus(rec);

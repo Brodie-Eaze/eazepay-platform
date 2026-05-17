@@ -6,6 +6,7 @@ import {
   listInvites,
   type InviteBrand,
 } from '../../../../lib/invites-store';
+import { enforceCsrf } from '../../../../lib/csrf.js';
 
 /**
  * Onboarding invite — mint + list.
@@ -25,7 +26,12 @@ const ExpiryEnum = z.union([z.literal(24), z.literal(168), z.literal(720)]);
 const PrefillSchema = z
   .object({
     businessName: z.string().trim().optional(),
-    contactEmail: z.string().trim().email().optional().or(z.literal('').transform(() => undefined)),
+    contactEmail: z
+      .string()
+      .trim()
+      .email()
+      .optional()
+      .or(z.literal('').transform(() => undefined)),
     contactPhone: z.string().trim().optional(),
   })
   .optional()
@@ -39,6 +45,12 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-108: state-changing endpoint MUST verify CSRF token.
+  // Pre-fix, a cross-origin form-post could mint invites under any
+  // operator's session.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {

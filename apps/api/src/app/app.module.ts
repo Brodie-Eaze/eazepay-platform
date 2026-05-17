@@ -186,20 +186,69 @@ const env = loadEnv();
       pinoHttp: {
         level: env.LOG_LEVEL,
         transport: env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
-        // PII redaction baseline. Tighten in dedicated logging service.
+        // SEC-120: extended PII redact list.
+        //
+        // Pre-fix this list only covered SSN/DOB/card fields plus auth
+        // headers. Owner email, phone, names, addresses, EIN/TIN, and
+        // refresh/access tokens flowed into Pino unmasked. The dot-star
+        // pattern matches at any nesting level so nested objects (e.g.
+        // `req.body.owner.email`, `dto.beneficialOwner.firstName`) are
+        // covered without enumerating every container.
+        //
+        // Pino uses fast-redact under the hood; the patterns are
+        // dot-separated paths with wildcard support. `[*]` is array
+        // wildcard, `*` is single-key wildcard. We don't enumerate
+        // `req.body.*.<field>` because `*.<field>` already matches.
         redact: {
           paths: [
+            // Request-level secrets
             'req.headers.authorization',
             'req.headers.cookie',
             'req.headers["x-api-key"]',
+            'req.headers["x-csrf-token"]',
+            // Auth secrets
             '*.password',
             '*.passwordHash',
+            '*.passcode',
+            '*.accessToken',
+            '*.refreshToken',
+            '*.sessionToken',
+            '*.bearerToken',
+            '*.secret',
+            '*.apiKey',
+            // Identity PII
             '*.ssn',
+            '*.ssnLast4',
             '*.dob',
+            '*.dateOfBirth',
+            '*.birthDate',
+            '*.firstName',
+            '*.lastName',
+            '*.middleName',
+            '*.legalName',
+            '*.fullName',
+            '*.taxId',
+            '*.ein',
+            '*.tin',
+            // Contact PII
+            '*.email',
+            '*.phone',
+            '*.phoneE164',
+            '*.mobile',
+            // Address PII (street + line1/2 only — city/state/zip
+            // are coarser-grained and useful for log triage)
+            '*.address',
+            '*.addressLine1',
+            '*.addressLine2',
+            '*.street',
+            // Financial
             '*.cardNumber',
             '*.cvv',
+            '*.cvc',
+            '*.pan',
             '*.routingNumber',
             '*.accountNumber',
+            '*.iban',
           ],
           censor: '[redacted]',
         },

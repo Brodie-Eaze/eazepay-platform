@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
+import { getSessionContext } from '../../../../lib/session';
+import { enforceCsrf } from '../../../../lib/csrf.js';
 
 /**
  * POST /api/applications/consent — consumer soft-pull consent receipt.
@@ -32,6 +34,16 @@ import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit
 // retry from the same session is idempotent but two separate sessions
 // agreeing on behalf of the same applicationId are both captured (a red
 // flag that gets routed to fraud review).
+//
+// SEC-105: two caps prevent unbounded memory growth.
+//   * MAX_RECEIPTS_TOTAL — global FIFO cap; oldest evicted on insert
+//   * MAX_RECEIPTS_PER_APPLICATION — defends against single-applicationId
+//     amplification (an attacker forging session IDs in a loop). Five
+//     receipts per app is enough for legit retry/refresh; anything
+//     beyond is fraud-signal anyway.
+const MAX_RECEIPTS_TOTAL = 5_000;
+const MAX_RECEIPTS_PER_APPLICATION = 5;
+
 const RECEIPTS = new Map<
   string,
   {
@@ -45,6 +57,27 @@ const RECEIPTS = new Map<
   }
 >();
 
+function pruneReceiptsForApplication(applicationId: string): void {
+  // Map iteration order = insertion order. Oldest matching entry is
+  // the first one encountered when iterating.
+  const matching: string[] = [];
+  for (const [key, rec] of RECEIPTS) {
+    if (rec.applicationId === applicationId) matching.push(key);
+  }
+  while (matching.length >= MAX_RECEIPTS_PER_APPLICATION) {
+    const oldest = matching.shift();
+    if (oldest) RECEIPTS.delete(oldest);
+  }
+}
+
+function pruneReceiptsGlobal(): void {
+  while (RECEIPTS.size >= MAX_RECEIPTS_TOTAL) {
+    const oldest = RECEIPTS.keys().next().value;
+    if (!oldest) return;
+    RECEIPTS.delete(oldest);
+  }
+}
+
 interface ConsentBody {
   applicationId: string;
   sessionId: string;
@@ -57,6 +90,14 @@ interface ConsentBody {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC-108: CSRF verification. The consumer apply page reads the
+  // eazepay_csrf cookie minted by middleware and echoes it via the
+  // X-CSRF-Token header (see lib/consumer-consent.ts). A cross-origin
+  // attacker cannot read the cookie (Strict SameSite + Secure) so
+  // they cannot forge consent receipts on a victim's behalf.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
   // SEC — Per-IP edge rate limit. The consent map is an in-memory
   // store that grows by one entry per request; without a cap an
   // attacker can OOM the BFF replica by posting synthetic receipts.
@@ -114,7 +155,15 @@ export async function POST(req: NextRequest) {
     userAgent,
   };
 
-  RECEIPTS.set(`${body.applicationId}:${body.sessionId}`, receipt);
+  // SEC-105: enforce caps before insert. Retries with the same
+  // composite key overwrite in place and don't grow the map, so the
+  // per-application prune only fires for genuinely new sessions.
+  const key = `${body.applicationId}:${body.sessionId}`;
+  if (!RECEIPTS.has(key)) {
+    pruneReceiptsForApplication(body.applicationId);
+    pruneReceiptsGlobal();
+  }
+  RECEIPTS.set(key, receipt);
 
   return NextResponse.json(
     {
@@ -131,11 +180,50 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET surface — used by ops to verify a receipt during a dispute. In
- * production this is admin-only. For the dev flow it's open so the
- * operator (Brodie) can curl it and see what landed.
+ * GET surface — used by ops to verify a receipt during a dispute.
+ *
+ * SEC-104 hardening: pre-fix, this GET returned every receipt for a
+ * given applicationId (IP, UA, disclosure version, consentText, full
+ * sessionId) to ANY caller — applicationId values are guessable
+ * (`app_<brand>_<base36-ts>` per SEC-112) so the leak path was
+ * iterate-and-harvest.
+ *
+ * Policy:
+ *   - Require an operator-level session (master/all/admin/operator/
+ *     viewer/investor demo presets, or a real session in master_admin
+ *     role once the backend wires it). Brand-scoped demo presets get
+ *     403 — partner merchants don't read FCRA audit chains.
+ *   - 404 when no session at all so the existence of the route isn't
+ *     a probing signal for unauthenticated attackers.
  */
 export async function GET(req: NextRequest) {
+  const session = await getSessionContext(req);
+  if (session.mode === 'none') {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Not Found',
+        status: 404,
+        code: 'not_found',
+      },
+      { status: 404 },
+    );
+  }
+
+  const isAdmin = (session.mode === 'demo' && session.isOperator) || session.mode === 'real';
+  if (!isAdmin) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Forbidden',
+        status: 403,
+        code: 'admin_required',
+        detail: 'Consent receipt access is limited to operator-tier sessions.',
+      },
+      { status: 403 },
+    );
+  }
+
   const applicationId = req.nextUrl.searchParams.get('applicationId');
   if (!applicationId) {
     return NextResponse.json({ ok: false, error: 'applicationId_required' }, { status: 400 });

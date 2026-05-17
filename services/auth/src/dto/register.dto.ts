@@ -18,6 +18,10 @@ export const RegisterSchema = z
     password: PasswordSchema,
     marketingConsent: z.boolean().default(false),
   })
+  // SEC-117: .strict() BEFORE .refine() so unknown root keys (e.g. an
+  // attacker-supplied `platformRole: 'master_admin'`) trip the
+  // unrecognized_keys check rather than slipping past the refine.
+  .strict()
   .refine((v) => v.email !== undefined || v.phone !== undefined, {
     message: 'one of email or phone is required',
     path: ['email'],

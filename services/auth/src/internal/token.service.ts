@@ -71,9 +71,17 @@ export class TokenService {
   }
 
   async verifyAccess(token: string): Promise<AccessTokenClaims> {
+    // SEC-113 (defense in depth): pin `algorithms` to the exact set we
+    // mint with. jose's default infers algorithms from the key material
+    // (Uint8Array → HMAC-* only, so `alg:none` is already blocked), but
+    // an explicit pin protects us from the Cognito swap — when this
+    // file moves to RS256 + JWKS, the dev who removes the HS256 mint
+    // path MUST also widen this list, which surfaces the change in
+    // code review instead of silently inheriting jose's default.
     const { payload } = await jwtVerify(token, this.accessKey, {
       issuer: this.config.jwtIssuer,
       audience: this.config.jwtAudience,
+      algorithms: ['HS256'],
     });
     return { sub: payload.sub as UserId, sid: (payload as { sid: SessionId }).sid };
   }

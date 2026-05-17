@@ -32,11 +32,7 @@ import { randomUUID } from 'node:crypto';
 
 export type ConsumerInviteBrand = 'medpay' | 'tradepay' | 'coachpay';
 
-export type ConsumerInviteStatus =
-  | 'active'
-  | 'expired'
-  | 'in_progress'
-  | 'redeemed';
+export type ConsumerInviteStatus = 'active' | 'expired' | 'in_progress' | 'redeemed';
 
 export interface ConsumerInviteRecord {
   token: string;
@@ -76,8 +72,21 @@ export const CONSUMER_BRAND_LABEL: Record<ConsumerInviteBrand, string> = {
 
 const STORE_FILE = path.join(process.cwd(), '.next', 'consumer-invites.json');
 
+/** SEC-105: per-process cap. Same rationale as invites-store.ts —
+ *  disk-fill and OOM via a tight loop on createConsumerInvite. The
+ *  oldest invite is FIFO-evicted on insert when the map is full. */
+const MAX_CONSUMER_INVITES = 10_000;
+
 const invites = new Map<string, ConsumerInviteRecord>();
 let loaded = false;
+
+function pruneConsumerInvitesGlobal(): void {
+  while (invites.size >= MAX_CONSUMER_INVITES) {
+    const oldest = invites.keys().next().value;
+    if (!oldest) return;
+    invites.delete(oldest);
+  }
+}
 
 async function loadIfNeeded(): Promise<void> {
   if (loaded) return;
@@ -94,20 +103,13 @@ async function loadIfNeeded(): Promise<void> {
 async function persist(): Promise<void> {
   try {
     await fs.mkdir(path.dirname(STORE_FILE), { recursive: true });
-    await fs.writeFile(
-      STORE_FILE,
-      JSON.stringify(Array.from(invites.values()), null, 2),
-      'utf-8',
-    );
+    await fs.writeFile(STORE_FILE, JSON.stringify(Array.from(invites.values()), null, 2), 'utf-8');
   } catch {
     /* Best-effort — in-memory map remains authoritative for this run. */
   }
 }
 
-function deriveStatus(
-  rec: ConsumerInviteRecord,
-  now = Date.now(),
-): ConsumerInviteStatus {
+function deriveStatus(rec: ConsumerInviteRecord, now = Date.now()): ConsumerInviteStatus {
   /* Redeemed wins (terminal). */
   if (rec.status === 'redeemed') return 'redeemed';
   /* Expiry beats anything else except redeemed. */
@@ -169,15 +171,14 @@ export async function createConsumerInvite(
     createdAt: now.toISOString(),
     lastSeenAt: null,
   };
+  pruneConsumerInvitesGlobal();
   invites.set(token, rec);
   await persist();
   return withUrl(rec);
 }
 
 /** Single lookup — returns null when missing. */
-export async function getConsumerInvite(
-  token: string,
-): Promise<ConsumerInviteWithUrl | null> {
+export async function getConsumerInvite(token: string): Promise<ConsumerInviteWithUrl | null> {
   await loadIfNeeded();
   const rec = invites.get(token);
   return rec ? withUrl(rec) : null;
@@ -205,9 +206,7 @@ export async function listConsumerInvites(opts: {
 }
 
 /** Mark the invite redeemed (terminal). Idempotent — repeat calls noop. */
-export async function redeemConsumerInvite(
-  token: string,
-): Promise<ConsumerInviteWithUrl | null> {
+export async function redeemConsumerInvite(token: string): Promise<ConsumerInviteWithUrl | null> {
   await loadIfNeeded();
   const rec = invites.get(token);
   if (!rec) return null;
@@ -223,9 +222,7 @@ export async function redeemConsumerInvite(
  * Bump the invite to "in_progress" — called when the consumer opens
  * the apply page or starts filling out the form. Idempotent.
  */
-export async function markStarted(
-  token: string,
-): Promise<ConsumerInviteWithUrl | null> {
+export async function markStarted(token: string): Promise<ConsumerInviteWithUrl | null> {
   await loadIfNeeded();
   const rec = invites.get(token);
   if (!rec) return null;
@@ -240,9 +237,7 @@ export async function markStarted(
  * Bump lastSeenAt as the consumer completes a step. Doesn't move the
  * status by itself — terminal moves go through redeem.
  */
-export async function markStepCompleted(
-  token: string,
-): Promise<ConsumerInviteWithUrl | null> {
+export async function markStepCompleted(token: string): Promise<ConsumerInviteWithUrl | null> {
   await loadIfNeeded();
   const rec = invites.get(token);
   if (!rec) return null;

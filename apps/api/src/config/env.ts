@@ -269,55 +269,57 @@ const EnvSchema = z
   // than silently degrading to dev-grade security posture.
   // ────────────────────────────────────────────────────────────────────
   .superRefine((env, ctx) => {
-    if (env.NODE_ENV !== 'production') return;
+    // SEC-116: staging is treated identically to production for the
+    // security-posture checks below. Pre-fix, staging was treated as
+    // non-prod and inherited the Lovable wildcard CORS allowlist,
+    // which meant `*.lovable.app` could `fetch(...credentials:'include')`
+    // against a staging deployment. Staging deployments mirror prod
+    // data shape and frequently mirror real partner credentials, so
+    // the lockdown must match prod.
+    const isHardened = env.NODE_ENV === 'production' || env.NODE_ENV === 'staging';
+    if (!isHardened) return;
 
     // SEC-031: a mock e-sign provider in production would let anyone
     // with a `dev-mock` literal flip envelope status to `signed`.
-    // Boot-time refusal is the canonical guard; the controller-side
-    // gate is belt-and-braces.
     if (env.ESIGN_PROVIDER === 'mock') {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['ESIGN_PROVIDER'],
         message:
-          'ESIGN_PROVIDER=mock is forbidden when NODE_ENV=production. Set it to docusign or dropbox_sign.',
+          'ESIGN_PROVIDER=mock is forbidden when NODE_ENV=production or staging. Set it to docusign or dropbox_sign.',
       });
     }
 
-    // SEC-047: in production CORS must be locked to an explicit set
-    // of origins, supplied via CORS_ALLOWED_ORIGINS. Empty allowlist
-    // means we'd reject every cross-origin request (functional
-    // breakage), and a stray Lovable wildcard means cross-tenant
-    // credentialed access. Refuse to boot either way.
+    // SEC-047 + SEC-116: in hardened environments CORS must be locked
+    // to an explicit allowlist supplied via CORS_ALLOWED_ORIGINS.
     if (env.CORS_ALLOWED_ORIGINS.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['CORS_ALLOWED_ORIGINS'],
         message:
-          'CORS_ALLOWED_ORIGINS must list at least one explicit origin in production (e.g. https://app.eazepay.com,https://partners.eazepay.com). The dev Lovable wildcard is refused in production.',
+          'CORS_ALLOWED_ORIGINS must list at least one explicit origin in production or staging (e.g. https://app.eazepay.com,https://partners.eazepay.com). The dev Lovable wildcard is refused.',
       });
     }
   })
   // After validation, compile pattern strings into RegExp objects,
-  // strip Lovable wildcards when running in production, and merge the
-  // production-only CORS_ALLOWED_ORIGINS list into CORS_ORIGINS so
-  // existing consumers (apps/api/src/main.ts) keep working without
-  // re-plumbing. SEC-047.
+  // strip Lovable wildcards when running in a hardened environment
+  // (production or staging — SEC-116), and merge the canonical allowed
+  // origins so existing consumers (apps/api/src/main.ts) keep working
+  // without re-plumbing. SEC-047 + SEC-116.
   .transform((env) => {
-    const isProd = env.NODE_ENV === 'production';
-    const patternStrings = isProd
-      ? // In prod: only honour patterns the operator explicitly set.
-        // If they didn't set anything, the array is the default which
-        // we deliberately drop here.
+    const isHardened = env.NODE_ENV === 'production' || env.NODE_ENV === 'staging';
+    const patternStrings = isHardened
+      ? // In hardened envs: only honour patterns the operator
+        // explicitly set. The default Lovable wildcards are dropped.
         process.env.CORS_ORIGIN_PATTERNS
         ? env.CORS_ORIGIN_PATTERNS
         : []
       : env.CORS_ORIGIN_PATTERNS;
-    // CORS_ALLOWED_ORIGINS is the canonical prod surface; in prod we
-    // use it exclusively (ignoring the dev defaults baked into
-    // CORS_ORIGINS). In non-prod we merge so localhost still works
-    // even if an operator also supplies CORS_ALLOWED_ORIGINS.
-    const mergedOrigins = isProd
+    // CORS_ALLOWED_ORIGINS is the canonical hardened-env surface; in
+    // hardened envs we use it exclusively (ignoring dev defaults baked
+    // into CORS_ORIGINS). In non-hardened envs we merge so localhost
+    // still works even if an operator also supplies CORS_ALLOWED_ORIGINS.
+    const mergedOrigins = isHardened
       ? env.CORS_ALLOWED_ORIGINS
       : Array.from(new Set([...env.CORS_ORIGINS, ...env.CORS_ALLOWED_ORIGINS]));
     return {

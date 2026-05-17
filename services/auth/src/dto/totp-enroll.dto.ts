@@ -14,24 +14,28 @@ import { z } from 'zod';
  * user controls the authenticator (see commitEnrolment docstring on
  * services/auth/src/internal/totp.service.ts for the threat model).
  */
-export const TotpEnrollInitSchema = z.object({});
+// SEC-117: .strict() on every DTO root so unknown fields 400 rather
+// than slip through silently.
+export const TotpEnrollInitSchema = z.object({}).strict();
 
 export class TotpEnrollInitDto extends createZodDto(TotpEnrollInitSchema) {}
 
-export const TotpEnrollVerifySchema = z.object({
-  secret: z.string().min(16).max(64),
-  code: z.string().regex(/^\d{6}$/, 'must be a 6-digit code'),
-  /**
-   * Recovery codes the client cached from the init response. We
-   * hash + persist them here so the user's break-glass codes
-   * survive the round-trip. If the client supplies different codes
-   * to those we returned, that's a client bug — we still accept
-   * them because the codes are minted client-side after init and
-   * never recoverable post-init.
-   */
-  recoveryCodesPlaintext: z
-    .array(z.string().min(8).max(32))
-    .length(10, 'expected exactly 10 recovery codes'),
-});
+export const TotpEnrollVerifySchema = z
+  .object({
+    secret: z.string().min(16).max(64),
+    code: z.string().regex(/^\d{6}$/, 'must be a 6-digit code'),
+    /**
+     * Recovery codes the client cached from the init response. We
+     * hash + persist them here so the user's break-glass codes
+     * survive the round-trip. If the client supplies different codes
+     * to those we returned, that's a client bug — we still accept
+     * them because the codes are minted client-side after init and
+     * never recoverable post-init.
+     */
+    recoveryCodesPlaintext: z
+      .array(z.string().min(8).max(32))
+      .length(10, 'expected exactly 10 recovery codes'),
+  })
+  .strict();
 
 export class TotpEnrollVerifyDto extends createZodDto(TotpEnrollVerifySchema) {}

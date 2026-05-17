@@ -30,12 +30,12 @@ enum UserStatus {
 /// finer-grained Master Command Centre RBAC the partner portal
 /// expects.
 enum PlatformRole {
-  master_admin   // EazePay ops; cross-tenant; can manage other staff
-  admin          // Tenant admin within a brand
-  underwriter    // Read application detail + decision; cannot manage users
-  compliance     // Read/close ComplianceReviews + risk flags
-  support        // Read-only customer + application access, ticketing
-  read_only      // Reporting / observer
+  master_admin // EazePay ops; cross-tenant; can manage other staff
+  admin // Tenant admin within a brand
+  underwriter // Read application detail + decision; cannot manage users
+  compliance // Read/close ComplianceReviews + risk flags
+  support // Read-only customer + application access, ticketing
+  read_only // Reporting / observer
 }
 
 enum KycStatus {
@@ -131,20 +131,20 @@ enum MarketplaceStatus {
 /// optimised for that vertical. A LenderProduct carries one brand;
 /// a Merchant signs up under one brand at onboarding.
 enum ProductBrand {
-  medpay    // medical, dental, vet, vision, fertility
-  tradepay  // home improvement, solar, roof, HVAC, contractor
-  coachpay  // coaching, certifications, professional services
-  direct    // EazePay direct consumer (any purpose)
+  medpay // medical, dental, vet, vision, fertility
+  tradepay // home improvement, solar, roof, HVAC, contractor
+  coachpay // coaching, certifications, professional services
+  direct // EazePay direct consumer (any purpose)
 }
 
 enum LenderConnectionStatus {
-  draft           // created in admin, no credentials yet
-  awaiting_creds  // creds requested, waiting on partner
-  testing         // creds present, running sandbox handshake
-  sandbox_active  // sandbox traffic only
-  live            // routing live applications
-  paused          // ops-suspended; credentials retained
-  revoked         // credentials wiped; cannot re-enable without re-issue
+  draft // created in admin, no credentials yet
+  awaiting_creds // creds requested, waiting on partner
+  testing // creds present, running sandbox handshake
+  sandbox_active // sandbox traffic only
+  live // routing live applications
+  paused // ops-suspended; credentials retained
+  revoked // credentials wiped; cannot re-enable without re-issue
 }
 
 enum LenderConnectionEnv {
@@ -235,7 +235,7 @@ enum PaymentMethodStatus {
 }
 
 enum TransactionDirection {
-  debit  // money out (consumer paying us, repayment)
+  debit // money out (consumer paying us, repayment)
   credit // money in (we are paying out, disbursement)
 }
 
@@ -356,37 +356,37 @@ enum WebhookDeliveryStatus {
 }
 
 model User {
-  id           String     @id @default(uuid()) @db.Uuid
+  id                   String        @id @default(uuid()) @db.Uuid
   /// PII — searchable. Stored plaintext at rest today (MVP).
   /// Tracked in `docs/soc2/remediation.md`:
   /// migrate to deterministic AES-SIV with a per-tenant pepper +
   /// HMAC blind index before SOC 2 Type II. Until then, treat the
   /// `users` table as restricted-class data and minimise direct
   /// reads outside the auth/profile services.
-  email        String?    @unique
+  email                String?       @unique
   /// PII — searchable; same MVP-vs-target as `email` above.
-  phoneE164    String?    @unique @map("phone_e164")
+  phoneE164            String?       @unique @map("phone_e164")
   /// SECRET — Argon2id; only present for service accounts. Consumer auth via Cognito.
-  passwordHash String?    @map("password_hash")
-  status       UserStatus @default(pending_verification)
-  kycStatus    KycStatus  @default(not_started) @map("kyc_status")
+  passwordHash         String?       @map("password_hash")
+  status               UserStatus    @default(pending_verification)
+  kycStatus            KycStatus     @default(not_started) @map("kyc_status")
   /// MVP-shape admin flag. Production swaps to Cognito groups + JIT
   /// elevation; documented in docs/ARCHITECTURE.md §16. Set manually
   /// (or via seed) for ops engineers; never user-settable.
-  isAdmin      Boolean    @default(false) @map("is_admin")
+  isAdmin              Boolean       @default(false) @map("is_admin")
   /// Non-null marks this account as EazePay platform staff. Drives the
   /// Master Command Centre / partner-portal Team page. Consumers have
   /// `platformRole = null`. Setting to non-null does NOT auto-flip
   /// `isAdmin`; the legacy boolean gates the existing admin guard
   /// while we migrate routes over to role-aware checks.
-  platformRole PlatformRole? @map("platform_role")
+  platformRole         PlatformRole? @map("platform_role")
   /// Display name shown in the team UI. Optional — falls back to
   /// email when null.
-  displayName  String?       @map("display_name")
+  displayName          String?       @map("display_name")
   /// Audit breadcrumbs for the team management UI.
-  invitedAt    DateTime?     @db.Timestamptz(6) @map("invited_at")
-  invitedById  String?       @db.Uuid @map("invited_by_id")
-  lastSeenAt   DateTime?     @db.Timestamptz(6) @map("last_seen_at")
+  invitedAt            DateTime?     @map("invited_at") @db.Timestamptz(6)
+  invitedById          String?       @map("invited_by_id") @db.Uuid
+  lastSeenAt           DateTime?     @map("last_seen_at") @db.Timestamptz(6)
   /// SEC-016 — TOTP second-factor envelope.
   ///
   /// Opaque ciphertext sealed via `PiiVaultService.sealOpaque`
@@ -395,7 +395,7 @@ model User {
   /// transplant fails the GCM auth-tag check. NULL when the user has
   /// not yet enrolled TOTP — SMS / email OTP continues to gate login
   /// for those accounts.
-  totpSecretCiphertext String? @map("totp_secret_ciphertext")
+  totpSecretCiphertext String?       @map("totp_secret_ciphertext")
   /// SEC-016 — array of break-glass recovery codes.
   ///
   /// Shape: `{ hash: string; used: boolean; usedAt?: string }[]`.
@@ -404,9 +404,9 @@ model User {
   /// `used: true` is irreversible — the auth service refuses redemption
   /// of an already-burned code. Single-use is the load-bearing
   /// property; without it a stolen recovery sheet is permanent.
-  totpRecoveryCodes Json? @map("totp_recovery_codes")
-  createdAt    DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt    DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
+  totpRecoveryCodes    Json?         @map("totp_recovery_codes")
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   sessions        Session[]
   consumerProfile ConsumerProfile?
@@ -427,7 +427,7 @@ model User {
 // docs/soc2/remediation.md). Anything in this blob is opaque at rest.
 model ConsumerProfile {
   id     String @id @default(uuid()) @db.Uuid
-  userId String @unique @db.Uuid @map("user_id")
+  userId String @unique @map("user_id") @db.Uuid
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /// PII — AES-256-GCM ciphertext of the full PII JSON blob
@@ -442,19 +442,19 @@ model ConsumerProfile {
   piiSchemaVersion  Int    @default(1) @map("pii_schema_version")
 
   // Compliance lifecycle (queryable, not PII)
-  kycStatus           KycStatus @default(not_started) @map("kyc_status")
-  kycProviderRef      String?   @map("kyc_provider_ref")
-  kycLastCheckedAt    DateTime? @db.Timestamptz(6) @map("kyc_last_checked_at")
-  kycCompletedAt      DateTime? @db.Timestamptz(6) @map("kyc_completed_at")
-  pepStatus           PepStatus @default(unknown) @map("pep_status")
-  sanctionsCheckedAt  DateTime? @db.Timestamptz(6) @map("sanctions_checked_at")
+  kycStatus          KycStatus @default(not_started) @map("kyc_status")
+  kycProviderRef     String?   @map("kyc_provider_ref")
+  kycLastCheckedAt   DateTime? @map("kyc_last_checked_at") @db.Timestamptz(6)
+  kycCompletedAt     DateTime? @map("kyc_completed_at") @db.Timestamptz(6)
+  pepStatus          PepStatus @default(unknown) @map("pep_status")
+  sanctionsCheckedAt DateTime? @map("sanctions_checked_at") @db.Timestamptz(6)
 
   // Residency — used for state-rules-matrix routing in orchestration. Not
   // PII on its own; full street address lives encrypted in the blob.
-  residentState String? @db.VarChar(2) @map("resident_state")
+  residentState String? @map("resident_state") @db.VarChar(2)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([kycStatus])
   @@index([residentState])
@@ -463,16 +463,16 @@ model ConsumerProfile {
 
 model Session {
   id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @db.Uuid @map("user_id")
+  userId           String    @map("user_id") @db.Uuid
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// SECRET — SHA-256 hash of refresh token; raw token never stored
   refreshTokenHash String    @map("refresh_token_hash")
   deviceId         String?   @map("device_id")
   ipAddress        String?   @map("ip_address")
   userAgent        String?   @map("user_agent")
-  createdAt        DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
-  expiresAt        DateTime  @db.Timestamptz(6) @map("expires_at")
-  revokedAt        DateTime? @db.Timestamptz(6) @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
 
   @@index([userId, expiresAt])
   @@index([refreshTokenHash])
@@ -483,14 +483,14 @@ model Session {
 // durable record so we don't double-charge on Redis flush.
 model IdempotencyRecord {
   key          String   @id
-  userId       String?  @db.Uuid @map("user_id")
+  userId       String?  @map("user_id") @db.Uuid
   method       String
   path         String
   requestHash  String   @map("request_hash")
   responseCode Int      @map("response_code")
   responseBody Json     @map("response_body")
-  createdAt    DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  expiresAt    DateTime @db.Timestamptz(6) @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz(6)
 
   @@index([expiresAt])
   @@map("idempotency_records")
@@ -500,33 +500,33 @@ model IdempotencyRecord {
 // XState machine in services/application; persistence is in this table.
 // Money columns are BigInt cents — never floats.
 model Application {
-  id            String              @id @default(uuid()) @db.Uuid
-  userId        String              @db.Uuid @map("user_id")
-  user          User                @relation(fields: [userId], references: [id])
-  merchantId    String?             @db.Uuid @map("merchant_id")
-  channel       OriginationChannel  @default(consumer_direct)
-  category      LoanCategory
+  id                   String             @id @default(uuid()) @db.Uuid
+  userId               String             @map("user_id") @db.Uuid
+  user                 User               @relation(fields: [userId], references: [id])
+  merchantId           String?            @map("merchant_id") @db.Uuid
+  channel              OriginationChannel @default(consumer_direct)
+  category             LoanCategory
   /// Money — integer cents (BigInt). Float math is banned by `Cents` brand.
-  requestedAmountCents BigInt        @map("requested_amount_cents")
-  termMonths    Int                 @map("term_months")
-  purposeDetail String?             @map("purpose_detail")
-  status        ApplicationStatus   @default(draft)
+  requestedAmountCents BigInt             @map("requested_amount_cents")
+  termMonths           Int                @map("term_months")
+  purposeDetail        String?            @map("purpose_detail")
+  status               ApplicationStatus  @default(draft)
 
   // Decision artefacts. Filled in over the application lifecycle by
   // decisioning + orchestration. Snapshot fields, not the full record.
-  riskScore           Int?    @map("risk_score")
-  affordabilityPasses Boolean? @map("affordability_passes")
-  declineReasonCodes  String[] @default([]) @map("decline_reason_codes")
-  policyVersion       String? @map("policy_version")
+  riskScore           Int?        @map("risk_score")
+  affordabilityPasses Boolean?    @map("affordability_passes")
+  declineReasonCodes  String[]    @default([]) @map("decline_reason_codes")
+  policyVersion       String?     @map("policy_version")
   /// Denormalised from HighsaleSnapshot.creditTier for fast filtering
   /// on dashboards. Authoritative value lives on the snapshot row.
   creditTier          CreditTier? @map("credit_tier")
 
-  submittedAt DateTime? @db.Timestamptz(6) @map("submitted_at")
-  decisionAt  DateTime? @db.Timestamptz(6) @map("decision_at")
-  expiresAt   DateTime? @db.Timestamptz(6) @map("expires_at")
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt   DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz(6)
+  decisionAt  DateTime? @map("decision_at") @db.Timestamptz(6)
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   offers           Offer[]
   contracts        Contract[]
@@ -537,35 +537,41 @@ model Application {
   @@index([userId, createdAt])
   @@index([merchantId, createdAt])
   @@index([status])
+  // SEC-119: operator dashboards filter "applications for merchant X
+  // in status Y, newest first" (e.g. /control-panel/<id>?tab=pending).
+  // The separate `(merchantId, createdAt)` + `(status)` indexes mean
+  // Postgres picks one and post-filters by the other. A composite
+  // hits both columns in a single scan.
+  @@index([merchantId, status, createdAt(sort: Desc)])
   @@map("applications")
 }
 
 model Offer {
-  id              String      @id @default(uuid()) @db.Uuid
-  applicationId   String      @db.Uuid @map("application_id")
-  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  lenderProductId String        @db.Uuid @map("lender_product_id")
+  id              String        @id @default(uuid()) @db.Uuid
+  applicationId   String        @map("application_id") @db.Uuid
+  application     Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  lenderProductId String        @map("lender_product_id") @db.Uuid
   lenderProduct   LenderProduct @relation("OfferLenderProduct", fields: [lenderProductId], references: [id])
   /// Lender of record (partner bank or licensed entity) — see ADR-0008
   lenderOfRecord  String        @map("lender_of_record")
 
   /// Money — integer cents
-  amountCents          BigInt @map("amount_cents")
-  termMonths           Int    @map("term_months")
+  amountCents         BigInt @map("amount_cents")
+  termMonths          Int    @map("term_months")
   /// APR in basis points (e.g. 1799 = 17.99% APR)
-  aprBps               Int    @map("apr_bps")
+  aprBps              Int    @map("apr_bps")
   /// Reg Z comparison rate in bps; null if not yet computed
-  comparisonRateBps    Int?   @map("comparison_rate_bps")
+  comparisonRateBps   Int?   @map("comparison_rate_bps")
   /// Money — integer cents
-  feesCents            BigInt @map("fees_cents")
+  feesCents           BigInt @map("fees_cents")
   /// Money — integer cents
-  totalRepayableCents  BigInt @map("total_repayable_cents")
+  totalRepayableCents BigInt @map("total_repayable_cents")
 
   rank      Int
   status    OfferStatus @default(presented)
-  expiresAt DateTime    @db.Timestamptz(6) @map("expires_at")
-  createdAt DateTime    @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime    @updatedAt @db.Timestamptz(6) @map("updated_at")
+  expiresAt DateTime    @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   contract Contract?
   loan     Loan?
@@ -580,49 +586,49 @@ model Offer {
 // disbursement + repayment lives in services/payment (next round).
 model Contract {
   id                String         @id @default(uuid()) @db.Uuid
-  applicationId     String         @db.Uuid @map("application_id")
+  applicationId     String         @map("application_id") @db.Uuid
   application       Application    @relation(fields: [applicationId], references: [id], onDelete: Restrict)
-  offerId           String         @unique @db.Uuid @map("offer_id")
+  offerId           String         @unique @map("offer_id") @db.Uuid
   offer             Offer          @relation(fields: [offerId], references: [id], onDelete: Restrict)
   signatureProvider String         @map("signature_provider") // 'mock' | 'docusign' | 'dropbox_sign'
   envelopeId        String         @unique @map("envelope_id")
   /// Hash of the rendered contract document at signing time. Audit anchor.
   documentSha256    String?        @map("document_sha256")
   status            ContractStatus @default(drafted)
-  signedAt          DateTime?      @db.Timestamptz(6) @map("signed_at")
-  createdAt         DateTime       @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt         DateTime       @updatedAt @db.Timestamptz(6) @map("updated_at")
+  signedAt          DateTime?      @map("signed_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([envelopeId])
   @@map("contracts")
 }
 
 model Loan {
-  id              String      @id @default(uuid()) @db.Uuid
-  applicationId   String      @db.Uuid @map("application_id")
-  application     Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
-  offerId         String      @unique @db.Uuid @map("offer_id")
-  offer           Offer       @relation(fields: [offerId], references: [id], onDelete: Restrict)
-  userId          String      @db.Uuid @map("user_id")
+  id            String      @id @default(uuid()) @db.Uuid
+  applicationId String      @map("application_id") @db.Uuid
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  offerId       String      @unique @map("offer_id") @db.Uuid
+  offer         Offer       @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  userId        String      @map("user_id") @db.Uuid
 
   /// Lender of record (partner bank / licensed entity) snapshotted at
   /// signing — never changes for the life of the loan.
-  lenderOfRecord  String      @map("lender_of_record")
-  lenderProductId String      @db.Uuid @map("lender_product_id")
+  lenderOfRecord  String @map("lender_of_record")
+  lenderProductId String @map("lender_product_id") @db.Uuid
 
   /// Money — integer cents.
-  principalCents      BigInt   @map("principal_cents")
-  termMonths          Int      @map("term_months")
+  principalCents      BigInt @map("principal_cents")
+  termMonths          Int    @map("term_months")
   /// APR in basis points; matches the accepted offer.
-  aprBps              Int      @map("apr_bps")
+  aprBps              Int    @map("apr_bps")
   /// Money — integer cents.
-  totalRepayableCents BigInt   @map("total_repayable_cents")
+  totalRepayableCents BigInt @map("total_repayable_cents")
 
-  status        LoanStatus @default(funding_pending)
-  disbursedAt   DateTime?  @db.Timestamptz(6) @map("disbursed_at")
-  firstPaymentDate DateTime? @db.Date @map("first_payment_date")
-  createdAt     DateTime   @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt     DateTime   @updatedAt @db.Timestamptz(6) @map("updated_at")
+  status           LoanStatus @default(funding_pending)
+  disbursedAt      DateTime?  @map("disbursed_at") @db.Timestamptz(6)
+  firstPaymentDate DateTime?  @map("first_payment_date") @db.Date
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   repayments   Repayment[]
   transactions Transaction[]
@@ -633,20 +639,20 @@ model Loan {
 }
 
 model Lender {
-  id            String          @id @default(uuid()) @db.Uuid
+  id             String     @id @default(uuid()) @db.Uuid
   /// Stable adapter id matching the LenderAdapter registered in code
-  adapterKey    String          @unique @map("adapter_key")
-  legalName     String          @map("legal_name")
+  adapterKey     String     @unique @map("adapter_key")
+  legalName      String     @map("legal_name")
   /// Bank-partner / state-licensee that holds the loan paper.
   /// See ADR-0008 — substance over form.
-  lenderOfRecord String         @map("lender_of_record")
-  tier          LenderTier
-  enabled       Boolean         @default(true)
-  priority      Int             @default(100)
+  lenderOfRecord String     @map("lender_of_record")
+  tier           LenderTier
+  enabled        Boolean    @default(true)
+  priority       Int        @default(100)
   /// Observed P95 latency in ms (rolling); written by orchestration metrics.
-  slaP95Ms      Int?            @map("sla_p95_ms")
-  createdAt     DateTime        @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt     DateTime        @updatedAt @db.Timestamptz(6) @map("updated_at")
+  slaP95Ms       Int?       @map("sla_p95_ms")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   products    LenderProduct[]
   routes      LenderRoute[]
@@ -667,48 +673,48 @@ model Lender {
 /// lender partner gives us their sandbox credentials. The connect
 /// wizard in the admin console writes here.
 model LenderConnection {
-  id           String              @id @default(uuid()) @db.Uuid
-  lenderId     String              @db.Uuid @map("lender_id")
-  lender       Lender              @relation(fields: [lenderId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid()) @db.Uuid
+  lenderId String @map("lender_id") @db.Uuid
+  lender   Lender @relation(fields: [lenderId], references: [id], onDelete: Cascade)
 
   /// Display label for ops, e.g. "Evergreen Prime — sandbox", "Acme — prod us-east"
-  label        String
-  env          LenderConnectionEnv
-  status       LenderConnectionStatus @default(draft)
-  brand        ProductBrand           @default(direct)
+  label  String
+  env    LenderConnectionEnv
+  status LenderConnectionStatus @default(draft)
+  brand  ProductBrand           @default(direct)
 
   /// HTTPS base URL of the partner's adapter API
-  baseUrl      String              @map("base_url")
+  baseUrl             String  @map("base_url")
   /// Webhook URL EazePay calls (callback URL the partner gave us)
-  inboundWebhookUrl  String?       @map("inbound_webhook_url")
+  inboundWebhookUrl   String? @map("inbound_webhook_url")
   /// Path on EazePay's side that receives the partner's webhooks
   /// (full URL = our base + /v1/webhooks/lenders/{id})
-  outboundWebhookPath String       @default("") @map("outbound_webhook_path")
+  outboundWebhookPath String  @default("") @map("outbound_webhook_path")
 
   /// Scopes (capability flags) granted by the partner's API key
-  scopes              String[]     @default([])
+  scopes String[] @default([])
 
   /// Encrypted credentials — base64-encoded envelope (data-key + ciphertext + tag)
-  apiKeyCiphertext    String?      @map("api_key_ciphertext")
-  apiKeyFingerprint   String?      @map("api_key_fingerprint")
-  apiSecretCiphertext String?      @map("api_secret_ciphertext")
-  webhookSecretCiphertext String?  @map("webhook_secret_ciphertext")
+  apiKeyCiphertext        String? @map("api_key_ciphertext")
+  apiKeyFingerprint       String? @map("api_key_fingerprint")
+  apiSecretCiphertext     String? @map("api_secret_ciphertext")
+  webhookSecretCiphertext String? @map("webhook_secret_ciphertext")
 
   /// Last sandbox handshake / production health check
-  lastHealthcheckAt      DateTime?                @db.Timestamptz(6) @map("last_healthcheck_at")
-  lastHealthcheckOutcome LenderHealthcheckOutcome? @map("last_healthcheck_outcome")
-  lastHealthcheckLatencyMs Int?                   @map("last_healthcheck_latency_ms")
+  lastHealthcheckAt        DateTime?                 @map("last_healthcheck_at") @db.Timestamptz(6)
+  lastHealthcheckOutcome   LenderHealthcheckOutcome? @map("last_healthcheck_outcome")
+  lastHealthcheckLatencyMs Int?                      @map("last_healthcheck_latency_ms")
 
   /// Rolling 1h failure count; orchestration uses this to short-circuit
   /// open the breaker.
   failureCount1h Int @default(0) @map("failure_count_1h")
 
   /// Whoever activated this connection in the admin console.
-  activatedById  String?  @db.Uuid @map("activated_by_id")
-  activatedAt    DateTime? @db.Timestamptz(6) @map("activated_at")
+  activatedById String?   @map("activated_by_id") @db.Uuid
+  activatedAt   DateTime? @map("activated_at") @db.Timestamptz(6)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   healthchecks LenderHealthcheck[]
 
@@ -721,51 +727,51 @@ model LenderConnection {
 /// LenderConnection. Surfaces in the admin console so ops can show a
 /// partner exactly why their integration was failing.
 model LenderHealthcheck {
-  id           String                    @id @default(uuid()) @db.Uuid
-  connectionId String                    @db.Uuid @map("connection_id")
-  connection   LenderConnection          @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  at           DateTime                  @default(now()) @db.Timestamptz(6)
+  id           String                   @id @default(uuid()) @db.Uuid
+  connectionId String                   @map("connection_id") @db.Uuid
+  connection   LenderConnection         @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  at           DateTime                 @default(now()) @db.Timestamptz(6)
   outcome      LenderHealthcheckOutcome
-  latencyMs    Int?                      @map("latency_ms")
-  httpStatus   Int?                      @map("http_status")
+  latencyMs    Int?                     @map("latency_ms")
+  httpStatus   Int?                     @map("http_status")
   detail       String?
-  initiatedBy  String?                   @map("initiated_by") // "system" | user id
+  initiatedBy  String?                  @map("initiated_by") // "system" | user id
 
   @@index([connectionId, at])
   @@map("lender_healthchecks")
 }
 
 model LenderProduct {
-  id        String  @id @default(uuid()) @db.Uuid
-  lenderId  String  @db.Uuid @map("lender_id")
-  lender    Lender  @relation(fields: [lenderId], references: [id], onDelete: Cascade)
+  id              String       @id @default(uuid()) @db.Uuid
+  lenderId        String       @map("lender_id") @db.Uuid
+  lender          Lender       @relation(fields: [lenderId], references: [id], onDelete: Cascade)
   /// Stable id matching the product configuration in code (e.g. "buzzpay_personal").
-  productKey String @unique @map("product_key")
-  name      String
+  productKey      String       @unique @map("product_key")
+  name            String
   /// Which branded surface this product appears under. The same
   /// LenderProduct may also be exposed via a second product row under
   /// a different brand; orchestration treats them as separate
   /// candidates so per-brand routing is clean.
-  brand          ProductBrand   @default(direct)
+  brand           ProductBrand @default(direct)
   /// Eligibility envelope. Money in BigInt cents; APR in bps.
-  category       LoanCategory
-  minAmountCents BigInt        @map("min_amount_cents")
-  maxAmountCents BigInt        @map("max_amount_cents")
-  minTermMonths  Int           @map("min_term_months")
-  maxTermMonths  Int           @map("max_term_months")
+  category        LoanCategory
+  minAmountCents  BigInt       @map("min_amount_cents")
+  maxAmountCents  BigInt       @map("max_amount_cents")
+  minTermMonths   Int          @map("min_term_months")
+  maxTermMonths   Int          @map("max_term_months")
   /// State-rules-matrix gating — empty = all permitted states; non-empty = allowlist.
-  permittedStates String[] @default([]) @map("permitted_states")
-  enabled         Boolean  @default(true)
+  permittedStates String[]     @default([]) @map("permitted_states")
+  enabled         Boolean      @default(true)
 
   /// If this product was sourced from a marketplace (engine.tech etc.),
   /// the originating MarketplaceLender row. Null = direct integration.
   /// Lets every Offer + LenderRoute trace back to the override row that
   /// gated it — closes the audit gap flagged in ADR-0018.
-  marketplaceLenderId String?            @db.Uuid @map("marketplace_lender_id")
+  marketplaceLenderId String?            @map("marketplace_lender_id") @db.Uuid
   marketplaceLender   MarketplaceLender? @relation(fields: [marketplaceLenderId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   routes LenderRoute[]
   offers Offer[]       @relation("OfferLenderProduct")
@@ -774,19 +780,19 @@ model LenderProduct {
 }
 
 model LenderRoute {
-  id              String              @id @default(uuid()) @db.Uuid
-  applicationId   String              @db.Uuid @map("application_id")
-  application     Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  lenderId        String              @db.Uuid @map("lender_id")
-  lender          Lender              @relation(fields: [lenderId], references: [id])
-  lenderProductId String              @db.Uuid @map("lender_product_id")
-  lenderProduct   LenderProduct       @relation(fields: [lenderProductId], references: [id])
-  evaluationOrder Int                 @map("evaluation_order")
-  evaluatedAt     DateTime            @default(now()) @db.Timestamptz(6) @map("evaluated_at")
-  evaluationLatencyMs Int?            @map("evaluation_latency_ms")
-  outcome         LenderRouteOutcome
-  reasonCodes     String[] @default([]) @map("reason_codes")
-  rawResponseRef  String?             @map("raw_response_ref")
+  id                  String             @id @default(uuid()) @db.Uuid
+  applicationId       String             @map("application_id") @db.Uuid
+  application         Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  lenderId            String             @map("lender_id") @db.Uuid
+  lender              Lender             @relation(fields: [lenderId], references: [id])
+  lenderProductId     String             @map("lender_product_id") @db.Uuid
+  lenderProduct       LenderProduct      @relation(fields: [lenderProductId], references: [id])
+  evaluationOrder     Int                @map("evaluation_order")
+  evaluatedAt         DateTime           @default(now()) @map("evaluated_at") @db.Timestamptz(6)
+  evaluationLatencyMs Int?               @map("evaluation_latency_ms")
+  outcome             LenderRouteOutcome
+  reasonCodes         String[]           @default([]) @map("reason_codes")
+  rawResponseRef      String?            @map("raw_response_ref")
 
   @@index([applicationId, evaluationOrder])
   @@index([lenderId, evaluatedAt])
@@ -800,44 +806,44 @@ model LenderRoute {
 // PII (beneficial owner DOB / address) is encrypted by the same envelope
 // pattern as ConsumerProfile; the per-row blob lives on BeneficialOwner.
 model Merchant {
-  id            String         @id @default(uuid()) @db.Uuid
+  id             String  @id @default(uuid()) @db.Uuid
   /// URL-safe slug used in hosted application links (eazepay.com/apply/<slug>/<token>)
-  slug          String         @unique
-  legalName     String         @map("legal_name")
-  dba           String?        @map("dba")
+  slug           String  @unique
+  legalName      String  @map("legal_name")
+  dba            String? @map("dba")
   /// PII — searchable. Stored plaintext at rest today (MVP). Target
   /// state: deterministic AES-SIV + per-tenant pepper + HMAC blind
   /// index; tracked in docs/soc2/remediation.md. Treat
   /// `merchants.ein` as restricted-class data in the interim.
-  ein           String?        @unique
-  formationState String?       @db.VarChar(2) @map("formation_state")
+  ein            String? @unique
+  formationState String? @map("formation_state") @db.VarChar(2)
   /// 6-digit NAICS code; used for risk tiering + MCC mapping
-  naicsCode     String?        @map("naics_code")
+  naicsCode      String? @map("naics_code")
   /// 4-digit MCC for card acquiring
-  mcc           String?        @map("mcc")
-  industry      String?
-  website       String?
+  mcc            String? @map("mcc")
+  industry       String?
+  website        String?
 
   /// Which branded surface this merchant signed up under. Defaults to
   /// direct (any-purpose EazePay) and is set at onboarding based on
   /// MCC / industry. Drives the apply-flow branding the customer sees.
-  brand     ProductBrand   @default(direct)
+  brand ProductBrand @default(direct)
 
-  status    MerchantStatus @default(pending)
-  kybStatus KybStatus      @default(not_started) @map("kyb_status")
-  kybProviderRef    String?  @map("kyb_provider_ref")
-  kybLastCheckedAt  DateTime? @db.Timestamptz(6) @map("kyb_last_checked_at")
-  kybCompletedAt    DateTime? @db.Timestamptz(6) @map("kyb_completed_at")
+  status           MerchantStatus @default(pending)
+  kybStatus        KybStatus      @default(not_started) @map("kyb_status")
+  kybProviderRef   String?        @map("kyb_provider_ref")
+  kybLastCheckedAt DateTime?      @map("kyb_last_checked_at") @db.Timestamptz(6)
+  kybCompletedAt   DateTime?      @map("kyb_completed_at") @db.Timestamptz(6)
 
   /// MDR (merchant discount rate) in basis points — fee EazePay collects on each transaction
-  mdrBps              Int     @default(0) @map("mdr_bps")
+  mdrBps               Int     @default(0) @map("mdr_bps")
   /// Per-application fee in cents (BigInt)
-  applicationFeeCents BigInt  @default(0) @map("application_fee_cents")
+  applicationFeeCents  BigInt  @default(0) @map("application_fee_cents")
   /// Settlement bank account verification ref (Plaid Auth result, micro-deposit ref, etc.)
   settlementAccountRef String? @map("settlement_account_ref")
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   users            MerchantUser[]
   beneficialOwners BeneficialOwner[]
@@ -852,13 +858,13 @@ model Merchant {
 
 model MerchantUser {
   id          String           @id @default(uuid()) @db.Uuid
-  merchantId  String           @db.Uuid @map("merchant_id")
+  merchantId  String           @map("merchant_id") @db.Uuid
   merchant    Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  userId      String           @db.Uuid @map("user_id")
+  userId      String           @map("user_id") @db.Uuid
   role        MerchantUserRole
   permissions String[]         @default([])
-  createdAt   DateTime         @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt   DateTime         @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@unique([merchantId, userId])
   @@index([userId])
@@ -870,7 +876,7 @@ model MerchantUser {
 // as ConsumerProfile.
 model BeneficialOwner {
   id         String   @id @default(uuid()) @db.Uuid
-  merchantId String   @db.Uuid @map("merchant_id")
+  merchantId String   @map("merchant_id") @db.Uuid
   merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
 
   /// PII — AES-256-GCM ciphertext of legal name, DOB, address, SSN-last-4
@@ -881,15 +887,15 @@ model BeneficialOwner {
   piiSchemaVersion  Int    @default(1) @map("pii_schema_version")
 
   /// Ownership percentage (0-100). Owners ≥25% are reportable per FinCEN BOI.
-  ownershipPct  Int     @map("ownership_pct")
+  ownershipPct  Int       @map("ownership_pct")
   /// True if this person controls the entity regardless of ownership
   /// (officer, board, etc) — FinCEN's "control person" prong.
-  isControlling Boolean @default(false) @map("is_controlling")
+  isControlling Boolean   @default(false) @map("is_controlling")
   kycStatus     KycStatus @default(not_started) @map("kyc_status")
   pepStatus     PepStatus @default(unknown) @map("pep_status")
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([merchantId])
   @@map("beneficial_owners")
@@ -899,23 +905,23 @@ model BeneficialOwner {
 // random URL-safe string with server-side validation. Single-use after
 // the consumer submits a draft application.
 model ApplicationLink {
-  id            String       @id @default(uuid()) @db.Uuid
-  merchantId    String       @db.Uuid @map("merchant_id")
-  merchant      Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  id                  String        @id @default(uuid()) @db.Uuid
+  merchantId          String        @map("merchant_id") @db.Uuid
+  merchant            Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   /// SHA-256 hash of the URL token; raw token is returned once at creation only
-  tokenHash     String       @unique @map("token_hash")
+  tokenHash           String        @unique @map("token_hash")
   /// Optional pre-fill hints
-  category      LoanCategory?
+  category            LoanCategory?
   /// Money — integer cents (BigInt)
-  amountHintCents BigInt?     @map("amount_hint_cents")
-  customerEmail   String?     @map("customer_email")
-  customerPhone   String?     @map("customer_phone")
-  expiresAt     DateTime     @db.Timestamptz(6) @map("expires_at")
-  usedByApplicationId String? @db.Uuid @map("used_by_application_id")
-  usedAt        DateTime?    @db.Timestamptz(6) @map("used_at")
-  revokedAt     DateTime?    @db.Timestamptz(6) @map("revoked_at")
-  createdAt     DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
-  createdByUserId String     @db.Uuid @map("created_by_user_id")
+  amountHintCents     BigInt?       @map("amount_hint_cents")
+  customerEmail       String?       @map("customer_email")
+  customerPhone       String?       @map("customer_phone")
+  expiresAt           DateTime      @map("expires_at") @db.Timestamptz(6)
+  usedByApplicationId String?       @map("used_by_application_id") @db.Uuid
+  usedAt              DateTime?     @map("used_at") @db.Timestamptz(6)
+  revokedAt           DateTime?     @map("revoked_at") @db.Timestamptz(6)
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdByUserId     String        @map("created_by_user_id") @db.Uuid
 
   @@index([merchantId, createdAt])
   @@map("application_links")
@@ -928,7 +934,7 @@ model ApplicationLink {
 // status flag.
 model PaymentMethod {
   id            String              @id @default(uuid()) @db.Uuid
-  userId        String              @db.Uuid @map("user_id")
+  userId        String              @map("user_id") @db.Uuid
   type          PaymentMethodType
   /// Provider name ('stripe' | 'modern_treasury' | 'mock').
   provider      String
@@ -942,8 +948,8 @@ model PaymentMethod {
   isDefault     Boolean             @default(false) @map("is_default")
   status        PaymentMethodStatus @default(pending_verification)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   transactions Transaction[]
 
@@ -956,30 +962,30 @@ model PaymentMethod {
 // Settlement to merchants is modelled as a separate Settlement entity
 // in a later round.
 model Transaction {
-  id              String                 @id @default(uuid()) @db.Uuid
-  loanId          String?                @db.Uuid @map("loan_id")
-  loan            Loan?                  @relation(fields: [loanId], references: [id])
-  paymentMethodId String?                @db.Uuid @map("payment_method_id")
-  paymentMethod   PaymentMethod?         @relation(fields: [paymentMethodId], references: [id])
+  id              String         @id @default(uuid()) @db.Uuid
+  loanId          String?        @map("loan_id") @db.Uuid
+  loan            Loan?          @relation(fields: [loanId], references: [id])
+  paymentMethodId String?        @map("payment_method_id") @db.Uuid
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
   /// Optional FK back to the Repayment this transaction satisfies.
-  repaymentId     String?                @unique @db.Uuid @map("repayment_id")
-  repayment       Repayment?             @relation(fields: [repaymentId], references: [id])
+  repaymentId     String?        @unique @map("repayment_id") @db.Uuid
+  repayment       Repayment?     @relation(fields: [repaymentId], references: [id])
 
-  direction TransactionDirection
+  direction     TransactionDirection
   /// Money — integer cents. Always positive; direction encodes the sign.
-  amountCents BigInt              @map("amount_cents")
-  currency   String               @default("USD") @db.VarChar(3)
-  status     TransactionStatus    @default(pending)
+  amountCents   BigInt               @map("amount_cents")
+  currency      String               @default("USD") @db.VarChar(3)
+  status        TransactionStatus    @default(pending)
   /// Stable provider identifier (Stripe PaymentIntent id, Modern
   /// Treasury payment_order id, mock-{uuid}). Idempotency anchor.
-  providerRef String              @unique @map("provider_ref")
+  providerRef   String               @unique @map("provider_ref")
   /// Failure or reversal reason. Reg E error-resolution surfaces from here.
-  failureReason String?           @map("failure_reason")
+  failureReason String?              @map("failure_reason")
 
-  occurredAt DateTime @default(now()) @db.Timestamptz(6) @map("occurred_at")
-  settledAt  DateTime? @db.Timestamptz(6) @map("settled_at")
-  createdAt  DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt  DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  occurredAt DateTime  @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  settledAt  DateTime? @map("settled_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([loanId, occurredAt])
   @@index([status])
@@ -992,21 +998,21 @@ model Transaction {
 // amortization (P/I split per month) lands when services/contract
 // renders the Reg Z disclosure schedule.
 model Repayment {
-  id        String          @id @default(uuid()) @db.Uuid
-  loanId    String          @db.Uuid @map("loan_id")
-  loan      Loan            @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  id              String          @id @default(uuid()) @db.Uuid
+  loanId          String          @map("loan_id") @db.Uuid
+  loan            Loan            @relation(fields: [loanId], references: [id], onDelete: Cascade)
   /// Position in the schedule, 1-indexed.
-  sequence  Int
-  dueDate   DateTime        @db.Date @map("due_date")
+  sequence        Int
+  dueDate         DateTime        @map("due_date") @db.Date
   /// Money — integer cents.
-  amountDueCents  BigInt    @map("amount_due_cents")
+  amountDueCents  BigInt          @map("amount_due_cents")
   /// Money — integer cents. Updated as collections settle.
-  amountPaidCents BigInt    @default(0) @map("amount_paid_cents")
-  status    RepaymentStatus @default(scheduled)
-  paidAt    DateTime?       @db.Timestamptz(6) @map("paid_at")
+  amountPaidCents BigInt          @default(0) @map("amount_paid_cents")
+  status          RepaymentStatus @default(scheduled)
+  paidAt          DateTime?       @map("paid_at") @db.Timestamptz(6)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   transaction Transaction?
 
@@ -1022,27 +1028,27 @@ model Repayment {
 // template registry lives in code, not DB, so a stale row can always
 // be re-rendered if the dispatcher restarts mid-batch.
 model Notification {
-  id           String              @id @default(uuid()) @db.Uuid
-  userId       String              @db.Uuid @map("user_id")
-  channel      NotificationChannel
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @map("user_id") @db.Uuid
+  channel       NotificationChannel
   /// Stable string key matched to a template in the notification service.
-  templateKey  String              @map("template_key")
+  templateKey   String              @map("template_key")
   /// Free-form template variables. Sensitive fields are NOT stored here —
   /// notifications referencing money or PII reference an entity id and
   /// the dispatcher composes at delivery time.
-  payload      Json                @default("{}")
+  payload       Json                @default("{}")
   /// Pointer back to the entity that triggered this notification (for
   /// dedupe + audit: e.g. ('Application', applicationId)).
-  subjectType  String?             @map("subject_type")
-  subjectId    String?             @map("subject_id")
-  status       NotificationStatus  @default(queued)
+  subjectType   String?             @map("subject_type")
+  subjectId     String?             @map("subject_id")
+  status        NotificationStatus  @default(queued)
   /// Provider-side reference (Twilio MessageSid, SES MessageId, etc.).
-  providerRef  String?             @map("provider_ref")
-  failureReason String?            @map("failure_reason")
-  sentAt       DateTime?           @db.Timestamptz(6) @map("sent_at")
-  readAt       DateTime?           @db.Timestamptz(6) @map("read_at")
-  createdAt    DateTime            @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt    DateTime            @updatedAt @db.Timestamptz(6) @map("updated_at")
+  providerRef   String?             @map("provider_ref")
+  failureReason String?             @map("failure_reason")
+  sentAt        DateTime?           @map("sent_at") @db.Timestamptz(6)
+  readAt        DateTime?           @map("read_at") @db.Timestamptz(6)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([userId, createdAt])
   @@index([userId, channel, readAt])
@@ -1056,18 +1062,18 @@ model Notification {
 // not deterministic: orchestration uses it as a knockout for `decline`,
 // a routing hint for `manual_review`, and informational otherwise.
 model RiskAssessment {
-  id            String              @id @default(uuid()) @db.Uuid
-  applicationId String              @unique @db.Uuid @map("application_id")
+  id             String             @id @default(uuid()) @db.Uuid
+  applicationId  String             @unique @map("application_id") @db.Uuid
   /// 0–100 composite score. Higher = riskier.
-  score         Int
+  score          Int
   recommendation RiskRecommendation
   /// Reason codes that contributed; mapped to a stable taxonomy.
-  reasonCodes   String[]            @default([]) @map("reason_codes")
+  reasonCodes    String[]           @default([]) @map("reason_codes")
   /// Provider-side raw responses kept for audit + model-monitoring.
-  signals       Json                @default("{}")
+  signals        Json               @default("{}")
   /// SR 11-7 — same input + this version reproduces the assessment.
-  policyVersion String              @map("policy_version")
-  createdAt     DateTime            @default(now()) @db.Timestamptz(6) @map("created_at")
+  policyVersion  String             @map("policy_version")
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([recommendation, createdAt])
   @@map("risk_assessments")
@@ -1079,12 +1085,12 @@ model RiskAssessment {
 model RiskFlag {
   id          String           @id @default(uuid()) @db.Uuid
   subjectType String           @map("subject_type")
-  subjectId   String           @db.Uuid @map("subject_id")
+  subjectId   String           @map("subject_id") @db.Uuid
   flagType    String           @map("flag_type") // velocity_user_24h, ip_geo_mismatch, etc
   severity    RiskFlagSeverity
   evidence    Json             @default("{}")
-  raisedAt    DateTime         @default(now()) @db.Timestamptz(6) @map("raised_at")
-  resolvedAt  DateTime?        @db.Timestamptz(6) @map("resolved_at")
+  raisedAt    DateTime         @default(now()) @map("raised_at") @db.Timestamptz(6)
+  resolvedAt  DateTime?        @map("resolved_at") @db.Timestamptz(6)
   resolvedBy  String?          @map("resolved_by")
 
   @@index([subjectType, subjectId, raisedAt])
@@ -1103,20 +1109,20 @@ model ComplianceReview {
   kind        ComplianceReviewKind
   /// Subject of the review (Application, User, Merchant, RiskFlag, etc.).
   subjectType String                 @map("subject_type")
-  subjectId   String                 @db.Uuid @map("subject_id")
+  subjectId   String                 @map("subject_id") @db.Uuid
   /// Free-form reason text for the audit narrative; reasonCodes carry
   /// the structured taxonomy.
   reason      String
-  reasonCodes String[] @default([]) @map("reason_codes")
+  reasonCodes String[]               @default([]) @map("reason_codes")
   status      ComplianceReviewStatus @default(open)
 
   /// Admin who created the review (UserId).
-  createdByUserId String                @db.Uuid @map("created_by_user_id")
+  createdByUserId     String  @map("created_by_user_id") @db.Uuid
   /// Admin who closed it (dual-control: must differ from createdByUserId
   /// when status is closed_* and dual_control_required was true).
-  closedByUserId  String?               @db.Uuid @map("closed_by_user_id")
+  closedByUserId      String? @map("closed_by_user_id") @db.Uuid
   /// True when the underlying action required two distinct admins.
-  dualControlRequired Boolean            @default(false) @map("dual_control_required")
+  dualControlRequired Boolean @default(false) @map("dual_control_required")
 
   /// External reference for reportable matters (FinCEN SAR id, state
   /// AG complaint id, etc.) — populated on escalated_reportable.
@@ -1125,9 +1131,9 @@ model ComplianceReview {
   /// Free-form context (links to evidence, snapshot of state at decision time).
   evidence Json @default("{}")
 
-  createdAt DateTime  @default(now()) @db.Timestamptz(6) @map("created_at")
-  closedAt  DateTime? @db.Timestamptz(6) @map("closed_at")
-  updatedAt DateTime  @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  closedAt  DateTime? @map("closed_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([status, createdAt])
   @@index([subjectType, subjectId])
@@ -1147,30 +1153,30 @@ model ComplianceReview {
 //  - approvedAt + expiresAt are immutable once written.
 //  - revokedAt sets status='revoked' irreversibly.
 model PiiUnmaskRequest {
-  id              String              @id @default(uuid()) @db.Uuid
+  id          String              @id @default(uuid()) @db.Uuid
   /// Subject of the unmask: today only 'User' / 'BeneficialOwner'.
-  subjectType     String              @map("subject_type")
-  subjectId       String              @db.Uuid @map("subject_id")
+  subjectType String              @map("subject_type")
+  subjectId   String              @map("subject_id") @db.Uuid
   /// Specific PII fields requested. Whitelisted by the service.
-  fields          String[]            @default([])
-  reasonCode      PiiUnmaskReasonCode @map("reason_code")
-  reasonNotes     String              @map("reason_notes")
-  status          PiiUnmaskStatus     @default(pending_approval)
+  fields      String[]            @default([])
+  reasonCode  PiiUnmaskReasonCode @map("reason_code")
+  reasonNotes String              @map("reason_notes")
+  status      PiiUnmaskStatus     @default(pending_approval)
 
-  requestedByUserId String   @db.Uuid @map("requested_by_user_id")
-  approvedByUserId  String?  @db.Uuid @map("approved_by_user_id")
-  approvedAt        DateTime? @db.Timestamptz(6) @map("approved_at")
+  requestedByUserId String    @map("requested_by_user_id") @db.Uuid
+  approvedByUserId  String?   @map("approved_by_user_id") @db.Uuid
+  approvedAt        DateTime? @map("approved_at") @db.Timestamptz(6)
   /// Wall-clock validity. Once past, status flips to 'expired' on next read.
-  expiresAt         DateTime? @db.Timestamptz(6) @map("expires_at")
-  revokedAt         DateTime? @db.Timestamptz(6) @map("revoked_at")
-  revokedByUserId   String?   @db.Uuid @map("revoked_by_user_id")
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz(6)
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedByUserId   String?   @map("revoked_by_user_id") @db.Uuid
 
   /// Tied to a ComplianceReview when the unmask is part of a regulated
   /// workflow (the ComplianceReview is the parent record).
-  complianceReviewId String? @db.Uuid @map("compliance_review_id")
+  complianceReviewId String? @map("compliance_review_id") @db.Uuid
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([subjectType, subjectId])
   @@index([status, expiresAt])
@@ -1186,7 +1192,7 @@ model Document {
   id          String         @id @default(uuid()) @db.Uuid
   /// Owning entity — User, Application, Loan, Merchant, BeneficialOwner, etc.
   ownerType   String         @map("owner_type")
-  ownerId     String         @db.Uuid @map("owner_id")
+  ownerId     String         @map("owner_id") @db.Uuid
   kind        DocumentKind
   /// Storage backend — 'local-fs' for dev, 's3' in prod.
   storage     String
@@ -1202,13 +1208,13 @@ model Document {
   /// Retention policy expressed as ISO date — auto-purge after this date.
   /// FCRA declined-app retention is 25 months; loan documents 7+ years
   /// per partner-bank policy. Set per-kind by the renderer.
-  retainUntil DateTime?      @db.Timestamptz(6) @map("retain_until")
+  retainUntil DateTime?      @map("retain_until") @db.Timestamptz(6)
   status      DocumentStatus @default(active)
   /// Free-form metadata (renderer version, policy version, etc.).
   metadata    Json           @default("{}")
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([ownerType, ownerId, kind])
   @@index([status, retainUntil])
@@ -1221,15 +1227,15 @@ model Document {
 // delivery. The secret is returned ONCE at creation time and stored
 // hashed thereafter — same pattern as the partner-facing API keys.
 model WebhookEndpoint {
-  id         String                 @id @default(uuid()) @db.Uuid
-  merchantId String                 @db.Uuid @map("merchant_id")
+  id                  String                @id @default(uuid()) @db.Uuid
+  merchantId          String                @map("merchant_id") @db.Uuid
   /// Public destination URL. https-only enforced at controller level.
-  url        String
+  url                 String
   /// SECRET — SHA-256 hash of the per-endpoint signing secret. Retained
   /// for fingerprint display in the dashboard and for back-compat with
   /// rows created before `secretCiphertext` was added. Rotation issues a
   /// fresh raw value + invalidates the old hash.
-  secretHash String                 @map("secret_hash")
+  secretHash          String                @map("secret_hash")
   /// SECRET — AES-256-GCM envelope of the raw signing secret, packed via
   /// `PiiVaultService.sealOpaque` with AAD bound to this row's id. The
   /// outbound dispatcher decrypts this at delivery time to compute the
@@ -1237,22 +1243,22 @@ model WebhookEndpoint {
   /// keep working; the dispatcher fails those deliveries with a
   /// `endpoint_secret_unmigrated_rotate_required` error, which trips the
   /// circuit-breaker after 20 failures and prompts the merchant to rotate.
-  secretCiphertext String?           @map("secret_ciphertext")
+  secretCiphertext    String?               @map("secret_ciphertext")
   /// Subscribed event types. Matched as exact strings against the
   /// publish call's event name.
-  events     String[]               @default([])
-  status     WebhookEndpointStatus  @default(active)
+  events              String[]              @default([])
+  status              WebhookEndpointStatus @default(active)
   /// Optional human label so a merchant with multiple endpoints can
   /// distinguish them.
-  description String?
+  description         String?
   /// Updated by the dispatcher on every successful delivery. Used to
   /// surface "last seen" metrics in the merchant dashboard.
-  lastDeliveredAt DateTime?          @db.Timestamptz(6) @map("last_delivered_at")
+  lastDeliveredAt     DateTime?             @map("last_delivered_at") @db.Timestamptz(6)
   /// Consecutive failure count for circuit-breaking. Reset on first
   /// successful delivery.
-  consecutiveFailures Int            @default(0) @map("consecutive_failures")
-  createdAt DateTime                 @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime                 @updatedAt @db.Timestamptz(6) @map("updated_at")
+  consecutiveFailures Int                   @default(0) @map("consecutive_failures")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   deliveries WebhookDelivery[]
 
@@ -1265,32 +1271,32 @@ model WebhookEndpoint {
 // before transitioning to dead_letter. Replayable from the merchant
 // dashboard.
 model WebhookDelivery {
-  id          String                @id @default(uuid()) @db.Uuid
-  endpointId  String                @db.Uuid @map("endpoint_id")
-  endpoint    WebhookEndpoint       @relation(fields: [endpointId], references: [id], onDelete: Cascade)
-  eventType   String                @map("event_type")
+  id          String          @id @default(uuid()) @db.Uuid
+  endpointId  String          @map("endpoint_id") @db.Uuid
+  endpoint    WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  eventType   String          @map("event_type")
   /// Stable event id from the publishing service; allows a merchant
   /// receiving multiple deliveries (one per endpoint) to dedupe.
-  eventId     String                @map("event_id")
+  eventId     String          @map("event_id")
   /// Subject anchor — typically (Application, applicationId).
-  subjectType String?               @map("subject_type")
-  subjectId   String?               @map("subject_id")
+  subjectType String?         @map("subject_type")
+  subjectId   String?         @map("subject_id")
   /// JSON payload as posted to the endpoint. Sensitive PII never lives
   /// here; payload references entity ids and the merchant fetches via
   /// authenticated APIs.
-  payload     Json                  @default("{}")
+  payload     Json            @default("{}")
 
-  status      WebhookDeliveryStatus @default(pending)
-  attempts    Int                   @default(0)
+  status         WebhookDeliveryStatus @default(pending)
+  attempts       Int                   @default(0)
   /// Earliest UTC time the dispatcher may attempt the next call.
-  nextAttemptAt DateTime?           @db.Timestamptz(6) @map("next_attempt_at")
+  nextAttemptAt  DateTime?             @map("next_attempt_at") @db.Timestamptz(6)
   /// Final / last delivery time on terminal states.
-  deliveredAt   DateTime?           @db.Timestamptz(6) @map("delivered_at")
+  deliveredAt    DateTime?             @map("delivered_at") @db.Timestamptz(6)
   /// Recorded HTTP status code from the most recent attempt.
-  lastStatusCode Int?               @map("last_status_code")
-  lastError      String?            @map("last_error")
-  createdAt   DateTime              @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt   DateTime              @updatedAt @db.Timestamptz(6) @map("updated_at")
+  lastStatusCode Int?                  @map("last_status_code")
+  lastError      String?               @map("last_error")
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@unique([endpointId, eventId])
   @@index([status, nextAttemptAt])
@@ -1331,11 +1337,17 @@ model AuditOutbox {
   after       Json?
   ipAddress   String?   @map("ip_address")
   userAgent   String?   @map("user_agent")
-  occurredAt  DateTime  @default(now()) @db.Timestamptz(6) @map("occurred_at")
-  publishedAt DateTime? @db.Timestamptz(6) @map("published_at")
+  occurredAt  DateTime  @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
 
   @@index([publishedAt])
   @@index([targetType, targetId])
+  // SEC-119: "what did actor X do" queries (admin investigation,
+  // compliance evidence pull, SOC2 export) hit `actorType + actorId`
+  // most often. Without this index every such lookup sequential-scans
+  // the entire outbox; latency grows linearly with table size.
+  // `occurredAt DESC` makes "most recent first" the natural order.
+  @@index([actorType, actorId, occurredAt(sort: Desc)])
   @@map("audit_outbox")
 }
 
@@ -1347,22 +1359,22 @@ model AuditOutbox {
 /// network. Each `MarketplaceLender` is the toggleable row a Master
 /// admin operates against in the Command Centre.
 model Marketplace {
-  id           String              @id @default(uuid()) @db.Uuid
-  slug         String              @unique
-  legalName    String              @map("legal_name")
-  displayName  String              @map("display_name")
-  provider     MarketplaceProvider
-  status       MarketplaceStatus   @default(active)
-  apiBaseUrl   String?             @map("api_base_url")
+  id                      String              @id @default(uuid()) @db.Uuid
+  slug                    String              @unique
+  legalName               String              @map("legal_name")
+  displayName             String              @map("display_name")
+  provider                MarketplaceProvider
+  status                  MarketplaceStatus   @default(active)
+  apiBaseUrl              String?             @map("api_base_url")
   /// Webhook secret used to verify inbound updates. Envelope-encrypted
   /// via the same scheme as LenderConnection credentials.
-  webhookSecretCiphertext String?  @map("webhook_secret_ciphertext")
+  webhookSecretCiphertext String?             @map("webhook_secret_ciphertext")
   /// Last-known lender count, refreshed by a daily sync job.
-  lenderCount  Int                 @default(0) @map("lender_count")
-  lastSyncAt   DateTime?           @db.Timestamptz(6) @map("last_sync_at")
+  lenderCount             Int                 @default(0) @map("lender_count")
+  lastSyncAt              DateTime?           @map("last_sync_at") @db.Timestamptz(6)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   lenders MarketplaceLender[]
 
@@ -1380,7 +1392,7 @@ model Marketplace {
 /// `brands` (or `brands` is empty, meaning "all brands").
 model MarketplaceLender {
   id               String         @id @default(uuid()) @db.Uuid
-  marketplaceId    String         @db.Uuid @map("marketplace_id")
+  marketplaceId    String         @map("marketplace_id") @db.Uuid
   marketplace      Marketplace    @relation(fields: [marketplaceId], references: [id], onDelete: Cascade)
   externalLenderId String         @map("external_lender_id")
   legalName        String         @map("legal_name")
@@ -1397,10 +1409,10 @@ model MarketplaceLender {
   permittedStates  String[]       @default([]) @map("permitted_states")
   /// Global kill switch. When false, no partner can route to this lender.
   globallyEnabled  Boolean        @default(true) @map("globally_enabled")
-  syncedAt         DateTime       @default(now()) @db.Timestamptz(6) @map("synced_at")
+  syncedAt         DateTime       @default(now()) @map("synced_at") @db.Timestamptz(6)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   accessOverrides PartnerLenderAccess[]
   products        LenderProduct[]
@@ -1420,9 +1432,9 @@ model MarketplaceLender {
 /// platform.
 model PartnerLenderAccess {
   id                  String            @id @default(uuid()) @db.Uuid
-  merchantId          String            @db.Uuid @map("merchant_id")
+  merchantId          String            @map("merchant_id") @db.Uuid
   merchant            Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  marketplaceLenderId String            @db.Uuid @map("marketplace_lender_id")
+  marketplaceLenderId String            @map("marketplace_lender_id") @db.Uuid
   /// Restrict (not Cascade): a MarketplaceLender being de-synced from
   /// its upstream provider must not silently wipe the per-partner
   /// override history. The audit chain needs those rows. To remove a
@@ -1432,8 +1444,8 @@ model PartnerLenderAccess {
   enabled             Boolean
   reason              String?
   /// User id of the admin who flipped this row.
-  changedById         String?           @db.Uuid @map("changed_by_id")
-  changedAt           DateTime          @default(now()) @db.Timestamptz(6) @map("changed_at")
+  changedById         String?           @map("changed_by_id") @db.Uuid
+  changedAt           DateTime          @default(now()) @map("changed_at") @db.Timestamptz(6)
 
   @@unique([merchantId, marketplaceLenderId])
   @@index([merchantId])
@@ -1448,26 +1460,26 @@ model PartnerLenderAccess {
 /// store the assigned credit tier denormalised so dashboards can
 /// filter without decrypting.
 model HighsaleSnapshot {
-  id                 String      @id @default(uuid()) @db.Uuid
-  applicationId      String      @unique @db.Uuid @map("application_id")
-  application        Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id                 String                 @id @default(uuid()) @db.Uuid
+  applicationId      String                 @unique @map("application_id") @db.Uuid
+  application        Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   /// Highsale's stable reference id for this pull.
-  highsaleRef        String      @unique @map("highsale_ref")
-  creditTier         CreditTier  @map("credit_tier")
-  ficoBand           String?     @map("fico_band")
+  highsaleRef        String                 @unique @map("highsale_ref")
+  creditTier         CreditTier             @map("credit_tier")
+  ficoBand           String?                @map("fico_band")
   /// Encrypted financial summary (account count, income ranges,
   /// tradeline counts, etc.). Read via PiiVaultService.
-  payloadCiphertext  String      @map("payload_ciphertext")
-  payloadFingerprint String      @map("payload_fingerprint")
+  payloadCiphertext  String                 @map("payload_ciphertext")
+  payloadFingerprint String                 @map("payload_fingerprint")
   /// SHA-256 of the inputs sent to Highsale. Lets the audit chain
   /// prove the snapshot belongs to this application's inputs.
-  inputsHash         String      @map("inputs_hash")
-  inquiryAt          DateTime               @db.Timestamptz(6) @map("inquiry_at")
-  expiresAt          DateTime               @db.Timestamptz(6) @map("expires_at")
+  inputsHash         String                 @map("inputs_hash")
+  inquiryAt          DateTime               @map("inquiry_at") @db.Timestamptz(6)
+  expiresAt          DateTime               @map("expires_at") @db.Timestamptz(6)
   status             HighsaleSnapshotStatus @default(pending)
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt DateTime @updatedAt @db.Timestamptz(6) @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([creditTier, status])
   @@map("highsale_snapshots")
@@ -1541,25 +1553,25 @@ enum ConfirmState {
 /// lazily on first edit (defaults are computed in service code so the
 /// table only stores explicit overrides).
 model BillingConfig {
-  id                       String       @id @default(uuid()) @db.Uuid
-  merchantId               String       @unique @db.Uuid @map("merchant_id")
-  merchant                 Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  cycle                    BillingCycle @default(monthly)
+  id                  String       @id @default(uuid()) @db.Uuid
+  merchantId          String       @unique @map("merchant_id") @db.Uuid
+  merchant            Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  cycle               BillingCycle @default(monthly)
   /// 1-28 for monthly, 0-6 (Sun-Sat) for weekly. UI clamps before write.
-  dayOfPeriod              Int          @default(1) @map("day_of_period")
+  dayOfPeriod         Int          @default(1) @map("day_of_period")
   /// Encrypted recipient override (PiiVaultService.sealOpaque envelope,
   /// AAD = `{entity:billing_config, field:sendToEmail, merchantId}`).
   /// NULL means fall back to Merchant's contact email.
-  sendToEmailEnc           String?      @map("send_to_email_enc")
-  autoSend                 Boolean      @default(false) @map("auto_send")
+  sendToEmailEnc      String?      @map("send_to_email_enc")
+  autoSend            Boolean      @default(false) @map("auto_send")
   /// Free-text URL template with `{{invoice}}` + `{{amount}}` substitution.
   /// Not encrypted: pasted Stripe/MICAMP link is not user PII, but the
   /// resolved URL may contain merchant identifiers. Treat as confidential.
-  paymentLinkTemplate      String?      @map("payment_link_template")
-  note                     String?
-  updatedById              String?      @db.Uuid @map("updated_by_id")
-  createdAt                DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt                DateTime     @updatedAt @db.Timestamptz(6) @map("updated_at")
+  paymentLinkTemplate String?      @map("payment_link_template")
+  note                String?
+  updatedById         String?      @map("updated_by_id") @db.Uuid
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   invoices Invoice[]
 
@@ -1571,36 +1583,36 @@ model BillingConfig {
 /// human-readable display id (e.g. INV-2026-05-p_atlas) and is the
 /// stable external reference used in emails + URLs.
 model Invoice {
-  id              String        @id @default(uuid()) @db.Uuid
-  invoiceNo       String        @unique @map("invoice_no")
-  merchantId      String        @db.Uuid @map("merchant_id")
-  merchant        Merchant      @relation(fields: [merchantId], references: [id], onDelete: Restrict)
-  billingConfigId String?       @db.Uuid @map("billing_config_id")
-  billingConfig   BillingConfig? @relation(fields: [billingConfigId], references: [id], onDelete: SetNull)
+  id               String         @id @default(uuid()) @db.Uuid
+  invoiceNo        String         @unique @map("invoice_no")
+  merchantId       String         @map("merchant_id") @db.Uuid
+  merchant         Merchant       @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  billingConfigId  String?        @map("billing_config_id") @db.Uuid
+  billingConfig    BillingConfig? @relation(fields: [billingConfigId], references: [id], onDelete: SetNull)
   /// "YYYY-MM" for monthly, "YYYY-Www" for weekly.
-  periodId        String        @map("period_id")
-  periodLabel     String        @map("period_label")
-  periodStart     DateTime      @db.Date @map("period_start")
-  periodEnd       DateTime      @db.Date @map("period_end")
+  periodId         String         @map("period_id")
+  periodLabel      String         @map("period_label")
+  periodStart      DateTime       @map("period_start") @db.Date
+  periodEnd        DateTime       @map("period_end") @db.Date
   /// Source aggregate at generate-time. Frozen so a later settlement
   /// re-roll doesn't silently change the invoice amount.
-  grossFundedCents BigInt       @map("gross_funded_cents")
+  grossFundedCents BigInt         @map("gross_funded_cents")
   /// Effective fee % at generate-time, in basis points × 100 (e.g.
   /// 350 = 3.50%). Stored as integer to avoid float drift.
-  feeBps          Int           @map("fee_bps")
+  feeBps           Int            @map("fee_bps")
   /// Default = round(grossFundedCents * feeBps / 10000). Can be
   /// overridden by accounts via setAmount.
-  amountCents     BigInt        @map("amount_cents")
-  status          InvoiceStatus @default(draft)
-  dueDate         DateTime      @db.Date @map("due_date")
-  voidedAt        DateTime?     @db.Timestamptz(6) @map("voided_at")
-  voidReason      String?       @map("void_reason")
-  createdAt       DateTime      @default(now()) @db.Timestamptz(6) @map("created_at")
-  updatedAt       DateTime      @updatedAt @db.Timestamptz(6) @map("updated_at")
+  amountCents      BigInt         @map("amount_cents")
+  status           InvoiceStatus  @default(draft)
+  dueDate          DateTime       @map("due_date") @db.Date
+  voidedAt         DateTime?      @map("voided_at") @db.Timestamptz(6)
+  voidReason       String?        @map("void_reason")
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  payments       InvoicePayment[]
-  activity       InvoiceActivity[]
-  confirmTokens  ConfirmToken[]
+  payments      InvoicePayment[]
+  activity      InvoiceActivity[]
+  confirmTokens ConfirmToken[]
 
   @@unique([merchantId, periodId])
   @@index([periodId, status])
@@ -1612,16 +1624,16 @@ model Invoice {
 /// new entries with a `note` referencing the prior id rather than
 /// edits-in-place.
 model InvoicePayment {
-  id          String        @id @default(uuid()) @db.Uuid
-  invoiceId   String        @db.Uuid @map("invoice_id")
-  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  amountCents BigInt               @map("amount_cents")
-  paidAt      DateTime             @db.Date @map("paid_at")
-  method      InvoicePaymentMethod
-  reference   String?
-  note        String?
-  recordedById String?      @db.Uuid @map("recorded_by_id")
-  recordedAt  DateTime      @default(now()) @db.Timestamptz(6) @map("recorded_at")
+  id           String               @id @default(uuid()) @db.Uuid
+  invoiceId    String               @map("invoice_id") @db.Uuid
+  invoice      Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amountCents  BigInt               @map("amount_cents")
+  paidAt       DateTime             @map("paid_at") @db.Date
+  method       InvoicePaymentMethod
+  reference    String?
+  note         String?
+  recordedById String?              @map("recorded_by_id") @db.Uuid
+  recordedAt   DateTime             @default(now()) @map("recorded_at") @db.Timestamptz(6)
 
   @@index([invoiceId])
   @@map("invoice_payments")
@@ -1630,21 +1642,21 @@ model InvoicePayment {
 /// Audit trail for one invoice. Every mutation a human (operator or
 /// recipient) makes against an invoice lands here. Append-only.
 model InvoiceActivity {
-  id        String              @id @default(uuid()) @db.Uuid
-  invoiceId String              @db.Uuid @map("invoice_id")
-  invoice   Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  kind      InvoiceActivityKind
+  id         String              @id @default(uuid()) @db.Uuid
+  invoiceId  String              @map("invoice_id") @db.Uuid
+  invoice    Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  kind       InvoiceActivityKind
   /// Display name for the actor — operator email, or "recipient" for
   /// confirm/dispute actions, or "system" for cron-driven changes.
-  actorLabel String             @map("actor_label")
+  actorLabel String              @map("actor_label")
   /// User id (NULL for unauthenticated recipient or system actions).
-  actorId   String?             @db.Uuid @map("actor_id")
-  summary   String
+  actorId    String?             @map("actor_id") @db.Uuid
+  summary    String
   /// IP + UA for recipient (confirm/dispute) actions — gives the
   /// audit chain a forensic anchor without storing PII.
-  remoteIp  String?             @map("remote_ip")
-  userAgent String?             @map("user_agent")
-  at        DateTime            @default(now()) @db.Timestamptz(6)
+  remoteIp   String?             @map("remote_ip")
+  userAgent  String?             @map("user_agent")
+  at         DateTime            @default(now()) @db.Timestamptz(6)
 
   @@index([invoiceId, at(sort: Desc)])
   @@map("invoice_activity")
@@ -1653,18 +1665,18 @@ model InvoiceActivity {
 /// Token gating the recipient confirm/dispute page. Single-use semantic:
 /// once `state` flips off `pending` the token is dead.
 model ConfirmToken {
-  id           String       @id @default(uuid()) @db.Uuid
+  id            String       @id @default(uuid()) @db.Uuid
   /// 32-byte random base64url, used in URL path.
-  token        String       @unique
-  invoiceId    String       @db.Uuid @map("invoice_id")
-  invoice      Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  state        ConfirmState @default(pending)
-  actedAt      DateTime?    @db.Timestamptz(6) @map("acted_at")
-  disputeReason String?     @map("dispute_reason")
-  remoteIp     String?      @map("remote_ip")
-  userAgent    String?      @map("user_agent")
-  expiresAt    DateTime     @db.Timestamptz(6) @map("expires_at")
-  createdAt    DateTime     @default(now()) @db.Timestamptz(6) @map("created_at")
+  token         String       @unique
+  invoiceId     String       @map("invoice_id") @db.Uuid
+  invoice       Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  state         ConfirmState @default(pending)
+  actedAt       DateTime?    @map("acted_at") @db.Timestamptz(6)
+  disputeReason String?      @map("dispute_reason")
+  remoteIp      String?      @map("remote_ip")
+  userAgent     String?      @map("user_agent")
+  expiresAt     DateTime     @map("expires_at") @db.Timestamptz(6)
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@index([invoiceId])
   @@index([expiresAt])
@@ -1723,35 +1735,35 @@ enum EventKind {
 }
 
 model EventLog {
-  id           BigInt    @id @default(autoincrement())
+  id            BigInt    @id @default(autoincrement())
   /// External UUID exposed in `id:` SSE frames + Last-Event-ID
   /// replay. Indexed for O(1) lookup on reconnect. The BigInt PK
   /// stays internal so we can preserve strict monotonic ordering
   /// without exposing it (which could leak event throughput).
-  uuid         String    @unique @default(uuid()) @db.Uuid
-  kind         EventKind
+  uuid          String    @unique @default(uuid()) @db.Uuid
+  kind          EventKind
   /// Tenant scope. NULL = master-only event (e.g. auth_signin_failed
   /// for unknown users). When non-null, partner SSE subscribers
   /// whose JWT.merchantId matches this value see the event.
-  merchantId   String?   @db.Uuid @map("merchant_id")
+  merchantId    String?   @map("merchant_id") @db.Uuid
   /// Entity primary id this event is about (application, invoice,
   /// merchant, etc.). UI uses this to deep-link.
-  targetType   String    @map("target_type")
-  targetId     String    @map("target_id")
+  targetType    String    @map("target_type")
+  targetId      String    @map("target_id")
   /// Actor who caused the event. NULL for system / cron sources.
-  actorId      String?   @db.Uuid @map("actor_id")
+  actorId       String?   @map("actor_id") @db.Uuid
   /// Human label for the actor — operator email, "system",
   /// "recipient" (for confirm/dispute), etc. Mirrors invoice_activity.
-  actorLabel   String    @map("actor_label")
+  actorLabel    String    @map("actor_label")
   /// JSON payload — IDs and small primitive fields only. Pass any
   /// free-text PII through `payload_pii_enc` instead.
-  payload      Json
+  payload       Json
   /// Envelope-encrypted free-text payload (PiiVaultService.sealOpaque
   /// with AAD `event:<uuid>`). NULL when the event has no free-text
   /// PII. Decryption requires master-tier access; partner SSE never
   /// surfaces this field.
-  payloadPiiEnc String?  @map("payload_pii_enc")
-  at           DateTime  @default(now()) @db.Timestamptz(6)
+  payloadPiiEnc String?   @map("payload_pii_enc")
+  at            DateTime  @default(now()) @db.Timestamptz(6)
 
   /// Indexes are sized for the dominant SSE-replay query (recent N
   /// events scoped to a merchant, ordered by id desc).

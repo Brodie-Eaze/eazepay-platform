@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import { redeemInvite, getInvite, BRAND_FROM_CONFIG_SLUG } from '../../../../../lib/invites-store';
 import { enforceCsrf } from '../../../../../lib/csrf.js';
 import { enforce as enforceEdgeRateLimit } from '../../../../../lib/edge-rate-limit.js';
@@ -66,6 +67,12 @@ const BodySchema = z.object({
   uploads: z.record(z.string()).default({}),
   inviteToken: z.string().min(1).optional(),
 });
+
+// SEC-115: never `console.log(body)` or `console.log(parsed.data)` in
+// this file. Owner SSN-last-4 + DOB + owner phone/email all live on
+// the parsed payload. If you add diagnostic logging, route it through
+// `lib/safe-log.ts` (`safeLog.info(...)`), which deep-redacts every
+// field whose key includes ssn/dob/email/phone/etc. before emit.
 
 /**
  * SEC — CSRF wrapping scope.
@@ -187,10 +194,8 @@ export async function POST(req: NextRequest) {
       }
       const json = (await res.json()) as { applicationId?: string };
       if (inviteIsValid && parsed.data.inviteToken) {
-        await redeemInvite(
-          parsed.data.inviteToken,
-          json.applicationId ?? `app_${Date.now().toString(36)}`,
-        );
+        // SEC-112: collision-free fallback when the backend doesn't return an id.
+        await redeemInvite(parsed.data.inviteToken, json.applicationId ?? `app_${randomUUID()}`);
       }
       return NextResponse.json(json);
     } catch {
@@ -198,7 +203,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const applicationId = `app_${parsed.data.brand}_${Date.now().toString(36)}`;
+  // SEC-112: collision-free + unguessable. The previous form
+  // `app_<brand>_<base36-ts>` had two problems:
+  //   1. simultaneous applies in the same millisecond could collide
+  //   2. iterating timestamps let an attacker harvest consent receipts
+  //      via SEC-104 (now fixed, but the underlying id format was the
+  //      load-bearing predictability).
+  const applicationId = `app_${parsed.data.brand}_${randomUUID()}`;
   if (inviteIsValid && parsed.data.inviteToken) {
     await redeemInvite(parsed.data.inviteToken, applicationId);
   }

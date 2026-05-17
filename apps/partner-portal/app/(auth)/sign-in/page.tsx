@@ -132,10 +132,13 @@ export default function SignInPage() {
   const searchParams = useSearchParams();
   const redirectTo = safeRedirect(searchParams.get('from'));
 
-  // Pre-filled for evaluator convenience — these aren't real
-  // credentials, just the placeholders the Lovable site shows.
-  const [email, setEmail] = useState('admin@eazepay.local');
-  const [password, setPassword] = useState('••••••••');
+  // SEC-114: form starts empty. Pre-filling the email field with a
+  // demo identifier (and the password field with a `••••••••` literal)
+  // made cred-stuffing trivial — a careless click of "Sign in" would
+  // attempt a real account name against the backend with a guessable
+  // sentinel. Use the placeholder attribute on the input instead.
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [hasMfa, setHasMfa] = useState(false);
   const [activeRole, setActiveRole] = useState<RolePreset['code']>('admin');
@@ -334,6 +337,7 @@ export default function SignInPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@yourcompany.com"
                 autoComplete="email"
                 required
                 disabled={submitting}
@@ -354,10 +358,11 @@ export default function SignInPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
                   autoComplete="current-password"
                   required
                   disabled={submitting}
-                  className="w-full h-10 rounded-lg border border-border bg-bg-elevated px-3 pr-10 text-[13px] text-fg focus:border-border-focus focus:ring-2 focus:ring-border-focus/20 outline-none transition-all"
+                  className="w-full h-10 rounded-lg border border-border bg-bg-elevated px-3 pr-10 text-[13px] text-fg placeholder:text-fg-muted/70 focus:border-border-focus focus:ring-2 focus:ring-border-focus/20 outline-none transition-all"
                 />
                 <button
                   type="button"

@@ -277,6 +277,11 @@ export async function createTestingApp(
   // annotation above) and we only pull the value here.
   const { FastifyAdapter } = await import('@nestjs/platform-fastify');
   const { ValidationPipe } = await import('@nestjs/common');
+  // SEC-117: mirror the production pipe stack from apps/api/src/main.ts.
+  // Without ZodValidationPipe the tests pass on input that production
+  // would reject — divergence between test posture and prod is exactly
+  // the kind of gap a security audit catches at the worst time.
+  const { ZodValidationPipe } = await import('nestjs-zod');
   const { AppModule } = await import('../../src/app/app.module.js');
   type NestFastifyApplication = import('@nestjs/platform-fastify').NestFastifyApplication;
 
@@ -292,6 +297,7 @@ export async function createTestingApp(
   );
   app.setGlobalPrefix('v1');
   app.useGlobalPipes(
+    new ZodValidationPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
