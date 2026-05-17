@@ -7,6 +7,8 @@ import {
   setFeeOverride,
   appendActivity,
   type InvoiceStatus,
+  type InvoicePayment,
+  type InvoiceActivity,
 } from '../../../lib/invoicing';
 import {
   applyInvoiceFilter,
@@ -40,12 +42,8 @@ interface Row {
   dueDate: string;
   voided?: boolean;
   voidReason?: string;
-  payments: ReturnType<typeof readInvoiceOverrides> extends Record<string, infer V>
-    ? NonNullable<V['payments']>
-    : never;
-  activity: ReturnType<typeof readInvoiceOverrides> extends Record<string, infer V>
-    ? NonNullable<V['activity']>
-    : never;
+  payments: InvoicePayment[];
+  activity: InvoiceActivity[];
 }
 
 const STATUS_TONE: Record<InvoiceStatus, { bg: string; text: string; ring: string }> = {

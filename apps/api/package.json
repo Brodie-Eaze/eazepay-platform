@@ -21,6 +21,7 @@
     "@eazepay/service-application": "workspace:*",
     "@eazepay/service-audit": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
+    "@eazepay/service-billing": "workspace:*",
     "@eazepay/service-compliance-doc": "workspace:*",
     "@eazepay/service-lender": "workspace:*",
     "@eazepay/service-merchant": "workspace:*",
