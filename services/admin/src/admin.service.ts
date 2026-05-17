@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import type { PrismaClient } from '@prisma/client';
 import {
-  PrismaClient,
   type ApplicationStatus,
   type PiiUnmaskReasonCode,
   type RiskFlagSeverity,
@@ -8,8 +8,9 @@ import {
 import { BadRequest, Conflict, Forbidden, NotFound } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
-import { ComplianceDocService } from '@eazepay/service-compliance-doc';
-import { PiiVaultService, type PiiV1 } from '@eazepay/service-user';
+import type { ComplianceDocService } from '@eazepay/service-compliance-doc';
+import type { PiiVaultService } from '@eazepay/service-user';
+import { type PiiV1 } from '@eazepay/service-user';
 import { PRISMA } from './internal/tokens.js';
 import { isValidReasonCode } from './reason-codes.js';
 
@@ -121,8 +122,7 @@ export class AdminService {
         });
       }
 
-      const dualControlRequired =
-        app.requestedAmountCents >= DUAL_CONTROL_AMOUNT_THRESHOLD_CENTS;
+      const dualControlRequired = app.requestedAmountCents >= DUAL_CONTROL_AMOUNT_THRESHOLD_CENTS;
 
       // Withdraw presented offers; void unsigned contracts.
       await tx.offer.updateMany({
@@ -209,9 +209,7 @@ export class AdminService {
             subjectType: 'Application',
             subjectId: applicationId,
           })
-          .catch((err) =>
-            this.logger.error({ err }, 'admin decline notify failed'),
-          );
+          .catch((err) => this.logger.error({ err }, 'admin decline notify failed'));
       }
 
       return {
@@ -622,7 +620,10 @@ export class AdminService {
     return this.prisma.$transaction(async (tx) => {
       // Confirm the subject exists.
       if (input.subjectType === 'User') {
-        const u = await tx.user.findUnique({ where: { id: input.subjectId }, select: { id: true } });
+        const u = await tx.user.findUnique({
+          where: { id: input.subjectId },
+          select: { id: true },
+        });
         if (!u) throw NotFound({ code: 'subject_not_found' });
       } else {
         const bo = await tx.beneficialOwner.findUnique({
@@ -996,10 +997,7 @@ export class AdminService {
 /** Project a dotted-path subset of a nested object. Unknown paths are
  *  silently dropped. Returns a flat-key map for a simple JSON contract
  *  (e.g. { 'legalName.first': 'Alex' }). */
-function projectFields(
-  source: Record<string, unknown>,
-  paths: string[],
-): Record<string, unknown> {
+function projectFields(source: Record<string, unknown>, paths: string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const p of paths) {
     const parts = p.split('.');

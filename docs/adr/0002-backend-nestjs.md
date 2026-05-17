@@ -12,7 +12,7 @@ We need a backend stack that lets a small team move fast across many services (a
 
 - NestJS on Node 20 LTS with strict TypeScript for all services at MVP.
 - Single deployable (modular monolith) at MVP with module boundaries enforced by Nx project graph and ESLint rules; services can be extracted later without contract change.
-- Reserve Go for the orchestration engine and decisioning hot path *only if* benchmarks demand it post-MVP. Default everywhere else is Node/Nest.
+- Reserve Go for the orchestration engine and decisioning hot path _only if_ benchmarks demand it post-MVP. Default everywhere else is Node/Nest.
 
 ## Alternatives considered
 

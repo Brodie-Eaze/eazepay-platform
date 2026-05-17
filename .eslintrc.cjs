@@ -50,10 +50,7 @@ module.exports = {
       'warn',
       { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
     ],
-    '@typescript-eslint/consistent-type-imports': [
-      'warn',
-      { prefer: 'type-imports' },
-    ],
+    '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
     '@typescript-eslint/no-explicit-any': 'warn',
     // Type-aware rule; needs parserOptions.project to function. Off by
     // default — see file header for the follow-up.

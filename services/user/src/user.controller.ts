@@ -3,9 +3,10 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Idempotent } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { CurrentUser } from '@eazepay/service-auth';
-import { UserService, type MeResponse, type StartKycResponse } from './user.service.js';
-import { UpdateProfileDto } from './dto/update-profile.dto.js';
-import { StartKycDto } from './dto/start-kyc.dto.js';
+import type { UserService } from './user.service.js';
+import { type MeResponse, type StartKycResponse } from './user.service.js';
+import type { UpdateProfileDto } from './dto/update-profile.dto.js';
+import type { StartKycDto } from './dto/start-kyc.dto.js';
 
 @ApiTags('me')
 @ApiBearerAuth()
@@ -33,19 +34,13 @@ export class UserController {
   // captured within the last 5 minutes via the otp.service step-up
   // purpose. For now we 403 on `?reveal=full` without a step-up token;
   // the actual step-up plumbing lands in a follow-up round.
-  me(
-    @CurrentUser() userId: UserId,
-    @Query('reveal') reveal?: string,
-  ): Promise<MeResponse> {
+  me(@CurrentUser() userId: UserId, @Query('reveal') reveal?: string): Promise<MeResponse> {
     return this.users.getMe(userId, { reveal: reveal === 'full' ? 'full' : 'masked' });
   }
 
   @Patch()
   @ApiOperation({ summary: 'Create or replace the encrypted PII profile' })
-  update(
-    @CurrentUser() userId: UserId,
-    @Body() dto: UpdateProfileDto,
-  ): Promise<MeResponse> {
+  update(@CurrentUser() userId: UserId, @Body() dto: UpdateProfileDto): Promise<MeResponse> {
     return this.users.updateProfile(userId, dto);
   }
 

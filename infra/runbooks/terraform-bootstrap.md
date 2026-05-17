@@ -14,6 +14,7 @@ stack applies.
 ## Steps
 
 1. Create the state bucket + lock table:
+
    ```bash
    aws s3api create-bucket --bucket eazepay-tfstate-<env> --region us-east-1
    aws s3api put-bucket-versioning --bucket eazepay-tfstate-<env> \

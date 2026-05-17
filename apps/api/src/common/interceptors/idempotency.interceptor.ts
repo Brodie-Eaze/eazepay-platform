@@ -1,15 +1,10 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
 import { Conflict, BadRequest, stableJsonSha256, IDEMPOTENT_KEY } from '@eazepay/shared-utils';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { RedisService } from '../../redis/redis.service.js';
+import type { RedisService } from '../../redis/redis.service.js';
 
 interface CachedResponse {
   status: number;
@@ -51,10 +46,10 @@ export class IdempotencyInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const required = this.reflector.getAllAndOverride<boolean | undefined>(
-      IDEMPOTENT_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const required = this.reflector.getAllAndOverride<boolean | undefined>(IDEMPOTENT_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (!required) return next.handle();
 
@@ -160,8 +155,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
               subscriber.error(
                 Conflict({
                   code: 'idempotency_key_mismatch',
-                  detail:
-                    'The same Idempotency-Key was used with a different request body.',
+                  detail: 'The same Idempotency-Key was used with a different request body.',
                 }),
               );
               return;
@@ -220,9 +214,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
             .pipe(
               tap({
                 next: (body) => {
-                  const res = context
-                    .switchToHttp()
-                    .getResponse<{ statusCode: number }>();
+                  const res = context.switchToHttp().getResponse<{ statusCode: number }>();
                   void this.redis.client.set(
                     redisKey,
                     JSON.stringify({

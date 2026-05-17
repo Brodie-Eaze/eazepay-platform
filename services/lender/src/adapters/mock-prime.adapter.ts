@@ -49,7 +49,7 @@ export class MockPrimeAdapter implements LenderAdapter {
     const principal = ctx.requestedAmountCents;
     const fees = (principal * BigInt(ORIGINATION_FEE_BPS)) / 10_000n;
     const interestApprox =
-      (principal * BigInt(APR_BPS) * BigInt(ctx.termMonths)) / (12n * 100n * 200n / 100n);
+      (principal * BigInt(APR_BPS) * BigInt(ctx.termMonths)) / ((12n * 100n * 200n) / 100n);
     const totalRepayable = principal + interestApprox + fees;
 
     return {

@@ -11,21 +11,18 @@ import { POST } from './route';
  */
 describe('/api/v/[brand]/consumer-invites', () => {
   it('POST mints a consumer invite for the given brand', async () => {
-    const req = new NextRequest(
-      'http://localhost/api/v/medpay/consumer-invites',
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          partnerId: 'p_helio',
-          salespersonEmail: 'rep@helio.example',
-          consumer: { firstName: 'Casey', lastName: 'Lin' },
-          loanAmountCents: 2500_00,
-          purpose: 'Veneers',
-          expiryHours: 168,
-        }),
-        headers: { 'content-type': 'application/json' },
-      },
-    );
+    const req = new NextRequest('http://localhost/api/v/medpay/consumer-invites', {
+      method: 'POST',
+      body: JSON.stringify({
+        partnerId: 'p_helio',
+        salespersonEmail: 'rep@helio.example',
+        consumer: { firstName: 'Casey', lastName: 'Lin' },
+        loanAmountCents: 2500_00,
+        purpose: 'Veneers',
+        expiryHours: 168,
+      }),
+      headers: { 'content-type': 'application/json' },
+    });
     const res = await POST(req, { params: Promise.resolve({ brand: 'medpay' }) });
     expect(res.status).toBe(201);
     const body = (await res.json()) as {

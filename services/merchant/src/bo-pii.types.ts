@@ -13,7 +13,10 @@ export const BoPiiV1Schema = z.object({
     last: z.string().min(1).max(100),
   }),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  ssnLast4: z.string().regex(/^\d{4}$/).optional(),
+  ssnLast4: z
+    .string()
+    .regex(/^\d{4}$/)
+    .optional(),
   address: z.object({
     line1: z.string().min(1).max(200),
     line2: z.string().max(200).optional(),

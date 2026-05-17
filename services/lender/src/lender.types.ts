@@ -1,4 +1,7 @@
-import type { LenderTier as PrismaLenderTier, LoanCategory as PrismaLoanCategory } from '@prisma/client';
+import type {
+  LenderTier as PrismaLenderTier,
+  LoanCategory as PrismaLoanCategory,
+} from '@prisma/client';
 
 export type LenderTier = PrismaLenderTier;
 export type LoanCategory = PrismaLoanCategory;
@@ -33,9 +36,7 @@ export interface LenderQuote {
   expiresAt: Date;
 }
 
-export type LenderEligibility =
-  | { eligible: true }
-  | { eligible: false; reasonCodes: string[] };
+export type LenderEligibility = { eligible: true } | { eligible: false; reasonCodes: string[] };
 
 export type LenderQuoteResult =
   | { outcome: 'approved'; quote: LenderQuote }

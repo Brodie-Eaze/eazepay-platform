@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { resolveBrandAccess } from '../../../lib/brand-access';
 import { readSignedDemoPreset } from '../../../lib/demo-cookie';
+import { readSignedAccountSession, ACCOUNT_COOKIE } from '../../../lib/account-cookie';
 
 /**
  * SEC-101 — server-side brand ownership fence for `/v/<brand>/*`.
@@ -38,14 +39,17 @@ export default async function BrandLayout({
   const jar = cookies();
   const realToken = jar.get('eazepay_at')?.value;
   const signedDemoCookie = jar.get('eazepay_demo')?.value;
-  // SEC-103: verify the demo cookie's HMAC signature before trusting
-  // its value. A forged or expired cookie resolves to null and the
-  // resolver treats it as no session.
-  const verified = await readSignedDemoPreset(signedDemoCookie);
+  const accountCookie = jar.get(ACCOUNT_COOKIE.name)?.value;
+  // SEC-103: verify both cookie signatures before trusting their
+  // values. Forged/expired cookies resolve to null and the resolver
+  // treats them as no session.
+  const verifiedDemo = await readSignedDemoPreset(signedDemoCookie);
+  const verifiedAccount = await readSignedAccountSession(accountCookie);
 
   const access = resolveBrandAccess(resolved.brand, {
     hasRealSession: Boolean(realToken),
-    verifiedDemoPreset: verified?.preset ?? null,
+    verifiedDemoPreset: verifiedDemo?.preset ?? null,
+    verifiedAccountBrand: verifiedAccount?.brand ?? null,
   });
 
   if (!access.allowed) {

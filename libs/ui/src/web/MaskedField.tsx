@@ -26,9 +26,7 @@ export const MaskedField: FC<{
         {label}
       </span>
       <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-bg-elevated/60 px-3 py-2">
-        <span className={cn('font-mono text-[13px]', show && unmasked && 'text-fg')}>
-          {value}
-        </span>
+        <span className={cn('font-mono text-[13px]', show && unmasked && 'text-fg')}>{value}</span>
         {unmaskActive && unmasked ? (
           <button
             onClick={() => setShow((v) => !v)}
@@ -37,10 +35,7 @@ export const MaskedField: FC<{
             {show ? 'Hide' : 'Reveal'}
           </button>
         ) : (
-          <button
-            onClick={onRequestUnmask}
-            className="text-[12px] text-accent hover:underline"
-          >
+          <button onClick={onRequestUnmask} className="text-[12px] text-accent hover:underline">
             Request unmask
           </button>
         )}
@@ -55,7 +50,12 @@ export const DataRow: FC<{ label: ReactNode; value: ReactNode; className?: strin
   value,
   className,
 }) => (
-  <div className={cn('flex items-center justify-between gap-4 py-2 border-b border-border last:border-b-0', className)}>
+  <div
+    className={cn(
+      'flex items-center justify-between gap-4 py-2 border-b border-border last:border-b-0',
+      className,
+    )}
+  >
     <span className="text-[12px] text-fg-muted uppercase tracking-wider font-medium">{label}</span>
     <span className="text-[13px] font-medium tabular-nums">{value}</span>
   </div>

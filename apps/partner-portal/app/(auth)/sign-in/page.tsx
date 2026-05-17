@@ -142,13 +142,64 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [hasMfa, setHasMfa] = useState(false);
   const [activeRole, setActiveRole] = useState<RolePreset['code']>('admin');
+  // Brand selection drives the partner-portal account sign-in flow
+  // (POST /api/account/sign-in). Default 'none' = no brand picked →
+  // sign-in falls through to the apps/api login. When a brand IS
+  // picked, the credentials are first tried against the local
+  // accounts-store (real businesses + invited teammates).
+  const [activeBrand, setActiveBrand] = useState<'medpay' | 'tradepay' | 'coachpay' | 'none'>(
+    'none',
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const signIn = async () => {
     setError(null);
     setSubmitting(true);
+    // Sign-in flow:
+    //   1. If the user picked a brand tile (MedPay / TradePay / CoachPay),
+    //      try the partner-portal account sign-in first. That route
+    //      authenticates against the local accounts-store (real
+    //      businesses + invited teammates).
+    //   2. Fallback to /api/auth/login (apps/api) so legacy users keep
+    //      working when apps/api lands. If apps/api is unreachable
+    //      (502), surface the original account error.
+    //
+    // Pre-fix this only called /api/auth/login which always 502s today
+    // (apps/api isn't deployed) — nobody could sign in with real
+    // credentials. After this change, real account holders can.
     try {
+      const brandForAccount = activeBrand !== 'none' ? activeBrand : null;
+      if (brandForAccount) {
+        const csrfMatch = document.cookie.match(/eazepay_csrf=([^;]+)/);
+        const csrfToken = csrfMatch ? csrfMatch[1]! : '';
+        const accountRes = await fetch('/api/account/sign-in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+          credentials: 'include',
+          body: JSON.stringify({ email, password, brand: brandForAccount }),
+        });
+        if (accountRes.ok) {
+          const body = (await accountRes.json()) as { redirectTo: string };
+          router.push(body.redirectTo);
+          router.refresh();
+          return;
+        }
+        // 401 = wrong credentials, don't fall back to apps/api with
+        // the same wrong credentials. Other codes (origin block,
+        // rate-limit) also stay here.
+        if (accountRes.status === 401) {
+          setError('Email or password is incorrect.');
+          setSubmitting(false);
+          return;
+        }
+        if (accountRes.status === 429) {
+          setError('Too many sign-in attempts. Wait a minute and try again.');
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -157,13 +208,9 @@ export default function SignInPage() {
       });
       if (!res.ok) {
         // SEC-001: Do NOT fall through to a demo session on auth
-        // failure. Previously this branch silently minted an
-        // `eazepay_demo` cookie via /api/auth/demo with the
-        // currently-selected role preset (default 'admin'), which
-        // meant any visitor who typed garbage credentials was dropped
-        // into the operating system with admin-flavour permissions.
-        // Demo workspaces remain reachable below via the explicit
-        // role/brand tiles — those are deliberate user actions.
+        // failure. Demo workspaces remain reachable below via the
+        // explicit role/brand tiles — those are deliberate user
+        // actions.
         const body = (await res.json().catch(() => ({}))) as { detail?: string; code?: string };
         setError(
           body.code === 'invalid_credentials'
@@ -176,8 +223,6 @@ export default function SignInPage() {
       router.push(redirectTo);
       router.refresh();
     } catch {
-      // Network/transport error — surface it. Do not auto-promote to
-      // a demo session (see SEC-001 above).
       setError('Network error — check your connection and try again.');
       setSubmitting(false);
     }
@@ -330,6 +375,26 @@ export default function SignInPage() {
           )}
 
           <form onSubmit={onSubmit} className="mt-6 space-y-3.5" noValidate aria-busy={submitting}>
+            {/* Brand picker — drives /api/account/sign-in routing.
+                "None (master)" falls through to apps/api login (legacy +
+                future Cognito path). */}
+            <label className="block">
+              <span className="block text-[12px] font-medium text-fg mb-1.5">Portal</span>
+              <select
+                value={activeBrand}
+                onChange={(e) =>
+                  setActiveBrand(e.target.value as 'medpay' | 'tradepay' | 'coachpay' | 'none')
+                }
+                disabled={submitting}
+                className="w-full h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg focus:border-border-focus focus:ring-2 focus:ring-border-focus/20 outline-none transition-all"
+              >
+                <option value="medpay">MedPay portal</option>
+                <option value="tradepay">TradePay portal</option>
+                <option value="coachpay">CoachPay portal</option>
+                <option value="none">EazePay (master)</option>
+              </select>
+            </label>
+
             {/* Email */}
             <label className="block">
               <span className="block text-[12px] font-medium text-fg mb-1.5">Email</span>

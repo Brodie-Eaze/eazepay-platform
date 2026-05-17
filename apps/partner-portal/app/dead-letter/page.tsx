@@ -42,11 +42,56 @@ interface DlqRow {
 }
 
 const DLQ_SEED: DlqRow[] = [
-  { id: 'dlq_001', source: 'webhook',          reference: 'whk_evergreen application.routed',  failure: 'HTTP 503 — upstream rejected (5 attempts)',          attempts: 5, firstSeen: '2026-05-14T14:55Z', lastTried: '2026-05-14T21:54Z', payloadBytes: 1204 },
-  { id: 'dlq_002', source: 'webhook',          reference: 'whk_atlas application.approved',    failure: 'TLS handshake timeout (3 attempts)',                attempts: 3, firstSeen: '2026-05-14T11:02Z', lastTried: '2026-05-14T17:01Z', payloadBytes: 982  },
-  { id: 'dlq_003', source: 'notification',     reference: 'aan_a_0344 postal mailer',          failure: 'PDF rasterisation failed — missing font asset',     attempts: 2, firstSeen: '2026-05-13T22:14Z', lastTried: '2026-05-14T03:22Z', payloadBytes: 412  },
-  { id: 'dlq_004', source: 'lender-callback',  reference: 'capitalone fund_ack a_022',         failure: 'Schema mismatch — expected_field "loan_id"',         attempts: 4, firstSeen: '2026-05-13T18:08Z', lastTried: '2026-05-14T08:18Z', payloadBytes: 631  },
-  { id: 'dlq_005', source: 'notification',     reference: 'sms partner.payout_scheduled',      failure: 'Carrier opt-out — recipient blocked short codes',   attempts: 1, firstSeen: '2026-05-12T09:42Z', lastTried: '2026-05-12T09:42Z', payloadBytes: 184  },
+  {
+    id: 'dlq_001',
+    source: 'webhook',
+    reference: 'whk_evergreen application.routed',
+    failure: 'HTTP 503 — upstream rejected (5 attempts)',
+    attempts: 5,
+    firstSeen: '2026-05-14T14:55Z',
+    lastTried: '2026-05-14T21:54Z',
+    payloadBytes: 1204,
+  },
+  {
+    id: 'dlq_002',
+    source: 'webhook',
+    reference: 'whk_atlas application.approved',
+    failure: 'TLS handshake timeout (3 attempts)',
+    attempts: 3,
+    firstSeen: '2026-05-14T11:02Z',
+    lastTried: '2026-05-14T17:01Z',
+    payloadBytes: 982,
+  },
+  {
+    id: 'dlq_003',
+    source: 'notification',
+    reference: 'aan_a_0344 postal mailer',
+    failure: 'PDF rasterisation failed — missing font asset',
+    attempts: 2,
+    firstSeen: '2026-05-13T22:14Z',
+    lastTried: '2026-05-14T03:22Z',
+    payloadBytes: 412,
+  },
+  {
+    id: 'dlq_004',
+    source: 'lender-callback',
+    reference: 'capitalone fund_ack a_022',
+    failure: 'Schema mismatch — expected_field "loan_id"',
+    attempts: 4,
+    firstSeen: '2026-05-13T18:08Z',
+    lastTried: '2026-05-14T08:18Z',
+    payloadBytes: 631,
+  },
+  {
+    id: 'dlq_005',
+    source: 'notification',
+    reference: 'sms partner.payout_scheduled',
+    failure: 'Carrier opt-out — recipient blocked short codes',
+    attempts: 1,
+    firstSeen: '2026-05-12T09:42Z',
+    lastTried: '2026-05-12T09:42Z',
+    payloadBytes: 184,
+  },
 ];
 
 export default function DeadLetterPage() {
@@ -74,21 +119,38 @@ export default function DeadLetterPage() {
         title="Dead Letter"
         description="Messages parked after retry exhaustion — inspect, replay, or discard. Discards are audit-logged."
         actions={
-          <Button size="sm" variant="secondary" onClick={() => flash('Replay-all queued for healthy endpoints')}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => flash('Replay-all queued for healthy endpoints')}
+          >
             Replay all healthy
           </Button>
         }
       />
       <PageBody>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <Stat label="Total parked" value={String(rows.length)} tone={rows.length > 10 ? 'warning' : 'neutral'} />
+          <Stat
+            label="Total parked"
+            value={String(rows.length)}
+            tone={rows.length > 10 ? 'warning' : 'neutral'}
+          />
           <Stat label="Webhook" value={String(rows.filter((r) => r.source === 'webhook').length)} />
-          <Stat label="Notifications" value={String(rows.filter((r) => r.source === 'notification').length)} />
-          <Stat label="Lender callbacks" value={String(rows.filter((r) => r.source === 'lender-callback').length)} />
+          <Stat
+            label="Notifications"
+            value={String(rows.filter((r) => r.source === 'notification').length)}
+          />
+          <Stat
+            label="Lender callbacks"
+            value={String(rows.filter((r) => r.source === 'lender-callback').length)}
+          />
         </div>
 
         <Card>
-          <CardHeader title="Parked messages" description="Each row carries the full payload, failure reason, and replay button." />
+          <CardHeader
+            title="Parked messages"
+            description="Each row carries the full payload, failure reason, and replay button."
+          />
           <CardBody className="p-0">
             <ul className="divide-y divide-border">
               {rows.map((r) => (
@@ -112,15 +174,22 @@ export default function DeadLetterPage() {
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <Button size="sm" variant="secondary" onClick={() => replay(r.id)}>Replay</Button>
-                      <Button size="sm" variant="danger" onClick={() => discard(r.id)}>Discard</Button>
+                      <Button size="sm" variant="secondary" onClick={() => replay(r.id)}>
+                        Replay
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => discard(r.id)}>
+                        Discard
+                      </Button>
                     </div>
                   </div>
                 </li>
               ))}
               {rows.length === 0 && (
                 <li className="px-5 py-10 text-center text-[13px] text-fg-muted">
-                  Dead-letter queue is empty. <Link href="/queues" className="text-accent hover:underline">View queues</Link>
+                  Dead-letter queue is empty.{' '}
+                  <Link href="/queues" className="text-accent hover:underline">
+                    View queues
+                  </Link>
                 </li>
               )}
             </ul>
@@ -138,13 +207,29 @@ export default function DeadLetterPage() {
   );
 }
 
-function Stat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'success' | 'danger' | 'warning' | 'neutral' }) {
+function Stat({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  tone?: 'success' | 'danger' | 'warning' | 'neutral';
+}) {
   const accent =
-    tone === 'success' ? 'text-success' : tone === 'danger' ? 'text-danger' : tone === 'warning' ? 'text-warning' : 'text-fg';
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'warning'
+          ? 'text-warning'
+          : 'text-fg';
   return (
     <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>{value}</p>
+      <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>
+        {value}
+      </p>
     </div>
   );
 }

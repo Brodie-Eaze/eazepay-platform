@@ -2,17 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  PageHeader,
-  PageBody,
-  Card,
-  CardBody,
-  Button,
-  BankIcon,
-  XIcon,
-} from '@eazepay/ui/web';
+import { PageHeader, PageBody, Card, CardBody, Button, BankIcon, XIcon } from '@eazepay/ui/web';
 import { useApi, formatDate, statusBadge } from '../../lib/api-client';
-import { marketplaceLenders as seedLenders, type MarketplaceLenderRow } from '../../lib/marketplace-data';
+import {
+  marketplaceLenders as seedLenders,
+  type MarketplaceLenderRow,
+} from '../../lib/marketplace-data';
 
 /**
  * Master Command Centre — Lenders.
@@ -67,11 +62,11 @@ export default function LendersPage() {
           products: l.brands,
           enabled: l.globallyEnabled,
           createdAt: l.syncedAt,
-          status: (l.pendingIntegration
-            ? 'pending'
-            : l.globallyEnabled
-              ? 'active'
-              : 'inactive') as 'active' | 'inactive' | 'disabled' | 'pending',
+          status: (l.pendingIntegration ? 'pending' : l.globallyEnabled ? 'active' : 'inactive') as
+            | 'active'
+            | 'inactive'
+            | 'disabled'
+            | 'pending',
           integrationType: 'API',
           apiBaseUrl: null,
           applicationsCount: l.pendingIntegration ? 0 : Math.max(0, 24 - i * 3),
@@ -105,7 +100,10 @@ export default function LendersPage() {
     e.preventDefault();
     createMutation.mutate({
       ...form,
-      products: form.products.split(',').map((s) => s.trim()).filter(Boolean),
+      products: form.products
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
       minAmount: form.minAmount ? parseInt(form.minAmount, 10) * 100 : undefined,
       maxAmount: form.maxAmount ? parseInt(form.maxAmount, 10) * 100 : undefined,
       minCreditScore: form.minCreditScore ? parseInt(form.minCreditScore, 10) : undefined,
@@ -121,13 +119,19 @@ export default function LendersPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2 justify-end">
             <Link href="/docs">
-              <Button size="sm" variant="ghost">API docs</Button>
+              <Button size="sm" variant="ghost">
+                API docs
+              </Button>
             </Link>
             <Link href="/lenders">
-              <Button size="sm" variant="ghost">Public hub</Button>
+              <Button size="sm" variant="ghost">
+                Public hub
+              </Button>
             </Link>
             <Link href="/lender-marketplace/access">
-              <Button size="sm" variant="secondary">Per-partner access</Button>
+              <Button size="sm" variant="secondary">
+                Per-partner access
+              </Button>
             </Link>
             <Button size="sm" onClick={() => setShowCreate((v) => !v)}>
               {showCreate ? 'Cancel' : 'Add lender'}
@@ -142,10 +146,11 @@ export default function LendersPage() {
           </span>
           <p className="text-[13px] text-fg-secondary">
             <span className="font-semibold">How these toggles work:</span> When a client opens a
-            partner&apos;s apply link (eg. <span className="font-mono">eazemedpay.lovable.app/?ref=&lt;partner&gt;</span>),
-            we run HighSale&apos;s soft-pull then show only lenders whose <span className="font-semibold">global enable</span> is on
-            AND who match the applicant&apos;s brand + credit tier — minus any per-partner overrides
-            flipped at{' '}
+            partner&apos;s apply link (eg.{' '}
+            <span className="font-mono">eazemedpay.lovable.app/?ref=&lt;partner&gt;</span>), we run
+            HighSale&apos;s soft-pull then show only lenders whose{' '}
+            <span className="font-semibold">global enable</span> is on AND who match the
+            applicant&apos;s brand + credit tier — minus any per-partner overrides flipped at{' '}
             <a href="/lender-marketplace/access" className="underline font-semibold">
               Per-partner access
             </a>
@@ -168,7 +173,9 @@ export default function LendersPage() {
               </div>
               <form onSubmit={submit} className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Name *</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Name *
+                  </label>
                   <input
                     required
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
@@ -177,7 +184,9 @@ export default function LendersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Integration type</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Integration type
+                  </label>
                   <select
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
                     value={form.integrationType}
@@ -189,7 +198,9 @@ export default function LendersPage() {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">API base URL</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    API base URL
+                  </label>
                   <input
                     type="url"
                     placeholder="https://api.lender.example.com"
@@ -199,7 +210,9 @@ export default function LendersPage() {
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Products (comma-separated)</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Products (comma-separated)
+                  </label>
                   <input
                     placeholder="med-pay, trade-pay"
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
@@ -208,7 +221,9 @@ export default function LendersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Min amount ($)</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Min amount ($)
+                  </label>
                   <input
                     type="number"
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
@@ -217,7 +232,9 @@ export default function LendersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Max amount ($)</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Max amount ($)
+                  </label>
                   <input
                     type="number"
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
@@ -226,7 +243,9 @@ export default function LendersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">Min credit score</label>
+                  <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                    Min credit score
+                  </label>
                   <input
                     type="number"
                     className="w-full rounded-md border border-border bg-bg-elevated px-3 py-2 text-[13px]"
@@ -235,7 +254,12 @@ export default function LendersPage() {
                   />
                 </div>
                 <div className="col-span-2 flex justify-end gap-2 pt-2">
-                  <Button variant="secondary" size="sm" type="button" onClick={() => setShowCreate(false)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    type="button"
+                    onClick={() => setShowCreate(false)}
+                  >
                     Cancel
                   </Button>
                   <Button size="sm" type="submit" disabled={createMutation.isPending || !form.name}>
@@ -267,7 +291,10 @@ export default function LendersPage() {
                 {[1, 2, 3].map((i) => (
                   <li key={i} className="grid grid-cols-12 px-5 py-4 gap-4">
                     {Array.from({ length: 5 }).map((_, j) => (
-                      <div key={j} className="h-4 bg-bg-muted rounded animate-pulse col-span-2 first:col-span-4" />
+                      <div
+                        key={j}
+                        className="h-4 bg-bg-muted rounded animate-pulse col-span-2 first:col-span-4"
+                      />
                     ))}
                   </li>
                 ))}
@@ -301,10 +328,14 @@ export default function LendersPage() {
                           {(l.products ?? []).join(', ') || '—'}
                         </p>
                       </div>
-                      <div className="col-span-2 text-[12px] text-fg-secondary">{l.integrationType ?? 'API'}</div>
+                      <div className="col-span-2 text-[12px] text-fg-secondary">
+                        {l.integrationType ?? 'API'}
+                      </div>
                       <div className="col-span-2">
                         <span
-                          className={'text-[11px] px-2 py-0.5 rounded-full font-medium ' + badgeClass}
+                          className={
+                            'text-[11px] px-2 py-0.5 rounded-full font-medium ' + badgeClass
+                          }
                           title={badgeTooltip}
                         >
                           {pending ? 'PENDING INTEGRATION' : status.toUpperCase()}
@@ -314,11 +345,15 @@ export default function LendersPage() {
                         {l.applicationsCount ?? 0}
                       </div>
                       <div className="col-span-2 flex items-center justify-end gap-2">
-                        <span className="text-[11px] text-fg-muted">{formatDate(l.createdAt ?? new Date().toISOString())}</span>
+                        <span className="text-[11px] text-fg-muted">
+                          {formatDate(l.createdAt ?? new Date().toISOString())}
+                        </span>
                         <select
                           className="text-[11px] rounded border border-border bg-bg-elevated px-2 py-1"
                           value={status}
-                          onChange={(e) => statusMutation.mutate({ id: l.id, status: e.target.value })}
+                          onChange={(e) =>
+                            statusMutation.mutate({ id: l.id, status: e.target.value })
+                          }
                         >
                           <option value="active">Active</option>
                           <option value="inactive">Inactive</option>

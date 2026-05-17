@@ -33,9 +33,9 @@ export default function ProductsPage() {
       />
       <PageBody>
         <Banner intent="info" className="mb-4">
-          Eligibility rules execute in EazePay's deterministic rules engine before any external lender
-          call. This protects your stack from ineligible traffic and gives us a defensible record of why
-          a particular applicant did or did not surface to you.
+          Eligibility rules execute in EazePay's deterministic rules engine before any external
+          lender call. This protects your stack from ineligible traffic and gives us a defensible
+          record of why a particular applicant did or did not surface to you.
         </Banner>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -45,7 +45,11 @@ export default function ProductsPage() {
                 title={
                   <span className="flex items-center gap-2">
                     {p.name}{' '}
-                    {p.status === 'active' && <StatusPill tone="success" dot>Active</StatusPill>}
+                    {p.status === 'active' && (
+                      <StatusPill tone="success" dot>
+                        Active
+                      </StatusPill>
+                    )}
                     {p.status === 'paused' && <StatusPill tone="warning">Paused</StatusPill>}
                     {p.status === 'draft' && <StatusPill tone="neutral">Draft</StatusPill>}
                   </span>
@@ -59,9 +63,24 @@ export default function ProductsPage() {
               />
               <CardBody className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 <div>
-                  <DataRow label="Loan size" value={<><Money cents={p.minAmountCents} noFractions /> – <Money cents={p.maxAmountCents} noFractions /></>} />
+                  <DataRow
+                    label="Loan size"
+                    value={
+                      <>
+                        <Money cents={p.minAmountCents} noFractions /> –{' '}
+                        <Money cents={p.maxAmountCents} noFractions />
+                      </>
+                    }
+                  />
                   <DataRow label="Term" value={`${p.minTerm}–${p.maxTerm} months`} />
-                  <DataRow label="APR window" value={<><Apr bps={p.aprFloorBps} /> – <Apr bps={p.aprCeilingBps} /></>} />
+                  <DataRow
+                    label="APR window"
+                    value={
+                      <>
+                        <Apr bps={p.aprFloorBps} /> – <Apr bps={p.aprCeilingBps} />
+                      </>
+                    }
+                  />
                   <DataRow label="Funded MTD" value={<Money cents={p.fundedMtdCents} compact />} />
                 </div>
                 <div>

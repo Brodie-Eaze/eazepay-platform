@@ -73,21 +73,21 @@ const THEMES: Record<Exclude<BrandCode, 'direct'>, ApplyTheme> = {
   //   tradepay primary #0F172A slate     · accent #F97316 safety-orange   · surface #FAFAF9 → #FFFFFF
   //   coachpay primary #6366F1 indigo    · violet #8B5CF6                 · surface #F5F3FF → #FFFFFF · deep #1E1B4B
   medpay: {
-    navy: '6 44 41',       // #062C29 deep clinical teal contrast band
-    accent: '14 124 102',  // #0E7C66 brand teal (matches landing primary)
-    soft: '236 255 254',   // #ECFFFE surface tint
+    navy: '6 44 41', // #062C29 deep clinical teal contrast band
+    accent: '14 124 102', // #0E7C66 brand teal (matches landing primary)
+    soft: '236 255 254', // #ECFFFE surface tint
     highlight: '215 243 235', // pale mint wash for "recommended" pills
   },
   tradepay: {
-    navy: '15 23 42',      // #0F172A premium slate (matches landing primary)
-    accent: '249 115 22',  // #F97316 safety-orange (sparing accent, matches landing)
-    soft: '250 250 249',   // #FAFAF9 warm off-white surface
+    navy: '15 23 42', // #0F172A premium slate (matches landing primary)
+    accent: '249 115 22', // #F97316 safety-orange (sparing accent, matches landing)
+    soft: '250 250 249', // #FAFAF9 warm off-white surface
     highlight: '255 237 213', // #FFEDD5 orange wash for "recommended" pills
   },
   coachpay: {
-    navy: '30 27 75',      // #1E1B4B cosmic deep indigo (matches landing problem band)
-    accent: '99 102 241',  // #6366F1 electric indigo (matches landing primary)
-    soft: '245 243 255',   // #F5F3FF cosmic-light surface
+    navy: '30 27 75', // #1E1B4B cosmic deep indigo (matches landing problem band)
+    accent: '99 102 241', // #6366F1 electric indigo (matches landing primary)
+    soft: '245 243 255', // #F5F3FF cosmic-light surface
     highlight: '237 233 254', // #EDE9FE violet wash for "recommended" pills
   },
 };
@@ -202,7 +202,15 @@ const CONTENT: Record<Exclude<BrandCode, 'direct'>, ApplyContent> = {
     offerHeadline: 'You’re pre-qualified for care',
     offerProduct: 'MedPay Financing',
     footerTagline: 'Helping patients access the care they need, without the cash crunch.',
-    industryChips: ['Dental', 'Med spa', 'Fertility', 'Cosmetic', 'Veterinary', 'Vision', 'Hearing'],
+    industryChips: [
+      'Dental',
+      'Med spa',
+      'Fertility',
+      'Cosmetic',
+      'Veterinary',
+      'Vision',
+      'Hearing',
+    ],
   },
   tradepay: {
     brandName: 'TradePay',
@@ -252,7 +260,8 @@ const CONTENT: Record<Exclude<BrandCode, 'direct'>, ApplyContent> = {
     steps: [
       {
         title: 'Pre-qualify online',
-        description: 'Tell us about the project + a few details about yourself. Takes under 2 minutes.',
+        description:
+          'Tell us about the project + a few details about yourself. Takes under 2 minutes.',
         bullets: ['Mobile-friendly', 'Soft credit pull', 'No SSN required at this step'],
       },
       {
@@ -263,7 +272,11 @@ const CONTENT: Record<Exclude<BrandCode, 'direct'>, ApplyContent> = {
       {
         title: 'Start the project',
         description: 'Your contractor is paid up front. Work begins on the agreed start date.',
-        bullets: ['Direct contractor pay', 'Progress payments available', 'Pay off early — no penalty'],
+        bullets: [
+          'Direct contractor pay',
+          'Progress payments available',
+          'Pay off early — no penalty',
+        ],
       },
     ],
     testimonials: [
@@ -363,7 +376,8 @@ const CONTENT: Record<Exclude<BrandCode, 'direct'>, ApplyContent> = {
     steps: [
       {
         title: 'Pick your program',
-        description: 'Find your bootcamp, certification, or coach — partner programs are pre-vetted.',
+        description:
+          'Find your bootcamp, certification, or coach — partner programs are pre-vetted.',
         bullets: ['Coaching programs', 'Bootcamps + certifications', 'Mastermind tuition'],
       },
       {
@@ -423,8 +437,16 @@ const CONTENT: Record<Exclude<BrandCode, 'direct'>, ApplyContent> = {
     purposePlaceholder: 'Coaching program, bootcamp, certification, etc.',
     offerHeadline: 'You’re pre-qualified to enrol',
     offerProduct: 'CoachPay Growth Loan',
-    footerTagline: 'Helping learners + coaches close the gap between “I want to grow” and “I’m in.”',
-    industryChips: ['Coaching', 'Bootcamps', 'Certifications', 'Mastermind', 'Online courses', 'Career programs'],
+    footerTagline:
+      'Helping learners + coaches close the gap between “I want to grow” and “I’m in.”',
+    industryChips: [
+      'Coaching',
+      'Bootcamps',
+      'Certifications',
+      'Mastermind',
+      'Online courses',
+      'Career programs',
+    ],
   },
 };
 

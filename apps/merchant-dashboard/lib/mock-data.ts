@@ -174,15 +174,62 @@ export interface Settlement {
 }
 
 export const settlements: Settlement[] = [
-  { id: 'stl_2026_05_03', period: 'May 3, 2026', grossCents: 7_550_000, mdrCents: 211_400, netCents: 7_338_600, applications: 3, status: 'in_flight' },
-  { id: 'stl_2026_05_02', period: 'May 2, 2026', grossCents: 4_120_000, mdrCents: 115_360, netCents: 4_004_640, applications: 2, status: 'paid', paidAt: '2026-05-04T08:00Z' },
-  { id: 'stl_2026_05_01', period: 'May 1, 2026', grossCents: 6_240_000, mdrCents: 174_720, netCents: 6_065_280, applications: 3, status: 'paid', paidAt: '2026-05-03T08:00Z' },
+  {
+    id: 'stl_2026_05_03',
+    period: 'May 3, 2026',
+    grossCents: 7_550_000,
+    mdrCents: 211_400,
+    netCents: 7_338_600,
+    applications: 3,
+    status: 'in_flight',
+  },
+  {
+    id: 'stl_2026_05_02',
+    period: 'May 2, 2026',
+    grossCents: 4_120_000,
+    mdrCents: 115_360,
+    netCents: 4_004_640,
+    applications: 2,
+    status: 'paid',
+    paidAt: '2026-05-04T08:00Z',
+  },
+  {
+    id: 'stl_2026_05_01',
+    period: 'May 1, 2026',
+    grossCents: 6_240_000,
+    mdrCents: 174_720,
+    netCents: 6_065_280,
+    applications: 3,
+    status: 'paid',
+    paidAt: '2026-05-03T08:00Z',
+  },
 ];
 
 export const webhookDeliveries = [
-  { id: 'wh_dlv_8KvR2NQp', event: 'application.funded', status: 'delivered', http: 200, attempts: 1, when: '2026-05-04T19:01Z' },
-  { id: 'wh_dlv_KvR2NQpLm', event: 'application.approved', status: 'delivered', http: 200, attempts: 1, when: '2026-05-04T18:42Z' },
-  { id: 'wh_dlv_R2NQpLmKv', event: 'application.submitted', status: 'delivered', http: 200, attempts: 1, when: '2026-05-04T18:40Z' },
+  {
+    id: 'wh_dlv_8KvR2NQp',
+    event: 'application.funded',
+    status: 'delivered',
+    http: 200,
+    attempts: 1,
+    when: '2026-05-04T19:01Z',
+  },
+  {
+    id: 'wh_dlv_KvR2NQpLm',
+    event: 'application.approved',
+    status: 'delivered',
+    http: 200,
+    attempts: 1,
+    when: '2026-05-04T18:42Z',
+  },
+  {
+    id: 'wh_dlv_R2NQpLmKv',
+    event: 'application.submitted',
+    status: 'delivered',
+    http: 200,
+    attempts: 1,
+    when: '2026-05-04T18:40Z',
+  },
 ];
 
 export const conversionFunnel = [
@@ -201,4 +248,10 @@ export const lenderMix = [
   { label: 'PathPoint', value: 1 },
 ];
 
-export const fmtDate = (iso: string) => new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+export const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });

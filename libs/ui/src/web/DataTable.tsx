@@ -33,7 +33,12 @@ export function DataTable<T>({
   dense?: boolean;
 }) {
   return (
-    <div className={cn('overflow-hidden rounded-lg border border-border bg-bg-elevated shadow-sm', className)}>
+    <div
+      className={cn(
+        'overflow-hidden rounded-lg border border-border bg-bg-elevated shadow-sm',
+        className,
+      )}
+    >
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead className="bg-bg-muted/40">
@@ -83,7 +88,8 @@ export function DataTable<T>({
                   role={onRowClick ? 'button' : undefined}
                   className={cn(
                     'border-b border-border last:border-b-0 transition-colors',
-                    onRowClick && 'cursor-pointer hover:bg-bg-muted/40 focus:bg-bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-inset',
+                    onRowClick &&
+                      'cursor-pointer hover:bg-bg-muted/40 focus:bg-bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-inset',
                   )}
                 >
                   {columns.map((c) => (

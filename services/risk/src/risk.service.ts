@@ -1,25 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { PRISMA } from './internal/tokens.js';
-import {
-  DEVICE_RISK_PROVIDER,
-  type DeviceRiskProvider,
-} from './ports/device-risk.port.js';
-import {
-  IDENTITY_RISK_PROVIDER,
-  type IdentityRiskProvider,
-} from './ports/identity-risk.port.js';
+import { DEVICE_RISK_PROVIDER, type DeviceRiskProvider } from './ports/device-risk.port.js';
+import { IDENTITY_RISK_PROVIDER, type IdentityRiskProvider } from './ports/identity-risk.port.js';
 import {
   RISK_DECLINE_THRESHOLD,
   RISK_MANUAL_REVIEW_THRESHOLD,
   RISK_POLICY_VERSION,
   RISK_REASON_CODES,
 } from './policy.js';
-import type {
-  RiskAssessInput,
-  RiskAssessment,
-  RiskRecommendation,
-} from './risk.types.js';
+import type { RiskAssessInput, RiskAssessment, RiskRecommendation } from './risk.types.js';
 
 const VELOCITY_WINDOW_HOURS = 24;
 const VELOCITY_USER_THRESHOLD = 3; // ≥3 apps in 24h is suspicious
@@ -88,10 +78,7 @@ export class RiskService {
       if (idResult.phoneScore !== null && idResult.phoneScore >= 80) {
         reasonCodes.add(RISK_REASON_CODES.phoneProviderHigh);
       }
-      const max = Math.max(
-        idResult.emailScore ?? 0,
-        idResult.phoneScore ?? 0,
-      );
+      const max = Math.max(idResult.emailScore ?? 0, idResult.phoneScore ?? 0);
       score = Math.max(score, max);
       for (const c of idResult.reasonCodes) reasonCodes.add(c);
     } catch (err) {

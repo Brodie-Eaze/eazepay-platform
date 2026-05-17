@@ -74,8 +74,8 @@ export const DisclosurePanel: FC<{
             className="mt-0.5 size-4 accent-accent"
           />
           <span className="text-[13px] leading-snug">
-            I have read and agree to the terms above. I understand this consent will be recorded with a
-            timestamped audit event.
+            I have read and agree to the terms above. I understand this consent will be recorded
+            with a timestamped audit event.
           </span>
         </label>
       )}

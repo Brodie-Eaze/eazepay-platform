@@ -1,17 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { promises as dns } from 'node:dns';
 import { isIP } from 'node:net';
 import { BadRequest, Conflict, Forbidden, NotFound, sha256Hex } from '@eazepay/shared-utils';
-import { PiiVaultService } from '@eazepay/service-user';
+import type { PiiVaultService } from '@eazepay/service-user';
 import type { MerchantId, UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
 import { webhookSecretAadContext } from './internal/webhook-signing.js';
-import type {
-  WebhookPublishInput,
-  WebhookPublisher,
-} from './ports/webhook-publisher.port.js';
+import type { WebhookPublishInput, WebhookPublisher } from './ports/webhook-publisher.port.js';
 
 const SECRET_BYTES = 32;
 const MAX_ENDPOINT_EVENTS = 50;
@@ -48,20 +45,20 @@ const PROD_REJECT_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
  * `node:https` agent. Tracked for the dispatcher service hardening.
  */
 const IPV4_BLOCK_CIDRS: Array<[number, number]> = [
-  [ipv4ToInt('0.0.0.0'), 8],         // 0.0.0.0/8 (this network, incl. 0.0.0.0)
-  [ipv4ToInt('10.0.0.0'), 8],        // RFC1918
-  [ipv4ToInt('100.64.0.0'), 10],     // CGNAT
-  [ipv4ToInt('127.0.0.0'), 8],       // loopback
-  [ipv4ToInt('169.254.0.0'), 16],    // link-local incl. IMDS 169.254.169.254
-  [ipv4ToInt('172.16.0.0'), 12],     // RFC1918
-  [ipv4ToInt('192.0.0.0'), 24],      // IETF protocol assignments
-  [ipv4ToInt('192.0.2.0'), 24],      // TEST-NET-1
-  [ipv4ToInt('192.168.0.0'), 16],    // RFC1918
-  [ipv4ToInt('198.18.0.0'), 15],     // benchmark
-  [ipv4ToInt('198.51.100.0'), 24],   // TEST-NET-2
-  [ipv4ToInt('203.0.113.0'), 24],    // TEST-NET-3
-  [ipv4ToInt('224.0.0.0'), 4],       // multicast
-  [ipv4ToInt('240.0.0.0'), 4],       // reserved (covers 255.255.255.255)
+  [ipv4ToInt('0.0.0.0'), 8], // 0.0.0.0/8 (this network, incl. 0.0.0.0)
+  [ipv4ToInt('10.0.0.0'), 8], // RFC1918
+  [ipv4ToInt('100.64.0.0'), 10], // CGNAT
+  [ipv4ToInt('127.0.0.0'), 8], // loopback
+  [ipv4ToInt('169.254.0.0'), 16], // link-local incl. IMDS 169.254.169.254
+  [ipv4ToInt('172.16.0.0'), 12], // RFC1918
+  [ipv4ToInt('192.0.0.0'), 24], // IETF protocol assignments
+  [ipv4ToInt('192.0.2.0'), 24], // TEST-NET-1
+  [ipv4ToInt('192.168.0.0'), 16], // RFC1918
+  [ipv4ToInt('198.18.0.0'), 15], // benchmark
+  [ipv4ToInt('198.51.100.0'), 24], // TEST-NET-2
+  [ipv4ToInt('203.0.113.0'), 24], // TEST-NET-3
+  [ipv4ToInt('224.0.0.0'), 4], // multicast
+  [ipv4ToInt('240.0.0.0'), 4], // reserved (covers 255.255.255.255)
 ];
 
 function ipv4ToInt(ip: string): number {
@@ -219,16 +216,18 @@ export class WebhookService implements WebhookPublisher {
   async listEndpoints(
     actorUserId: UserId,
     merchantId: MerchantId,
-  ): Promise<Array<{
-    id: string;
-    url: string;
-    events: string[];
-    status: string;
-    description: string | null;
-    lastDeliveredAt: string | null;
-    consecutiveFailures: number;
-    createdAt: string;
-  }>> {
+  ): Promise<
+    Array<{
+      id: string;
+      url: string;
+      events: string[];
+      status: string;
+      description: string | null;
+      lastDeliveredAt: string | null;
+      consecutiveFailures: number;
+      createdAt: string;
+    }>
+  > {
     await this.assertMerchantMember(actorUserId, merchantId);
     const rows = await this.prisma.webhookEndpoint.findMany({
       where: { merchantId },
@@ -478,10 +477,7 @@ export class WebhookService implements WebhookPublisher {
     // URL hostname can come back wrapped in [] for IPv6 — strip for
     // both the literal-host check and DNS resolution.
     const host = parsed.hostname.replace(/^\[|\]$/g, '');
-    if (
-      process.env.NODE_ENV === 'production' &&
-      PROD_REJECT_HOSTS.includes(host)
-    ) {
+    if (process.env.NODE_ENV === 'production' && PROD_REJECT_HOSTS.includes(host)) {
       throw BadRequest({
         code: 'endpoint_url_blocked',
         detail: 'loopback hosts not permitted in production',

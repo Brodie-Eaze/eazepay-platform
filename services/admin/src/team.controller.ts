@@ -17,7 +17,7 @@ import { Idempotent } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { TeamService } from './team.service.js';
+import type { TeamService } from './team.service.js';
 
 const PlatformRoleEnum = z.enum([
   'master_admin',
@@ -94,10 +94,7 @@ export class TeamController {
   @ApiOperation({
     summary: 'Invite a new staff member (or re-invite an existing closed account)',
   })
-  invite(
-    @CurrentUser() adminUserId: UserId,
-    @Body() dto: InviteDto,
-  ): Promise<unknown> {
+  invite(@CurrentUser() adminUserId: UserId, @Body() dto: InviteDto): Promise<unknown> {
     return this.team.invite(adminUserId, {
       email: dto.email,
       displayName: dto.displayName,

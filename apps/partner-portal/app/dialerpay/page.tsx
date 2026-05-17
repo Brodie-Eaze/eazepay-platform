@@ -1,11 +1,4 @@
-import {
-  PhoneIcon,
-  ShieldIcon,
-  BoltIcon,
-  CardIcon,
-  ChartIcon,
-  UsersIcon,
-} from '@eazepay/ui/web';
+import { PhoneIcon, ShieldIcon, BoltIcon, CardIcon, ChartIcon, UsersIcon } from '@eazepay/ui/web';
 import { IntegrationPage } from '../../components/IntegrationPage';
 
 /**

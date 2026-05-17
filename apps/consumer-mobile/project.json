@@ -5,7 +5,13 @@
   "projectType": "application",
   "tags": ["scope:app", "platform:mobile"],
   "targets": {
-    "typecheck": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/consumer-mobile typecheck" } },
-    "lint": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/consumer-mobile lint" } }
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/consumer-mobile typecheck" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/consumer-mobile lint" }
+    }
   }
 }

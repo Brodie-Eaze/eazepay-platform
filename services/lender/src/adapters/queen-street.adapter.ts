@@ -65,9 +65,7 @@ export class QueenStreetLenderAdapter implements LenderAdapter {
     const baseUrl = process.env.QUEEN_STREET_BASE_URL;
     const token = process.env.QUEEN_STREET_API_TOKEN;
     if (!baseUrl || !token) {
-      this.logger.warn(
-        'queen_street adapter invoked but credentials missing — returning error',
-      );
+      this.logger.warn('queen_street adapter invoked but credentials missing — returning error');
       throw new Error('queen_street_adapter_pending_api_credentials');
     }
 

@@ -20,7 +20,8 @@ export default function StepBusinessDetails({ state, setState, errors }: StepPro
         const owners = s.owners.slice();
         const o = owners[i];
         if (!o) return s;
-        const v = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+        const v =
+          e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
         owners[i] = { ...o, [k]: v } as BeneficialOwner;
         return { ...s, owners };
       });
@@ -48,7 +49,10 @@ export default function StepBusinessDetails({ state, setState, errors }: StepPro
     setState((s) => ({ ...s, owners: s.owners.filter((_, j) => j !== i) }));
   };
 
-  const ownershipTotal = state.owners.reduce((sum, o) => sum + Number(o.ownershipPercentage || 0), 0);
+  const ownershipTotal = state.owners.reduce(
+    (sum, o) => sum + Number(o.ownershipPercentage || 0),
+    0,
+  );
 
   return (
     <div className="space-y-8">
@@ -94,8 +98,8 @@ export default function StepBusinessDetails({ state, setState, errors }: StepPro
           <div>
             <h2 className="text-[15px] font-semibold text-fg">Beneficial owners</h2>
             <p className="text-[12px] text-fg-muted mt-0.5">
-              Anyone with ≥25% ownership, plus a control person (officer or director).
-              Ownership must sum to 100%.
+              Anyone with ≥25% ownership, plus a control person (officer or director). Ownership
+              must sum to 100%.
             </p>
           </div>
           <span

@@ -24,8 +24,8 @@ export default function PiiPage() {
       />
       <PageBody>
         <Banner intent="info" className="mb-4">
-          The default for every applicant record is <strong>masked</strong>. Unmask grants expire in 30
-          minutes by default. After expiry, the field re-locks and the next read requires a fresh
+          The default for every applicant record is <strong>masked</strong>. Unmask grants expire in
+          30 minutes by default. After expiry, the field re-locks and the next read requires a fresh
           request. This is what gives EazePay a defensible audit posture under GLBA Safeguards.
         </Banner>
 
@@ -33,34 +33,56 @@ export default function PiiPage() {
           {piiUnmaskRequests.map((req) => (
             <Card key={req.id}>
               <CardHeader
-                title={<span className="flex items-center gap-2"><ShieldIcon size={14} />Request <span className="font-mono">{req.id}</span></span>}
+                title={
+                  <span className="flex items-center gap-2">
+                    <ShieldIcon size={14} />
+                    Request <span className="font-mono">{req.id}</span>
+                  </span>
+                }
                 description={`For subject ${req.subject}`}
                 action={
-                  req.status === 'approved'
-                    ? <StatusPill tone="success">Approved</StatusPill>
-                    : <StatusPill tone="warning" dot>Pending</StatusPill>
+                  req.status === 'approved' ? (
+                    <StatusPill tone="success">Approved</StatusPill>
+                  ) : (
+                    <StatusPill tone="warning" dot>
+                      Pending
+                    </StatusPill>
+                  )
                 }
               />
               <CardBody>
                 <DataRow label="Requested by" value={req.requestedBy} />
-                <DataRow label="Requested at" value={new Date(req.requestedAt).toLocaleString('en-US')} />
-                <DataRow label="Fields" value={<span className="font-mono text-[12px]">{req.fields.join(', ')}</span>} />
+                <DataRow
+                  label="Requested at"
+                  value={new Date(req.requestedAt).toLocaleString('en-US')}
+                />
+                <DataRow
+                  label="Fields"
+                  value={<span className="font-mono text-[12px]">{req.fields.join(', ')}</span>}
+                />
                 <DataRow label="Reason" value={req.reason} />
                 {req.status === 'approved' && (
                   <>
                     <DataRow label="Approver" value={req.approver} />
-                    <DataRow label="Expires" value={new Date(req.expiresAt!).toLocaleString('en-US')} />
+                    <DataRow
+                      label="Expires"
+                      value={new Date(req.expiresAt!).toLocaleString('en-US')}
+                    />
                   </>
                 )}
                 <div className="flex gap-2 mt-3">
                   {req.status === 'pending' ? (
                     <>
-                      <Button size="sm" variant="secondary">Reject</Button>
+                      <Button size="sm" variant="secondary">
+                        Reject
+                      </Button>
                       <Button size="sm">Approve (30m)</Button>
                     </>
                   ) : (
                     <>
-                      <Button size="sm" variant="secondary">Revoke</Button>
+                      <Button size="sm" variant="secondary">
+                        Revoke
+                      </Button>
                       <Button size="sm">Read (logged)</Button>
                     </>
                   )}

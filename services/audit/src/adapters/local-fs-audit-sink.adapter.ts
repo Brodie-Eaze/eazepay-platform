@@ -3,11 +3,7 @@ import { mkdir, readFile, writeFile, appendFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { sha256Hex } from '@eazepay/shared-utils';
-import type {
-  AuditSink,
-  AuditSinkPutResult,
-  AuditSinkRecord,
-} from '../ports/audit-sink.port.js';
+import type { AuditSink, AuditSinkPutResult, AuditSinkRecord } from '../ports/audit-sink.port.js';
 
 const ZERO_HASH = '0'.repeat(64);
 

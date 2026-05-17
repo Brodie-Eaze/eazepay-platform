@@ -21,7 +21,10 @@ export const PiiV1Schema = z.object({
     suffix: z.string().max(20).optional(),
   }),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
-  ssnLast4: z.string().regex(/^\d{4}$/).optional(),
+  ssnLast4: z
+    .string()
+    .regex(/^\d{4}$/)
+    .optional(),
   address: z.object({
     line1: z.string().min(1).max(200),
     line2: z.string().max(200).optional(),

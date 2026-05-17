@@ -1,12 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { BadRequest, Conflict, Forbidden, NotFound, sha256Hex } from '@eazepay/shared-utils';
 import type { MerchantId, UserId } from '@eazepay/shared-types';
-import {
-  PiiVaultService,
-  type PiiV1,
-} from '@eazepay/service-user';
+import type { PiiVaultService } from '@eazepay/service-user';
+import { type PiiV1 } from '@eazepay/service-user';
 import { MERCHANT_REGISTRATION_REQUIRES_ADMIN, PRISMA } from './internal/tokens.js';
 import { KYB_PROVIDER, type KybProvider } from './ports/kyb-provider.port.js';
 import type { BoPiiV1 } from './bo-pii.types.js';
@@ -105,7 +103,10 @@ export class MerchantService {
     });
   }
 
-  async getOne(userId: UserId, merchantId: MerchantId): Promise<{
+  async getOne(
+    userId: UserId,
+    merchantId: MerchantId,
+  ): Promise<{
     id: MerchantId;
     slug: string;
     legalName: string;
@@ -153,10 +154,7 @@ export class MerchantService {
     // transaction. Sealing OUTSIDE the transaction keeps the KMS
     // round-trip from holding a DB connection.
     const beneficialOwnerId = randomUUID();
-    const sealed = await this.vault.sealForBo(
-      beneficialOwnerId,
-      dto.pii as unknown as PiiV1,
-    );
+    const sealed = await this.vault.sealForBo(beneficialOwnerId, dto.pii as unknown as PiiV1);
 
     return this.prisma.$transaction(async (tx) => {
       const bo = await tx.beneficialOwner.create({
@@ -187,7 +185,10 @@ export class MerchantService {
     });
   }
 
-  async startKyb(userId: UserId, merchantId: MerchantId): Promise<{
+  async startKyb(
+    userId: UserId,
+    merchantId: MerchantId,
+  ): Promise<{
     outcome: 'pending' | 'approved' | 'manual_review' | 'rejected';
     providerRef: string;
   }> {
@@ -348,7 +349,10 @@ export class MerchantService {
    * before prompting the consumer to register/login.
    * Throws on missing/expired/used/revoked link.
    */
-  async getLinkContext(slug: string, tokenRaw: string): Promise<{
+  async getLinkContext(
+    slug: string,
+    tokenRaw: string,
+  ): Promise<{
     merchantId: MerchantId;
     merchantSlug: string;
     merchantLegalName: string;
@@ -466,11 +470,12 @@ export class MerchantService {
   }
 
   private async generateSlug(legalName: string): Promise<string> {
-    const base = legalName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'merchant';
+    const base =
+      legalName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'merchant';
     for (let i = 0; i < 10; i++) {
       const candidate = i === 0 ? base : `${base}-${randomBytes(3).toString('hex')}`;
       const existing = await this.prisma.merchant.findUnique({ where: { slug: candidate } });

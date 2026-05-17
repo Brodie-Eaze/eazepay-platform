@@ -1,18 +1,9 @@
-import {
-  Body,
-  Controller,
-  Headers,
-  HttpCode,
-  Logger,
-  Param,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, Logger, Param, Post, Req } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Public } from '@eazepay/service-auth';
-import { ApplicationService } from '@eazepay/service-application';
+import type { ApplicationService } from '@eazepay/service-application';
 import { NotFound, Unauthorized } from '@eazepay/shared-utils';
 import { z } from 'zod';
 import type { FastifyRequest } from 'fastify';
@@ -145,8 +136,7 @@ export class ESignWebhookController {
     // later and would still verify, flipping an old envelope to
     // `signed` status and resuming a stale contract flow.
     const enforceReplay =
-      (process.env['WEBHOOK_REPLAY_WINDOW_ENFORCED'] ?? 'true').toLowerCase() !==
-      'false';
+      (process.env['WEBHOOK_REPLAY_WINDOW_ENFORCED'] ?? 'true').toLowerCase() !== 'false';
 
     if (enforceReplay) {
       if (!timestamp) {
@@ -180,4 +170,3 @@ export class ESignWebhookController {
     }
   }
 }
-

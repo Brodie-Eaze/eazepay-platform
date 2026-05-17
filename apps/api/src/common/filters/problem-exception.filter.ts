@@ -1,10 +1,5 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  Logger,
-} from '@nestjs/common';
+import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
+import { Catch, HttpException, Logger } from '@nestjs/common';
 import { ProblemError, type Problem } from '@eazepay/shared-utils';
 import { ZodError } from 'zod';
 import { randomUUID } from 'node:crypto';
@@ -27,8 +22,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
     // present, otherwise mint a fresh uuid. The id is set as both the
     // response header `X-Request-Id` and folded into the log entry so
     // grep-by-id works from either side.
-    const requestId =
-      (req as { id?: string }).id ?? randomUUID();
+    const requestId = (req as { id?: string }).id ?? randomUUID();
     void res.header('X-Request-Id', requestId);
 
     const problem = this.toProblem(exception, req.url, requestId);
@@ -44,8 +38,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
           requestId,
           path: req.url,
           err: exception instanceof Error ? exception.stack : exception,
-          rawMessage:
-            exception instanceof Error ? exception.message : undefined,
+          rawMessage: exception instanceof Error ? exception.message : undefined,
         },
         `5xx: ${problem.title}`,
       );
@@ -57,11 +50,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
       .send(problem);
   }
 
-  private toProblem(
-    exception: unknown,
-    instance: string,
-    requestId: string,
-  ): Problem {
+  private toProblem(exception: unknown, instance: string, requestId: string): Problem {
     if (exception instanceof ProblemError) {
       return { ...exception.problem, instance, requestId } as Problem;
     }
@@ -113,7 +102,7 @@ export class ProblemExceptionFilter implements ExceptionFilter {
         typeof r === 'string'
           ? r
           : typeof (r as { message?: unknown }).message === 'string'
-            ? ((r as { message: string }).message)
+            ? (r as { message: string }).message
             : exception.message;
       return {
         type: 'about:blank',

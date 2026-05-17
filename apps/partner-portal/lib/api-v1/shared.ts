@@ -36,9 +36,7 @@ const MOCK_SECRET = 'demo_shared_secret_replace_in_prod';
  * staging box).
  */
 export function signatureRequired(): boolean {
-  return (
-    process.env.NODE_ENV === 'production' || process.env.REQUIRE_HMAC === 'true'
-  );
+  return process.env.NODE_ENV === 'production' || process.env.REQUIRE_HMAC === 'true';
 }
 
 /**
@@ -54,9 +52,7 @@ export function signatureRequired(): boolean {
 export function requireSignatureCheck(
   sigCheck: { status: 'valid' | 'missing' | 'invalid' | 'skipped'; reason?: string },
   instance: string,
-):
-  | null
-  | { title: string; status: number; code: string; detail: string; instance: string } {
+): null | { title: string; status: number; code: string; detail: string; instance: string } {
   if (sigCheck.status === 'invalid' || sigCheck.status === 'missing') {
     return {
       title: 'Unauthorized',
@@ -125,7 +121,10 @@ export async function verifySignature(args: {
     return { status: 'skipped', reason: 'No signature headers — demo allows unsigned calls.' };
   }
   if (!timestamp || !nonce || !signature) {
-    return { status: 'missing', reason: 'Required headers: X-EazePay-Timestamp · X-EazePay-Nonce · X-EazePay-Signature.' };
+    return {
+      status: 'missing',
+      reason: 'Required headers: X-EazePay-Timestamp · X-EazePay-Nonce · X-EazePay-Signature.',
+    };
   }
   // 5-minute replay window
   const now = Math.floor(Date.now() / 1000);
@@ -145,9 +144,7 @@ export async function verifySignature(args: {
     );
     const payload = enc.encode(`${timestamp}.${nonce}.${body}`);
     const sigBuf = await crypto.subtle.sign('HMAC', key, payload);
-    const hex = [...new Uint8Array(sigBuf)]
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
+    const hex = [...new Uint8Array(sigBuf)].map((b) => b.toString(16).padStart(2, '0')).join('');
     // SEC-028 — constant-time comparison.
     //
     // Threat closed: the previous hex===signature check short-circuits
@@ -348,9 +345,7 @@ export function offerFor(lender: SampleLender, amountCents: number, termMonths =
   const monthly =
     aprMonthly === 0
       ? Math.round(amountCents / termMonths)
-      : Math.round(
-          (amountCents * aprMonthly) / (1 - Math.pow(1 + aprMonthly, -termMonths)),
-        );
+      : Math.round((amountCents * aprMonthly) / (1 - Math.pow(1 + aprMonthly, -termMonths)));
   return {
     offer_id: idFor('off', lender.id + amountCents + termMonths),
     application_id: idFor('app', lender.id + amountCents),

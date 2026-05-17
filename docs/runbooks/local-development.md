@@ -78,6 +78,6 @@ pnpm --filter @eazepay/service-application test
 - **Migrations fail on first run** — make sure docker postgres is
   healthy: `docker compose ps`.
 - **`Cannot find module '@eazepay/...'`** — run `pnpm install`. Nx
-  + workspace symlinks handle the rest.
+  - workspace symlinks handle the rest.
 - **Mobile RN won't start** — Expo is finicky on first run; check
   `expo doctor` output.

@@ -21,32 +21,35 @@ export class MockKycAdapter implements KycProvider {
   async initiate(input: KycInitiateInput): Promise<KycInitiateResult> {
     const ref = randomUUID();
     const last = input.pii.legalName.last.toUpperCase();
-    const result: KycStatusResult =
-      last.startsWith('XR')
-        ? { outcome: 'rejected', reasonCodes: ['mock_reject'], pep: 'cleared', sanctions: 'cleared' }
-        : last.startsWith('X')
-          ? {
-              outcome: 'manual_review',
-              reasonCodes: ['mock_review_low_confidence'],
-              pep: 'cleared',
-              sanctions: 'cleared',
-            }
-          : {
-              outcome: 'approved',
-              reasonCodes: [],
-              pep: 'cleared',
-              sanctions: 'cleared',
-            };
+    const result: KycStatusResult = last.startsWith('XR')
+      ? { outcome: 'rejected', reasonCodes: ['mock_reject'], pep: 'cleared', sanctions: 'cleared' }
+      : last.startsWith('X')
+        ? {
+            outcome: 'manual_review',
+            reasonCodes: ['mock_review_low_confidence'],
+            pep: 'cleared',
+            sanctions: 'cleared',
+          }
+        : {
+            outcome: 'approved',
+            reasonCodes: [],
+            pep: 'cleared',
+            sanctions: 'cleared',
+          };
     this.results.set(ref, result);
-    this.logger.warn(
-      `[DEV-ONLY] KYC mock initiate ref=${ref} outcome=${result.outcome}`,
-    );
+    this.logger.warn(`[DEV-ONLY] KYC mock initiate ref=${ref} outcome=${result.outcome}`);
     return { providerRef: ref, outcome: result.outcome };
   }
 
   async status(providerRef: string): Promise<KycStatusResult> {
     const r = this.results.get(providerRef);
-    if (!r) return { outcome: 'expired', reasonCodes: ['mock_unknown_ref'], pep: 'unknown', sanctions: 'unknown' };
+    if (!r)
+      return {
+        outcome: 'expired',
+        reasonCodes: ['mock_unknown_ref'],
+        pep: 'unknown',
+        sanctions: 'unknown',
+      };
     return r;
   }
 }

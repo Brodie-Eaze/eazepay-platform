@@ -1,7 +1,7 @@
 name: Compliance review
 description: A controls, regulator, or audit-evidence item the engineering team needs to act on.
-title: "[compliance] <one-line summary>"
-labels: ["compliance", "triage"]
+title: '[compliance] <one-line summary>'
+labels: ['compliance', 'triage']
 assignees: []
 body:
   - type: markdown
@@ -32,7 +32,7 @@ body:
     id: control
     attributes:
       label: Control / regulation
-      placeholder: "SOC 2 CC6.1, GLBA Safeguards § 314.4(c), Reg B § 1002.9, ..."
+      placeholder: 'SOC 2 CC6.1, GLBA Safeguards § 314.4(c), Reg B § 1002.9, ...'
     validations:
       required: true
 

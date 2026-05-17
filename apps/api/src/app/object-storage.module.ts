@@ -1,9 +1,5 @@
 import { Global, Module, type Provider } from '@nestjs/common';
-import {
-  LocalFsObjectStorage,
-  OBJECT_STORAGE,
-  type ObjectStorage,
-} from '@eazepay/shared-utils';
+import { LocalFsObjectStorage, OBJECT_STORAGE, type ObjectStorage } from '@eazepay/shared-utils';
 import { loadEnv } from '../config/env.js';
 
 const env = loadEnv();
@@ -13,9 +9,7 @@ const storageProvider: Provider = {
   useFactory: (): ObjectStorage => {
     if (env.OBJECT_STORAGE === 'local-fs') {
       if (env.NODE_ENV === 'production') {
-        throw new Error(
-          'OBJECT_STORAGE=local-fs is dev-only — wire S3 in production.',
-        );
+        throw new Error('OBJECT_STORAGE=local-fs is dev-only — wire S3 in production.');
       }
       return new LocalFsObjectStorage(
         env.LOCAL_FS_STORAGE_ROOT,

@@ -75,33 +75,61 @@ export default function ProcessorsPage() {
               title={
                 <span className="flex items-center gap-3">
                   MiCamp
-                  <StatusPill tone="success" dot>Live</StatusPill>
+                  <StatusPill tone="success" dot>
+                    Live
+                  </StatusPill>
                 </span>
               }
               description="Single-stack acquirer for card-present, card-not-present, and stored-credential transactions across all brands."
-              action={<Button size="sm" variant="ghost">Manage</Button>}
+              action={
+                <Button size="sm" variant="ghost">
+                  Manage
+                </Button>
+              }
             />
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 <div>
-                  <DataRow label="Account" value={<span className="font-mono text-[12px]">micamp_acct_8KvR2N</span>} />
-                  <DataRow label="MID" value={<span className="font-mono text-[12px]">444•••••3120</span>} />
+                  <DataRow
+                    label="Account"
+                    value={<span className="font-mono text-[12px]">micamp_acct_8KvR2N</span>}
+                  />
+                  <DataRow
+                    label="MID"
+                    value={<span className="font-mono text-[12px]">444•••••3120</span>}
+                  />
                   <DataRow label="Processor" value="First Data / Fiserv (downstream)" />
-                  <DataRow label="3DS" value={<StatusPill tone="success">Enabled · risk-based</StatusPill>} />
+                  <DataRow
+                    label="3DS"
+                    value={<StatusPill tone="success">Enabled · risk-based</StatusPill>}
+                  />
                   <DataRow label="Tokenization" value="Network · Visa + Mastercard ATC" />
                 </div>
                 <div>
                   <DataRow label="Funding cadence" value="T+1 · same-day on opt-in" />
                   <DataRow label="Reserve" value="0% (graduated)" />
                   <DataRow label="Dispute fee" value="$15 · refunded if won" />
-                  <DataRow label="Risk monitor" value={<StatusPill tone="success" dot>Healthy</StatusPill>} />
+                  <DataRow
+                    label="Risk monitor"
+                    value={
+                      <StatusPill tone="success" dot>
+                        Healthy
+                      </StatusPill>
+                    }
+                  />
                   <DataRow label="Auth rate (rolling)" value="94.8%" />
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-border flex items-center gap-2 flex-wrap">
-                <Button size="sm" variant="secondary" leadingIcon={<WebhookIcon size={14} />}>Webhooks</Button>
-                <Button size="sm" variant="secondary">Open API key</Button>
-                <Button size="sm" variant="ghost" leadingIcon={<ArrowRightIcon size={14} />}>Settlement report</Button>
+                <Button size="sm" variant="secondary" leadingIcon={<WebhookIcon size={14} />}>
+                  Webhooks
+                </Button>
+                <Button size="sm" variant="secondary">
+                  Open API key
+                </Button>
+                <Button size="sm" variant="ghost" leadingIcon={<ArrowRightIcon size={14} />}>
+                  Settlement report
+                </Button>
               </div>
             </CardBody>
           </Card>
@@ -111,33 +139,61 @@ export default function ProcessorsPage() {
               title={
                 <span className="flex items-center gap-3">
                   HighSale
-                  <StatusPill tone="success" dot>Live · EZ Check</StatusPill>
+                  <StatusPill tone="success" dot>
+                    Live · EZ Check
+                  </StatusPill>
                 </span>
               }
               description="Electronic-check processor — RCC (remotely-created checks), Web-debit, and tele-check rails for one-time and recurring debits."
-              action={<Button size="sm" variant="ghost">Manage</Button>}
+              action={
+                <Button size="sm" variant="ghost">
+                  Manage
+                </Button>
+              }
             />
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 <div>
-                  <DataRow label="Account" value={<span className="font-mono text-[12px]">hs_acct_R2NQp8</span>} />
+                  <DataRow
+                    label="Account"
+                    value={<span className="font-mono text-[12px]">hs_acct_R2NQp8</span>}
+                  />
                   <DataRow label="Rail" value="RCC + WEB · same-day ACH available" />
                   <DataRow label="Auth method" value="Plaid Auth · micro-deposits fallback" />
-                  <DataRow label="Reg E coverage" value={<StatusPill tone="success">Consumer · in scope</StatusPill>} />
+                  <DataRow
+                    label="Reg E coverage"
+                    value={<StatusPill tone="success">Consumer · in scope</StatusPill>}
+                  />
                   <DataRow label="Tokenization" value="Vault-stored routing + account" />
                 </div>
                 <div>
                   <DataRow label="Funding cadence" value="T+1 · same-day on opt-in" />
-                  <DataRow label="Pre-debit notice" value={<StatusPill tone="success">10-day enforced</StatusPill>} />
+                  <DataRow
+                    label="Pre-debit notice"
+                    value={<StatusPill tone="success">10-day enforced</StatusPill>}
+                  />
                   <DataRow label="Return rate (60d)" value="0.31%" />
                   <DataRow label="Unauth return (60d)" value="0.04%" />
-                  <DataRow label="Risk monitor" value={<StatusPill tone="success" dot>Healthy</StatusPill>} />
+                  <DataRow
+                    label="Risk monitor"
+                    value={
+                      <StatusPill tone="success" dot>
+                        Healthy
+                      </StatusPill>
+                    }
+                  />
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-border flex items-center gap-2 flex-wrap">
-                <Button size="sm" variant="secondary" leadingIcon={<WebhookIcon size={14} />}>Webhooks</Button>
-                <Button size="sm" variant="secondary">Open API key</Button>
-                <Button size="sm" variant="ghost" leadingIcon={<ArrowRightIcon size={14} />}>Return-rate report</Button>
+                <Button size="sm" variant="secondary" leadingIcon={<WebhookIcon size={14} />}>
+                  Webhooks
+                </Button>
+                <Button size="sm" variant="secondary">
+                  Open API key
+                </Button>
+                <Button size="sm" variant="ghost" leadingIcon={<ArrowRightIcon size={14} />}>
+                  Return-rate report
+                </Button>
               </div>
             </CardBody>
           </Card>
@@ -150,7 +206,9 @@ export default function ProcessorsPage() {
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-fg-muted font-semibold mb-2">Disbursement</div>
+                  <div className="text-[11px] uppercase tracking-wider text-fg-muted font-semibold mb-2">
+                    Disbursement
+                  </div>
                   <ol className="space-y-2 text-[13px]">
                     {[
                       ['1.', 'Loan funded by partner bank (Cross River) on e-sign'],
@@ -166,13 +224,18 @@ export default function ProcessorsPage() {
                   </ol>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase tracking-wider text-fg-muted font-semibold mb-2">Repayment</div>
+                  <div className="text-[11px] uppercase tracking-wider text-fg-muted font-semibold mb-2">
+                    Repayment
+                  </div>
                   <ol className="space-y-2 text-[13px]">
                     {[
                       ['1.', 'Consumer auto-pay debited via MiCamp (card) or HighSale (EZ Check)'],
                       ['2.', 'Funds settle to EazePay servicing account at Cross River'],
                       ['3.', 'Daily sweep to bank-of-record (true lender) per servicing agreement'],
-                      ['4.', 'Return-rate monitoring against Nacha caps; failed debits enter dunning'],
+                      [
+                        '4.',
+                        'Return-rate monitoring against Nacha caps; failed debits enter dunning',
+                      ],
                     ].map(([n, t]) => (
                       <li key={n} className="flex items-start gap-2">
                         <span className="font-mono text-fg-muted shrink-0">{n}</span>

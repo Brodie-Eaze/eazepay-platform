@@ -32,7 +32,15 @@ type ButtonProps = {
 };
 const Button: React.FC<ButtonProps> = (props) => <_Button {...(props as any)} />;
 
-const CATEGORIES = ['All', 'Getting started', 'Applications', 'Payouts', 'Lenders', 'Integrations', 'Account'] as const;
+const CATEGORIES = [
+  'All',
+  'Getting started',
+  'Applications',
+  'Payouts',
+  'Lenders',
+  'Integrations',
+  'Account',
+] as const;
 
 export default function HelpPage() {
   const [search, setSearch] = useState('');
@@ -50,7 +58,8 @@ export default function HelpPage() {
       if (cat !== 'All' && a.category !== cat) return false;
       if (search) {
         const q = search.toLowerCase();
-        if (!a.title.toLowerCase().includes(q) && !a.summary.toLowerCase().includes(q)) return false;
+        if (!a.title.toLowerCase().includes(q) && !a.summary.toLowerCase().includes(q))
+          return false;
       }
       return true;
     });
@@ -73,7 +82,11 @@ export default function HelpPage() {
         description="Documentation, contact channels, and a place to file a support ticket. Most questions are answered below within seconds."
         actions={
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={() => flash('Status page: status.eazepay.com')}>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => flash('Status page: status.eazepay.com')}
+            >
               Status page
             </Button>
             <Button size="sm" variant="primary" onClick={() => setTicketOpen(true)}>
@@ -140,7 +153,13 @@ export default function HelpPage() {
             <CardBody>
               <div className="py-8 text-center text-[13px] text-fg-muted">
                 No articles match the current filters.{' '}
-                <button onClick={() => { setSearch(''); setCat('All'); }} className="text-accent hover:underline">
+                <button
+                  onClick={() => {
+                    setSearch('');
+                    setCat('All');
+                  }}
+                  className="text-accent hover:underline"
+                >
                   Reset filters
                 </button>
               </div>
@@ -150,7 +169,10 @@ export default function HelpPage() {
           <div className="space-y-4">
             {[...byCat.entries()].map(([catKey, articles]) => (
               <Card key={catKey}>
-                <CardHeader title={catKey} description={`${articles.length} article${articles.length === 1 ? '' : 's'}`} />
+                <CardHeader
+                  title={catKey}
+                  description={`${articles.length} article${articles.length === 1 ? '' : 's'}`}
+                />
                 <CardBody className="p-0">
                   <ul className="divide-y divide-border">
                     {articles.map((a) => (
@@ -192,7 +214,8 @@ export default function HelpPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-semibold text-fg">Ask EAZE AI</p>
                 <p className="text-[12px] text-fg-muted mt-0.5">
-                  An AI assistant trained on the EazePay docs, your account, and your recent applications. Most questions resolved without a ticket.
+                  An AI assistant trained on the EazePay docs, your account, and your recent
+                  applications. Most questions resolved without a ticket.
                 </p>
               </div>
               <Link
@@ -207,7 +230,13 @@ export default function HelpPage() {
       </PageBody>
 
       {ticketOpen && (
-        <TicketModal onClose={() => setTicketOpen(false)} onSubmit={() => { setTicketOpen(false); flash('Ticket #SUP-4812 created'); }} />
+        <TicketModal
+          onClose={() => setTicketOpen(false)}
+          onSubmit={() => {
+            setTicketOpen(false);
+            flash('Ticket #SUP-4812 created');
+          }}
+        />
       )}
 
       {toast && (
@@ -239,7 +268,9 @@ function ContactCard({
       className="text-left rounded-xl border border-border bg-bg-elevated px-4 py-3 hover:border-border-strong"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{title}</span>
+        <span className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">
+          {title}
+        </span>
         <span className="text-fg-muted">{icon}</span>
       </div>
       <p className="mt-1.5 text-[16px] font-semibold text-fg leading-none">{value}</p>
@@ -255,7 +286,12 @@ function TicketModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: () 
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close"
+      />
       <div className="relative w-full max-w-lg rounded-xl border border-border bg-bg-elevated shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <h2 className="text-[15px] font-semibold text-fg">Open a support ticket</h2>
@@ -305,10 +341,18 @@ function TicketModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: () 
             </select>
           </label>
           <div className="flex justify-end gap-2 pt-3 border-t border-border">
-            <button type="button" onClick={onClose} className="h-9 px-3 rounded-md border border-border text-[12px] text-fg-secondary hover:bg-bg-muted">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-9 px-3 rounded-md border border-border text-[12px] text-fg-secondary hover:bg-bg-muted"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={!subject.trim()} className="h-9 px-3 rounded-md bg-fg text-white text-[12px] font-semibold disabled:opacity-40">
+            <button
+              type="submit"
+              disabled={!subject.trim()}
+              className="h-9 px-3 rounded-md bg-fg text-white text-[12px] font-semibold disabled:opacity-40"
+            >
               Submit ticket
             </button>
           </div>

@@ -29,7 +29,10 @@ export const Banner: FC<BannerProps> = ({ intent, title, children, theme = 'ligh
   );
 };
 
-function paletteFor(intent: Intent, c: ReturnType<typeof colorsForTheme>): { bg: string; fg: string } {
+function paletteFor(
+  intent: Intent,
+  c: ReturnType<typeof colorsForTheme>,
+): { bg: string; fg: string } {
   switch (intent) {
     case 'info':
       return { bg: c.infoBg, fg: c.infoFg };

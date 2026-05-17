@@ -1,9 +1,4 @@
-import {
-  BoltIcon,
-  ChartIcon,
-  PackageIcon,
-  SparkIcon,
-} from '@eazepay/ui/web';
+import { BoltIcon, ChartIcon, PackageIcon, SparkIcon } from '@eazepay/ui/web';
 import { AgencyPickerPage } from '../../components/AgencyPickerPage';
 
 /** Marketing Consult — direct port of the Lovable `/marketing-consult`
@@ -53,7 +48,11 @@ export default function MarketingConsultPage() {
               name: 'Lead Juice',
               blurb:
                 'Specialized marketing for medical practices, med spas, dental offices, and healthcare providers. Lead Juice delivers patient acquisition strategies that drive real appointments.',
-              bullets: ['Patient lead generation', 'HIPAA-compliant campaigns', 'Med spa & dental marketing'],
+              bullets: [
+                'Patient lead generation',
+                'HIPAA-compliant campaigns',
+                'Med spa & dental marketing',
+              ],
               cta: 'Book a Call with Lead Juice',
             },
           ],
@@ -65,7 +64,11 @@ export default function MarketingConsultPage() {
               name: 'AMALA Agency',
               blurb:
                 'Growth marketing built for coaches, consultants, and course creators. AMALA Agency helps you build authority, fill programs, and scale your coaching business.',
-              bullets: ['Coaching funnel builds', 'Social media strategy', 'Program launch campaigns'],
+              bullets: [
+                'Coaching funnel builds',
+                'Social media strategy',
+                'Program launch campaigns',
+              ],
               cta: 'Book a Call with AMALA Agency',
             },
           ],

@@ -1,7 +1,7 @@
 name: Bug report
 description: A defect in code, infrastructure, or behavior. Not for security or production-down.
-title: "[bug] <one-line summary>"
-labels: ["bug", "triage"]
+title: '[bug] <one-line summary>'
+labels: ['bug', 'triage']
 body:
   - type: markdown
     attributes:

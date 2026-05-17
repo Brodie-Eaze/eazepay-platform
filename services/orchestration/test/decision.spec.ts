@@ -26,9 +26,9 @@ describe('DecisionService — knockouts + affordability', () => {
   });
 
   it('knocks out terms outside program range', () => {
-    expect(
-      svc.evaluate({ requestedAmountCents: 100_000n, termMonths: 1 }).reasonCodes,
-    ).toContain(REASON_CODES.termOutOfRange);
+    expect(svc.evaluate({ requestedAmountCents: 100_000n, termMonths: 1 }).reasonCodes).toContain(
+      REASON_CODES.termOutOfRange,
+    );
     expect(
       svc.evaluate({
         requestedAmountCents: 100_000n,

@@ -2,11 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { aesGcmDecrypt, aesGcmEncrypt } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { KEY_MANAGER, type KeyManager } from '../ports/key-manager.port.js';
-import {
-  PII_SCHEMA_VERSION,
-  PiiV1Schema,
-  type PiiV1,
-} from '../pii.types.js';
+import { PII_SCHEMA_VERSION, PiiV1Schema, type PiiV1 } from '../pii.types.js';
 
 export interface SealedPii {
   ciphertext: Buffer;
@@ -144,10 +140,7 @@ export class PiiVaultService {
    * the SAME id when persisting the row, otherwise the auth-tag check
    * on the next read will fail closed.
    */
-  async sealForBo(
-    beneficialOwnerId: string,
-    pii: PiiV1,
-  ): Promise<SealedPii> {
+  async sealForBo(beneficialOwnerId: string, pii: PiiV1): Promise<SealedPii> {
     const validated = PiiV1Schema.parse(pii);
     const key = await this.km.generateDataKey();
     try {
@@ -272,14 +265,9 @@ export class PiiVaultService {
    * That is the load-bearing property — it's what stops a row-level swap
    * from succeeding even when both rows belong to the same merchant.
    */
-  async openOpaque(
-    envelopeB64: string,
-    aadContext: Record<string, string>,
-  ): Promise<Buffer> {
+  async openOpaque(envelopeB64: string, aadContext: Record<string, string>): Promise<Buffer> {
     const aad = this.opaqueAad(aadContext);
-    const parsed = JSON.parse(
-      Buffer.from(envelopeB64, 'base64').toString('utf8'),
-    ) as {
+    const parsed = JSON.parse(Buffer.from(envelopeB64, 'base64').toString('utf8')) as {
       v: number;
       ct: string;
       n: string;

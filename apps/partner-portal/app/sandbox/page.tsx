@@ -37,17 +37,54 @@ export default function SandboxPage() {
       <PageBody>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <Card>
-            <CardHeader title="Generate a test application" description="Use these IDs to drive deterministic outcomes." />
+            <CardHeader
+              title="Generate a test application"
+              description="Use these IDs to drive deterministic outcomes."
+            />
             <CardBody className="space-y-3">
-              <DataRow label="Approve, prime profile" value={<span className="font-mono text-[12px]">applicant_test_prime_001</span>} />
-              <DataRow label="Approve with counter-offer" value={<span className="font-mono text-[12px]">applicant_test_counter_002</span>} />
-              <DataRow label="Decline — DTI" value={<span className="font-mono text-[12px]">applicant_test_decline_dti_003</span>} />
-              <DataRow label="Decline — FICO floor" value={<span className="font-mono text-[12px]">applicant_test_decline_fico_004</span>} />
-              <DataRow label="Ineligible — state coverage" value={<span className="font-mono text-[12px]">applicant_test_ineligible_state_005</span>} />
-              <DataRow label="Timeout — circuit breaker" value={<span className="font-mono text-[12px]">applicant_test_timeout_006</span>} />
+              <DataRow
+                label="Approve, prime profile"
+                value={<span className="font-mono text-[12px]">applicant_test_prime_001</span>}
+              />
+              <DataRow
+                label="Approve with counter-offer"
+                value={<span className="font-mono text-[12px]">applicant_test_counter_002</span>}
+              />
+              <DataRow
+                label="Decline — DTI"
+                value={
+                  <span className="font-mono text-[12px]">applicant_test_decline_dti_003</span>
+                }
+              />
+              <DataRow
+                label="Decline — FICO floor"
+                value={
+                  <span className="font-mono text-[12px]">applicant_test_decline_fico_004</span>
+                }
+              />
+              <DataRow
+                label="Ineligible — state coverage"
+                value={
+                  <span className="font-mono text-[12px]">applicant_test_ineligible_state_005</span>
+                }
+              />
+              <DataRow
+                label="Timeout — circuit breaker"
+                value={<span className="font-mono text-[12px]">applicant_test_timeout_006</span>}
+              />
               <div className="pt-2 flex gap-2">
-                <Button leadingIcon={<BoltIcon size={14} />} onClick={() => flash('Running 6 sandbox scenarios — check the webhook log')}>Run all 6 scenarios</Button>
-                <Button variant="ghost" onClick={() => flash('20 synthetic webhook deliveries queued')}>Generate webhook traffic</Button>
+                <Button
+                  leadingIcon={<BoltIcon size={14} />}
+                  onClick={() => flash('Running 6 sandbox scenarios — check the webhook log')}
+                >
+                  Run all 6 scenarios
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => flash('20 synthetic webhook deliveries queued')}
+                >
+                  Generate webhook traffic
+                </Button>
               </div>
             </CardBody>
           </Card>
@@ -81,16 +118,26 @@ curl -X POST https://sandbox.eazepay.com/v1/partner/applications/{id}/respond \\
           </Card>
 
           <Card className="xl:col-span-2">
-            <CardHeader title="Replay any production decision in sandbox" description="Mirror your audit chain without touching real data. Useful for postmortem + regression tests." />
+            <CardHeader
+              title="Replay any production decision in sandbox"
+              description="Mirror your audit chain without touching real data. Useful for postmortem + regression tests."
+            />
             <CardBody className="space-y-2">
               <Banner intent="success">
-                When you replay a production decision into sandbox, EazePay seeds the synthetic applicant
-                with the same masked inputs that fed the original decision and routes through the same
-                policy version. You get a bit-for-bit reproducible decision pack.
+                When you replay a production decision into sandbox, EazePay seeds the synthetic
+                applicant with the same masked inputs that fed the original decision and routes
+                through the same policy version. You get a bit-for-bit reproducible decision pack.
               </Banner>
               <div className="flex gap-2 pt-1">
-                <Button trailingIcon={<ArrowRightIcon size={14} />} onClick={() => flash('Pick a production decision from the audit log to replay')}>Replay a recent decision</Button>
-                <Button variant="ghost" onClick={() => flash('Opening replay guide at /docs')}>Read the replay guide</Button>
+                <Button
+                  trailingIcon={<ArrowRightIcon size={14} />}
+                  onClick={() => flash('Pick a production decision from the audit log to replay')}
+                >
+                  Replay a recent decision
+                </Button>
+                <Button variant="ghost" onClick={() => flash('Opening replay guide at /docs')}>
+                  Read the replay guide
+                </Button>
               </div>
             </CardBody>
           </Card>

@@ -68,10 +68,7 @@ export async function POST(req: NextRequest, ctx: { params: { lenderId: string }
   // no signature headers at all — is rejected the same as 'invalid' /
   // 'missing'. Without this gate, an unauthenticated caller can hit
   // this endpoint and receive a real offer payload.
-  const sigReject = requireSignatureCheck(
-    sigCheck,
-    `/api/v1/lenders/${ctx.params.lenderId}/quote`,
-  );
+  const sigReject = requireSignatureCheck(sigCheck, `/api/v1/lenders/${ctx.params.lenderId}/quote`);
   if (sigReject) {
     return problem(sigReject);
   }

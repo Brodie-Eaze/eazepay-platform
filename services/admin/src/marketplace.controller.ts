@@ -16,7 +16,7 @@ import { Idempotent } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { MarketplaceService } from './marketplace.service.js';
+import type { MarketplaceService } from './marketplace.service.js';
 
 const CreditTierEnum = z.enum(['prime_plus', 'prime', 'near_prime', 'sub_prime', 'no_match']);
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay', 'direct']);
@@ -37,10 +37,7 @@ const UpdateLenderSchema = z
     servesTiers: z.array(CreditTierEnum).optional(),
     brands: z.array(BrandEnum).optional(),
     minScore: z.number().int().min(300).max(900).nullable().optional(),
-    permittedStates: z
-      .array(z.string().length(2).toUpperCase())
-      .max(56)
-      .optional(),
+    permittedStates: z.array(z.string().length(2).toUpperCase()).max(56).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, {
     message: 'at least one field is required',
@@ -148,10 +145,7 @@ export class MarketplaceController {
     summary:
       'Upsert a per-partner lender access override. Pass `{enabled:true|false}` to force, or `{inherit:true}` to fall back to the global value.',
   })
-  setAccess(
-    @CurrentUser() adminUserId: UserId,
-    @Body() dto: SetAccessDto,
-  ): Promise<unknown> {
+  setAccess(@CurrentUser() adminUserId: UserId, @Body() dto: SetAccessDto): Promise<unknown> {
     return this.marketplace.setPartnerAccess(adminUserId, {
       merchantId: dto.merchantId,
       marketplaceLenderId: dto.marketplaceLenderId,

@@ -1,9 +1,4 @@
-import {
-  UsersIcon,
-  ChartIcon,
-  PackageIcon,
-  SparkIcon,
-} from '@eazepay/ui/web';
+import { UsersIcon, ChartIcon, PackageIcon, SparkIcon } from '@eazepay/ui/web';
 import { AgencyPickerPage } from '../../components/AgencyPickerPage';
 
 /** Sales Recruitment — direct port of Lovable's `/sales-recruitment`.
@@ -24,12 +19,14 @@ export default function SalesRecruitmentPage() {
         {
           icon: <UsersIcon size={18} />,
           title: 'Talent Sourcing',
-          description: 'Access a vetted pipeline of experienced sales professionals in financial services',
+          description:
+            'Access a vetted pipeline of experienced sales professionals in financial services',
         },
         {
           icon: <ChartIcon size={18} />,
           title: 'Performance Matching',
-          description: 'Data-driven matching to find reps who fit your product, market, and culture',
+          description:
+            'Data-driven matching to find reps who fit your product, market, and culture',
         },
         {
           icon: <SparkIcon size={18} />,
@@ -52,7 +49,11 @@ export default function SalesRecruitmentPage() {
               name: 'She Sells',
               blurb:
                 'Women-led sales recruitment specializing in medical and healthcare sales teams. Build a powerhouse team that understands patient financing.',
-              bullets: ['Medical sales specialists', 'Healthcare industry focus', 'High-performance closers'],
+              bullets: [
+                'Medical sales specialists',
+                'Healthcare industry focus',
+                'High-performance closers',
+              ],
               cta: 'Book a Call with She Sells',
             },
             {
@@ -71,7 +72,11 @@ export default function SalesRecruitmentPage() {
               name: 'Impact',
               blurb:
                 'Recruitment agency focused on high-ticket coaching and consulting sales teams. Find closers who understand transformation-based selling.',
-              bullets: ['High-ticket sales closers', 'Coaching industry expertise', 'Setter & closer teams'],
+              bullets: [
+                'High-ticket sales closers',
+                'Coaching industry expertise',
+                'Setter & closer teams',
+              ],
               cta: 'Book a Call with Impact',
             },
             {

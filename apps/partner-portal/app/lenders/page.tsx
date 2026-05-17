@@ -26,9 +26,7 @@ import { SAMPLE_LENDERS } from '../../lib/api-v1/shared';
  */
 
 const fmtAmount = (cents: number) =>
-  cents >= 100_000_00
-    ? `$${Math.round(cents / 100_000) / 10}M`
-    : `$${Math.round(cents / 1000)}k`;
+  cents >= 100_000_00 ? `$${Math.round(cents / 100_000) / 10}M` : `$${Math.round(cents / 1000)}k`;
 
 const fmtApr = (bps: { min: number; max: number }) =>
   `${(bps.min / 100).toFixed(1)}% – ${(bps.max / 100).toFixed(1)}% APR`;
@@ -57,7 +55,7 @@ const ENDPOINTS = [
   {
     method: 'POST',
     path: '/api/v1/lenders/{lender_id}/quote',
-    summary: "Reference shape of the request EazePay POSTs to your adapter.",
+    summary: 'Reference shape of the request EazePay POSTs to your adapter.',
   },
   {
     method: 'POST',
@@ -84,10 +82,18 @@ export default function PublicLenderHubPage() {
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-gray-700">
-            <a href="#lenders" className="hover:text-gray-900">Lenders</a>
-            <a href="#how" className="hover:text-gray-900">How routing works</a>
-            <a href="#endpoints" className="hover:text-gray-900">API endpoints</a>
-            <Link href="/docs" className="hover:text-gray-900">Full docs</Link>
+            <a href="#lenders" className="hover:text-gray-900">
+              Lenders
+            </a>
+            <a href="#how" className="hover:text-gray-900">
+              How routing works
+            </a>
+            <a href="#endpoints" className="hover:text-gray-900">
+              API endpoints
+            </a>
+            <Link href="/docs" className="hover:text-gray-900">
+              Full docs
+            </Link>
           </nav>
           <Link
             href="/docs"
@@ -104,8 +110,7 @@ export default function PublicLenderHubPage() {
         <div
           className="absolute inset-0 -z-10"
           style={{
-            background:
-              'radial-gradient(ellipse at top, #eef2ff 0%, #ffffff 60%, #f8fafc 100%)',
+            background: 'radial-gradient(ellipse at top, #eef2ff 0%, #ffffff 60%, #f8fafc 100%)',
           }}
         />
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20 text-center">
@@ -114,8 +119,7 @@ export default function PublicLenderHubPage() {
             Open for new lender adapters
           </span>
           <h1 className="mt-5 text-[44px] md:text-[58px] font-bold tracking-tight leading-[1.05] text-[#0d1530] max-w-3xl mx-auto">
-            Plug into a multi-brand{' '}
-            <span style={{ color: '#5d8bff' }}>orchestration rail</span>.
+            Plug into a multi-brand <span style={{ color: '#5d8bff' }}>orchestration rail</span>.
           </h1>
           <p className="mt-5 text-[15px] md:text-[16px] text-gray-600 max-w-2xl mx-auto leading-relaxed">
             EazePay routes every soft-pull-qualified application to every eligible lender adapter,
@@ -389,9 +393,21 @@ curl -s https://api.eazepay.com/api/v1/orchestration/route \\
       <section className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
           {[
-            { i: <ShieldIcon size={18} />, t: 'Audit-grade', s: 'Append-only hash-chained audit log on every decision.' },
-            { i: <ChartIcon size={18} />, t: 'Fair-lending', s: 'Quarterly disparate-impact + equalised-odds review.' },
-            { i: <BankIcon size={18} />, t: 'Bank-partner', s: 'Lender-of-record carried structurally on every Loan.' },
+            {
+              i: <ShieldIcon size={18} />,
+              t: 'Audit-grade',
+              s: 'Append-only hash-chained audit log on every decision.',
+            },
+            {
+              i: <ChartIcon size={18} />,
+              t: 'Fair-lending',
+              s: 'Quarterly disparate-impact + equalised-odds review.',
+            },
+            {
+              i: <BankIcon size={18} />,
+              t: 'Bank-partner',
+              s: 'Lender-of-record carried structurally on every Loan.',
+            },
           ].map((c) => (
             <div key={c.t}>
               <span
@@ -401,7 +417,9 @@ curl -s https://api.eazepay.com/api/v1/orchestration/route \\
                 {c.i}
               </span>
               <h3 className="mt-3 text-[14px] font-bold text-[#0d1530]">{c.t}</h3>
-              <p className="mt-1 text-[12px] text-gray-600 leading-relaxed max-w-xs mx-auto">{c.s}</p>
+              <p className="mt-1 text-[12px] text-gray-600 leading-relaxed max-w-xs mx-auto">
+                {c.s}
+              </p>
             </div>
           ))}
         </div>

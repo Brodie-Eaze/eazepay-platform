@@ -14,6 +14,7 @@ Lovable preview) calls. Every route lives at `${NEXT_PUBLIC_API_URL}/v1`
   BFF — frontend should treat any 401 as "force re-login".
 
 CORS allowlist:
+
 - Exact: `CORS_ORIGINS` (defaults to `localhost:3001..3004`).
 - Pattern: `CORS_ORIGIN_PATTERNS` (defaults to `*.lovable.app` and
   `*.lovableproject.com`).
@@ -37,13 +38,13 @@ are human prose.
 
 ## Authentication
 
-| Method | Path | Body | Notes |
-|---|---|---|---|
-| POST | `/v1/auth/register` | `RegisterDto` | Public. Returns `{ userId, challenge }`. |
-| POST | `/v1/auth/login` | `{ identifier, password, remember? }` | Public. Returns `{ mfaRequired, challenge }`. |
-| POST | `/v1/auth/verify-otp` | `{ challengeId, code, deviceId }` | Public. Returns `{ tokens, sessionId }`. |
-| POST | `/v1/auth/refresh` | `{ refreshToken, deviceId }` | Public. Rotates session, returns new tokens. |
-| POST | `/v1/auth/logout` | – | **Authenticated.** Revokes the caller's session. 204 on success. |
+| Method | Path                  | Body                                  | Notes                                                            |
+| ------ | --------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| POST   | `/v1/auth/register`   | `RegisterDto`                         | Public. Returns `{ userId, challenge }`.                         |
+| POST   | `/v1/auth/login`      | `{ identifier, password, remember? }` | Public. Returns `{ mfaRequired, challenge }`.                    |
+| POST   | `/v1/auth/verify-otp` | `{ challengeId, code, deviceId }`     | Public. Returns `{ tokens, sessionId }`.                         |
+| POST   | `/v1/auth/refresh`    | `{ refreshToken, deviceId }`          | Public. Rotates session, returns new tokens.                     |
+| POST   | `/v1/auth/logout`     | –                                     | **Authenticated.** Revokes the caller's session. 204 on success. |
 
 The partner portal's `/api/auth/logout` route handler should call this
 endpoint and clear the three cookies (`eazepay_at`, `eazepay_rt`,
@@ -185,7 +186,7 @@ Returns one row per `MarketplaceLender` for the given merchant:
     "lender": {
       "legalName": "Foo Financial",
       "displayName": "Foo Financial",
-      "servesTiers": ["prime","near_prime"]
+      "servesTiers": ["prime", "near_prime"]
     }
   }
 ]
@@ -242,6 +243,7 @@ Response: 200 { "ok": true, "snapshotId": "uuid", "creditTier": "..." }
 ```
 
 Effects:
+
 1. Upsert `HighsaleSnapshot` by `highsaleRef` (idempotent on replay).
 2. Denormalise `creditTier` onto `Application.creditTier`.
 3. Append `highsale.snapshot.scored` to `AuditOutbox` (hash-chained).
@@ -254,12 +256,12 @@ serve traffic without `HIGHSALE_WEBHOOK_SECRET` set).
 
 ## Environment variables (BFF-relevant)
 
-| Var | Required | Default | Notes |
-|---|---|---|---|
-| `CORS_ORIGINS` | no | `localhost:3001..3004` | comma-separated exact origins |
-| `CORS_ORIGIN_PATTERNS` | no | `^https://.*\.lovable\.app$,^https://.*\.lovableproject\.com$` | comma-separated regex |
-| `HIGHSALE_WEBHOOK_SECRET` | yes for receiver | – | min 16 chars; required to serve `/v1/webhooks/highsale` |
-| `NEXT_PUBLIC_API_URL` | yes (frontend) | `http://localhost:3300` | absolute base URL for the API |
+| Var                       | Required         | Default                                                        | Notes                                                   |
+| ------------------------- | ---------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| `CORS_ORIGINS`            | no               | `localhost:3001..3004`                                         | comma-separated exact origins                           |
+| `CORS_ORIGIN_PATTERNS`    | no               | `^https://.*\.lovable\.app$,^https://.*\.lovableproject\.com$` | comma-separated regex                                   |
+| `HIGHSALE_WEBHOOK_SECRET` | yes for receiver | –                                                              | min 16 chars; required to serve `/v1/webhooks/highsale` |
+| `NEXT_PUBLIC_API_URL`     | yes (frontend)   | `http://localhost:3300`                                        | absolute base URL for the API                           |
 
 ---
 

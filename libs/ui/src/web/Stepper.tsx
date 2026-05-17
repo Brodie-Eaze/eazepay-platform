@@ -36,10 +36,7 @@ export const Stepper: FC<{
             </div>
             {i < items.length - 1 && (
               <div
-                className={cn(
-                  'h-7 w-px mt-1 hidden md:hidden',
-                  isDone ? 'bg-accent' : 'bg-border',
-                )}
+                className={cn('h-7 w-px mt-1 hidden md:hidden', isDone ? 'bg-accent' : 'bg-border')}
               />
             )}
           </div>
@@ -53,7 +50,9 @@ export const Stepper: FC<{
               {item.label}
             </div>
             {item.description && (
-              <div className="text-[12px] text-fg-muted mt-0.5 leading-snug">{item.description}</div>
+              <div className="text-[12px] text-fg-muted mt-0.5 leading-snug">
+                {item.description}
+              </div>
             )}
           </div>
           {i < items.length - 1 && (

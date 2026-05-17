@@ -12,16 +12,17 @@ import type { StepProps } from './state';
  *   • Volume & ticket expectations — drives underwriting / risk bands.
  */
 export default function StepFinancialProfile({ state, setState, errors }: StepProps) {
-  const set = (k: keyof typeof state) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setState((s) => ({ ...s, [k]: e.target.value }));
+  const set =
+    (k: keyof typeof state) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setState((s) => ({ ...s, [k]: e.target.value }));
 
   return (
     <div className="space-y-8">
       <section>
         <h2 className="text-[15px] font-semibold text-fg mb-3">Settlement bank account</h2>
         <p className="text-[12px] text-fg-muted mb-4">
-          Where we'll send your funded volume. Routing + account are encrypted and never
-          surfaced in plaintext after submission.
+          Where we'll send your funded volume. Routing + account are encrypted and never surfaced in
+          plaintext after submission.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Bank name" required error={errors['bankName']}>
@@ -38,7 +39,12 @@ export default function StepFinancialProfile({ state, setState, errors }: StepPr
               <option value="savings">Savings</option>
             </SelectInput>
           </Field>
-          <Field label="ABA routing number" required error={errors['routingNumber']} hint="9 digits">
+          <Field
+            label="ABA routing number"
+            required
+            error={errors['routingNumber']}
+            hint="9 digits"
+          >
             <TextInput
               placeholder="123456789"
               value={state.routingNumber}

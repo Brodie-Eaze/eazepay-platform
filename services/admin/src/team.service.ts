@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient, type PlatformRole, type UserStatus } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { type PlatformRole, type UserStatus } from '@prisma/client';
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
@@ -156,8 +157,7 @@ export class TeamService {
         // change platformRole or isAdmin here; only refresh the invite
         // metadata so the operator can see the latest invite event. If
         // the operator wants to CHANGE the role, they use update().
-        const isExistingStaff =
-          existing.platformRole != null && existing.status !== 'closed';
+        const isExistingStaff = existing.platformRole != null && existing.status !== 'closed';
 
         if (!isExistingStaff) {
           // Case B: existing row is a consumer OR a closed/removed account.
@@ -187,7 +187,7 @@ export class TeamService {
           throw Conflict({
             code: 'user_already_exists',
             detail:
-              'A user account already exists for this email. Use the team update flow to change an existing staff member\'s role, or contact the user out-of-band before granting staff access.',
+              "A user account already exists for this email. Use the team update flow to change an existing staff member's role, or contact the user out-of-band before granting staff access.",
           });
         }
 
@@ -375,7 +375,10 @@ export class TeamService {
    * row recorded. We never `DELETE` here — regulators expect a
    * recoverable lineage of "who had access when".
    */
-  async remove(actorUserId: UserId, targetUserId: string): Promise<{ id: string; status: 'closed' }> {
+  async remove(
+    actorUserId: UserId,
+    targetUserId: string,
+  ): Promise<{ id: string; status: 'closed' }> {
     if (targetUserId === actorUserId) {
       throw Conflict({ code: 'cannot_remove_self' });
     }

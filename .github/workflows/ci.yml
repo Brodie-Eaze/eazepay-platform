@@ -59,6 +59,13 @@ jobs:
     name: Security scans
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # gitleaks-action calls /repos/.../pulls/<n>/commits to scope the
+    # PR scan to commits in this PR. That endpoint needs an explicit
+    # pull-requests:read permission on PR runs; without it the action
+    # hard-fails before the secret scan even runs.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:

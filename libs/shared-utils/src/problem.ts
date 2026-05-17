@@ -23,9 +23,7 @@ export class ProblemError extends Error {
 
 const make =
   (status: number, defaultCode: string, defaultTitle: string, type: string) =>
-  (
-    overrides: Partial<Omit<Problem, 'status' | 'type'>> = {},
-  ): ProblemError =>
+  (overrides: Partial<Omit<Problem, 'status' | 'type'>> = {}): ProblemError =>
     new ProblemError({
       type,
       status,
@@ -47,10 +45,5 @@ export const UnprocessableEntity = make(
   'Unprocessable Entity',
   'about:blank',
 );
-export const TooManyRequests = make(
-  429,
-  'too_many_requests',
-  'Too Many Requests',
-  'about:blank',
-);
+export const TooManyRequests = make(429, 'too_many_requests', 'Too Many Requests', 'about:blank');
 export const InternalError = make(500, 'internal_error', 'Internal Server Error', 'about:blank');

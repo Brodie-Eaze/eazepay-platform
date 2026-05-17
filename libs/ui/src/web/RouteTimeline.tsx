@@ -39,7 +39,10 @@ const outcomeToTone = (o: RouteStep['outcome']): { tone: StatusTone; label: stri
   }
 };
 
-export const RouteTimeline: FC<{ steps: RouteStep[]; className?: string }> = ({ steps, className }) => (
+export const RouteTimeline: FC<{ steps: RouteStep[]; className?: string }> = ({
+  steps,
+  className,
+}) => (
   <div className={cn('relative pl-6', className)}>
     <div className="absolute left-[10px] top-1 bottom-1 w-px bg-border" />
     {steps.map((s, i) => {

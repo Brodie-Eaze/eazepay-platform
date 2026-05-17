@@ -31,7 +31,12 @@ export const CodeBlock: FC<{
   const lines = children.split('\n');
 
   return (
-    <div className={cn('rounded-lg border border-border bg-[rgb(11,13,18)] overflow-hidden text-[13px] font-mono', className)}>
+    <div
+      className={cn(
+        'rounded-lg border border-border bg-[rgb(11,13,18)] overflow-hidden text-[13px] font-mono',
+        className,
+      )}
+    >
       {(filename || language) && (
         <div className="flex items-center justify-between border-b border-white/10 px-4 py-2 text-[12px] text-white/60">
           <span>{filename ?? language}</span>
@@ -67,8 +72,16 @@ export const CodeBlock: FC<{
 };
 
 /** Inline code snippet, e.g. variable names in prose. */
-export const InlineCode: FC<{ children: ReactNode; className?: string }> = ({ children, className }) => (
-  <code className={cn('font-mono text-[12.5px] bg-bg-muted text-fg-secondary px-1.5 py-0.5 rounded', className)}>
+export const InlineCode: FC<{ children: ReactNode; className?: string }> = ({
+  children,
+  className,
+}) => (
+  <code
+    className={cn(
+      'font-mono text-[12.5px] bg-bg-muted text-fg-secondary px-1.5 py-0.5 rounded',
+      className,
+    )}
+  >
     {children}
   </code>
 );

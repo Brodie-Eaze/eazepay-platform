@@ -37,7 +37,13 @@ import StepReview from './step-review';
  * sticky footer with Back / Continue actions.
  */
 
-const STEP_ORDER: StepKey[] = ['industry', 'business_info', 'business_details', 'financial_profile', 'review'];
+const STEP_ORDER: StepKey[] = [
+  'industry',
+  'business_info',
+  'business_details',
+  'financial_profile',
+  'review',
+];
 
 const STEP_LABEL: Record<StepKey, string> = {
   industry: 'Industry',
@@ -102,7 +108,8 @@ export default function WelcomePage() {
         if (!o.title.trim()) e[`owner_${i}_title`] = 'Required';
         if (!o.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e[`owner_${i}_email`] = 'Invalid email';
       });
-      if (!state.yearsInBusiness || Number(state.yearsInBusiness) < 0) e['yearsInBusiness'] = 'Required';
+      if (!state.yearsInBusiness || Number(state.yearsInBusiness) < 0)
+        e['yearsInBusiness'] = 'Required';
     }
     if (stepKey === 'financial_profile') {
       if (!state.bankName.trim()) e['bankName'] = 'Required';
@@ -206,8 +213,11 @@ export default function WelcomePage() {
                 </span>
                 <span
                   className={
-                    (active ? 'text-fg font-semibold' : done ? 'text-fg-secondary' : 'text-fg-muted') +
-                    ' whitespace-nowrap'
+                    (active
+                      ? 'text-fg font-semibold'
+                      : done
+                        ? 'text-fg-secondary'
+                        : 'text-fg-muted') + ' whitespace-nowrap'
                   }
                 >
                   {STEP_LABEL[k]}
@@ -243,9 +253,7 @@ export default function WelcomePage() {
           {stepKey === 'financial_profile' && (
             <StepFinancialProfile state={state} setState={setState} errors={errors} />
           )}
-          {stepKey === 'review' && (
-            <StepReview state={state} setState={setState} errors={errors} />
-          )}
+          {stepKey === 'review' && <StepReview state={state} setState={setState} errors={errors} />}
         </div>
 
         {submitError && (

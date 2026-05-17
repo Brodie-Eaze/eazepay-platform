@@ -5,7 +5,13 @@
   "projectType": "application",
   "tags": ["scope:app", "type:webhook-receiver"],
   "targets": {
-    "build": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/webhooks-app build" } },
-    "dev": { "executor": "nx:run-commands", "options": { "command": "pnpm --filter @eazepay/webhooks-app dev" } }
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/webhooks-app build" }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/webhooks-app dev" }
+    }
   }
 }

@@ -25,7 +25,7 @@ export default function VerifyOtpScreen({ route, navigation }: Props) {
     } catch (err) {
       Alert.alert(
         'Verification failed',
-        err instanceof ApiError ? err.problem.detail ?? err.problem.title : String(err),
+        err instanceof ApiError ? (err.problem.detail ?? err.problem.title) : String(err),
       );
     } finally {
       setSubmitting(false);
@@ -53,7 +53,12 @@ export default function VerifyOtpScreen({ route, navigation }: Props) {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: lightColors.bgDefault, padding: spacing.xxl },
-  h2: { fontSize: fontSizes.h3, fontWeight: '700', color: lightColors.textPrimary, marginTop: spacing.xxl },
+  h2: {
+    fontSize: fontSizes.h3,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+    marginTop: spacing.xxl,
+  },
   helper: { color: lightColors.textSecondary, marginTop: spacing.sm, marginBottom: spacing.xl },
   code: {
     height: 64,
@@ -66,7 +71,14 @@ const s = StyleSheet.create({
     color: lightColors.textPrimary,
     textAlign: 'center',
   },
-  btn: { backgroundColor: lightColors.accentDefault, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: spacing.xl },
+  btn: {
+    backgroundColor: lightColors.accentDefault,
+    height: 52,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+  },
   btnText: { color: lightColors.textOnAccent, fontWeight: '600', fontSize: fontSizes.body },
   disabled: { opacity: 0.6 },
 });

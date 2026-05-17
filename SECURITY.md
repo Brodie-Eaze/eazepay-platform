@@ -34,15 +34,15 @@ only.
 
 Detailed model: [`docs/security/threat-model.md`](docs/security/threat-model.md).
 
-| Asset class | Sensitivity | Primary control |
-|---|---|---|
-| Consumer NPI (SSN, DOB, address, financial accounts) | **Restricted** | Envelope encryption (KMS-wrapped data keys) + deterministic SIV for searchable fields + JIT unmask with dual control |
-| Authentication credentials | **Restricted** | Argon2id at rest, never logged, rotated on suspect signals |
-| Loan agreements, bureau reports, IDV images | **Restricted** | Object Lock + KMS + retention-tagged S3 |
-| Decision artefacts (input snapshot + policy version) | **Confidential** | Hash-chained append-only audit log to S3 Object Lock + DynamoDB |
-| Merchant / partner business data | **Confidential** | Tenant-scoped row filters; never cross-leaked in webhooks or BFF reads |
-| Application telemetry (no PII) | **Internal** | OpenTelemetry → SIEM, PII redaction at the logger |
-| Public marketing surfaces | **Public** | Standard web hygiene |
+| Asset class                                          | Sensitivity      | Primary control                                                                                                      |
+| ---------------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Consumer NPI (SSN, DOB, address, financial accounts) | **Restricted**   | Envelope encryption (KMS-wrapped data keys) + deterministic SIV for searchable fields + JIT unmask with dual control |
+| Authentication credentials                           | **Restricted**   | Argon2id at rest, never logged, rotated on suspect signals                                                           |
+| Loan agreements, bureau reports, IDV images          | **Restricted**   | Object Lock + KMS + retention-tagged S3                                                                              |
+| Decision artefacts (input snapshot + policy version) | **Confidential** | Hash-chained append-only audit log to S3 Object Lock + DynamoDB                                                      |
+| Merchant / partner business data                     | **Confidential** | Tenant-scoped row filters; never cross-leaked in webhooks or BFF reads                                               |
+| Application telemetry (no PII)                       | **Internal**     | OpenTelemetry → SIEM, PII redaction at the logger                                                                    |
+| Public marketing surfaces                            | **Public**       | Standard web hygiene                                                                                                 |
 
 ## Boundary security
 
@@ -124,14 +124,14 @@ Runbook: [`docs/runbooks/incident-response.md`](docs/runbooks/incident-response.
 Severity is set by impact (consumer NPI exposure, money movement, RTO
 breach) and notification clocks are:
 
-| Trigger | Audience | SLA |
-|---|---|---|
-| NPI confirmed exposed | Security officer + counsel + DPO | Immediate |
-| > 500 consumers impacted | FTC under GLBA Safeguards | 30 days |
-| NY consumer affected | NYDFS Part 500 | 72 hours |
-| State-by-state notification | Per state AG matrix | Statutory minimum |
-| Bank-partner notification | Per partner-bank agreement | Often 24 hours |
-| Postmortem to leadership | Internal | 14 days |
+| Trigger                     | Audience                         | SLA               |
+| --------------------------- | -------------------------------- | ----------------- |
+| NPI confirmed exposed       | Security officer + counsel + DPO | Immediate         |
+| > 500 consumers impacted    | FTC under GLBA Safeguards        | 30 days           |
+| NY consumer affected        | NYDFS Part 500                   | 72 hours          |
+| State-by-state notification | Per state AG matrix              | Statutory minimum |
+| Bank-partner notification   | Per partner-bank agreement       | Often 24 hours    |
+| Postmortem to leadership    | Internal                         | 14 days           |
 
 ## Vendor and supply-chain security
 

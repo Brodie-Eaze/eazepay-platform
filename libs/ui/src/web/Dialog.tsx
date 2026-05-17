@@ -77,7 +77,10 @@ export const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLD
 
 export const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2 pt-2', className)}
+    className={cn(
+      'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2 pt-2',
+      className,
+    )}
     {...props}
   />
 );
@@ -106,6 +109,10 @@ export const DialogDescription = forwardRef<
 ));
 DialogDescription.displayName = 'DialogDescription';
 
-export const DialogBody = ({ children, className }: { children: ReactNode; className?: string }) => (
-  <div className={cn('text-[13px] text-fg-secondary', className)}>{children}</div>
-);
+export const DialogBody = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => <div className={cn('text-[13px] text-fg-secondary', className)}>{children}</div>;

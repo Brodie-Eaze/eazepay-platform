@@ -1,11 +1,9 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { DynamicModule, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import type { PrismaClient } from '@prisma/client';
 import { MerchantController } from './merchant.controller.js';
 import { MerchantService } from './merchant.service.js';
-import {
-  MERCHANT_REGISTRATION_REQUIRES_ADMIN,
-  PRISMA,
-} from './internal/tokens.js';
+import { MERCHANT_REGISTRATION_REQUIRES_ADMIN, PRISMA } from './internal/tokens.js';
 import { KYB_PROVIDER } from './ports/kyb-provider.port.js';
 import { MockKybAdapter } from './adapters/mock-kyb.adapter.js';
 
@@ -25,9 +23,7 @@ export class MerchantModule {
       useFactory: () => {
         if (options.kybProvider === 'mock') {
           if (!options.isDevelopment) {
-            throw new Error(
-              'MockKybAdapter is dev-only — wire Middesk/Alloy for non-development.',
-            );
+            throw new Error('MockKybAdapter is dev-only — wire Middesk/Alloy for non-development.');
           }
           return new MockKybAdapter();
         }

@@ -20,10 +20,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import {
-  applications,
-  type ApplicationRow,
-} from '../../../../../../../lib/master-data';
+import { applications, type ApplicationRow } from '../../../../../../../lib/master-data';
 import { findInviteByApplicationId } from '../../../../../../../lib/consumer-invites-store';
 import { marketplaceLenders } from '../../../../../../../lib/marketplace-data';
 
@@ -129,11 +126,7 @@ interface OfferOut {
   amount?: number;
 }
 
-function buildOffers(
-  applicationId: string,
-  stage: LiveStatus,
-  row?: ApplicationRow,
-): OfferOut[] {
+function buildOffers(applicationId: string, stage: LiveStatus, row?: ApplicationRow): OfferOut[] {
   /* Offers only start appearing once orchestration is running. */
   const stageIdx = STATUS_LADDER.indexOf(stage);
   if (stageIdx < STATUS_LADDER.indexOf('orchestration_running')) return [];
@@ -156,8 +149,7 @@ function buildOffers(
     const aprBp = 700 + ((seed + i * 137) % 1900); // 7.00% – 26.00%
     const termOptions = [24, 36, 48, 60, 72];
     const term = termOptions[(seed + i) % termOptions.length] ?? 48;
-    const amount =
-      (row?.amountCents ?? 1_500_000) - ((seed + i * 311) % 200_000);
+    const amount = (row?.amountCents ?? 1_500_000) - ((seed + i * 311) % 200_000);
 
     if (decision === 'pending') {
       return { lenderId, lenderName: name, decision };
@@ -182,10 +174,7 @@ interface TimelineEntry {
   detail: string;
 }
 
-function buildTimeline(
-  applicationId: string,
-  stage: LiveStatus,
-): TimelineEntry[] {
+function buildTimeline(applicationId: string, stage: LiveStatus): TimelineEntry[] {
   const stageIdx = STATUS_LADDER.indexOf(stage);
   const out: TimelineEntry[] = [];
   const baseSeed = hash(applicationId + '|timeline');
@@ -206,11 +195,7 @@ function buildTimeline(
   return out;
 }
 
-function detailFor(
-  stage: LiveStatus,
-  applicationId: string,
-  i: number,
-): string {
+function detailFor(stage: LiveStatus, applicationId: string, i: number): string {
   const seed = hash(applicationId + stage);
   const dt = `event-${(seed % 9999).toString().padStart(4, '0')}-${i}`;
   switch (stage) {

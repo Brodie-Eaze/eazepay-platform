@@ -4,10 +4,10 @@ Repo-level tooling. Two reserved sub-directories today; both are workspace membe
 
 ## Layout
 
-| Path | What goes here | Status |
-|---|---|---|
-| `generators/` | Nx code-generators for repeatable scaffolds (new service module, new web component, new ADR, new lender adapter) | Reserved — `.gitkeep` only |
-| `scripts/` | Repo maintenance scripts (one-off migrations, codemods, repo-wide audits, bulk-rename helpers, CI helpers that don't belong in a specific app) | Reserved — `.gitkeep` only |
+| Path          | What goes here                                                                                                                                 | Status                     |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `generators/` | Nx code-generators for repeatable scaffolds (new service module, new web component, new ADR, new lender adapter)                               | Reserved — `.gitkeep` only |
+| `scripts/`    | Repo maintenance scripts (one-off migrations, codemods, repo-wide audits, bulk-rename helpers, CI helpers that don't belong in a specific app) | Reserved — `.gitkeep` only |
 
 ## When to use what
 

@@ -323,6 +323,7 @@ const NAKED_ROUTES = [
   '/lenders', // public lender developer hub — prospective lenders, no sidebar
   '/landing', // per-vertical marketing landing pages — public, no sidebar
   '/invoices/confirm', // recipient confirm/dispute page — public, token-gated
+  '/accept', // team-invite accept landing — recipient may have no cookie
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {

@@ -76,8 +76,7 @@ export async function PATCH(
 
   let invite;
   if (parsed.data.event === 'started') invite = await markStarted(token);
-  else if (parsed.data.event === 'step_completed')
-    invite = await markStepCompleted(token);
+  else if (parsed.data.event === 'step_completed') invite = await markStepCompleted(token);
   else invite = await redeemConsumerInvite(token);
 
   if (!invite) {

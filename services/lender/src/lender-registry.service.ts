@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { NotFound } from '@eazepay/shared-utils';
 import { PRISMA } from './internal/tokens.js';
 import { LENDER_ADAPTERS, type LenderAdapter } from './ports/lender-adapter.port.js';
@@ -199,7 +199,10 @@ export class LenderRegistry implements OnModuleInit {
   }
 
   /** Returns DB rows for all enabled adapters whose DB Lender row is enabled. */
-  async listEnabled(category: string, residentState: string | null): Promise<
+  async listEnabled(
+    category: string,
+    residentState: string | null,
+  ): Promise<
     Array<{
       adapter: LenderAdapter;
       lenderId: string;
@@ -220,8 +223,10 @@ export class LenderRegistry implements OnModuleInit {
     });
     return products
       .filter((p) => this.byKey.has(p.lender.adapterKey))
-      .filter((p) =>
-        p.permittedStates.length === 0 || (residentState != null && p.permittedStates.includes(residentState)),
+      .filter(
+        (p) =>
+          p.permittedStates.length === 0 ||
+          (residentState != null && p.permittedStates.includes(residentState)),
       )
       .map((p) => ({
         adapter: this.byKey.get(p.lender.adapterKey)!,

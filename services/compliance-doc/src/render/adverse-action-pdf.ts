@@ -5,7 +5,7 @@ const FCRA_FREE_DISCLOSURE_BLOCK =
   'You have the right to obtain, within 60 days, a free copy of your consumer report from the consumer reporting agency identified above. The consumer reporting agency did not make the credit decision and cannot provide you with the specific reasons for the decision. You also have the right to dispute the accuracy or completeness of any information in your consumer report furnished by the consumer reporting agency.';
 
 const ECOA_NONDISCRIM_BLOCK =
-  'The Federal Equal Credit Opportunity Act prohibits creditors from discriminating against credit applicants on the basis of race, color, religion, national origin, sex, marital status, age (provided the applicant has the capacity to enter into a binding contract); because all or part of the applicant\'s income derives from any public assistance program; or because the applicant has in good faith exercised any right under the Consumer Credit Protection Act. The federal agency that administers compliance with this law concerning this creditor is the Consumer Financial Protection Bureau, 1700 G Street NW, Washington, DC 20552.';
+  "The Federal Equal Credit Opportunity Act prohibits creditors from discriminating against credit applicants on the basis of race, color, religion, national origin, sex, marital status, age (provided the applicant has the capacity to enter into a binding contract); because all or part of the applicant's income derives from any public assistance program; or because the applicant has in good faith exercised any right under the Consumer Credit Protection Act. The federal agency that administers compliance with this law concerning this creditor is the Consumer Financial Protection Bureau, 1700 G Street NW, Washington, DC 20552.";
 
 const COMPLAINT_BLOCK =
   'If you have a complaint about this decision or this notice, you can submit a complaint to the Consumer Financial Protection Bureau at consumerfinance.gov/complaint or by calling (855) 411-2372. You may also contact your state attorney general.';
@@ -19,9 +19,7 @@ const COMPLAINT_BLOCK =
  * legal scrutiny, not a marketing piece. No imagery, no tables; clear
  * blocks with the regulatory language verbatim.
  */
-export async function renderAdverseActionPdf(
-  content: AdverseActionNoticeContent,
-): Promise<Buffer> {
+export async function renderAdverseActionPdf(content: AdverseActionNoticeContent): Promise<Buffer> {
   const doc = new PDFDocument({
     size: 'LETTER',
     margins: { top: 54, bottom: 54, left: 54, right: 54 },
@@ -42,7 +40,9 @@ export async function renderAdverseActionPdf(
   doc.font('Helvetica').fontSize(9);
   doc.text(content.lenderOfRecord.addressLine1);
   if (content.lenderOfRecord.addressLine2) doc.text(content.lenderOfRecord.addressLine2);
-  doc.text(`${content.lenderOfRecord.city}, ${content.lenderOfRecord.state} ${content.lenderOfRecord.zip}`);
+  doc.text(
+    `${content.lenderOfRecord.city}, ${content.lenderOfRecord.state} ${content.lenderOfRecord.zip}`,
+  );
   if (content.lenderOfRecord.servicerLine) doc.text(content.lenderOfRecord.servicerLine);
 
   doc.moveDown(1);
@@ -62,15 +62,21 @@ export async function renderAdverseActionPdf(
 
   // Title.
   doc.moveDown(1.2);
-  doc.font('Helvetica-Bold').fontSize(14).text('Notice of Action Taken on Your Credit Application', {
-    align: 'left',
-  });
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(14)
+    .text('Notice of Action Taken on Your Credit Application', {
+      align: 'left',
+    });
 
   // Decision summary.
   doc.moveDown(0.6);
-  doc.font('Helvetica').fontSize(10).text(
-    `We have considered your recent application for ${content.application.categoryDisplay} financing in the amount of ${content.application.amountDisplay} for a term of ${content.application.termDisplay}. We are unable to approve your application at this time. The principal reasons for this action are:`,
-  );
+  doc
+    .font('Helvetica')
+    .fontSize(10)
+    .text(
+      `We have considered your recent application for ${content.application.categoryDisplay} financing in the amount of ${content.application.amountDisplay} for a term of ${content.application.termDisplay}. We are unable to approve your application at this time. The principal reasons for this action are:`,
+    );
 
   // Reasons list.
   doc.moveDown(0.5);
@@ -98,12 +104,8 @@ export async function renderAdverseActionPdf(
 
     if (b.score !== undefined && b.scoreRangeDisplay) {
       doc.moveDown(0.4);
-      doc
-        .font('Helvetica-Bold')
-        .text('Credit Score Disclosure');
-      doc
-        .font('Helvetica')
-        .text(`Your credit score: ${b.score} (range: ${b.scoreRangeDisplay})`);
+      doc.font('Helvetica-Bold').text('Credit Score Disclosure');
+      doc.font('Helvetica').text(`Your credit score: ${b.score} (range: ${b.scoreRangeDisplay})`);
       if (b.keyFactors?.length) {
         doc.text('Key factors that adversely affected your score:');
         for (const f of b.keyFactors) doc.text(`• ${f}`, { indent: 12 });
@@ -128,9 +130,12 @@ export async function renderAdverseActionPdf(
 
   // Footer — internal references (audit anchor for the printed copy).
   doc.moveDown(1.2);
-  doc.fontSize(8).fillColor('#555555').text(
-    `Reference: Application ${content.application.id} • Policy version ${content.policyVersion} • Generated ${content.generatedAt}`,
-  );
+  doc
+    .fontSize(8)
+    .fillColor('#555555')
+    .text(
+      `Reference: Application ${content.application.id} • Policy version ${content.policyVersion} • Generated ${content.generatedAt}`,
+    );
 
   doc.end();
   await finished;

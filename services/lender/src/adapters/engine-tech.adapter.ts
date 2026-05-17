@@ -73,9 +73,7 @@ export class EngineTechLenderAdapter implements LenderAdapter {
     const clientId = process.env.ENGINE_TECH_CLIENT_ID;
     const clientSecret = process.env.ENGINE_TECH_CLIENT_SECRET;
     if (!baseUrl || !clientId || !clientSecret) {
-      this.logger.warn(
-        'engine_tech adapter invoked but credentials missing — returning error',
-      );
+      this.logger.warn('engine_tech adapter invoked but credentials missing — returning error');
       throw new Error('engine_tech_adapter_pending_api_credentials');
     }
 

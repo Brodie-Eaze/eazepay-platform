@@ -23,13 +23,7 @@ export interface ESignDraftInput {
   metadata?: Record<string, string>;
 }
 
-export type ESignStatus =
-  | 'drafted'
-  | 'sent'
-  | 'signed'
-  | 'declined'
-  | 'expired'
-  | 'voided';
+export type ESignStatus = 'drafted' | 'sent' | 'signed' | 'declined' | 'expired' | 'voided';
 
 export interface ESignDraftResult {
   envelopeId: string;

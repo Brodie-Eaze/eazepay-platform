@@ -1,17 +1,9 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { CurrentUser } from '@eazepay/service-auth';
 import type { UserId } from '@eazepay/shared-types';
-import { NotificationService } from './notification.service.js';
+import type { NotificationService } from './notification.service.js';
 
 const ListQuerySchema = z.object({
   cursor: z.string().uuid().optional(),
@@ -30,10 +22,7 @@ export class NotificationController {
 
   @Get()
   @ApiOperation({ summary: 'List in-app notifications for the authenticated user' })
-  list(
-    @CurrentUser() userId: UserId,
-    @Query() query: Record<string, string>,
-  ): Promise<unknown> {
+  list(@CurrentUser() userId: UserId, @Query() query: Record<string, string>): Promise<unknown> {
     const parsed = ListQuerySchema.parse(query);
     return this.notifications.listInbox(userId, parsed);
   }

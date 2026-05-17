@@ -19,8 +19,9 @@ into the following sections, in this order:
 ## [Unreleased]
 
 ### Added
+
 - Master Command Centre with cross-vertical KPI grid, Monthly Submissions
-  + Funded Volume + Credit Insights charts, and Partner Leaderboard.
+  - Funded Volume + Credit Insights charts, and Partner Leaderboard.
 - Per-vertical Partner Portals at `/v/{tradepay,medpay,coachpay}` with
   brand-filtered Dashboard / Applications / Partners views and a back-link
   to the Command Centre.
@@ -54,6 +55,7 @@ into the following sections, in this order:
   plugging in lender API keys.
 
 ### Changed
+
 - Repository governance hardened for SOC 2 readiness: `SECURITY.md`,
   `CONTRIBUTING.md`, `LICENSE`, `CHANGELOG.md`, expanded ADR set, and
   controls mapping under `docs/soc2/`.
@@ -62,6 +64,7 @@ into the following sections, in this order:
   business actually operates.
 
 ### Security
+
 - Application-layer envelope encryption for all PII columns; per-row
   AAD; deterministic AES-SIV for searchable fields with a per-tenant
   pepper.

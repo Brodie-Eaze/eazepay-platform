@@ -59,7 +59,14 @@ export const Logo: FC<{ size?: number; variant?: 'full' | 'mark'; className?: st
           strokeLinejoin="round"
         />
         <defs>
-          <linearGradient id="eazepay-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="eazepay-grad"
+            x1="0"
+            y1="0"
+            x2="32"
+            y2="32"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop stopColor="rgb(var(--accent))" />
             <stop offset="1" stopColor="rgb(var(--chart-6))" />
           </linearGradient>

@@ -173,23 +173,113 @@ export const queueKpis = {
 };
 
 export const lenderHealth = [
-  { name: 'BuzzPay (internal)', tier: 0, status: 'ok', p95Ms: 184, errorRate: 0, approvalRate: 0.64 },
-  { name: 'Evergreen Prime', tier: 1, status: 'ok', p95Ms: 612, errorRate: 0.002, approvalRate: 0.61 },
-  { name: 'Sterling Direct', tier: 1, status: 'degraded', p95Ms: 1240, errorRate: 0.041, approvalRate: 0.57 },
-  { name: 'PathPoint Medical', tier: 2, status: 'ok', p95Ms: 488, errorRate: 0.004, approvalRate: 0.58 },
-  { name: 'Solstice Auto', tier: 2, status: 'ok', p95Ms: 712, errorRate: 0.011, approvalRate: 0.52 },
-  { name: 'Bluemark Subprime', tier: 4, status: 'paused', p95Ms: 0, errorRate: 0, approvalRate: 0.71 },
+  {
+    name: 'BuzzPay (internal)',
+    tier: 0,
+    status: 'ok',
+    p95Ms: 184,
+    errorRate: 0,
+    approvalRate: 0.64,
+  },
+  {
+    name: 'Evergreen Prime',
+    tier: 1,
+    status: 'ok',
+    p95Ms: 612,
+    errorRate: 0.002,
+    approvalRate: 0.61,
+  },
+  {
+    name: 'Sterling Direct',
+    tier: 1,
+    status: 'degraded',
+    p95Ms: 1240,
+    errorRate: 0.041,
+    approvalRate: 0.57,
+  },
+  {
+    name: 'PathPoint Medical',
+    tier: 2,
+    status: 'ok',
+    p95Ms: 488,
+    errorRate: 0.004,
+    approvalRate: 0.58,
+  },
+  {
+    name: 'Solstice Auto',
+    tier: 2,
+    status: 'ok',
+    p95Ms: 712,
+    errorRate: 0.011,
+    approvalRate: 0.52,
+  },
+  {
+    name: 'Bluemark Subprime',
+    tier: 4,
+    status: 'paused',
+    p95Ms: 0,
+    errorRate: 0,
+    approvalRate: 0.71,
+  },
 ];
 
 export const auditLogs = [
-  { id: 'evt_8KvR2NQp', at: '2026-05-04T18:42:01Z', actor: 'system', action: 'application.offers.presented', target: 'app_4nqLkR2vTjW' },
-  { id: 'evt_KvR2NQpLm', at: '2026-05-04T18:42:00Z', actor: 'system', action: 'lender.route.evaluated', target: 'app_4nqLkR2vTjW · evergreen_prime' },
-  { id: 'evt_R2NQpLmKv', at: '2026-05-04T18:41:58Z', actor: 'system', action: 'lender.route.evaluated', target: 'app_4nqLkR2vTjW · buzzpay' },
-  { id: 'evt_NQpLmKvR2', at: '2026-05-04T18:41:55Z', actor: 'system', action: 'application.submitted', target: 'app_4nqLkR2vTjW' },
-  { id: 'evt_QpLmKvR2N', at: '2026-05-04T18:41:52Z', actor: 'cust_jM7p2…', action: 'consent.granted', target: 'soft_pull · permissible_purpose 604(a)(3)(A)' },
-  { id: 'evt_pLmKvR2NQ', at: '2026-05-04T17:21:33Z', actor: 'priya@eazepay.com', action: 'application.approved', target: 'app_8mRT2WQpKvN' },
-  { id: 'evt_LmKvR2NQp', at: '2026-05-04T17:21:30Z', actor: 'priya@eazepay.com', action: 'pii.unmask.read', target: 'cust_dK3p2… · field: ssn' },
-  { id: 'evt_mKvR2NQpL', at: '2026-05-04T17:18:10Z', actor: 'system', action: 'application.submitted', target: 'app_8mRT2WQpKvN' },
+  {
+    id: 'evt_8KvR2NQp',
+    at: '2026-05-04T18:42:01Z',
+    actor: 'system',
+    action: 'application.offers.presented',
+    target: 'app_4nqLkR2vTjW',
+  },
+  {
+    id: 'evt_KvR2NQpLm',
+    at: '2026-05-04T18:42:00Z',
+    actor: 'system',
+    action: 'lender.route.evaluated',
+    target: 'app_4nqLkR2vTjW · evergreen_prime',
+  },
+  {
+    id: 'evt_R2NQpLmKv',
+    at: '2026-05-04T18:41:58Z',
+    actor: 'system',
+    action: 'lender.route.evaluated',
+    target: 'app_4nqLkR2vTjW · buzzpay',
+  },
+  {
+    id: 'evt_NQpLmKvR2',
+    at: '2026-05-04T18:41:55Z',
+    actor: 'system',
+    action: 'application.submitted',
+    target: 'app_4nqLkR2vTjW',
+  },
+  {
+    id: 'evt_QpLmKvR2N',
+    at: '2026-05-04T18:41:52Z',
+    actor: 'cust_jM7p2…',
+    action: 'consent.granted',
+    target: 'soft_pull · permissible_purpose 604(a)(3)(A)',
+  },
+  {
+    id: 'evt_pLmKvR2NQ',
+    at: '2026-05-04T17:21:33Z',
+    actor: 'priya@eazepay.com',
+    action: 'application.approved',
+    target: 'app_8mRT2WQpKvN',
+  },
+  {
+    id: 'evt_LmKvR2NQp',
+    at: '2026-05-04T17:21:30Z',
+    actor: 'priya@eazepay.com',
+    action: 'pii.unmask.read',
+    target: 'cust_dK3p2… · field: ssn',
+  },
+  {
+    id: 'evt_mKvR2NQpL',
+    at: '2026-05-04T17:18:10Z',
+    actor: 'system',
+    action: 'application.submitted',
+    target: 'app_8mRT2WQpKvN',
+  },
 ];
 
 export const riskFlags = [
@@ -215,7 +305,8 @@ export const riskFlags = [
     flagType: 'ofac_secondary_hit',
     severity: 'high' as const,
     raisedAt: '2026-05-04T15:11:30Z',
-    detail: 'Soft fuzzy match against Consolidated Sanctions list — opened compliance review #cr_8Kv.',
+    detail:
+      'Soft fuzzy match against Consolidated Sanctions list — opened compliance review #cr_8Kv.',
   },
 ];
 
@@ -272,7 +363,8 @@ export const exampleRouteStepsAdmin: RouteStep[] = [
     outcome: 'declined',
     latencyMs: 1240,
     reasonCode: 'state_residence_unsupported',
-    reasonDetail: 'Sterling not licensed in TX for second-lien-style home improvement; orchestration filtered out at compliance step.',
+    reasonDetail:
+      'Sterling not licensed in TX for second-lien-style home improvement; orchestration filtered out at compliance step.',
     at: '2026-05-04T18:42:01Z',
   },
   {
@@ -289,5 +381,10 @@ export const exampleRouteStepsAdmin: RouteStep[] = [
 
 export const fmtDate = (iso: string) => {
   const d = new Date(iso);
-  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 };

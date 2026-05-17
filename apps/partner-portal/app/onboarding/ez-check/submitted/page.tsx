@@ -34,8 +34,8 @@ export default function EzCheckSubmittedPage() {
           EZ Check install request submitted
         </h1>
         <p className="mt-3 text-[14px] text-fg-secondary leading-relaxed">
-          Our install team has your config. You'll get a calendar invite within an hour, and
-          we'll walk you through the embed during your scheduled call.
+          Our install team has your config. You'll get a calendar invite within an hour, and we'll
+          walk you through the embed during your scheduled call.
         </p>
 
         <ol className="mt-8 text-left space-y-3 rounded-xl border border-border bg-bg-elevated p-5">

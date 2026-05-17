@@ -27,9 +27,5 @@ export const webhookSecretAadContext = (
  * the merchant can enforce a freshness window when verifying — that's
  * what stops a captured request body from being replayed indefinitely.
  */
-export const computeSignature = (
-  secret: string,
-  timestamp: number,
-  bodyJson: string,
-): string =>
+export const computeSignature = (secret: string, timestamp: number, bodyJson: string): string =>
   createHmac('sha256', secret).update(`${timestamp}.${bodyJson}`).digest('hex');

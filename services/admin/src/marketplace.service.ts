@@ -1,10 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import {
-  PrismaClient,
-  type CreditTier,
-  type MarketplaceStatus,
-  type ProductBrand,
-} from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import { type CreditTier, type MarketplaceStatus, type ProductBrand } from '@prisma/client';
 import { BadRequest, Conflict, NotFound } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { PRISMA } from './internal/tokens.js';
@@ -285,7 +281,9 @@ export class MarketplaceService {
       inherit?: boolean;
       reason?: string;
     },
-  ): Promise<PartnerAccessRow | { merchantId: string; marketplaceLenderId: string; inherited: true }> {
+  ): Promise<
+    PartnerAccessRow | { merchantId: string; marketplaceLenderId: string; inherited: true }
+  > {
     if (input.inherit && input.enabled !== undefined) {
       throw BadRequest({
         code: 'conflicting_intent',

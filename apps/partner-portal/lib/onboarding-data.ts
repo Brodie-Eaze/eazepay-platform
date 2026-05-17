@@ -221,9 +221,27 @@ export const ONBOARDING_BUSINESSES: OnboardingBusiness[] = [
       { id: 't_02', at: iso(10, 22), type: 'event', body: 'Wizard started', actor: 'business' },
       { id: 't_03', at: iso(9), type: 'event', body: 'KYB submitted', actor: 'business' },
       { id: 't_04', at: iso(8, 12), type: 'system', body: 'KYB completed — pass', actor: 'system' },
-      { id: 't_05', at: iso(7, 4), type: 'human', body: 'Doc request sent (voided cheque)', actor: 'cole@eaze.test' },
-      { id: 't_06', at: iso(2, 4), type: 'system', body: 'Push notification sent — voided cheque reminder', actor: 'system' },
-      { id: 't_07', at: iso(0, 2, 14), type: 'event', body: 'SMS reply received', actor: 'business' },
+      {
+        id: 't_05',
+        at: iso(7, 4),
+        type: 'human',
+        body: 'Doc request sent (voided cheque)',
+        actor: 'cole@eaze.test',
+      },
+      {
+        id: 't_06',
+        at: iso(2, 4),
+        type: 'system',
+        body: 'Push notification sent — voided cheque reminder',
+        actor: 'system',
+      },
+      {
+        id: 't_07',
+        at: iso(0, 2, 14),
+        type: 'event',
+        body: 'SMS reply received',
+        actor: 'business',
+      },
     ],
   },
   {
@@ -260,8 +278,20 @@ export const ONBOARDING_BUSINESSES: OnboardingBusiness[] = [
       dialerPay: 'in_progress',
     },
     docs: [
-      { id: 'd1', name: 'C-46 Solar Contractor License', required: true, status: 'approved', requestedAt: iso(16) },
-      { id: 'd2', name: 'Insurance certificate ($2M GL)', required: true, status: 'approved', requestedAt: iso(15) },
+      {
+        id: 'd1',
+        name: 'C-46 Solar Contractor License',
+        required: true,
+        status: 'approved',
+        requestedAt: iso(16),
+      },
+      {
+        id: 'd2',
+        name: 'Insurance certificate ($2M GL)',
+        required: true,
+        status: 'approved',
+        requestedAt: iso(15),
+      },
       { id: 'd3', name: 'BO IDs (×2)', required: true, status: 'approved', requestedAt: iso(15) },
     ],
     comms: [
@@ -298,10 +328,34 @@ export const ONBOARDING_BUSINESSES: OnboardingBusiness[] = [
       { id: 'tp1', at: iso(18), type: 'system', body: 'Invite sent', actor: 'system' },
       { id: 'tp2', at: iso(16), type: 'event', body: 'KYB submitted', actor: 'business' },
       { id: 'tp3', at: iso(14), type: 'system', body: 'KYB completed — pass', actor: 'system' },
-      { id: 'tp4', at: iso(10), type: 'event', body: 'Highsale onboarding complete', actor: 'business' },
-      { id: 'tp5', at: iso(8), type: 'event', body: 'MyCAMP onboarding complete', actor: 'business' },
-      { id: 'tp6', at: iso(5), type: 'event', body: 'EZ Check onboarding complete', actor: 'business' },
-      { id: 'tp7', at: iso(2), type: 'event', body: 'Processing onboarding complete', actor: 'business' },
+      {
+        id: 'tp4',
+        at: iso(10),
+        type: 'event',
+        body: 'Highsale onboarding complete',
+        actor: 'business',
+      },
+      {
+        id: 'tp5',
+        at: iso(8),
+        type: 'event',
+        body: 'MyCAMP onboarding complete',
+        actor: 'business',
+      },
+      {
+        id: 'tp6',
+        at: iso(5),
+        type: 'event',
+        body: 'EZ Check onboarding complete',
+        actor: 'business',
+      },
+      {
+        id: 'tp7',
+        at: iso(2),
+        type: 'event',
+        body: 'Processing onboarding complete',
+        actor: 'business',
+      },
       { id: 'tp8', at: iso(1), type: 'system', body: 'Routed for ops review', actor: 'system' },
     ],
   },
@@ -391,7 +445,13 @@ export const ONBOARDING_BUSINESSES: OnboardingBusiness[] = [
       dialerPay: 'not_started',
     },
     docs: [
-      { id: 'ds1', name: 'BO ID — Dr. Singh', required: true, status: 'received', requestedAt: iso(5) },
+      {
+        id: 'ds1',
+        name: 'BO ID — Dr. Singh',
+        required: true,
+        status: 'received',
+        requestedAt: iso(5),
+      },
     ],
     comms: [
       {
@@ -409,7 +469,13 @@ export const ONBOARDING_BUSINESSES: OnboardingBusiness[] = [
     timeline: [
       { id: 'ts1', at: iso(6), type: 'system', body: 'Invite sent', actor: 'system' },
       { id: 'ts2', at: iso(5), type: 'event', body: 'KYB submitted', actor: 'business' },
-      { id: 'ts3', at: iso(0, 6), type: 'human', body: 'Info request sent — adverse media clarification', actor: 'maya@eaze.test' },
+      {
+        id: 'ts3',
+        at: iso(0, 6),
+        type: 'human',
+        body: 'Info request sent — adverse media clarification',
+        actor: 'maya@eaze.test',
+      },
     ],
   },
   {
@@ -502,7 +568,13 @@ export const ONBOARDING_BUSINESSES: OnboardingBusiness[] = [
       { id: 'tr1', at: iso(42), type: 'system', body: 'Invite sent', actor: 'system' },
       { id: 'tr2', at: iso(35), type: 'system', body: 'KYB completed', actor: 'system' },
       { id: 'tr3', at: iso(30), type: 'human', body: 'Approved', actor: 'cole@eaze.test' },
-      { id: 'tr4', at: iso(28), type: 'event', body: 'First application submitted', actor: 'business' },
+      {
+        id: 'tr4',
+        at: iso(28),
+        type: 'event',
+        body: 'First application submitted',
+        actor: 'business',
+      },
     ],
   },
 ];
@@ -535,7 +607,9 @@ export const INTEGRATION_LABEL: Record<keyof OnboardingBusiness['integrations'],
   dialerPay: 'DialerPay',
 };
 
-export const integrationStateLabel = (s: OnboardingBusiness['integrations'][keyof OnboardingBusiness['integrations']]) =>
+export const integrationStateLabel = (
+  s: OnboardingBusiness['integrations'][keyof OnboardingBusiness['integrations']],
+) =>
   s === 'completed'
     ? 'Completed'
     : s === 'in_progress'
@@ -545,7 +619,15 @@ export const integrationStateLabel = (s: OnboardingBusiness['integrations'][keyo
         : 'Not started';
 
 export const checkLabel = (s: CheckState) =>
-  s === 'pass' ? 'Pass' : s === 'fail' ? 'Fail' : s === 'running' ? 'Running' : s === 'review' ? 'Review' : 'Pending';
+  s === 'pass'
+    ? 'Pass'
+    : s === 'fail'
+      ? 'Fail'
+      : s === 'running'
+        ? 'Running'
+        : s === 'review'
+          ? 'Review'
+          : 'Pending';
 
 /**
  * Compute a "Xh ago"-style label relative to the frozen STATIC_NOW

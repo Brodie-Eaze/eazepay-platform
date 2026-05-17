@@ -95,9 +95,11 @@ function deriveStatus(rec: TeamInviteRecord, now = Date.now()): TeamInviteStatus
 }
 
 function buildUrl(rec: TeamInviteRecord): string {
-  // Brand-scoped accept URL — recipient lands inside the brand portal,
-  // not the master OS. Same wall-up posture as the rest of /v/<brand>/.
-  return `/v/${rec.brand}/team/accept?token=${rec.token}`;
+  // Public top-level accept route — recipient may have no cookie when
+  // they click the email, so /v/<brand>/* (gated) is the wrong place.
+  // Brand is in the path so the page can render brand-aware chrome
+  // without the recipient picking from a dropdown.
+  return `/accept/${rec.brand}?token=${rec.token}`;
 }
 
 function withUrl(rec: TeamInviteRecord): TeamInviteWithUrl {

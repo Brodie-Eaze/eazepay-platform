@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { lightColors, spacing, fontSizes } from '@eazepay/ui/tokens';
 import type { Offer } from '@eazepay/api-client';
 import { ApiError } from '@eazepay/api-client';
@@ -57,7 +66,7 @@ export default function OffersScreen({ route, navigation }: Props) {
     } catch (err) {
       Alert.alert(
         'Could not accept offer',
-        err instanceof ApiError ? err.problem.detail ?? err.problem.title : String(err),
+        err instanceof ApiError ? (err.problem.detail ?? err.problem.title) : String(err),
       );
     }
   };
@@ -76,8 +85,8 @@ export default function OffersScreen({ route, navigation }: Props) {
       <SafeAreaView style={[s.safe, s.center]}>
         <Text style={s.declineH}>We weren't able to approve this application</Text>
         <Text style={s.declineBody}>
-          We've sent you an Adverse Action Notice with the specific reasons and your rights.
-          Check your email or your in-app inbox.
+          We've sent you an Adverse Action Notice with the specific reasons and your rights. Check
+          your email or your in-app inbox.
         </Text>
         <Pressable style={s.btn} onPress={() => navigation.popToTop()}>
           <Text style={s.btnText}>Back to home</Text>
@@ -90,7 +99,9 @@ export default function OffersScreen({ route, navigation }: Props) {
     <SafeAreaView style={s.safe}>
       <ScrollView contentContainerStyle={s.body}>
         <Text style={s.h2}>Your offers</Text>
-        <Text style={s.helper}>Sorted by lowest total cost. The lender of record is shown on each card.</Text>
+        <Text style={s.helper}>
+          Sorted by lowest total cost. The lender of record is shown on each card.
+        </Text>
         {offers.map((o) => (
           <View key={o.id} style={s.offer}>
             <View style={s.offerRow}>
@@ -98,7 +109,8 @@ export default function OffersScreen({ route, navigation }: Props) {
               <Text style={s.offerApr}>{(o.aprBps / 100).toFixed(2)}% APR</Text>
             </View>
             <Text style={s.offerTotal}>
-              Total to repay: ${(Number(o.totalRepayableCents) / 100).toFixed(2)} over {o.termMonths} months
+              Total to repay: ${(Number(o.totalRepayableCents) / 100).toFixed(2)} over{' '}
+              {o.termMonths} months
             </Text>
             <Text style={s.offerLender}>Lender: {o.lenderOfRecord}</Text>
             <Pressable style={s.btn} onPress={() => accept(o.id)}>
@@ -118,14 +130,47 @@ const s = StyleSheet.create({
   h2: { fontSize: fontSizes.h3, fontWeight: '700', color: lightColors.textPrimary },
   helper: { color: lightColors.textSecondary, marginBottom: spacing.lg },
   loadingText: { marginTop: spacing.lg, color: lightColors.textSecondary },
-  offer: { padding: spacing.xl, borderRadius: 16, backgroundColor: lightColors.bgElevated, borderWidth: 1, borderColor: lightColors.borderDefault, marginBottom: spacing.md },
-  offerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.xs },
+  offer: {
+    padding: spacing.xl,
+    borderRadius: 16,
+    backgroundColor: lightColors.bgElevated,
+    borderWidth: 1,
+    borderColor: lightColors.borderDefault,
+    marginBottom: spacing.md,
+  },
+  offerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: spacing.xs,
+  },
   offerAmount: { fontSize: fontSizes.h4, fontWeight: '700', color: lightColors.textPrimary },
   offerApr: { fontSize: fontSizes.bodyLg, fontWeight: '600', color: lightColors.accentDefault },
   offerTotal: { color: lightColors.textSecondary, marginBottom: spacing.xs },
-  offerLender: { color: lightColors.textMuted, fontSize: fontSizes.bodySm, marginBottom: spacing.lg },
-  btn: { backgroundColor: lightColors.accentDefault, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  offerLender: {
+    color: lightColors.textMuted,
+    fontSize: fontSizes.bodySm,
+    marginBottom: spacing.lg,
+  },
+  btn: {
+    backgroundColor: lightColors.accentDefault,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   btnText: { color: lightColors.textOnAccent, fontWeight: '600', fontSize: fontSizes.body },
-  declineH: { fontSize: fontSizes.h4, fontWeight: '700', color: lightColors.textPrimary, textAlign: 'center', marginBottom: spacing.lg },
-  declineBody: { color: lightColors.textSecondary, textAlign: 'center', marginBottom: spacing.xl, lineHeight: 22 },
+  declineH: {
+    fontSize: fontSizes.h4,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  declineBody: {
+    color: lightColors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+    lineHeight: 22,
+  },
 });

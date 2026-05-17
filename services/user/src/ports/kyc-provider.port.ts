@@ -1,12 +1,7 @@
 import type { UserId } from '@eazepay/shared-types';
 import type { PiiV1 } from '../pii.types.js';
 
-export type KycOutcome =
-  | 'pending'
-  | 'approved'
-  | 'manual_review'
-  | 'rejected'
-  | 'expired';
+export type KycOutcome = 'pending' | 'approved' | 'manual_review' | 'rejected' | 'expired';
 
 export interface KycInitiateInput {
   userId: UserId;

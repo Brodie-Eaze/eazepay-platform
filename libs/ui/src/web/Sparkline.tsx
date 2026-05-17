@@ -21,14 +21,27 @@ export const Sparkline: FC<{
     const y = height - ((v - min) / range) * (height - 4) - 2;
     return [x, y] as const;
   });
-  const path = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
+  const path = points
+    .map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`)
+    .join(' ');
   const area = `${path} L ${width} ${height} L 0 ${height} Z`;
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={className} aria-hidden>
-      {filled && (
-        <path d={area} fill="currentColor" opacity={0.12} />
-      )}
-      <path d={path} fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className={className}
+      aria-hidden
+    >
+      {filled && <path d={area} fill="currentColor" opacity={0.12} />}
+      <path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 };
@@ -45,14 +58,28 @@ export const BarChart: FC<{
   const max = Math.max(...data.map((d) => d.value)) || 1;
   const barWidth = width / data.length - 6;
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className={className} preserveAspectRatio="none">
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className={className}
+      preserveAspectRatio="none"
+    >
       {data.map((d, i) => {
         const h = Math.max(2, (d.value / max) * (height - 24));
         const x = i * (barWidth + 6);
         const y = height - h - 12;
         return (
           <g key={i}>
-            <rect x={x} y={y} width={barWidth} height={h} rx={2} fill="currentColor" opacity={0.75} />
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={h}
+              rx={2}
+              fill="currentColor"
+              opacity={0.75}
+            />
             <text
               x={x + barWidth / 2}
               y={height - 2}
