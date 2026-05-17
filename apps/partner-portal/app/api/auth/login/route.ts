@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { signDemoPreset } from '../../../../lib/demo-cookie';
 
 /**
  * Sign-in proxy. The browser never talks to the backend directly so we
@@ -208,6 +209,24 @@ export async function POST(req: NextRequest) {
     if (isDemoFallbackAllowed()) {
       const preset = DEMO_PRESET_BY_EMAIL[identifier.toLowerCase()];
       if (preset) {
+        // SEC-109: master preset is gated to operators who explicitly
+        // opted into it via DEMO_MASTER_ENABLED. The fallback path
+        // honours the same gate as /api/auth/demo so a misconfigured
+        // production cannot mint master sessions through here either.
+        if (preset === 'master' && process.env.DEMO_MASTER_ENABLED !== 'true') {
+          return NextResponse.json(
+            {
+              type: 'about:blank',
+              title: 'Forbidden',
+              status: 403,
+              code: 'master_preset_disabled',
+              detail:
+                'The master demo preset is disabled on this deployment. Set DEMO_MASTER_ENABLED=true to enable.',
+            },
+            { status: 403 },
+          );
+        }
+        const signedValue = await signDemoPreset(preset, DEMO_TTL_SECONDS);
         const response = NextResponse.json({
           ok: true,
           demoMode: true,
@@ -215,10 +234,12 @@ export async function POST(req: NextRequest) {
           notice:
             'Signed in to the demo workspace. The real EazePay API is not reachable from this deployment.',
         });
-        response.cookies.set('eazepay_demo', preset, {
+        // SEC-103/106: signed value + sameSite=strict to close the
+        // top-level-form-post fixation surface.
+        response.cookies.set('eazepay_demo', signedValue, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          sameSite: 'strict',
           path: '/',
           maxAge: DEMO_TTL_SECONDS,
         });

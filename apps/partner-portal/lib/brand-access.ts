@@ -7,42 +7,42 @@
  * read TradePay's data — the frontend nav wall-up (PR #34) only hides
  * the link from their sidebar, it doesn't gate the route.
  *
- * This module is the load-bearing enforcement. The `/v/[brand]/layout.tsx`
- * server component calls `resolveBrandAccess(...)` and `notFound()`s
- * any caller whose session doesn't own the brand. Returns a discriminated
- * union so the layout can log the deny-reason without expanding the
- * shape over time.
+ * This module is the load-bearing policy layer. The `/v/[brand]/layout.tsx`
+ * server component verifies the demo cookie signature (via lib/demo-cookie.ts)
+ * and passes the resolved preset string into `resolveBrandAccess(...)`.
+ * Returns a discriminated union so the layout can log the deny-reason
+ * without expanding the shape over time.
  *
  * ## Demo cookie policy (strict — this is the active exploit vector)
  *
- *   Cookie value        → Allowed brand slugs
+ *   Verified preset     → Allowed brand slugs
  *   ───────────────────────────────────────────
  *   medpay              → ['medpay']
  *   tradepay            → ['tradepay']
  *   coachpay            → ['coachpay']
  *   all                 → ALL (multi-tenant demo workspace)
- *   master              → ALL (master operator demo)
- *   admin / operator    → ALL (master-OS staff roles — operators have
- *                              legitimate ops need to view brand surfaces)
+ *   master              → ALL (master operator demo; behind DEMO_MASTER_ENABLED env)
+ *   admin / operator    → ALL (master-OS staff roles)
  *   viewer / investor   → ALL (read-only master-OS staff)
  *
- * Any cookie value not in this table is treated as deny → notFound().
+ * Any other value is denied. Forged cookies fail verification before
+ * they reach this resolver (caller passes `null` for verifiedDemoPreset).
  *
  * ## Real session policy (deferred contract)
  *
- * Real backend sessions (`eazepay_at` cookie set) currently bypass with
+ * Real backend sessions (`hasRealSession: true`) currently bypass with
  * a structured `console.warn` breadcrumb. The intended end-state is:
  *
  *   1. Backend mints JWTs with a `merchantBrands: BrandSlug[]` claim
  *      (or master_admin role grants all-brand access).
- *   2. This helper decodes the JWT (verified by middleware already)
- *      and checks the brand against the claim.
+ *   2. The layout decodes the JWT (verified by middleware already)
+ *      and passes `allowedBrands` to a new arg of `resolveBrandAccess`.
  *
  * Until that lands, real sessions are advisory-only. The deployed
  * partner-portal demo doesn't issue real sessions, so the exploit path
- * the audit identified (SEC-101) is fully closed today via the demo
- * cookie strict path. The warn breadcrumb is intentional load-failure
- * telemetry so any production rollout of real sessions is visible.
+ * SEC-101 identified is fully closed today via the demo cookie strict
+ * path. The warn breadcrumb is intentional load-failure telemetry so
+ * any production rollout of real sessions is visible.
  */
 
 import type { BrandCode } from '@eazepay/shared-types';
@@ -82,46 +82,30 @@ export type BrandAccessResult =
       reason: 'no_session' | 'unknown_brand_slug' | 'demo_preset_unknown' | 'demo_brand_mismatch';
     };
 
-/**
- * Resolve the `brand` URL slug to a canonical BrandCode. Returns null
- * for unknown slugs — the layout 404s those before any cookie check
- * runs, so an attacker can't probe whether `/v/<arbitrary>/x` enforces.
- */
+export interface BrandAccessInputs {
+  /** True if a real (non-demo) session is present. The caller has
+   *  already verified the JWT (middleware did it) — pass the boolean. */
+  hasRealSession: boolean;
+  /** The verified demo cookie preset, or null if absent / signature
+   *  failed / expired. Caller MUST verify the signed cookie before
+   *  passing the preset — this module does not verify HMAC. */
+  verifiedDemoPreset: string | null;
+}
+
 export function brandCodeFromSlug(slug: string): BrandCode | null {
   const brand = BRAND_ORDER.find((code) => BRANDS[code].slug === slug);
   return brand ?? null;
 }
 
-/**
- * Server-side authorization check for `/v/<brand>/*` routes. Pure
- * function — caller passes the cookie values it reads via `next/headers`
- * so this module stays trivially testable.
- *
- * @param brandSlug   The URL param. Validated against the known brand
- *                    slugs; unknown slugs deny with `unknown_brand_slug`.
- * @param cookies     Cookie values read by the caller. Missing values
- *                    are treated as undefined.
- */
 export function resolveBrandAccess(
   brandSlug: string,
-  cookies: {
-    eazepay_at?: string;
-    eazepay_demo?: string;
-  },
+  inputs: BrandAccessInputs,
 ): BrandAccessResult {
-  // Validate the brand slug first. Any unknown brand 404s before we
-  // touch cookies — denies an attacker the ability to probe.
   if (!brandCodeFromSlug(brandSlug)) {
     return { allowed: false, reason: 'unknown_brand_slug' };
   }
 
-  const realToken = cookies.eazepay_at;
-  const demoPreset = cookies.eazepay_demo;
-
-  // Real session: contract not yet wired (backend doesn't emit
-  // merchantBrands claim today). Allow with a structured breadcrumb
-  // so any unintended production rollout is visible in server logs.
-  if (realToken) {
+  if (inputs.hasRealSession) {
     // eslint-disable-next-line no-console
     console.warn(
       JSON.stringify({
@@ -135,20 +119,17 @@ export function resolveBrandAccess(
     return { allowed: true, via: 'real_session_deferred' };
   }
 
-  if (!demoPreset) {
-    return { allowed: false, reason: 'no_session' };
-  }
-
-  if (!KNOWN_DEMO_PRESETS.has(demoPreset)) {
+  const preset = inputs.verifiedDemoPreset;
+  if (!preset) return { allowed: false, reason: 'no_session' };
+  if (!KNOWN_DEMO_PRESETS.has(preset)) {
     return { allowed: false, reason: 'demo_preset_unknown' };
   }
 
-  if (OPERATOR_PRESETS.has(demoPreset as DemoPreset)) {
+  if (OPERATOR_PRESETS.has(preset as DemoPreset)) {
     return { allowed: true, via: 'demo_operator' };
   }
 
-  // Brand-based demo preset — must match the requested brand exactly.
-  if (BRAND_PRESETS.has(demoPreset as DemoPreset) && demoPreset === brandSlug) {
+  if (BRAND_PRESETS.has(preset as DemoPreset) && preset === brandSlug) {
     return { allowed: true, via: 'demo_brand_match' };
   }
 

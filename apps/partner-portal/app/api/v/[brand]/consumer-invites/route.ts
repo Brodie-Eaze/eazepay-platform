@@ -91,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
   }
   const brand = brandParsed.data as Exclude<BrandCode, 'direct'>;
 
-  const session = getSessionContext(req);
+  const session = await getSessionContext(req);
   if (session.mode === 'none') {
     return problem(401, 'not_signed_in');
   }
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ bran
   }
   const brand = brandParsed.data as Exclude<BrandCode, 'direct'>;
 
-  const session = getSessionContext(req);
+  const session = await getSessionContext(req);
   if (session.mode === 'none') {
     return problem(401, 'not_signed_in');
   }

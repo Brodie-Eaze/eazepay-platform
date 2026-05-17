@@ -1,114 +1,130 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { middleware } from './middleware';
+import { signDemoPreset, _resetDemoCookieKeyCache } from './lib/demo-cookie';
 
 /**
  * Middleware fence smoke tests.
  *
  * The middleware has two jobs: inject `x-pathname` on the RSC request
  * headers, and bounce unauthed requests to `/sign-in?from=<safe-path>`.
- * SEC-008 closed an open-redirect vector: pre-fix, `from` could be set
- * to `//evil.com` or `https://evil.com` because the middleware just
- * encoded `pathname + search` verbatim. The current implementation
- * normalises any non-relative path to `/` before encoding. These specs
- * pin that behaviour.
+ * SEC-008 closed an open-redirect vector in `from`; SEC-103 added HMAC
+ * signature verification on the demo cookie so a forged value fails
+ * the auth fence.
  *
  * Note: `NextRequest` in vitest doesn't emit a real 302 — the Response
  * object carries the redirect target in its `Location` header.
  */
 
 function unauthedRequest(url: string): NextRequest {
-  // why: a NextRequest with no cookies is exactly what the middleware
-  // sees from a logged-out browser hitting a protected path.
   return new NextRequest(url);
 }
 
-function authedRequest(url: string): NextRequest {
-  // why: build a NextRequest carrying the `eazepay_at` access-token
-  // cookie. The middleware treats this as a real session.
-  const req = new NextRequest(url, {
+function realAuthedRequest(url: string): NextRequest {
+  return new NextRequest(url, {
     headers: { cookie: 'eazepay_at=fake-access-token' },
   });
-  return req;
+}
+
+async function demoAuthedRequest(url: string, preset = 'medpay'): Promise<NextRequest> {
+  const signed = await signDemoPreset(preset, 60);
+  return new NextRequest(url, {
+    headers: { cookie: `eazepay_demo=${signed}` },
+  });
+}
+
+function forgedDemoRequest(url: string, fakeValue = 'medpay'): NextRequest {
+  // why: a bare preset (pre-SEC-103 cookie shape) is what an attacker
+  // would set if they didn't have the HMAC secret.
+  return new NextRequest(url, {
+    headers: { cookie: `eazepay_demo=${fakeValue}` },
+  });
 }
 
 describe('partner-portal middleware', () => {
-  it('redirects unauthed /control-panel to /sign-in with from=/control-panel', () => {
-    const res = middleware(unauthedRequest('http://localhost:3004/control-panel'));
-    expect(res.status).toBe(307); // NextResponse.redirect default
+  beforeEach(() => {
+    _resetDemoCookieKeyCache();
+    process.env.DEMO_COOKIE_SECRET = 'unit-test-secret-x'.padEnd(40, '_');
+  });
+
+  it('redirects unauthed /control-panel to /sign-in with from=/control-panel', async () => {
+    const res = await middleware(unauthedRequest('http://localhost:3004/control-panel'));
+    expect(res.status).toBe(307);
     const location = res.headers.get('location');
     expect(location).toBeTruthy();
     const u = new URL(location!);
     expect(u.pathname).toBe('/sign-in');
-    // why: encodeURIComponent('/control-panel') === '%2Fcontrol-panel'
     expect(u.searchParams.get('from')).toBe('/control-panel');
   });
 
-  it('SEC-008 — scheme-relative path (//evil.com) is normalised to /', () => {
-    // why: a phishing site could craft a sign-in link that, after
-    // login, redirects to `//evil.com` (which the browser interprets
-    // as the attacker's host). The middleware refuses to round-trip
-    // any `from` that starts with `//`.
-    const res = middleware(unauthedRequest('http://localhost:3004//evil.com'));
-    const location = res.headers.get('location');
-    expect(location).toBeTruthy();
-    const u = new URL(location!);
+  it('SEC-008 — scheme-relative path (//evil.com) is normalised to /', async () => {
+    const res = await middleware(unauthedRequest('http://localhost:3004//evil.com'));
+    const u = new URL(res.headers.get('location')!);
     expect(u.pathname).toBe('/sign-in');
     expect(u.searchParams.get('from')).toBe('/');
   });
 
-  it('SEC-008 — absolute URL in pathname normalises to /', () => {
-    // why: similar to the //evil.com case but with an explicit https
-    // scheme baked into the path. NextRequest normalises the URL
-    // before middleware sees it, so the most realistic abuse vector
-    // is a scheme-relative `//evil.com` (covered above). We assert
-    // the function's contract on any non-relative input.
-    const res = middleware(unauthedRequest('http://localhost:3004/https://evil.com/path'));
-    const location = res.headers.get('location');
-    const u = new URL(location!);
+  it('SEC-008 — absolute URL in pathname normalises to /', async () => {
+    const res = await middleware(unauthedRequest('http://localhost:3004/https://evil.com/path'));
+    const u = new URL(res.headers.get('location')!);
     expect(u.pathname).toBe('/sign-in');
-    // why: `/https://evil.com/path` *does* start with `/` and not
-    // `//`, so the middleware lets it through — this is fine because
-    // the browser interprets it as a relative path back to our own
-    // origin, never to evil.com.
     expect(u.searchParams.get('from')).toBe('/https://evil.com/path');
   });
 
-  it('preserves the query string in the from parameter', () => {
-    // why: a user clicking a deep link like /apply?invite=xyz needs to
-    // land back on the same URL after auth, query intact.
-    const res = middleware(unauthedRequest('http://localhost:3004/control-panel?tab=invites'));
-    const location = res.headers.get('location');
-    const u = new URL(location!);
+  it('preserves the query string in the from parameter', async () => {
+    const res = await middleware(
+      unauthedRequest('http://localhost:3004/control-panel?tab=invites'),
+    );
+    const u = new URL(res.headers.get('location')!);
     expect(u.searchParams.get('from')).toBe('/control-panel?tab=invites');
   });
 
-  it('authed request to /control-panel passes through (no redirect)', () => {
-    const res = middleware(authedRequest('http://localhost:3004/control-panel'));
-    // why: NextResponse.next() returns a 200-ish response, NOT 307.
-    // The contract is "no location header" — the request was forwarded
-    // upstream rather than redirected.
+  it('authed request to /control-panel passes through (no redirect)', async () => {
+    const res = await middleware(realAuthedRequest('http://localhost:3004/control-panel'));
     expect(res.headers.get('location')).toBeNull();
-    // And the injected x-pathname is set so RSCs can read it.
     expect(res.headers.get('x-middleware-request-x-pathname')).toBe('/control-panel');
   });
 
-  it('public paths are not gated (no auth required)', () => {
-    // why: /sign-in itself must not redirect to /sign-in, otherwise we
-    // have a redirect loop. Same for /apply (consumer landing).
-    const signIn = middleware(unauthedRequest('http://localhost:3004/sign-in'));
+  it('public paths are not gated (no auth required)', async () => {
+    const signIn = await middleware(unauthedRequest('http://localhost:3004/sign-in'));
     expect(signIn.headers.get('location')).toBeNull();
-    const apply = middleware(unauthedRequest('http://localhost:3004/apply/medpay'));
+    const apply = await middleware(unauthedRequest('http://localhost:3004/apply/medpay'));
     expect(apply.headers.get('location')).toBeNull();
   });
 
-  it('/api/* and /_next/* are public (cookie-less RPC works)', () => {
-    // why: BFF route handlers run inside the same Next process and
-    // some are intentionally public (consumer apply endpoints). The
-    // fence must skip /api entirely; auth is enforced per-route.
-    const api = middleware(unauthedRequest('http://localhost:3004/api/onboarding/invite'));
+  it('/api/* and /_next/* are public (cookie-less RPC works)', async () => {
+    const api = await middleware(unauthedRequest('http://localhost:3004/api/onboarding/invite'));
     expect(api.headers.get('location')).toBeNull();
-    const nextAsset = middleware(unauthedRequest('http://localhost:3004/_next/static/chunk.js'));
+    const nextAsset = await middleware(
+      unauthedRequest('http://localhost:3004/_next/static/chunk.js'),
+    );
     expect(nextAsset.headers.get('location')).toBeNull();
+  });
+
+  describe('SEC-103 — signed demo cookie enforcement', () => {
+    it('valid signed demo cookie passes through', async () => {
+      const req = await demoAuthedRequest('http://localhost:3004/control-panel');
+      const res = await middleware(req);
+      expect(res.headers.get('location')).toBeNull();
+    });
+
+    it('forged (unsigned) demo cookie fails auth fence and redirects to /sign-in', async () => {
+      const req = forgedDemoRequest('http://localhost:3004/control-panel', 'master');
+      const res = await middleware(req);
+      expect(res.status).toBe(307);
+      const u = new URL(res.headers.get('location')!);
+      expect(u.pathname).toBe('/sign-in');
+    });
+
+    it('demo cookie signed with a different secret fails auth fence', async () => {
+      const signed = await signDemoPreset('master', 60);
+      _resetDemoCookieKeyCache();
+      process.env.DEMO_COOKIE_SECRET = 'rotated-different-secret'.padEnd(40, '_');
+      const req = new NextRequest('http://localhost:3004/control-panel', {
+        headers: { cookie: `eazepay_demo=${signed}` },
+      });
+      const res = await middleware(req);
+      expect(res.status).toBe(307);
+    });
   });
 });

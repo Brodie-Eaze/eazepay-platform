@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { mintCsrfToken, setCsrfCookie, CSRF_CONSTANTS } from './lib/csrf.js';
+import { readSignedDemoPreset } from './lib/demo-cookie.js';
 
 /**
  * Three jobs at the edge, before any route handler or React Server
@@ -57,11 +58,21 @@ function demoCookieTrusted(): boolean {
   return process.env.DEMO_MODE_ENABLED !== 'false';
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   const hasRealSession = Boolean(req.cookies.get('eazepay_at')?.value);
-  const hasDemoSession = Boolean(req.cookies.get('eazepay_demo')?.value) && demoCookieTrusted();
+  // SEC-103/109: verify the demo cookie's HMAC signature before
+  // trusting it as a session. A forged/expired cookie returns null
+  // and is treated as no session — the user is bounced to /sign-in.
+  let hasDemoSession = false;
+  if (demoCookieTrusted()) {
+    const signed = req.cookies.get('eazepay_demo')?.value;
+    if (signed) {
+      const verified = await readSignedDemoPreset(signed);
+      hasDemoSession = verified !== null;
+    }
+  }
   const hasSession = hasRealSession || hasDemoSession;
 
   if (!hasSession && !isPublic(pathname)) {

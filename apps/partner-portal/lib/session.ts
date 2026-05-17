@@ -2,16 +2,15 @@
  * Server-side session helper for BFF route handlers.
  *
  * Centralises "who is this caller and what can they touch" so individual
- * routes don't re-implement the cookie-read + scope-derivation dance.
- * Pairs with `lib/brand-access.ts` (which does the same thing for page
- * routes via `next/headers`); this module is for `NextRequest`-flavoured
- * API handlers.
+ * routes don't re-implement the cookie-read + signature-verify dance.
+ * Pairs with `lib/brand-access.ts` (page routes via `next/headers`);
+ * this module is for `NextRequest`-flavoured API handlers.
  *
  * Threat model: SEC-102 (audit). Pre-fix, `/api/v/<brand>/consumer-invites`
- * accepted `partnerId` from the request body with zero session check,
- * so a salesperson email lookup leaked another partner's pipeline. Any
- * BFF that reads or writes partner-scoped data MUST resolve the caller
- * through this helper and constrain partnerIds to `session.allowedPartnerIds`.
+ * accepted `partnerId` from the request body with zero session check.
+ * SEC-103/109 hardening (signed demo cookies) flows through here too —
+ * `getSessionContext` returns mode:'none' if the cookie's HMAC fails
+ * verification, so a forged cookie can't escalate.
  *
  * ## Session modes
  *
@@ -25,13 +24,14 @@
  *     → deferred contract. Treated as operator-scoped with a structured
  *       breadcrumb until the backend emits merchantId/brand claims.
  *
- *   no session
+ *   no session (or forged/expired demo cookie)
  *     → returns `{ mode: 'none' }`. Caller must reject with 401.
  */
 
 import type { NextRequest } from 'next/server';
 import type { BrandCode } from '@eazepay/shared-types';
 import { partners as MASTER_PARTNERS, type PartnerSummary } from './master-data';
+import { readSignedDemoPreset } from './demo-cookie';
 
 type DemoPreset =
   | 'admin'
@@ -60,7 +60,6 @@ const KNOWN_DEMO_PRESETS: ReadonlySet<string> = new Set<string>([
   ...BRAND_PRESETS,
 ]);
 
-/** Map the BrandCode → the literal partner.product label used in the roster. */
 const BRAND_TO_PRODUCT_LABEL: Record<Exclude<BrandCode, 'direct'>, PartnerSummary['product']> = {
   medpay: 'MedPay',
   tradepay: 'TradePay',
@@ -72,7 +71,7 @@ export type SessionContext =
       mode: 'demo';
       preset: DemoPreset;
       isOperator: boolean;
-      /** Brand the session is scoped to, or null for operator/all-brand presets. */
+      /** Brand the session is scoped to, or null for operator presets. */
       brand: BrandCode | null;
     }
   | {
@@ -82,7 +81,12 @@ export type SessionContext =
     }
   | { mode: 'none' };
 
-export function getSessionContext(req: NextRequest): SessionContext {
+/**
+ * Resolve the session for a given BFF request. Verifies the demo cookie
+ * signature before trusting its value (SEC-103). Async because HMAC
+ * verification uses Web Crypto subtle.
+ */
+export async function getSessionContext(req: NextRequest): Promise<SessionContext> {
   const at = req.cookies.get('eazepay_at')?.value;
   if (at) {
     // eslint-disable-next-line no-console
@@ -97,15 +101,15 @@ export function getSessionContext(req: NextRequest): SessionContext {
     return { mode: 'real', placeholder: true };
   }
 
-  const preset = req.cookies.get('eazepay_demo')?.value;
-  if (!preset) return { mode: 'none' };
-  if (!KNOWN_DEMO_PRESETS.has(preset)) return { mode: 'none' };
+  const signed = req.cookies.get('eazepay_demo')?.value;
+  const verified = await readSignedDemoPreset(signed);
+  if (!verified) return { mode: 'none' };
+  if (!KNOWN_DEMO_PRESETS.has(verified.preset)) return { mode: 'none' };
 
-  const typed = preset as DemoPreset;
+  const typed = verified.preset as DemoPreset;
   if (OPERATOR_PRESETS.has(typed)) {
     return { mode: 'demo', preset: typed, isOperator: true, brand: null };
   }
-
   // Brand preset — the demo presets match BrandCode 1:1.
   return {
     mode: 'demo',
@@ -115,39 +119,33 @@ export function getSessionContext(req: NextRequest): SessionContext {
   };
 }
 
-/** Roster of partner IDs the session may act on for the given brand. */
 export function allowedPartnerIdsForBrand(
   session: SessionContext,
   brand: Exclude<BrandCode, 'direct'>,
 ): string[] {
   if (session.mode === 'none') return [];
-  if (session.mode === 'real') {
-    // Treat as operator until the backend lands. Same caveat as
-    // `getSessionContext` — breadcrumb-only enforcement.
-    return partnersForBrand(brand).map((p) => p.id);
-  }
-  // Demo: operators see all; brand-scoped see only their brand.
+  if (session.mode === 'real') return partnersForBrand(brand).map((p) => p.id);
   if (session.isOperator) return partnersForBrand(brand).map((p) => p.id);
   if (session.brand === brand) return partnersForBrand(brand).map((p) => p.id);
   return [];
 }
 
-/** Partners whose product matches the brand (plus Multi-brand). */
 function partnersForBrand(brand: Exclude<BrandCode, 'direct'>): PartnerSummary[] {
   const label = BRAND_TO_PRODUCT_LABEL[brand];
   return MASTER_PARTNERS.filter((p) => p.product === label || p.product === 'Multi-brand');
 }
 
 /**
- * Tiny helper for routes that just want to gate "any session at all"
- * without caring about partner scoping. Returns null if a session is
- * present; a 401 Problem-Details Response if not. Caller short-circuits:
+ * Tiny helper for routes that just want to gate "any session at all".
+ * Returns null if a session is present; a 401 Problem-Details Response
+ * if not. Caller short-circuits:
  *
- *   const fail = requireSession(req);
+ *   const fail = await requireSession(req);
  *   if (fail) return fail;
  */
-export function requireSession(req: NextRequest): Response | null {
-  if (getSessionContext(req).mode === 'none') {
+export async function requireSession(req: NextRequest): Promise<Response | null> {
+  const ctx = await getSessionContext(req);
+  if (ctx.mode === 'none') {
     return new Response(
       JSON.stringify({
         type: 'about:blank',
