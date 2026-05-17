@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { redeemInvite, getInvite, BRAND_FROM_CONFIG_SLUG } from '../../../../../lib/invites-store';
+import { sendWelcomeEmail } from '../../../../../lib/server-email';
 import { enforceCsrf } from '../../../../../lib/csrf.js';
 import { enforce as enforceEdgeRateLimit } from '../../../../../lib/edge-rate-limit.js';
 
@@ -213,6 +214,42 @@ export async function POST(req: NextRequest) {
   if (inviteIsValid && parsed.data.inviteToken) {
     await redeemInvite(parsed.data.inviteToken, applicationId);
   }
+
+  // Fire the branded welcome email. The mapping config-slug → BrandCode
+  // is what BRAND_FROM_CONFIG_SLUG provides — handles both 'med-pay'
+  // (the wizard's URL slug) and 'medpay' (the BrandCode).
+  const brandCode =
+    BRAND_FROM_CONFIG_SLUG[parsed.data.brand] ??
+    (['medpay', 'tradepay', 'coachpay'].includes(parsed.data.brand)
+      ? (parsed.data.brand as 'medpay' | 'tradepay' | 'coachpay')
+      : null);
+  if (brandCode) {
+    const origin = req.headers.get('origin') ?? `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const portalUrl = `${origin}/v/${brandCode}/welcome?application=${applicationId}`;
+    try {
+      await sendWelcomeEmail({
+        brand: brandCode,
+        to: parsed.data.ownerEmail,
+        idempotencyKey: `welcome-${applicationId}`,
+        vars: {
+          recipientName: parsed.data.ownerName.split(' ')[0] ?? parsed.data.ownerName,
+          merchantBusinessName: parsed.data.legalName,
+          portalUrl,
+        },
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'onboarding.welcome_email_failed',
+          applicationId,
+          msg: (err as Error).message,
+        }),
+      );
+    }
+  }
+
   return NextResponse.json(
     {
       ok: true,
