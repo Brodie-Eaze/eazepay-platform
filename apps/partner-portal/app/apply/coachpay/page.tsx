@@ -1658,6 +1658,11 @@ const COACHPAY_APPLY_CSS = `
 .cp-card-cta {
   margin-top: 16px;
   width: 100%;
+  /* Cap the CTA at a readable button width so wide-desktop viewports
+     don't get a button the width of the whole card. */
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px;
   border-radius: 12px;
@@ -1781,7 +1786,8 @@ const COACHPAY_APPLY_CSS = `
 .cp-apply-main > .cp-ambient-grid,
 .cp-apply-main > .cp-ambient-glow { z-index: 0; }
 .cp-apply-container {
-  max-width: 720px; margin: 0 auto; padding: 0 24px;
+  /* Tighter on desktop so the offers + form columns don't sprawl. */
+  max-width: 640px; margin: 0 auto; padding: 0 24px;
   position: relative; z-index: 1;
 }
 .cp-apply-footer {

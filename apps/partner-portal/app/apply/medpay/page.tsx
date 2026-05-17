@@ -1539,6 +1539,11 @@ const MEDPAY_APPLY_CSS = `
 .mp-offer-cta {
   margin-top: 18px;
   width: 100%;
+  /* Cap the CTA at a readable button width so wide-desktop viewports
+     don't get a CTA the width of the whole offer card. */
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 12px;
   border-radius: 12px;
@@ -1594,7 +1599,11 @@ const MEDPAY_APPLY_CSS = `
   padding: 40px 0 80px;
 }
 .mp-apply-container {
-  max-width: 720px; margin: 0 auto; padding: 0 24px;
+  /* Tighter on desktop so the offers + form columns don't sprawl on
+     wide viewports (ultrawide users were seeing a single button
+     stretched almost edge-to-edge). 640px reads as a comfortable
+     form/card column on any monitor. */
+  max-width: 640px; margin: 0 auto; padding: 0 24px;
   position: relative; z-index: 1;
 }
 .mp-apply-footer {
