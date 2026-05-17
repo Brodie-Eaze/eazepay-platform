@@ -157,9 +157,115 @@ export function computeInvoiceForPartner(input: InvoiceComputeInput): ComputedIn
 
 const INVOICE_STORE_KEY = 'eazepay_invoice_overrides_v1';
 
+export type PaymentMethod = 'ach' | 'wire' | 'card' | 'check' | 'other';
+
+export interface InvoicePayment {
+  id: string;
+  amountCents: number;
+  paidAt: string; // ISO date
+  method: PaymentMethod;
+  reference?: string;
+  note?: string;
+  recordedAt: string; // ISO timestamp
+}
+
+export type ActivityKind =
+  | 'status'
+  | 'fee_pct'
+  | 'fee_amount'
+  | 'due_date'
+  | 'payment'
+  | 'void'
+  | 'unvoid'
+  | 'send';
+
+export interface InvoiceActivity {
+  id: string;
+  at: string; // ISO timestamp
+  kind: ActivityKind;
+  by: string; // actor (admin@eaze.test in demo)
+  summary: string;
+}
+
 export interface InvoiceOverride {
   status?: InvoiceStatus;
   customFeeCents?: number;
+  dueDate?: string; // ISO YYYY-MM-DD
+  voidedAt?: string;
+  voidReason?: string;
+  payments?: InvoicePayment[];
+  activity?: InvoiceActivity[];
+}
+
+// SSR-safe runtime guard for tag values like InvoiceStatus / PaymentMethod.
+const STATUSES: InvoiceStatus[] = ['draft', 'sent', 'paid', 'overdue'];
+const METHODS: PaymentMethod[] = ['ach', 'wire', 'card', 'check', 'other'];
+
+function parsePayments(input: unknown): InvoicePayment[] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  const out: InvoicePayment[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== 'object') continue;
+    const p = raw as Record<string, unknown>;
+    if (
+      typeof p.id !== 'string' ||
+      typeof p.amountCents !== 'number' ||
+      !Number.isFinite(p.amountCents) ||
+      typeof p.paidAt !== 'string' ||
+      typeof p.method !== 'string' ||
+      !METHODS.includes(p.method as PaymentMethod) ||
+      typeof p.recordedAt !== 'string'
+    ) {
+      continue;
+    }
+    out.push({
+      id: p.id,
+      amountCents: Math.round(p.amountCents),
+      paidAt: p.paidAt,
+      method: p.method as PaymentMethod,
+      reference: typeof p.reference === 'string' ? p.reference : undefined,
+      note: typeof p.note === 'string' ? p.note : undefined,
+      recordedAt: p.recordedAt,
+    });
+  }
+  return out;
+}
+
+function parseActivity(input: unknown): InvoiceActivity[] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  const allowed: ActivityKind[] = [
+    'status',
+    'fee_pct',
+    'fee_amount',
+    'due_date',
+    'payment',
+    'void',
+    'unvoid',
+    'send',
+  ];
+  const out: InvoiceActivity[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== 'object') continue;
+    const a = raw as Record<string, unknown>;
+    if (
+      typeof a.id !== 'string' ||
+      typeof a.at !== 'string' ||
+      typeof a.kind !== 'string' ||
+      !allowed.includes(a.kind as ActivityKind) ||
+      typeof a.by !== 'string' ||
+      typeof a.summary !== 'string'
+    ) {
+      continue;
+    }
+    out.push({
+      id: a.id,
+      at: a.at,
+      kind: a.kind as ActivityKind,
+      by: a.by,
+      summary: a.summary,
+    });
+  }
+  return out;
 }
 
 export function readInvoiceOverrides(): Record<string, InvoiceOverride> {
@@ -174,18 +280,21 @@ export function readInvoiceOverrides(): Record<string, InvoiceOverride> {
       if (!v || typeof v !== 'object') continue;
       const ov = v as Record<string, unknown>;
       const next: InvoiceOverride = {};
-      if (
-        typeof ov.status === 'string' &&
-        (ov.status === 'draft' ||
-          ov.status === 'sent' ||
-          ov.status === 'paid' ||
-          ov.status === 'overdue')
-      ) {
-        next.status = ov.status;
+      if (typeof ov.status === 'string' && STATUSES.includes(ov.status as InvoiceStatus)) {
+        next.status = ov.status as InvoiceStatus;
       }
       if (typeof ov.customFeeCents === 'number' && Number.isFinite(ov.customFeeCents)) {
         next.customFeeCents = ov.customFeeCents;
       }
+      if (typeof ov.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ov.dueDate)) {
+        next.dueDate = ov.dueDate;
+      }
+      if (typeof ov.voidedAt === 'string') next.voidedAt = ov.voidedAt;
+      if (typeof ov.voidReason === 'string') next.voidReason = ov.voidReason;
+      const payments = parsePayments(ov.payments);
+      if (payments) next.payments = payments;
+      const activity = parseActivity(ov.activity);
+      if (activity) next.activity = activity;
       out[k] = next;
     }
     return out;
@@ -203,4 +312,102 @@ export function setInvoiceOverride(invoiceNo: string, patch: Partial<InvoiceOver
   } catch {
     /* swallow */
   }
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ *  Activity + payment helpers
+ * ──────────────────────────────────────────────────────────────────
+ *  Every mutation that the accounts team makes (status flip, fee
+ *  edit, payment recorded, void) writes an activity entry so the
+ *  drawer can show an audit timeline. Payments are append-only;
+ *  voiding marks the invoice voided (status surfaces as Draft + a
+ *  red "Void" badge in the UI).
+ */
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function rid(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function appendActivity(invoiceNo: string, entry: Omit<InvoiceActivity, 'id' | 'at'>): void {
+  const next = readInvoiceOverrides();
+  const cur = next[invoiceNo] ?? {};
+  const activity = [...(cur.activity ?? [])];
+  activity.unshift({ id: rid('act'), at: nowIso(), ...entry });
+  setInvoiceOverride(invoiceNo, { activity });
+}
+
+export interface RecordPaymentInput {
+  invoiceNo: string;
+  amountCents: number;
+  paidAt: string; // ISO date
+  method: PaymentMethod;
+  reference?: string;
+  note?: string;
+  by: string;
+  /** When true, flip status → paid (or remain paid). */
+  markPaid?: boolean;
+}
+
+export function recordPayment(input: RecordPaymentInput): InvoicePayment {
+  const payment: InvoicePayment = {
+    id: rid('pay'),
+    amountCents: Math.max(0, Math.round(input.amountCents)),
+    paidAt: input.paidAt,
+    method: input.method,
+    reference: input.reference,
+    note: input.note,
+    recordedAt: nowIso(),
+  };
+  const cur = readInvoiceOverrides()[input.invoiceNo] ?? {};
+  const payments = [...(cur.payments ?? []), payment];
+  setInvoiceOverride(input.invoiceNo, {
+    payments,
+    ...(input.markPaid ? { status: 'paid' as InvoiceStatus } : {}),
+  });
+  appendActivity(input.invoiceNo, {
+    kind: 'payment',
+    by: input.by,
+    summary: `Recorded ${(input.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} via ${input.method.toUpperCase()}${input.reference ? ` (ref ${input.reference})` : ''}`,
+  });
+  return payment;
+}
+
+export function voidInvoice(invoiceNo: string, reason: string, by: string): void {
+  setInvoiceOverride(invoiceNo, {
+    voidedAt: nowIso(),
+    voidReason: reason,
+    status: 'draft',
+  });
+  appendActivity(invoiceNo, {
+    kind: 'void',
+    by,
+    summary: `Voided · ${reason || 'no reason given'}`,
+  });
+}
+
+export function unvoidInvoice(invoiceNo: string, by: string): void {
+  setInvoiceOverride(invoiceNo, { voidedAt: undefined, voidReason: undefined });
+  appendActivity(invoiceNo, { kind: 'unvoid', by, summary: 'Voided state cleared' });
+}
+
+export function setDueDate(invoiceNo: string, dueDate: string, by: string): void {
+  setInvoiceOverride(invoiceNo, { dueDate });
+  appendActivity(invoiceNo, {
+    kind: 'due_date',
+    by,
+    summary: `Due date set to ${dueDate}`,
+  });
+}
+
+/** Sum of payments against an invoice, in cents. */
+export function totalPaidCents(
+  invoiceNo: string,
+  overrides?: Record<string, InvoiceOverride>,
+): number {
+  const o = overrides ?? readInvoiceOverrides();
+  return (o[invoiceNo]?.payments ?? []).reduce((s, p) => s + p.amountCents, 0);
 }
