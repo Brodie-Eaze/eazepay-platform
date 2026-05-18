@@ -4573,27 +4573,19 @@ const CSS = `
     font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em;
   }
 
+  /* Route map sits flush below the PRISM/HELIX/RESULT chip list as
+     a continuation of the same card. Used to be a tilted panel with
+     its own background and shadow that looked like it "popped up" out
+     of nowhere with empty space above it. */
   .tp-route-map-scene {
-    perspective: 1400px;
-    perspective-origin: 50% 80%;
-    margin-top: 6px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(15,23,42,0.12);
   }
   .tp-route-map-stage {
-    transform-style: preserve-3d;
-    transform: rotateX(30deg);
-    transform-origin: 50% 100%;
-    padding: 16px;
-    border-radius: 14px;
-    background: linear-gradient(180deg, rgba(248,250,252,0.7) 0%, rgba(255,255,255,0.7) 100%);
-    border: 1px solid rgba(15,23,42,0.08);
-    box-shadow:
-      0 1px 0 rgba(255,255,255,0.7) inset,
-      0 18px 38px -20px rgba(15,23,42,0.30);
-    transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1);
-    will-change: transform;
-  }
-  .tp-route-map-stage:hover {
-    transform: rotateX(20deg) translateY(-3px);
+    /* No tilt, no separate panel chrome — the SVG renders its own
+       grid background so it stands on its own. */
+    padding: 4px 0 0 0;
   }
   .tp-route-map-svg {
     width: 100%;
