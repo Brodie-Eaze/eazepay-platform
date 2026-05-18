@@ -476,13 +476,6 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={360}>
           <Storyboard />
         </Reveal>
-        <Reveal delay={480}>
-          <div className="sld-hero-stat-row">
-            <HeroStat n={3} suffix=" min" k="Total flow time" />
-            <HeroStat n={4} k="Taps to fund" />
-            <HeroStat n={0} suffix="%" k="Credit impact (until accept)" />
-          </div>
-        </Reveal>
       </div>
     ),
   },
@@ -846,14 +839,6 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={360}>
           <SmartRoutingViz />
-        </Reveal>
-        <Reveal delay={480}>
-          <div className="sld-mini-stats">
-            <MiniStat v="< 10s" k="Financial qualify" />
-            <MiniStat v="Multi-stage" k="Up to 5 routing gates" />
-            <MiniStat v="2-path" k="High / low ticket funnel" />
-            <MiniStat v="Per-lead" k="Customisable routes" />
-          </div>
         </Reveal>
       </div>
     ),
@@ -2000,62 +1985,49 @@ function Storyboard(): JSX.Element {
 
 /** Money-flow breakdown — where the $1.4M goes. Slide 2 supplement. */
 function MoneyBreakdown(): JSX.Element {
-  // Proportional bars — width scaled to share of the $1.41M total.
-  const total = 1_408_800;
+  // Quiet teal-only breakdown of where the $1.41M leaks.
   const rows = [
     {
       k: 'Lost case acceptance',
-      sub: '~24 declined cases/yr × $48k avg ticket × 95%',
-      v: 1_094_400,
-      vLabel: '$1,094,400',
-      tone: 'severe',
+      sub: '~24 declined cases/yr · $48k avg ticket · 95%',
+      v: '$1,094,400',
+      pct: '77.7%',
     },
     {
       k: 'Filler clinical hours',
-      sub: '~7 unfit consults/wk × 1.5 hr × $400/hr × 52',
-      v: 218_400,
-      vLabel: '$218,400',
-      tone: 'high',
+      sub: '~7 unfit consults/wk · 1.5 hr · $400/hr · 52',
+      v: '$218,400',
+      pct: '15.5%',
     },
     {
       k: 'Truck-roll + estimator costs',
       sub: 'fuel + opportunity cost on no-fund visits',
-      v: 96_000,
-      vLabel: '$96,000',
-      tone: 'med',
+      v: '$96,000',
+      pct: '6.8%',
     },
   ];
   return (
     <div className="sld-money">
-      <div className="sld-money-bg" aria-hidden />
-      <div className="sld-money-bars">
-        {rows.map((r, i) => {
-          const pct = Math.round((r.v / total) * 1000) / 10;
-          return (
-            <div key={i} className={`sld-money-bar sld-money-bar-${r.tone}`}>
-              <div className="sld-money-bar-head">
-                <span className="sld-money-bar-rank">{String(i + 1).padStart(2, '0')}</span>
-                <span className="sld-money-bar-k">{r.k}</span>
-                <span className="sld-money-bar-pct">{pct}%</span>
-                <span className="sld-money-bar-v">{r.vLabel}</span>
-              </div>
-              <div className="sld-money-bar-track">
-                <div
-                  className="sld-money-bar-fill"
-                  style={{ width: `${pct}%`, animationDelay: `${i * 0.12}s` }}
-                />
-              </div>
-              <div className="sld-money-bar-sub">{r.sub}</div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="sld-money-total">
-        <div className="sld-money-total-l">
-          <div className="sld-money-total-eyebrow">Total annual leakage</div>
-          <div className="sld-money-total-sub">illustrative · implant practice</div>
+      {rows.map((r, i) => (
+        <div key={i} className="sld-money-row">
+          <div className="sld-money-row-l">
+            <div className="sld-money-row-k">{r.k}</div>
+            <div className="sld-money-row-sub">{r.sub}</div>
+          </div>
+          <div className="sld-money-row-r">
+            <div className="sld-money-row-pct">{r.pct}</div>
+            <div className="sld-money-row-v">{r.v}</div>
+          </div>
         </div>
-        <div className="sld-money-total-v">$1.41M</div>
+      ))}
+      <div className="sld-money-row sld-money-row-total">
+        <div className="sld-money-row-l">
+          <div className="sld-money-row-k">Total annual leakage</div>
+          <div className="sld-money-row-sub">illustrative · implant practice</div>
+        </div>
+        <div className="sld-money-row-r">
+          <div className="sld-money-row-v sld-money-row-v-total">$1.41M</div>
+        </div>
       </div>
     </div>
   );
@@ -5006,148 +4978,68 @@ const CSS = `
   letter-spacing: 0.04em;
 }
 
-/* Money breakdown — slide 2 · proportional leakage bars */
+/* Money breakdown — slide 2 · clean teal-only ledger table */
 .sld-money {
-  position: relative;
   display: flex; flex-direction: column;
-  gap: 22px;
-  padding: 26px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--mp-line);
-  border-radius: 20px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 22px 60px -32px rgba(14, 124, 102, 0.30);
+  box-shadow: 0 18px 40px -28px rgba(14, 124, 102, 0.20);
 }
-.sld-money-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 100% at 100% 0%, rgba(220, 76, 76, 0.06), transparent 65%),
-    radial-gradient(ellipse 40% 80% at 0% 100%, rgba(14, 124, 102, 0.06), transparent 65%);
-  pointer-events: none;
+.sld-money-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px;
+  padding: 18px 24px;
+  border-bottom: 1px dashed var(--mp-line);
 }
-.sld-money > * { position: relative; z-index: 1; }
-.sld-money-bars {
-  display: flex; flex-direction: column;
-  gap: 18px;
+.sld-money-row:last-child { border-bottom: none; }
+.sld-money-row-l {
+  display: flex; flex-direction: column; gap: 4px;
 }
-.sld-money-bar {
-  display: flex; flex-direction: column;
-  gap: 8px;
-}
-.sld-money-bar-head {
-  display: grid;
-  grid-template-columns: 32px 1fr auto auto;
-  align-items: baseline;
-  gap: 14px;
-}
-.sld-money-bar-rank {
-  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-  font-size: 11px; font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--mp-mute);
-  font-variant-numeric: tabular-nums;
-}
-.sld-money-bar-k {
-  font-size: 15px; font-weight: 600;
+.sld-money-row-k {
+  font-size: 14.5px; font-weight: 600;
   color: var(--mp-ink);
   letter-spacing: -0.012em;
 }
-.sld-money-bar-pct {
+.sld-money-row-sub {
+  font-size: 12px;
+  color: var(--mp-mute);
+  line-height: 1.4;
+}
+.sld-money-row-r {
+  display: flex; align-items: baseline; gap: 16px;
+}
+.sld-money-row-pct {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-  font-size: 12px; font-weight: 700;
+  font-size: 12px; font-weight: 600;
   color: var(--mp-mute);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
-.sld-money-bar-v {
-  font-size: 18px; font-weight: 700;
+.sld-money-row-v {
+  font-size: 18px; font-weight: 600;
   color: var(--mp-ink);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.018em;
   font-variant-numeric: tabular-nums;
 }
-.sld-money-bar-track {
-  position: relative;
-  height: 10px;
-  background: rgba(14, 124, 102, 0.06);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.sld-money-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  width: 0;
-  animation: sldMoneyFill 1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-  position: relative;
-  overflow: hidden;
-}
-.sld-money-bar-fill::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.35) 50%,
-    transparent 100%
-  );
-  animation: sldMoneyShimmer 2.4s ease-in-out infinite;
-}
-@keyframes sldMoneyFill {
-  from { width: 0; }
-}
-@keyframes sldMoneyShimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-.sld-money-bar-severe .sld-money-bar-fill {
-  background: linear-gradient(90deg, #C0392B 0%, #E55934 100%);
-  box-shadow: 0 6px 16px -6px rgba(192, 57, 43, 0.50);
-}
-.sld-money-bar-high .sld-money-bar-fill {
-  background: linear-gradient(90deg, #E08A2D 0%, #F2B441 100%);
-  box-shadow: 0 6px 16px -6px rgba(224, 138, 45, 0.45);
-}
-.sld-money-bar-med .sld-money-bar-fill {
-  background: linear-gradient(90deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
-  box-shadow: 0 6px 16px -6px rgba(14, 124, 102, 0.40);
-}
-.sld-money-bar-sub {
-  font-size: 12px;
-  color: var(--mp-mute);
-  margin-left: 46px;
-  line-height: 1.4;
-}
-.sld-money-total {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 24px;
-  padding: 18px 22px;
-  border-radius: 14px;
+.sld-money-row-total {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(34, 184, 160, 0.45), transparent 70%),
-    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
-  color: #fff;
-  box-shadow:
-    0 22px 50px -22px rgba(14, 124, 102, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    radial-gradient(ellipse 60% 100% at 100% 50%, rgba(34, 184, 160, 0.12), transparent 70%),
+    rgba(248, 253, 252, 0.98);
+  border-top: 1px solid var(--mp-line-strong);
 }
-.sld-money-total-eyebrow {
+.sld-money-row-total .sld-money-row-k {
   font-size: 11px; letter-spacing: 0.22em; font-weight: 700;
-  color: var(--mp-teal-2);
+  color: var(--mp-teal);
   text-transform: uppercase;
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
 }
-.sld-money-total-sub {
-  margin-top: 2px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.65);
-}
-.sld-money-total-v {
-  font-size: 42px; font-weight: 800;
-  letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #fff 0%, var(--mp-teal-2) 100%);
+.sld-money-row-v-total {
+  font-size: 26px; font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
 
 /* Pricing 2-col grid + sample invoice */
