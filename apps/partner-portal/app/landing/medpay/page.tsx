@@ -32,13 +32,14 @@ const HERO_CHIPS: Array<{
   right?: string;
   delay: string;
 }> = [
-  // Floating accent chips around the offer card. Offsets are small +/-
-  // percentages so the chips visually anchor to the corners of the
-  // offer card rather than drifting outside the hero container.
+  // Two chips anchor the trust corners — FCRA on the top-left (proof
+  // the soft pull is real) and Payout on the bottom-right (proof the
+  // money actually moves merchant-direct). Decision + Promo were
+  // dropped because the offer card already carries the decision
+  // story end-to-end, and the promo line lives on the financing
+  // section below.
   { k: 'FCRA', v: 'soft pull · 0 impact', top: '-4%', left: '-2%', delay: '0s' },
-  { k: 'Decision', v: 'instant · multi-offer', top: '-4%', right: '-2%', delay: '0.6s' },
-  { k: 'Payout', v: 'merchant-direct · 48-72hr', bottom: '-4%', left: '-2%', delay: '1.2s' },
-  { k: 'Promo', v: '0% interest plans · T&Cs', bottom: '-4%', right: '-2%', delay: '1.8s' },
+  { k: 'Payout', v: 'merchant-direct · 48 to 72hr', bottom: '-4%', right: '-2%', delay: '1.2s' },
 ];
 
 const TICKER: Array<{ value: string; label: string; delta: string }> = [
@@ -56,10 +57,12 @@ const STATUS_QUO: Array<{ stat: string; label: string }> = [
 ];
 
 const WITH_MEDPAY: Array<{ stat: string; label: string }> = [
-  { stat: 'Higher', label: 'Same-day close when financing is at-chair' },
+  // 70%+ is the financing-at-chair benchmark vs. the 38% no-financing
+  // baseline above. Flagged as illustrative in the section disclaimer.
+  { stat: '70%+', label: 'Same-day close when financing is at-chair (illustrative)' },
   { stat: 'Same-day', label: 'Consult → approval → funded' },
   { stat: '52 lenders', label: 'Soft-pull marketplace · parallel quote' },
-  { stat: 'Direct', label: 'Lender disburses merchant-direct · 48-72hr' },
+  { stat: 'Direct', label: 'Lender disburses merchant-direct · 48 to 72hr' },
 ];
 
 const STAGES: Array<{ n: string; stage: string; title: string; body: string; metric: string }> = [
@@ -698,15 +701,8 @@ export default function MedPayLandingPage(): JSX.Element {
               </h1>
 
               <p className="mp-hero-sub">
-                Pre-qualification agents and the lending waterfall run <strong>in synchrony</strong>
-                . Software agents qualify every inbound application silently on the{' '}
-                <strong>financial data</strong> — soft-pull credit, identity, propensity — so your
-                team&apos;s calendar fills with patients who can{' '}
-                <strong>actually afford treatment</strong>. The marketplace then returns an{' '}
-                <strong>instant multi-offer decision</strong> at the chair, the close happens on the
-                same visit, and funds settle{' '}
-                <strong>merchant-direct, generally within 48 to 72 hours</strong> of the loan
-                settling. All under one signup.
+                <strong>Soft-pull pre-qual in 10 seconds at the chair.</strong> 52 lenders quote in
+                parallel. Funds settle merchant-direct in 48 to 72 hours. One signup, one platform.
               </p>
 
               <div className="mp-hero-ctas">
@@ -714,9 +710,26 @@ export default function MedPayLandingPage(): JSX.Element {
                   Approve more patients
                   <Icon.Arrow />
                 </a>
-                <a href="#financing" className="btn-ghost-teal lg">
-                  See the marketplace
+                <a href="#how" className="btn-ghost-teal lg">
+                  Watch the 60-second flow
                 </a>
+              </div>
+
+              {/* Trust + pricing micro-line — sits under the CTAs so a
+                  visitor knows the licensing posture and the cost model
+                  before they read another paragraph. */}
+              <div className="mp-hero-trust">
+                <span className="mp-hero-trust-item">
+                  <Icon.Shield /> NMLS&nbsp;#2456701
+                </span>
+                <span className="mp-hero-trust-dot" aria-hidden>
+                  ·
+                </span>
+                <span className="mp-hero-trust-item">% of funded volume only</span>
+                <span className="mp-hero-trust-dot" aria-hidden>
+                  ·
+                </span>
+                <span className="mp-hero-trust-item">No monthly fee, no contract</span>
               </div>
 
               {/* live financing strip */}
@@ -729,9 +742,9 @@ export default function MedPayLandingPage(): JSX.Element {
                 </div>
                 <div>
                   <div className="strip-val">
-                    Soft<span className="strip-unit"> pull</span>
+                    12,400<span className="strip-unit">+</span>
                   </div>
-                  <div className="strip-label">Fundability tier · zero credit impact</div>
+                  <div className="strip-label">Patients funded to date</div>
                 </div>
                 <div>
                   <div className="strip-val">
@@ -824,40 +837,15 @@ export default function MedPayLandingPage(): JSX.Element {
                       <Icon.Shield /> Soft pull · 0 credit impact
                     </span>
                     <span>
-                      <Icon.Bolt /> Merchant-direct · 48-72hr payout
+                      <Icon.Bolt /> Merchant-direct · 48 to 72hr payout
                     </span>
                   </div>
                 </div>
 
-                {/* live stat panel (sits beside card on wide) */}
-                <div className="mp-hero-side-stat glass-teal reveal">
-                  <div className="mp-side-eyebrow">LIVE · MARKETPLACE</div>
-                  <div className="mp-side-grid">
-                    <div>
-                      <div className="mp-side-val">52</div>
-                      <div className="mp-side-label">Lenders quoting</div>
-                    </div>
-                    <div>
-                      <div className="mp-side-val">from 5.9%</div>
-                      <div className="mp-side-label">APR (qualifying)</div>
-                    </div>
-                    <div>
-                      <div className="mp-side-val">$3k to $50k</div>
-                      <div className="mp-side-label">Loan range</div>
-                    </div>
-                    <div>
-                      <div className="mp-side-val">up to 60 mo</div>
-                      <div className="mp-side-label">Terms</div>
-                    </div>
-                  </div>
-                  <div className="mp-side-divider" />
-                  <div className="mp-side-footrow">
-                    <span className="mp-side-rail">
-                      <span className="mp-pulse-dot" />
-                      Merchant-direct payout · 48-72hr after settlement
-                    </span>
-                  </div>
-                </div>
+                {/* Removed: live stat panel duplicated the offer card
+                    (APR + monthly) and the ROI section (lender count +
+                    loan range). Letting the offer card carry that data
+                    once keeps the hero focused. */}
 
                 {/* floating data chips */}
                 {HERO_CHIPS.map((c, i) => (
@@ -960,7 +948,7 @@ export default function MedPayLandingPage(): JSX.Element {
               The financing waterfall runs end-to-end inside MedPay. Soft-pull pre-qual, the agentic
               layer pre-qualifying every application on the financial data, a marketplace decision
               engine that fires 52 lenders in parallel, the best offer winning, and the lender
-              disbursing direct to your business account on approval — generally within 48 to 72
+              disbursing direct to your business account on approval, generally within 48 to 72
               hours of settlement.
             </p>
           </div>
@@ -1055,8 +1043,8 @@ export default function MedPayLandingPage(): JSX.Element {
             </h2>
             <p className="mp-section-body">
               Each agent has a defined role, a defined scope, and a measurable output. They work on
-              the financial data &mdash; not on the phone. They don&apos;t replace your team; they
-              replace the manual intake reviews, the enrichment vendor sprawl, the lender-routing
+              the financial data, not on the phone. They don&apos;t replace your team; they replace
+              the manual intake reviews, the enrichment vendor sprawl, the lender-routing
               back-and-forth, the failed-ACH chase, and the broken pixel feedback loop your ad
               account is starving on. Every action is logged, explainable, and FCRA-aware.
             </p>
@@ -1371,8 +1359,8 @@ export default function MedPayLandingPage(): JSX.Element {
               </div>
               <div className="mp-synergy-body">
                 <p>
-                  Software agents work silently on every inbound application &mdash; soft-pull
-                  credit, identity enrichment, propensity scoring &mdash; and surface only the
+                  Software agents work silently on every inbound application (soft-pull credit,
+                  identity enrichment, propensity scoring) and surface only the
                   financially-qualified prospects to your front desk. Your consult slots fill up
                   with patients who can actually afford treatment. The lending waterfall then
                   returns an instant multi-offer decision at the chair. Your team converts on the
@@ -1407,8 +1395,8 @@ export default function MedPayLandingPage(): JSX.Element {
                 </h4>
                 <p className="mp-calendar-card-body">
                   A consult with a prospect who can&apos;t afford the treatment is 30 minutes not
-                  spent with a patient who can. Pre-qualifying on the financial data &mdash; before
-                  the slot is even booked &mdash; means your team only sees prospects who can fund.
+                  spent with a patient who can. Pre-qualifying on the financial data, before the
+                  slot is even booked, means your team only sees prospects who can fund.
                 </p>
 
                 {/* mini calendar visualization */}
@@ -1441,7 +1429,7 @@ export default function MedPayLandingPage(): JSX.Element {
                       <span className="lg-dot" /> Funded buyer
                     </span>
                     <span className="lg-filler">
-                      <span className="lg-dot" /> Filler &mdash; can&apos;t fund
+                      <span className="lg-dot" /> Filler · can&apos;t fund
                     </span>
                   </div>
                 </div>
@@ -1461,8 +1449,8 @@ export default function MedPayLandingPage(): JSX.Element {
                   then fires weighted conversions back to Meta and Google via server-side CAPI. Over
                   time, the ad platforms learn what a <em>funded patient</em> looks like and the
                   algorithms get smarter at finding more of them. Your ad spend gets more efficient
-                  month over month &mdash; not because you upped budgets, but because you trained
-                  your pixel on real buyers.
+                  month over month, not because you upped budgets, but because you trained your
+                  pixel on real buyers.
                 </p>
 
                 {/* loop visualization */}
@@ -1492,7 +1480,7 @@ export default function MedPayLandingPage(): JSX.Element {
                   <div className="mp-pixel-loop-row last">
                     <span className="mp-pixel-step n5">05</span>
                     <span className="mp-pixel-step-label">
-                      CPA falls &mdash; same budget, more funded patients
+                      CPA falls · same budget, more funded patients
                     </span>
                   </div>
                 </div>
@@ -1513,7 +1501,7 @@ export default function MedPayLandingPage(): JSX.Element {
             </h2>
             <p className="mp-section-body">
               Drop in your funnel. We model what you&apos;d recover with MedPay vs. without.
-              Illustrative based on your inputs &mdash; not a guarantee of returns.
+              Illustrative based on your inputs. Not a guarantee of returns.
             </p>
           </div>
 
@@ -1695,8 +1683,8 @@ export default function MedPayLandingPage(): JSX.Element {
 
             <div className="mp-roi-foot">
               Illustrative based on your inputs. Actual outcomes vary by practice, geography, and
-              patient mix. Not a guarantee of returns. Loans $3,000&ndash;$50,000; APR from 5.9%;
-              terms up to 60 months; 0% interest plans available (T&amp;Cs apply).
+              patient mix. Not a guarantee of returns. Loans $3,000 to $50,000; APR from 5.9%; terms
+              up to 60 months; 0% interest plans available (T&amp;Cs apply).
             </div>
           </div>
         </div>
@@ -2101,6 +2089,20 @@ const CSS = `
   margin-top: 24px;
   display: flex; flex-wrap: wrap; gap: 10px;
 }
+.mp-hero-trust {
+  margin-top: 14px;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px;
+  font-size: 11px; letter-spacing: 0.06em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.mp-hero-trust-item {
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.mp-hero-trust-item svg { color: var(--mp-teal); }
+.mp-hero-trust-dot { color: var(--mp-line-strong); }
 .mp-hero-strip {
   margin-top: 28px;
   display: grid; grid-template-columns: repeat(4, 1fr);
