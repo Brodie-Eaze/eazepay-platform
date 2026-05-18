@@ -791,11 +791,14 @@ function HeroOfferCard() {
         FCRA soft pull · funds in 48 to 72hr · merchant-direct
       </div>
 
-      {/* In-card CTA — centered, intrinsic width (not full-card),
-          with vertical padding for a chunkier button vs the previous
-          thin full-width bar. */}
-      <div className="px-5 pt-3 pb-5 flex justify-center">
-        <a href="/apply/tradepay" className="tp-btn-primary tp-cta-glow text-sm px-8 py-4">
+      {/* In-card CTA — sits inside the card rather than floating
+          across the bottom edge with chips around it. Routes to the
+          real consumer apply flow. */}
+      <div className="px-5 pt-3 pb-5">
+        <a
+          href="/apply/tradepay"
+          className="tp-btn-primary tp-cta-glow text-sm w-full justify-center"
+        >
           Start my application
           <IconArrowRight className="ml-1.5" />
         </a>
