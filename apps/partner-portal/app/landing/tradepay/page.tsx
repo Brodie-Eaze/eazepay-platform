@@ -34,14 +34,27 @@ type CaseStudy = {
 
 type Objection = { q: string; a: string };
 
+// Sorted cheapest-monthly-first so the "Recommended" star sits on the
+// row a savvy buyer would actually pick — the previous order had
+// CoreCredit (more expensive) flagged as Recommended above BuildBank,
+// which read as a contradiction. All three offers fund the full ask
+// so the comparison reads cleanly without an Amount column.
 const HERO_OFFER: RankedOffer[] = [
+  {
+    lender: 'BuildBank',
+    amount: '$24,000',
+    apr: '6.99%',
+    monthly: '$436 / mo',
+    term: '60 mo',
+    status: 'primary',
+  },
   {
     lender: 'CoreCredit',
     amount: '$24,000',
     apr: '8.49%',
     monthly: '$480 / mo',
     term: '60 mo',
-    status: 'primary',
+    status: 'backup',
   },
   {
     lender: 'FinWise',
@@ -50,14 +63,6 @@ const HERO_OFFER: RankedOffer[] = [
     monthly: '$510 / mo',
     term: '60 mo',
     status: 'backup',
-  },
-  {
-    lender: 'BuildBank',
-    amount: '$22,000',
-    apr: '6.99%',
-    monthly: '$436 / mo',
-    term: '60 mo',
-    status: 'counter',
   },
 ];
 
@@ -703,7 +708,8 @@ function Hero() {
 function HeroOfferCard() {
   return (
     <div className="tp-offer-card">
-      {/* Header */}
+      {/* Header — single APPROVED indicator (the previous footer chip
+          said APPROVED a second time on the same card). */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200/70">
         <div className="tp-status-pill">
           <span className="tp-status-pill-scan" aria-hidden />
@@ -712,49 +718,42 @@ function HeroOfferCard() {
             TradePay · approved
           </span>
         </div>
-        <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-          Soft pull · 0 impact
-        </span>
+        <span className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Match · 14s</span>
       </div>
 
       {/* Project line */}
-      <div className="px-5 py-4 border-b border-slate-200/70 flex items-center justify-between">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500 flex items-center gap-1.5">
-            Roof replacement · Henderson residence
-            {/* Explicit "illustrative" tag — the project name, dollar
-                amount, and the lender names below are mock data for
-                visual demo. Naming specific lenders without the tag
-                could imply a partnership that doesn't exist. */}
-            <span className="text-[8.5px] tracking-[0.18em] font-semibold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
-              Illustrative
-            </span>
-          </div>
-          <div className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">$24,000</div>
+      <div className="px-5 py-4 border-b border-slate-200/70">
+        <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500 flex items-center gap-1.5">
+          Roof replacement · Henderson residence
+          {/* Explicit "illustrative" tag — the project name, dollar
+              amount, and the lender names below are mock data for
+              visual demo. Naming specific lenders without the tag
+              could imply a partnership that doesn't exist. */}
+          <span className="text-[8.5px] tracking-[0.18em] font-semibold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
+            Illustrative
+          </span>
         </div>
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Match time</div>
-          <div className="mt-1 text-base font-semibold tabular-nums text-slate-900">14s</div>
-        </div>
+        <div className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">$24,000</div>
       </div>
 
-      {/* Ranked offers */}
+      {/* Ranked offers — 3 cols (LENDER / MONTHLY / TERM). APR column
+          dropped to match the defensive sweep on the apply-flow
+          calculator (PR #50). */}
       <div className="px-5 py-4 border-b border-slate-200/70">
         <div className="grid grid-cols-12 text-[9.5px] uppercase tracking-[0.18em] text-slate-500 pb-2 border-b border-slate-200/60">
-          <div className="col-span-4">Lender</div>
-          <div className="col-span-3 text-right">Monthly</div>
-          <div className="col-span-2 text-right">APR</div>
-          <div className="col-span-3 text-right">Term</div>
+          <div className="col-span-6">Lender</div>
+          <div className="col-span-4 text-right">Monthly</div>
+          <div className="col-span-2 text-right">Term</div>
         </div>
 
-        {HERO_OFFER.map((o, i) => (
+        {HERO_OFFER.map((o) => (
           <div
             key={o.lender}
             className={`grid grid-cols-12 items-center py-2.5 text-[12.5px] ${
               o.status === 'primary' ? 'tp-offer-row-primary' : 'text-slate-600'
             }`}
           >
-            <div className="col-span-4 flex items-center gap-2">
+            <div className="col-span-6 flex items-center gap-2">
               {o.status === 'primary' ? (
                 <span className="tp-star">★</span>
               ) : (
@@ -774,42 +773,35 @@ function HeroOfferCard() {
               )}
             </div>
             <div
-              className={`col-span-3 text-right tabular-nums ${
+              className={`col-span-4 text-right tabular-nums ${
                 o.status === 'primary' ? 'font-semibold text-slate-900' : ''
               }`}
             >
               {o.monthly}
             </div>
-            <div className="col-span-2 text-right tabular-nums">{o.apr}</div>
-            <div className="col-span-3 text-right tabular-nums">{o.term}</div>
+            <div className="col-span-2 text-right tabular-nums">{o.term}</div>
           </div>
         ))}
       </div>
 
-      {/* Live stats strip */}
-      <div className="grid grid-cols-3 tp-stat-strip">
-        <div className="tp-stat-cell">
-          <div className="tp-stat-num">$12.8M</div>
-          <div className="tp-stat-lbl">Funded · 30d</div>
-        </div>
-        <div className="tp-stat-cell">
-          <div className="tp-stat-num">Soft</div>
-          <div className="tp-stat-lbl">Pull · zero impact</div>
-        </div>
-        <div className="tp-stat-cell">
-          <div className="tp-stat-num">Real-time</div>
-          <div className="tp-stat-lbl">Lender marketplace</div>
-        </div>
+      {/* Single trust line — used to be three competing trust surfaces
+          (header "Soft pull · 0 impact", inner stats strip, footer
+          "Merchant-direct" line). One line, all three points. */}
+      <div className="px-5 py-3.5 bg-slate-50/70 text-[10.5px] uppercase tracking-[0.18em] text-slate-600 text-center">
+        FCRA soft pull · funds in 48 to 72hr · merchant-direct
       </div>
 
-      {/* Footer with key data chip · single orange touch */}
-      <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50/70">
-        <div className="text-[10.5px] uppercase tracking-[0.18em] text-slate-600">
-          Merchant-direct · funds in 48 to 72hr to your account
-        </div>
-        <div className="tp-funded-chip">
-          <span className="tp-funded-chip-dot" /> APPROVED
-        </div>
+      {/* In-card CTA — sits inside the card rather than floating
+          across the bottom edge with chips around it. Routes to the
+          real consumer apply flow. */}
+      <div className="px-5 pt-3 pb-5">
+        <a
+          href="/apply/tradepay"
+          className="tp-btn-primary tp-cta-glow text-sm w-full justify-center"
+        >
+          Start my application
+          <IconArrowRight className="ml-1.5" />
+        </a>
       </div>
     </div>
   );
