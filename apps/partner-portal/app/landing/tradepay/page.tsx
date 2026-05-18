@@ -1409,15 +1409,18 @@ function QuoteTheBuyersSection() {
                   Filler (can&apos;t fund)
                 </span>
               </div>
-            </div>
-          </div>
 
-          {/* Hours recovered stat tile · floats */}
-          <div className="tp-quote-recovered">
-            <div className="tp-quote-recovered-k">Estimator hours recovered / week</div>
-            <div className="tp-quote-recovered-v">~12.5 hrs</div>
-            <div className="tp-quote-recovered-sub">
-              5 filler slots &times; 2.5 hours each, redirected to funded buyers. Illustrative.
+              {/* Calendar footer — the math sits INSIDE the panel rather
+                  than as a separate dark tile below, so Card A reads
+                  as one cohesive object that matches the visual weight
+                  of Cards B and C. */}
+              <div className="tp-quote-calendar-foot">
+                <div className="tp-quote-calendar-foot-k">Estimator hours recovered / week</div>
+                <div className="tp-quote-calendar-foot-v">~12.5 hrs</div>
+                <div className="tp-quote-calendar-foot-sub">
+                  5 filler slots &times; 2.5 hours, redirected to funded buyers. Illustrative.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -4490,36 +4493,31 @@ const CSS = `
     background: rgba(120, 120, 120, 0.4);
   }
 
-  /* Hours-recovered stat tile · float + subtle wobble */
-  .tp-quote-recovered {
-    margin-top: 6px;
-    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 16px 18px;
-    color: var(--tp-slate-200);
-    box-shadow:
-      0 1px 0 rgba(255,255,255,0.04) inset,
-      0 18px 38px -22px rgba(15,23,42,0.45);
-    will-change: transform;
+  /* Calendar footer — the math row, now inside the calendar panel
+     (used to be a separate dark "tp-quote-recovered" tile that
+     orphaned at the bottom of Card A). */
+  .tp-quote-calendar-foot {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(15,23,42,0.12);
+    display: flex; flex-direction: column; gap: 4px;
   }
-  .tp-quote-recovered-k {
-    font-size: 10px; letter-spacing: 0.18em;
+  .tp-quote-calendar-foot-k {
+    font-size: 10px; letter-spacing: 0.16em;
     text-transform: uppercase; font-weight: 600;
-    color: var(--tp-slate-400);
+    color: var(--tp-slate-500);
   }
-  .tp-quote-recovered-v {
-    margin-top: 6px;
-    font-size: 28px; font-weight: 800;
+  .tp-quote-calendar-foot-v {
+    font-size: 26px; font-weight: 800;
     letter-spacing: -0.02em;
-    background: linear-gradient(180deg, #F8FAFC 0%, #FED7AA 60%, #F97316 100%);
+    background: linear-gradient(180deg, var(--tp-slate-900) 0%, var(--tp-orange) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     font-variant-numeric: tabular-nums;
+    line-height: 1.1;
   }
-  .tp-quote-recovered-sub {
-    margin-top: 4px;
+  .tp-quote-calendar-foot-sub {
     font-size: 10.5px; color: var(--tp-slate-500);
     line-height: 1.5;
   }
