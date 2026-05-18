@@ -325,6 +325,7 @@ const NAKED_ROUTES = [
   '/invoices/confirm', // recipient confirm/dispute page — public, token-gated
   '/accept', // team-invite accept landing — recipient may have no cookie
   '/sales', // sales-team pitch decks (full-screen slide presentations)
+  '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {
