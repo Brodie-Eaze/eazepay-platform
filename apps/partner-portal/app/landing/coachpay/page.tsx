@@ -63,7 +63,7 @@ const WITH_COACHPAY = [
   { stat: 'Closed', label: 'on the discovery call, before the objection lands' },
   { stat: '48-72h', label: 'merchant-direct payout from the lender' },
   { stat: '10 sec', label: 'soft-pull pre-qual decision while still on Zoom' },
-  { stat: 'No clawback', label: 'on routine defaults — lender carries the credit risk' },
+  { stat: 'No clawback', label: 'on routine defaults, lender carries the credit risk' },
 ];
 
 const WATERFALL = [
@@ -78,28 +78,28 @@ const WATERFALL = [
     n: '02',
     stage: 'Agents',
     title: 'ORACLE scores. HELIX routes.',
-    body: 'ORACLE returns a fundability tier on the financial data. HELIX routes the prospect to the right closer based on tier and capacity. All software — no manual handoff, no homework after the call.',
+    body: 'ORACLE returns a fundability tier on the financial data. HELIX routes the prospect to the right closer based on tier and capacity. All software, no manual handoff, no homework after the call.',
     metric: '<10s decision',
   },
   {
     n: '03',
     stage: 'Decision',
     title: 'Marketplace waterfalls in parallel',
-    body: 'CoachPay routes one application across 52 lenders in parallel — engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.',
+    body: 'CoachPay routes one application across 52 lenders in parallel, engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.',
     metric: '52 lenders',
   },
   {
     n: '04',
     stage: 'Offer',
     title: 'Multiple ranked offers · APR from 5.9%',
-    body: 'The offer card surfaces multiple ranked offers tailored to the prospect — $5k to $50k tickets, 12 to 60 month terms, APR from 5.9% for qualifying clients. 0% interest plans available for qualifying programs (T&Cs apply).',
+    body: 'The offer card surfaces multiple ranked offers tailored to the prospect, $5k to $50k tickets, 12 to 60 month terms, APR from 5.9% for qualifying clients. 0% interest plans available for qualifying programs (T&Cs apply).',
     metric: 'APR from 5.9%',
   },
   {
     n: '05',
     stage: 'Funded',
     title: 'Merchant-direct payout · 48 to 72 hours',
-    body: 'The lender disburses straight to your business account — no intermediary holding funds. Funds generally land within 48 to 72 hours of the loan settling. Lender carries the credit risk; no clawback on routine defaults.',
+    body: 'The lender disburses straight to your business account, no intermediary holding funds. Funds generally land within 48 to 72 hours of the loan settling. Lender carries the credit risk; no clawback on routine defaults.',
     metric: '48 to 72 hours',
   },
 ];
@@ -160,7 +160,7 @@ const OBJECTIONS = [
   },
   {
     q: 'If a student stops paying mid-program, am I on the hook for the cash collected?',
-    a: "No. The lender on the offer carries the credit risk for routine defaults. Once the loan settles, funds land in your business account merchant-direct, generally within 48 to 72 hours — no intermediary holding funds. If a student quits the program, that's your refund policy decision, not the lender's problem. No clawback on routine defaults.",
+    a: "No. The lender on the offer carries the credit risk for routine defaults. Once the loan settles, funds land in your business account merchant-direct, generally within 48 to 72 hours, no intermediary holding funds. If a student quits the program, that's your refund policy decision, not the lender's problem. No clawback on routine defaults.",
   },
   {
     q: 'What underwriting does CoachPay support for high-ticket programs?',
@@ -168,11 +168,11 @@ const OBJECTIONS = [
   },
   {
     q: 'How does the merchant payout actually work?',
-    a: 'Merchant-direct. The lender disburses straight to your business account once the loan settles — no escrow agent, no marketplace intermediary holding funds. Funds generally land within 48 to 72 hours. The lender carries the credit risk on routine defaults; no surprise clawbacks come back to you.',
+    a: 'Merchant-direct. The lender disburses straight to your business account once the loan settles, no escrow agent, no marketplace intermediary holding funds. Funds generally land within 48 to 72 hours. The lender carries the credit risk on routine defaults; no surprise clawbacks come back to you.',
   },
   {
     q: "What happens when the primary lender doesn't approve the full ticket?",
-    a: 'The card-stacking layer routes the client through 800+ credit card and BNPL options, ranked by remaining credit available, statement-cycle timing, and 0% promo windows. A $35k mastermind can fund across one personal loan plus two cards instead of being declined. Same instant-decision flow — the agentic layer just adds another fundable path.',
+    a: 'The card-stacking layer routes the client through 800+ credit card and BNPL options, ranked by remaining credit available, statement-cycle timing, and 0% promo windows. A $35k mastermind can fund across one personal loan plus two cards instead of being declined. Same instant-decision flow, the agentic layer just adds another fundable path.',
   },
   {
     q: "Won't offering financing commoditise my high-ticket program?",
@@ -218,7 +218,7 @@ const HERO_CHIPS: Array<{
 ];
 
 /* ----------------------------------------------------------------------------
-   ROI Calculator — 4-stage funnel
+   ROI Calculator, 4-stage funnel
    ---------------------------------------------------------------------------- */
 
 interface RoiInputs {
@@ -354,7 +354,7 @@ export default function CoachPayLandingPage() {
             <a href="/apply/coachpay" className="cp-btn cp-btn--ghost">
               See the closer flow
             </a>
-            <a href="/welcome" className="cp-btn cp-btn--violet">
+            <a href="/submit/coach-pay" className="cp-btn cp-btn--violet">
               Start CoachPay signup
             </a>
           </div>
@@ -380,8 +380,8 @@ export default function CoachPayLandingPage() {
                 <span className="cp-grad-text">Real offers in 10 seconds.</span>
               </h1>
               <p className="cp-hero-sub">
-                CoachPay puts a full lender waterfall behind your offer — prime, near-prime,
-                subprime — and returns a real, signed pre-approval in under ten seconds. Your client
+                CoachPay puts a full lender waterfall behind your offer, prime, near-prime,
+                subprime, and returns a real, signed pre-approval in under ten seconds. Your client
                 picks a plan on the call instead of "thinking about it."{' '}
                 <span className="cp-emph">
                   Point-of-sale finance, end-to-end, with zero credit-score impact to apply.
@@ -389,7 +389,7 @@ export default function CoachPayLandingPage() {
               </p>
 
               <div className="cp-hero-ctas">
-                <a href="/welcome" className="cp-btn cp-btn--violet cp-btn--lg">
+                <a href="/submit/coach-pay" className="cp-btn cp-btn--violet cp-btn--lg">
                   Start CoachPay signup
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
@@ -634,7 +634,7 @@ export default function CoachPayLandingPage() {
                 Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to
                 60 months for lower monthly repayments. 0% interest plans available for qualifying
                 programs (T&amp;Cs apply). 52 lenders quoted in parallel with a 5-second SLA per
-                round-trip. The lender disburses straight to your business account — no intermediary
+                round-trip. The lender disburses straight to your business account, no intermediary
                 holding funds.
               </p>
               <div className="cp-pillar-roi">
@@ -655,7 +655,7 @@ export default function CoachPayLandingPage() {
             <PillarFeature
               icon="grid"
               title="52 lenders · 5s SLA"
-              body="One application, 52 parallel lender quotes. Multiple ranked offers tailored to the client's situation — Cross River, engine.tech, FinWise, Affirm, EazePay Direct. Best total-cost offer ranked first."
+              body="One application, 52 parallel lender quotes. Multiple ranked offers tailored to the client's situation, Cross River, engine.tech, FinWise, Affirm, EazePay Direct. Best total-cost offer ranked first."
             />
             <PillarFeature
               icon="zero"
@@ -665,7 +665,7 @@ export default function CoachPayLandingPage() {
             <PillarFeature
               icon="rocket"
               title="Merchant-direct · 48 to 72h"
-              body="Lender disburses straight to your business account once the loan settles — no intermediary holding funds. Funds generally land within 48 to 72 hours. Lender carries the credit risk; no clawback on routine defaults."
+              body="Lender disburses straight to your business account once the loan settles, no intermediary holding funds. Funds generally land within 48 to 72 hours. Lender carries the credit risk; no clawback on routine defaults."
             />
           </div>
         </div>
@@ -689,7 +689,7 @@ export default function CoachPayLandingPage() {
                 card-stacking layer routes the client through 800+ credit card and BNPL options
                 ranked by remaining credit available, statement-cycle timing, and 0% promo windows.
                 The client can fund a $35,000 mastermind across one personal loan plus two cards
-                instead of being declined. Same instant-decision flow — the agentic layer just adds
+                instead of being declined. Same instant-decision flow, the agentic layer just adds
                 another fundable path.
               </p>
               <div className="cp-cardstack-bullets">
@@ -699,7 +699,7 @@ export default function CoachPayLandingPage() {
                 </div>
                 <div className="cp-cardstack-bullet">
                   <span className="cp-cardstack-bullet-dot" />
-                  Fans across multiple cards to fund the gap — same flow, more paths
+                  Fans across multiple cards to fund the gap, same flow, more paths
                 </div>
                 <div className="cp-cardstack-bullet">
                   <span className="cp-cardstack-bullet-dot" />
@@ -747,10 +747,10 @@ export default function CoachPayLandingPage() {
                 or can&rsquo;t afford the program is pure waste.
               </h3>
               <p className="cp-qual-math-body">
-                Pre-qualification across multiple financial-data checkpoints — credit, identity,
-                cashflow, and optional asset signals — means the prospect that lands in your
-                calendar is already cleared. Your closer talks to people who can pay; not people who
-                came to browse.
+                Pre-qualification across multiple financial-data checkpoints, credit, identity,
+                cashflow, and optional asset signals, means the prospect that lands in your calendar
+                is already cleared. Your closer talks to people who can pay; not people who came to
+                browse.
               </p>
             </div>
             <div className="cp-qual-math-tiles">
@@ -767,7 +767,7 @@ export default function CoachPayLandingPage() {
               <div className="cp-qual-math-tile">
                 <div className="cp-qual-math-tile-v">Funded</div>
                 <div className="cp-qual-math-tile-l">
-                  enrolments / month — what calendars actually convert
+                  enrolments / month, what calendars actually convert
                 </div>
               </div>
             </div>
@@ -784,7 +784,7 @@ export default function CoachPayLandingPage() {
                 <div className="cp-qual-loop-step-n">01</div>
                 <div className="cp-qual-loop-step-t">Hold pixel events</div>
                 <div className="cp-qual-loop-step-b">
-                  ECHO holds pixel events until the prospect clears qualification — Meta and Google
+                  ECHO holds pixel events until the prospect clears qualification, Meta and Google
                   never see the form fillers.
                 </div>
               </div>
@@ -792,7 +792,7 @@ export default function CoachPayLandingPage() {
                 <div className="cp-qual-loop-step-n">02</div>
                 <div className="cp-qual-loop-step-t">Fire weighted conversions</div>
                 <div className="cp-qual-loop-step-b">
-                  Cleared prospects fire as weighted conversions back to Meta and Google CAPI — the
+                  Cleared prospects fire as weighted conversions back to Meta and Google CAPI, the
                   algorithms learn from buyers, not browsers.
                 </div>
               </div>
@@ -801,7 +801,7 @@ export default function CoachPayLandingPage() {
                 <div className="cp-qual-loop-step-t">Retrain on funded enrolments</div>
                 <div className="cp-qual-loop-step-b">
                   Funded enrolments uploaded as offline conversions. Ad spend gets more efficient
-                  month over month — same budget, more buyers.
+                  month over month, same budget, more buyers.
                 </div>
               </div>
             </div>
@@ -825,7 +825,7 @@ export default function CoachPayLandingPage() {
             </h3>
             <p className="cp-synergy-body">
               Software agents pre-qualify every inbound prospect across multiple financial-data
-              checkpoints — soft-pull credit, identity, cashflow, optional asset signals. Only the
+              checkpoints, soft-pull credit, identity, cashflow, optional asset signals. Only the
               cleared prospects reach your discovery-call calendar. The lending waterfall returns an
               instant multi-offer decision on the call. When the primary loan doesn&rsquo;t cover
               the full program, the card-stacking layer fans 800+ cards across the gap. Combined,
@@ -855,10 +855,10 @@ export default function CoachPayLandingPage() {
               and every approval. 24/7.
             </h2>
             <p className="cp-h2-sub cp-h2-sub--on-dark">
-              Software agents operating on financial data — they never contact the prospect
-              directly. Each agent has a defined scope and a measurable output. They replace the
-              manual lead reviews, the copy-paste enrichment, the routing guesswork, and the
-              financing leakage on cold ads.
+              Software agents operating on financial data, they never contact the prospect directly.
+              Each agent has a defined scope and a measurable output. They replace the manual lead
+              reviews, the copy-paste enrichment, the routing guesswork, and the financing leakage
+              on cold ads.
             </p>
           </div>
 
@@ -1032,7 +1032,7 @@ export default function CoachPayLandingPage() {
 
           <div className="cp-agents-foot reveal">
             <span className="cp-agents-foot-dot" />
-            Software agents only — pre-qualification runs on financial data, never outbound contact.
+            Software agents only, pre-qualification runs on financial data, never outbound contact.
             FCRA permissible-purpose-aware. Every agent action logged to an immutable audit trail.
           </div>
         </div>
@@ -1051,7 +1051,7 @@ export default function CoachPayLandingPage() {
               <span className="cp-grad-text-violet">pre-qualification baked in.</span>
             </h2>
             <p className="cp-h2-sub">
-              Five inputs across the four-stage funnel — inbound leads, the financial-data filter
+              Five inputs across the four-stage funnel, inbound leads, the financial-data filter
               pass rate, your show rate, your close rate on shows, and your average ticket. The math
               runs against your numbers.
             </p>
@@ -1131,7 +1131,7 @@ export default function CoachPayLandingPage() {
                     <div className="cp-roi-out-stat-l">closer hours saved / week</div>
                   </div>
                 </div>
-                <a href="/welcome" className="cp-btn cp-btn--violet cp-btn--lg cp-roi-cta">
+                <a href="/submit/coach-pay" className="cp-btn cp-btn--violet cp-btn--lg cp-roi-cta">
                   Start CoachPay signup
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                     <path
@@ -1274,7 +1274,7 @@ export default function CoachPayLandingPage() {
             to 72 hours of the loan settling.
           </p>
           <div className="cp-final-ctas reveal">
-            <a href="/welcome" className="cp-btn cp-btn--violet cp-btn--xl">
+            <a href="/submit/coach-pay" className="cp-btn cp-btn--violet cp-btn--xl">
               Start CoachPay signup
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <path
@@ -1811,7 +1811,7 @@ function QualificationTree() {
       </div>
       <div className="cp-qual-tree-foot">
         <span className="cp-qual-tree-foot-dot" />
-        Software agents only. Pre-qualification runs on financial data — never outbound voice, SMS,
+        Software agents only. Pre-qualification runs on financial data, never outbound voice, SMS,
         or DM contact with the prospect.
       </div>
     </div>
