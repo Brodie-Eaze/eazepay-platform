@@ -218,17 +218,23 @@ const SLIDES_RAW: Slide[] = [
             <Pillar
               n="01"
               head="Speed"
-              body="Patient enters last 4 of SSN + DOB on any browser, on any device. Fundability tier returns in under 10 seconds. Zero credit impact."
+              metric="< 10s"
+              body="Last 4 of SSN + DOB on any browser, on any device. Fundability tier returns instantly. Zero credit impact, full FCRA compliance."
+              tags={['Soft pull', 'FCRA', '0 friction']}
             />
             <Pillar
               n="02"
               head="Coverage"
-              body="Every lender in parallel on one soft pull. Patient sees the cheapest qualifying offer. Decline rate is the floor of the marketplace, not the floor of a single lender."
+              metric="Every lender"
+              body="One soft pull queries every lender in parallel. Patient sees the cheapest qualifying offer. Decline rate is the floor of the marketplace, not the floor of a single lender."
+              tags={['Parallel quoting', 'Best-price wins', 'Higher approvals']}
             />
             <Pillar
               n="03"
               head="Cash flow"
-              body="Lender disburses to your business account. 48 to 72 hours. No clawback on routine defaults — the lender carries the credit risk, not you."
+              metric="48–72 hr"
+              body="Lender disburses to your business account merchant-direct. No clawback on routine defaults — the lender carries the credit risk, not you."
+              tags={['Merchant-direct', 'No clawback', 'Lender holds risk']}
             />
           </div>
         </Reveal>
@@ -1341,12 +1347,35 @@ function CountStat({
   );
 }
 
-function Pillar({ n, head, body }: { n: string; head: string; body: string }): JSX.Element {
+function Pillar({
+  n,
+  head,
+  metric,
+  body,
+  tags,
+}: {
+  n: string;
+  head: string;
+  metric?: string;
+  body: string;
+  tags?: string[];
+}): JSX.Element {
   return (
     <div className="sld-pillar">
+      <div className="sld-pillar-glow" aria-hidden />
       <div className="sld-pillar-n">{n}</div>
+      {metric ? <div className="sld-pillar-metric">{metric}</div> : null}
       <div className="sld-pillar-h">{head}</div>
       <div className="sld-pillar-b">{body}</div>
+      {tags && tags.length ? (
+        <div className="sld-pillar-tags">
+          {tags.map((t, i) => (
+            <span key={i} className="sld-pillar-tag">
+              {t}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1836,35 +1865,134 @@ function BankWire(): JSX.Element {
 
 /** 4-panel patient storyboard for slide 11. */
 function Storyboard(): JSX.Element {
-  const panels = [
+  const panels: Array<{
+    n: string;
+    t: string;
+    b: string;
+    meta: string;
+    glyph: JSX.Element;
+  }> = [
     {
       n: '01',
       t: 'Enter info',
-      b: 'Patient taps in last 4 of SSN, DOB, income, address on any device. 30 seconds.',
+      b: 'Patient taps in last 4 of SSN, DOB, income, address on any device.',
+      meta: '30 sec',
+      glyph: (
+        <svg viewBox="0 0 32 32" aria-hidden>
+          <rect
+            x="6"
+            y="4"
+            width="20"
+            height="24"
+            rx="3"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="none"
+          />
+          <line x1="9" y1="11" x2="20" y2="11" stroke="currentColor" strokeWidth="1.6" />
+          <line x1="9" y1="16" x2="23" y2="16" stroke="currentColor" strokeWidth="1.6" />
+          <line x1="9" y1="21" x2="17" y2="21" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      ),
     },
     {
       n: '02',
       t: 'Soft pull',
-      b: 'Marketplace returns fundability tier in <10s. Zero credit impact. FCRA-compliant.',
+      b: 'Marketplace returns fundability tier with zero credit impact. FCRA-compliant.',
+      meta: '< 10 sec',
+      glyph: (
+        <svg viewBox="0 0 32 32" aria-hidden>
+          <circle cx="16" cy="16" r="10" stroke="currentColor" strokeWidth="1.6" fill="none" />
+          <path
+            d="M16 6 A10 10 0 0 1 26 16"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M16 11 L16 16 L20 19"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      ),
     },
     {
       n: '03',
       t: 'See offers',
-      b: 'Three ranked offers on one screen. Cheapest first. Recommended star.',
+      b: 'Three ranked offers on one screen. Cheapest first. Best total cost is starred.',
+      meta: '3 offers',
+      glyph: (
+        <svg viewBox="0 0 32 32" aria-hidden>
+          <rect
+            x="5"
+            y="7"
+            width="22"
+            height="5"
+            rx="1.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            fill="currentColor"
+            fillOpacity="0.16"
+          />
+          <rect
+            x="5"
+            y="14"
+            width="22"
+            height="5"
+            rx="1.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            fill="none"
+          />
+          <rect
+            x="5"
+            y="21"
+            width="22"
+            height="5"
+            rx="1.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            fill="none"
+          />
+          <polygon
+            points="24,9.5 24.5,8.4 25,9.5 26.2,9.5 25.2,10.3 25.6,11.5 24.5,10.8 23.4,11.5 23.8,10.3 22.8,9.5"
+            fill="currentColor"
+          />
+        </svg>
+      ),
     },
     {
       n: '04',
       t: 'Tap to fund',
-      b: 'Patient signs e-loan docs in-session. Funds settle merchant-direct in 48-72 hr.',
+      b: 'Patient e-signs in-session. Funds settle merchant-direct in 48-72 hours.',
+      meta: '48–72 hr',
+      glyph: (
+        <svg viewBox="0 0 32 32" aria-hidden>
+          <path
+            d="M6 16 L13 23 L26 9"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
     },
   ];
   return (
     <div className="sld-storyboard">
+      <div className="sld-storyboard-track" aria-hidden />
       {panels.map((p, i) => (
-        <div key={i} className="sld-story-panel">
+        <div key={i} className="sld-story-panel" style={{ animationDelay: `${i * 0.12}s` }}>
           <div className="sld-story-n">{p.n}</div>
+          <div className="sld-story-glyph">{p.glyph}</div>
           <div className="sld-story-t">{p.t}</div>
           <div className="sld-story-b">{p.b}</div>
+          <div className="sld-story-meta">{p.meta}</div>
         </div>
       ))}
     </div>
@@ -1873,40 +2001,63 @@ function Storyboard(): JSX.Element {
 
 /** Money-flow breakdown — where the $1.4M goes. Slide 2 supplement. */
 function MoneyBreakdown(): JSX.Element {
+  // Proportional bars — width scaled to share of the $1.41M total.
+  const total = 1_408_800;
   const rows = [
+    {
+      k: 'Lost case acceptance',
+      sub: '~24 declined cases/yr × $48k avg ticket × 95%',
+      v: 1_094_400,
+      vLabel: '$1,094,400',
+      tone: 'severe',
+    },
     {
       k: 'Filler clinical hours',
       sub: '~7 unfit consults/wk × 1.5 hr × $400/hr × 52',
-      v: '$218,400',
+      v: 218_400,
+      vLabel: '$218,400',
+      tone: 'high',
     },
     {
       k: 'Truck-roll + estimator costs',
       sub: 'fuel + opportunity cost on no-fund visits',
-      v: '$96,000',
-    },
-    {
-      k: 'Lost case acceptance',
-      sub: '~24 declined cases/yr × $48k avg ticket × 95%',
-      v: '$1,094,400',
-    },
-    {
-      k: 'Total annual leakage',
-      sub: 'illustrative · implant practice',
-      v: '$1.41M',
-      total: true,
+      v: 96_000,
+      vLabel: '$96,000',
+      tone: 'med',
     },
   ];
   return (
     <div className="sld-money">
-      {rows.map((r, i) => (
-        <div key={i} className={`sld-money-row ${r.total ? 'is-total' : ''}`}>
-          <div>
-            <div className="sld-money-k">{r.k}</div>
-            <div className="sld-money-sub">{r.sub}</div>
-          </div>
-          <div className="sld-money-v">{r.v}</div>
+      <div className="sld-money-bg" aria-hidden />
+      <div className="sld-money-bars">
+        {rows.map((r, i) => {
+          const pct = Math.round((r.v / total) * 1000) / 10;
+          return (
+            <div key={i} className={`sld-money-bar sld-money-bar-${r.tone}`}>
+              <div className="sld-money-bar-head">
+                <span className="sld-money-bar-rank">{String(i + 1).padStart(2, '0')}</span>
+                <span className="sld-money-bar-k">{r.k}</span>
+                <span className="sld-money-bar-pct">{pct}%</span>
+                <span className="sld-money-bar-v">{r.vLabel}</span>
+              </div>
+              <div className="sld-money-bar-track">
+                <div
+                  className="sld-money-bar-fill"
+                  style={{ width: `${pct}%`, animationDelay: `${i * 0.12}s` }}
+                />
+              </div>
+              <div className="sld-money-bar-sub">{r.sub}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="sld-money-total">
+        <div className="sld-money-total-l">
+          <div className="sld-money-total-eyebrow">Total annual leakage</div>
+          <div className="sld-money-total-sub">illustrative · implant practice</div>
         </div>
-      ))}
+        <div className="sld-money-total-v">$1.41M</div>
+      </div>
     </div>
   );
 }
@@ -2466,42 +2617,172 @@ function WhoIsItFor(): JSX.Element {
 /** Six autonomous agents · one platform. 3+3 grid of agents with
  *  role, what-they-watch, and output. */
 function SixAgents(): JSX.Element {
-  const agents = [
+  // Each agent gets a unique geometric SVG glyph + a "version · LIVE"
+  // tag so the grid reads like an ops console, not a static brochure.
+  const agents: Array<{
+    code: string;
+    role: string;
+    watches: string;
+    output: string;
+    version: string;
+    glyph: JSX.Element;
+  }> = [
     {
       code: 'ORACLE',
       role: 'Financial qualification',
       watches: 'Reporting-bureau pull on every lead',
-      output: 'Credit score · available credit · income · DTI · pre-approval $',
+      output: 'Credit · available credit · income · DTI · pre-approval $',
+      version: 'v4.2',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="20" cy="20" r="7" fill="currentColor" opacity="0.18" />
+          <circle cx="20" cy="20" r="2.5" fill="currentColor" />
+          <path
+            d="M20 6 L20 14 M20 26 L20 34 M6 20 L14 20 M26 20 L34 20"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+        </svg>
+      ),
     },
     {
       code: 'HELIX',
       role: 'Smart forms + smart routing',
       watches: 'Form behaviour + financial signals',
       output: 'Reshapes the form · routes by credit → income → DTI',
+      version: 'v3.8',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <path
+            d="M10 6 Q20 14 30 6 Q20 14 10 22 Q20 30 30 22 Q20 30 10 38"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <circle cx="10" cy="6" r="1.6" fill="currentColor" />
+          <circle cx="30" cy="6" r="1.6" fill="currentColor" />
+          <circle cx="10" cy="22" r="1.6" fill="currentColor" />
+          <circle cx="30" cy="22" r="1.6" fill="currentColor" />
+          <circle cx="10" cy="38" r="1.6" fill="currentColor" />
+          <circle cx="30" cy="38" r="1.6" fill="currentColor" />
+        </svg>
+      ),
     },
     {
       code: 'NEXUS',
       role: 'Lender marketplace',
       watches: 'Lender appetite + rates',
       output: 'Ranked parallel quotes',
+      version: 'v6.1',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <circle cx="20" cy="20" r="3" fill="currentColor" />
+          {[0, 60, 120, 180, 240, 300].map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            const x2 = 20 + Math.cos(rad) * 12;
+            const y2 = 20 + Math.sin(rad) * 12;
+            return (
+              <g key={deg}>
+                <line x1="20" y1="20" x2={x2} y2={y2} stroke="currentColor" strokeWidth="1.4" />
+                <circle cx={x2} cy={y2} r="2.2" fill="currentColor" opacity="0.7" />
+              </g>
+            );
+          })}
+        </svg>
+      ),
     },
     {
       code: 'FLUX',
       role: 'Lender routing',
       watches: 'Approval rates per tier',
       output: 'Optimal lender order',
+      version: 'v2.5',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <path
+            d="M8 12 L20 12 L24 20 L20 28 L8 28"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M16 8 L28 8 L32 16 L28 24 L16 24"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="none"
+            strokeLinejoin="round"
+            opacity="0.5"
+          />
+          <circle cx="32" cy="32" r="2.5" fill="currentColor" />
+        </svg>
+      ),
     },
     {
       code: 'ECHO',
       role: 'Pixel attribution',
       watches: 'The funded-patient signal',
       output: 'Re-trains Meta + Google',
+      version: 'v5.0',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <circle cx="20" cy="20" r="3" fill="currentColor" />
+          <circle
+            cx="20"
+            cy="20"
+            r="8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            opacity="0.7"
+          />
+          <circle
+            cx="20"
+            cy="20"
+            r="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            opacity="0.40"
+          />
+          <circle
+            cx="20"
+            cy="20"
+            r="18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            opacity="0.20"
+          />
+        </svg>
+      ),
     },
     {
       code: 'VEGA',
       role: 'Compliance audit',
       watches: 'Every consent + disclosure',
       output: 'FCRA / ECOA / TILA trail',
+      version: 'v1.9',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <path
+            d="M20 4 L34 10 L34 22 Q34 30 20 36 Q6 30 6 22 L6 10 Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="none"
+          />
+          <path
+            d="M14 20 L18 24 L26 16"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
     },
   ];
   return (
@@ -2528,8 +2809,18 @@ function SixAgents(): JSX.Element {
       <Reveal delay={360}>
         <div className="sld-agents-grid">
           {agents.map((a, i) => (
-            <div key={i} className="sld-agent-card">
-              <div className="sld-agent-code">{a.code}</div>
+            <div key={i} className="sld-agent-card" style={{ animationDelay: `${i * 0.08}s` }}>
+              <div className="sld-agent-glow" aria-hidden />
+              <div className="sld-agent-head">
+                <div className="sld-agent-glyph">{a.glyph}</div>
+                <div className="sld-agent-head-r">
+                  <div className="sld-agent-code">{a.code}</div>
+                  <div className="sld-agent-version">
+                    <span className="sld-agent-version-dot" />
+                    {a.version} · LIVE
+                  </div>
+                </div>
+              </div>
               <div className="sld-agent-role">{a.role}</div>
               <div className="sld-agent-meta">
                 <div>
@@ -3439,37 +3730,92 @@ const CSS = `
   color: var(--mp-teal);
 }
 
-/* ===== Pillars 3-up ===== */
+/* ===== Pillars 3-up · slide 1 ===== */
 .sld-pillars {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 18px;
   margin-top: 8px;
+  perspective: 1400px;
 }
 .sld-pillar {
-  background: rgba(255, 255, 255, 0.92);
+  position: relative;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(34, 184, 160, 0.10), transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 253, 252, 0.97) 100%);
   border: 1px solid var(--mp-line-strong);
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 18px 50px -28px rgba(14, 124, 102, 0.22);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 22px;
+  padding: 26px 26px 22px;
+  box-shadow:
+    0 22px 60px -32px rgba(14, 124, 102, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  gap: 4px;
+}
+.sld-pillar-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 110%, rgba(34, 184, 160, 0.20), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
 }
 .sld-pillar:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 26px 60px -28px rgba(14, 124, 102, 0.36);
+  transform: translateY(-6px) rotateX(2deg);
+  box-shadow:
+    0 36px 80px -32px rgba(14, 124, 102, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
+.sld-pillar:hover .sld-pillar-glow { opacity: 1; }
+.sld-pillar > * { position: relative; z-index: 1; }
 .sld-pillar-n {
-  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
+  display: inline-block;
+  width: fit-content;
+  padding: 3px 8px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--mp-teal);
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(14, 124, 102, 0.20);
+  border-radius: 6px;
+}
+.sld-pillar-metric {
+  margin-top: 12px;
+  font-size: 40px; font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
 }
 .sld-pillar-h {
-  margin-top: 8px;
-  font-size: 26px; font-weight: 600;
-  letter-spacing: -0.02em;
+  margin-top: 10px;
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -0.018em;
   color: var(--mp-ink);
 }
 .sld-pillar-b {
-  margin-top: 12px;
-  font-size: 14px; color: var(--mp-ink-2); line-height: 1.55;
+  margin-top: 6px;
+  font-size: 13.5px; color: var(--mp-ink-2); line-height: 1.55;
+}
+.sld-pillar-tags {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--mp-line);
+  display: flex; flex-wrap: wrap;
+  gap: 6px;
+}
+.sld-pillar-tag {
+  font-size: 10.5px; letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--mp-teal);
+  background: rgba(34, 184, 160, 0.08);
+  border: 1px solid rgba(14, 124, 102, 0.16);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
 }
 
 /* ===== Stage row (slides 05–09) ===== */
@@ -4634,84 +4980,259 @@ const CSS = `
   text-transform: uppercase;
 }
 
-/* Storyboard — slide 11 */
+/* Storyboard — slide 11 · 4-panel patient journey with glyphs + track */
 .sld-storyboard {
+  position: relative;
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-top: 8px;
+  padding-top: 8px;
+  perspective: 1600px;
 }
+.sld-storyboard-track {
+  position: absolute;
+  top: 60px;
+  left: 14%; right: 14%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(14, 124, 102, 0.20) 8%,
+    rgba(14, 124, 102, 0.40) 50%,
+    rgba(14, 124, 102, 0.20) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.sld-storyboard-track::before,
+.sld-storyboard-track::after {
+  content: '';
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--mp-teal-2);
+  box-shadow: 0 0 0 4px rgba(34, 184, 160, 0.20);
+}
+.sld-storyboard-track::before { left: -4px; }
+.sld-storyboard-track::after { right: -4px; }
 .sld-story-panel {
-  padding: 24px 22px;
-  background: rgba(255, 255, 255, 0.92);
+  position: relative;
+  padding: 22px 20px 20px;
+  background:
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(34, 184, 160, 0.08), transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.98) 100%);
   border: 1px solid var(--mp-line);
   border-radius: 18px;
-  display: flex; flex-direction: column; gap: 10px;
-  position: relative;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  z-index: 1;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 18px 40px -28px rgba(14, 124, 102, 0.22);
+  opacity: 0;
+  transform: translateY(8px);
+  animation: sldStoryIn .5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              border-color .35s ease;
+  transform-style: preserve-3d;
+}
+@keyframes sldStoryIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .sld-story-panel:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
-}
-.sld-story-panel::before {
-  content: '';
-  position: absolute; top: -30px; right: -30px;
-  width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(34, 184, 160, 0.10), transparent 70%);
-  pointer-events: none;
+  transform: translateY(-6px) rotateX(2deg);
+  box-shadow:
+    0 32px 70px -32px rgba(14, 124, 102, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(14, 124, 102, 0.30);
 }
 .sld-story-n {
-  font-size: 11px; letter-spacing: 0.22em; font-weight: 700;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--mp-teal);
+  padding: 3px 7px;
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(14, 124, 102, 0.20);
+  border-radius: 6px;
+  width: fit-content;
 }
+.sld-story-glyph {
+  margin-top: 4px;
+  width: 44px; height: 44px;
+  padding: 8px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(34, 184, 160, 0.30), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: var(--mp-teal-2);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 24px -10px rgba(14, 124, 102, 0.55);
+}
+.sld-story-glyph svg { width: 100%; height: 100%; }
 .sld-story-t {
-  font-size: 22px; font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 18px; font-weight: 600;
+  letter-spacing: -0.018em;
   color: var(--mp-ink);
 }
 .sld-story-b {
-  font-size: 13.5px; color: var(--mp-ink-2);
-  line-height: 1.55;
+  font-size: 12.5px; color: var(--mp-ink-2);
+  line-height: 1.5;
+}
+.sld-story-meta {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px dashed var(--mp-line);
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 600;
+  color: var(--mp-teal);
+  letter-spacing: 0.04em;
 }
 
-/* Money breakdown — slide 2 */
+/* Money breakdown — slide 2 · proportional leakage bars */
 .sld-money {
+  position: relative;
   display: flex; flex-direction: column;
-  background: rgba(255, 255, 255, 0.92);
+  gap: 22px;
+  padding: 26px;
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--mp-line);
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 22px 60px -32px rgba(14, 124, 102, 0.30);
 }
-.sld-money-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 18px 24px;
-  border-bottom: 1px dashed var(--mp-line);
-  gap: 24px;
+.sld-money-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 100% at 100% 0%, rgba(220, 76, 76, 0.06), transparent 65%),
+    radial-gradient(ellipse 40% 80% at 0% 100%, rgba(14, 124, 102, 0.06), transparent 65%);
+  pointer-events: none;
 }
-.sld-money-row:last-child { border-bottom: none; }
-.sld-money-row.is-total {
-  background: linear-gradient(90deg, rgba(34, 184, 160, 0.10) 0%, transparent 100%);
-  border-top: 1px solid var(--mp-line-strong);
+.sld-money > * { position: relative; z-index: 1; }
+.sld-money-bars {
+  display: flex; flex-direction: column;
+  gap: 18px;
 }
-.sld-money-k {
-  font-size: 14px; font-weight: 700;
+.sld-money-bar {
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+.sld-money-bar-head {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: baseline;
+  gap: 14px;
+}
+.sld-money-bar-rank {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--mp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.sld-money-bar-k {
+  font-size: 15px; font-weight: 600;
   color: var(--mp-ink);
+  letter-spacing: -0.012em;
 }
-.sld-money-sub {
-  margin-top: 3px;
-  font-size: 12px; color: var(--mp-mute);
+.sld-money-bar-pct {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px; font-weight: 700;
+  color: var(--mp-mute);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
-.sld-money-v {
-  font-size: 22px; font-weight: 800;
+.sld-money-bar-v {
+  font-size: 18px; font-weight: 700;
   color: var(--mp-ink);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
-.sld-money-row.is-total .sld-money-v {
-  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+.sld-money-bar-track {
+  position: relative;
+  height: 10px;
+  background: rgba(14, 124, 102, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sld-money-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  width: 0;
+  animation: sldMoneyFill 1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+.sld-money-bar-fill::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
+  animation: sldMoneyShimmer 2.4s ease-in-out infinite;
+}
+@keyframes sldMoneyFill {
+  from { width: 0; }
+}
+@keyframes sldMoneyShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.sld-money-bar-severe .sld-money-bar-fill {
+  background: linear-gradient(90deg, #C0392B 0%, #E55934 100%);
+  box-shadow: 0 6px 16px -6px rgba(192, 57, 43, 0.50);
+}
+.sld-money-bar-high .sld-money-bar-fill {
+  background: linear-gradient(90deg, #E08A2D 0%, #F2B441 100%);
+  box-shadow: 0 6px 16px -6px rgba(224, 138, 45, 0.45);
+}
+.sld-money-bar-med .sld-money-bar-fill {
+  background: linear-gradient(90deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
+  box-shadow: 0 6px 16px -6px rgba(14, 124, 102, 0.40);
+}
+.sld-money-bar-sub {
+  font-size: 12px;
+  color: var(--mp-mute);
+  margin-left: 46px;
+  line-height: 1.4;
+}
+.sld-money-total {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(34, 184, 160, 0.45), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
+  box-shadow:
+    0 22px 50px -22px rgba(14, 124, 102, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-money-total-eyebrow {
+  font-size: 11px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal-2);
+  text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+.sld-money-total-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+.sld-money-total-v {
+  font-size: 42px; font-weight: 800;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #fff 0%, var(--mp-teal-2) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 /* Pricing 2-col grid + sample invoice */
@@ -5013,32 +5534,97 @@ const CSS = `
   font-size: 13px; color: var(--mp-ink-2); line-height: 1.5;
 }
 
-/* ===== Seven agents grid ===== */
+/* ===== Six agents grid · 3x2 ops-console feel ===== */
 .sld-agents-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  perspective: 1600px;
 }
 .sld-agent-card {
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.92);
+  position: relative;
+  padding: 16px 18px 14px;
+  background:
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(34, 184, 160, 0.10), transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 253, 252, 0.97) 100%);
   border: 1px solid var(--mp-line);
   border-radius: 14px;
   display: flex; flex-direction: column; gap: 10px;
-  transition: transform .2s ease, box-shadow .2s ease;
+  transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              border-color .35s ease;
+  overflow: hidden;
+  opacity: 0;
+  animation: sldAgentIn .5s ease forwards;
+  transform-style: preserve-3d;
+  box-shadow: 0 16px 38px -28px rgba(14, 124, 102, 0.20);
+}
+@keyframes sldAgentIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sld-agent-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(34, 184, 160, 0.20), transparent 60%);
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
 }
 .sld-agent-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.30);
-  border-color: var(--mp-line-strong);
+  transform: translateY(-4px) rotateX(2deg);
+  box-shadow:
+    0 30px 60px -28px rgba(14, 124, 102, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(14, 124, 102, 0.30);
+}
+.sld-agent-card:hover .sld-agent-glow { opacity: 1; }
+.sld-agent-card > * { position: relative; z-index: 1; }
+.sld-agent-head {
+  display: flex; align-items: center; gap: 12px;
+}
+.sld-agent-glyph {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  padding: 6px;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse 80% 80% at 50% 50%, rgba(34, 184, 160, 0.18), transparent 70%),
+    rgba(34, 184, 160, 0.06);
+  border: 1px solid rgba(14, 124, 102, 0.18);
+  color: var(--mp-teal);
+  display: flex; align-items: center; justify-content: center;
+}
+.sld-agent-glyph svg { width: 100%; height: 100%; }
+.sld-agent-head-r {
+  display: flex; flex-direction: column; gap: 2px;
 }
 .sld-agent-code {
-  font-size: 13px; letter-spacing: 0.20em; font-weight: 800;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px; letter-spacing: 0.18em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
 }
+.sld-agent-version {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.10em;
+  color: var(--mp-mute);
+  font-weight: 600;
+}
+.sld-agent-version-dot {
+  width: 5px; height: 5px;
+  border-radius: 999px;
+  background: #2DC470;
+  box-shadow: 0 0 0 0 rgba(45, 196, 112, 0.5);
+  animation: sldLivePulse 1.6s ease-in-out infinite;
+}
+@keyframes sldLivePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 196, 112, 0.55); }
+  50% { box-shadow: 0 0 0 5px rgba(45, 196, 112, 0); }
+}
 .sld-agent-role {
-  font-size: 15px; font-weight: 700;
+  font-size: 14px; font-weight: 600;
   color: var(--mp-ink);
   letter-spacing: -0.01em;
 }
@@ -5048,6 +5634,7 @@ const CSS = `
   border-top: 1px dashed var(--mp-line);
 }
 .sld-agent-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 9px; letter-spacing: 0.18em; font-weight: 700;
   color: var(--mp-mute);
   text-transform: uppercase;
