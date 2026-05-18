@@ -1062,7 +1062,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <div className="sld-cover-wordmark">
-            <span className="grad-teal-deep">Med</span>
+            <span className="grad-teal-deep">Coach</span>
             <span className="grad-teal">Pay</span>
           </div>
         </Reveal>
