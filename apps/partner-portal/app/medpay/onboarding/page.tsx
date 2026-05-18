@@ -1,572 +1,293 @@
 /**
- * MedPay · Onboarding wizard (/medpay/onboarding)
+ * MedPay · Onboarding (/medpay/onboarding)
  *
- * 5-step KYB form. Aurean-style chrome (.mpf-* namespace) + MedPay
- * teal palette. Form state is local (useState); on submit the user
- * lands at /medpay/success.
+ * Direct port of the AUREAN/AI onboarding page styling
+ * (https://aurean-ai-landing-production.up.railway.app/onboarding)
+ * but tinted for MedPay's teal palette and with the MedPay agent
+ * stack (ORACLE / HELIX / NEXUS / FLUX / ECHO) as the five setup
+ * modules instead of Aurean's (PRISM / VEGA / NEXUS / FLUX).
  *
- * Step 1 · Business info     · legal name, EIN, address, NPI/license
- * Step 2 · Primary contact   · owner / operator name, email, phone
- * Step 3 · Banking + payout  · routing + account, payout cadence
- * Step 4 · Documents         · provider license, malpractice, W-9, voided check
- * Step 5 · Review + e-sign   · typed signature, MSA acceptance
+ * Visual DNA preserved from Aurean:
+ *   • Dark base (#0a0a14) with radial ambient glow + dot grid
+ *   • Glass-morphism cards (backdrop-filter blur + translucent fill)
+ *   • Gradient-to-ash text headings
+ *   • Numbered step circles with brand-tinted glow on the active step
+ *   • Slim progress bar at the top ("N of 5 complete")
+ *   • Per-step: agent badge, title, body, items list, time chip,
+ *     "Continue setup" link + "Mark complete" action
+ *   • Final "Book launch call" CTA card
+ *   • "Saves automatically · your launch engineer is in your Slack"
+ *     supportive footer
  *
- * On submit we don't actually POST anywhere yet — this is a UI
- * scaffold that wires to /api/onboarding/medpay later. The flow
- * still validates each step before letting the user advance.
+ * Tinted for MedPay:
+ *   • Ambient glow uses teal radial (#0E7C66 / #22B8A0)
+ *   • Active step glow + progress fill use teal gradient
+ *   • Agent badges use the deck's monospace + teal pill style
  */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-type Step1 = {
-  legalName: string;
-  ein: string;
-  practiceType: string;
-  npi: string;
-  state: string;
-  zip: string;
-  streetAddr: string;
-};
-type Step2 = {
-  ownerName: string;
-  ownerEmail: string;
-  ownerPhone: string;
-  ownerRole: string;
-};
-type Step3 = {
-  bankName: string;
-  routing: string;
-  account: string;
-  cadence: 'next-day' | 'weekly';
-};
-type Step4 = {
-  providerLicense: boolean;
-  malpractice: boolean;
-  w9: boolean;
-  voidedCheck: boolean;
-};
-type Step5 = {
-  signatureName: string;
-  msa: boolean;
+type Step = {
+  id: string;
+  n: string;
+  agent: string;
+  title: string;
+  body: string;
+  items: string[];
+  time: string;
+  configLabel: string;
+  configHref: string;
 };
 
-const STEPS = [
-  { n: 1, t: 'Business info' },
-  { n: 2, t: 'Owner contact' },
-  { n: 3, t: 'Banking + payout' },
-  { n: 4, t: 'Documents' },
-  { n: 5, t: 'Review + sign' },
+const STEPS: Step[] = [
+  {
+    id: 'core',
+    n: '01',
+    agent: 'CORE',
+    title: 'Account setup',
+    body: 'Confirm the practice EIN, connect your team Slack, accept the master service agreement, and book your first KYB document upload.',
+    items: ['Practice + EIN verification', 'Slack channel invite', 'MSA + pricing acceptance'],
+    time: '≈ 3 min',
+    configLabel: 'Continue setup',
+    configHref: '/welcome',
+  },
+  {
+    id: 'helix',
+    n: '02',
+    agent: 'HELIX',
+    title: 'Smart forms + intake',
+    body: 'Configure the HELIX smart-form for the patient soft-pull. Pick the four fields you want first, drop the embed snippet on your site, and route the lead by ticket size.',
+    items: ['Soft-pull form fields', 'iPad-ready embed snippet', 'Lead routing rules'],
+    time: '≈ 8 min',
+    configLabel: 'Configure HELIX',
+    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=ConsumerApplyConfigPanel',
+  },
+  {
+    id: 'oracle',
+    n: '03',
+    agent: 'ORACLE',
+    title: 'Financial qualification',
+    body: 'Wire ORACLE up to the credit bureaus, set the practice-side pre-approval thresholds, and define the tier ladder MedPay should surface on the soft-pull return.',
+    items: ['Bureau credentials', 'Pre-approval thresholds', 'Tier ladder + decline messaging'],
+    time: '≈ 10 min',
+    configLabel: 'Configure ORACLE',
+    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=AgentsPanel',
+  },
+  {
+    id: 'nexus',
+    n: '04',
+    agent: 'NEXUS',
+    title: 'Lender marketplace',
+    body: 'Activate the lender panel for your verticals (dental / med spa / derm / vet / vision). NEXUS quotes them in parallel and surfaces the cheapest monthly payment.',
+    items: [
+      'Lender panel · per-vertical',
+      'Carrier waterfall + appetite caps',
+      'Best-offer presentation rules',
+    ],
+    time: '≈ 12 min',
+    configLabel: 'Configure NEXUS',
+    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=LenderPanelMatrix',
+  },
+  {
+    id: 'flux',
+    n: '05',
+    agent: 'FLUX',
+    title: 'Lender routing + payouts',
+    body: 'FLUX wires the lender approval signal to the merchant-direct disbursement leg. Confirm your bank routing, set the payout cadence, and verify the first $10 test settlement.',
+    items: ['Bank routing + voided check', 'Payout cadence', 'Merchant-direct test settlement'],
+    time: '≈ 15 min',
+    configLabel: 'Configure FLUX',
+    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=PayoutDestinationsPanel',
+  },
 ];
 
 export default function MedPayOnboarding(): JSX.Element {
-  const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [done, setDone] = useState<Set<string>>(new Set());
+  const [activeIdx, setActiveIdx] = useState(0);
 
-  const [s1, setS1] = useState<Step1>({
-    legalName: '',
-    ein: '',
-    practiceType: 'dental',
-    npi: '',
-    state: '',
-    zip: '',
-    streetAddr: '',
-  });
-  const [s2, setS2] = useState<Step2>({
-    ownerName: '',
-    ownerEmail: '',
-    ownerPhone: '',
-    ownerRole: 'Owner / Founder',
-  });
-  const [s3, setS3] = useState<Step3>({
-    bankName: '',
-    routing: '',
-    account: '',
-    cadence: 'next-day',
-  });
-  const [s4, setS4] = useState<Step4>({
-    providerLicense: false,
-    malpractice: false,
-    w9: false,
-    voidedCheck: false,
-  });
-  const [s5, setS5] = useState<Step5>({
-    signatureName: '',
-    msa: false,
-  });
+  const completeCount = done.size;
+  const progressPct = Math.round((completeCount / STEPS.length) * 100);
 
-  const v1 =
-    s1.legalName.length > 1 &&
-    s1.ein.length >= 9 &&
-    s1.state.length === 2 &&
-    s1.zip.length >= 5 &&
-    s1.streetAddr.length > 5;
-  const v2 = s2.ownerName.length > 1 && s2.ownerEmail.includes('@') && s2.ownerPhone.length >= 10;
-  const v3 = s3.bankName.length > 1 && s3.routing.length === 9 && s3.account.length >= 4;
-  const v4 = s4.providerLicense && s4.malpractice && s4.w9 && s4.voidedCheck;
-  const v5 = s5.signatureName.length > 1 && s5.msa;
+  useEffect(() => {
+    // first incomplete step gets the active glow
+    const firstOpen = STEPS.findIndex((s) => !done.has(s.id));
+    setActiveIdx(firstOpen === -1 ? STEPS.length - 1 : firstOpen);
+  }, [done]);
 
-  const stepValid = step === 1 ? v1 : step === 2 ? v2 : step === 3 ? v3 : step === 4 ? v4 : v5;
-
-  function next() {
-    if (!stepValid) return;
-    if (step < 5) setStep(step + 1);
-    else router.push('/medpay/success');
-  }
-  function back() {
-    if (step > 1) setStep(step - 1);
+  function markDone(id: string) {
+    setDone((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   return (
-    <div className="mpf-root">
+    <div className="mp-onb-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="mp-onb-ambient-bg">
+        <div className="ambient-glow" />
+        <div className="ambient-grid" />
+      </div>
 
-      <header className="mpf-nav">
-        <div className="mpf-container mpf-nav-inner">
-          <Link href="/medpay/start" className="mpf-brand" aria-label="MedPay home">
-            <span className="mpf-brand-mark">
+      {/* HEADER */}
+      <header className="mp-onb-nav">
+        <div className="mp-onb-nav-inner">
+          <Link href="/medpay/start" className="mp-onb-brand" aria-label="MedPay home">
+            <span className="mp-onb-brand-mark">
               <LogoIcon />
             </span>
-            <span className="mpf-brand-word">
-              MedPay<span className="mpf-brand-sub">/Patient Financing</span>
+            <span className="mp-onb-brand-word">
+              <span className="grad-text-brand">Med</span>
+              <span className="mp-onb-brand-slash">/</span>
+              <span className="mp-onb-brand-suffix">Pay</span>
             </span>
           </Link>
-          <div className="mpf-nav-cta-group">
-            <span className="mpf-nav-step">
-              Step {step} of {STEPS.length} · {STEPS[step - 1]?.t}
-            </span>
-          </div>
+          <nav className="mp-onb-nav-links">
+            <Link href="/sales/medpay">Sales deck</Link>
+            <Link href="/landing/medpay">Platform</Link>
+            <Link href="/help">Support</Link>
+          </nav>
         </div>
       </header>
 
-      <main className="mpf-main">
-        <section className="mpf-hero mpf-hero-tight">
-          <div className="mpf-container">
-            <div className="mpf-eyebrow-pill">
-              <span className="mpf-pulse-dot" />
-              Activate MedPay · Step 2 of 2
+      <main className="mp-onb-main">
+        {/* Hero */}
+        <section className="mp-onb-hero">
+          <div className="mp-onb-container">
+            <div className="mp-onb-eyebrow-pill">
+              <span className="mp-onb-pulse-dot" />
+              ACTIVATE MEDPAY
             </div>
-            <h1 className="mpf-h1">
-              <span className="mpf-grad-teal">Get your practice live</span>
-              <br />
-              <span className="mpf-grad-teal-deep">in under 10 minutes.</span>
+            <h1 className="mp-onb-h1">
+              <span className="grad-text">Onboarding</span>
             </h1>
-            <p className="mpf-hero-sub">
-              We&apos;ll verify the business, wire your payout account, and collect the four
-              documents required to onboard a lending merchant. No payment is collected here — the
-              $10,000 platform fee is invoiced after KYB clears.
+            <p className="mp-onb-hero-sub">
+              Five short modules. Saves automatically. Come back any time. Your launch engineer is
+              in your Slack channel.
             </p>
           </div>
         </section>
 
-        {/* WIZARD */}
-        <section className="mpf-section mpf-wiz-section">
-          <div className="mpf-container">
-            <div className="mpf-wiz">
-              <aside className="mpf-wiz-rail">
-                {STEPS.map((s) => (
-                  <div
-                    key={s.n}
-                    className={`mpf-wiz-rail-item ${
-                      step === s.n ? 'is-active' : step > s.n ? 'is-done' : ''
+        {/* Progress + steps */}
+        <section className="mp-onb-body">
+          <div className="mp-onb-container-narrow">
+            <div className="mp-onb-progress glass">
+              <div className="mp-onb-progress-head">
+                <span className="mp-onb-progress-label">
+                  <span className="stat-num">{completeCount}</span> of{' '}
+                  <span className="stat-num">{STEPS.length}</span> complete
+                </span>
+                <span className="mp-onb-progress-pct stat-num">{progressPct}%</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+              </div>
+            </div>
+
+            <div className="mp-onb-steps">
+              {STEPS.map((s, i) => {
+                const isDone = done.has(s.id);
+                const isActive = i === activeIdx && !isDone;
+                return (
+                  <article
+                    key={s.id}
+                    className={`glass card step rounded-2xl reveal ${isActive ? 'is-active' : ''} ${
+                      isDone ? 'is-done' : ''
                     }`}
                   >
-                    <div className="mpf-wiz-rail-n">{step > s.n ? '✓' : s.n}</div>
-                    <div className="mpf-wiz-rail-t">{s.t}</div>
-                  </div>
-                ))}
-              </aside>
+                    <div className="mp-onb-step-head">
+                      <div className={`step-num ${isActive ? 'is-active' : ''}`}>
+                        {isDone ? <CheckIcon /> : s.n}
+                      </div>
+                      <div className="mp-onb-step-head-r">
+                        <div className="mp-onb-step-meta">
+                          <span className="agent-badge">{s.agent}</span>
+                          <span className="time-chip">⌛ {s.time}</span>
+                          {isDone ? <span className="done-pill">✓ Complete</span> : null}
+                        </div>
+                        <h3 className="mp-onb-step-title">{s.title}</h3>
+                        <p className="mp-onb-step-body">{s.body}</p>
+                        <ul className="mp-onb-step-items">
+                          {s.items.map((it, j) => (
+                            <li key={j}>
+                              <span className="mark" aria-hidden>
+                                <CheckIcon size={11} />
+                              </span>
+                              <span>{it}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mp-onb-step-actions">
+                          <Link href={s.configHref} className="btn-primary">
+                            {s.configLabel} <ArrowIcon />
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn-ghost"
+                            onClick={() => markDone(s.id)}
+                          >
+                            {isDone ? 'Mark incomplete' : 'Mark complete'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
 
-              <div className="mpf-wiz-body">
-                {step === 1 && <Step1Form s={s1} set={setS1} />}
-                {step === 2 && <Step2Form s={s2} set={setS2} />}
-                {step === 3 && <Step3Form s={s3} set={setS3} />}
-                {step === 4 && <Step4Form s={s4} set={setS4} />}
-                {step === 5 && <Step5Form s={s5} set={setS5} all={{ s1, s2, s3, s4 }} />}
-
-                <div className="mpf-wiz-actions">
-                  <button
-                    type="button"
-                    className="mpf-btn-ghost"
-                    onClick={back}
-                    disabled={step === 1}
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    className={`mpf-btn-primary mpf-btn-lg ${stepValid ? '' : 'is-disabled'}`}
-                    onClick={next}
-                    disabled={!stepValid}
-                  >
-                    {step === 5 ? 'Submit application' : 'Continue'}
-                    <ArrowIcon />
-                  </button>
-                </div>
+            {/* Final CTA */}
+            <div className="mp-onb-launch glass-hi rounded-2xl">
+              <div>
+                <div className="mp-onb-launch-tag">FINAL STEP</div>
+                <h3 className="mp-onb-launch-h">Book your launch call</h3>
+                <p className="mp-onb-launch-b">
+                  30 minutes with the MedPay launch team. We walk the first soft-pull on your real
+                  traffic, validate the lender panel, and queue the live-fire test settlement.
+                </p>
               </div>
+              <Link href="/help" className="btn-primary btn-lg">
+                Book launch call <ArrowIcon />
+              </Link>
+            </div>
+
+            <div className="mp-onb-foot-note">
+              Saves automatically. Come back any time. Your launch engineer is in your Slack
+              channel.
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="mpf-footer">
-        <div className="mpf-container mpf-footer-inner">
-          <div className="mpf-footer-brand">
+      <footer className="mp-onb-footer">
+        <div className="mp-onb-container-narrow mp-onb-footer-inner">
+          <div className="mp-onb-footer-brand">
             <LogoIcon />
-            <span>MedPay · A vertical of EazePay</span>
+            <span>
+              <span className="grad-text-brand">MedPay</span> · A vertical of EazePay
+            </span>
           </div>
-          <div className="mpf-footer-meta">
-            NMLS #2456701 · 7-year audit retention · FCRA / ECOA / TILA compliant
+          <div className="mp-onb-footer-links">
+            <Link href="/sales/medpay">Sales deck</Link>
+            <Link href="/landing/medpay">Platform</Link>
+            <Link href="/help">Support</Link>
           </div>
+          <div className="mp-onb-footer-meta">NMLS #2456701 · FCRA · ECOA · TILA</div>
         </div>
       </footer>
     </div>
   );
 }
 
-/* ----------------------------- step components ----------------------- */
+/* ---------- icons ---------- */
 
-function Field({
-  label,
-  children,
-  help,
-}: {
-  label: string;
-  children: React.ReactNode;
-  help?: string;
-}) {
+function LogoIcon({ size = 22 }: { size?: number }) {
   return (
-    <label className="mpf-fld">
-      <span className="mpf-fld-l">{label}</span>
-      {children}
-      {help ? <span className="mpf-fld-help">{help}</span> : null}
-    </label>
-  );
-}
-
-function Step1Form({ s, set }: { s: Step1; set: (x: Step1) => void }) {
-  return (
-    <div className="mpf-wiz-body-inner">
-      <h2 className="mpf-h2">Tell us about your practice</h2>
-      <p className="mpf-section-sub">
-        We pull the EIN against IRS records (60 seconds) and verify the NPI / license against the
-        state board.
-      </p>
-      <div className="mpf-fld-grid">
-        <Field label="Legal business name">
-          <input
-            type="text"
-            placeholder="Helio Dental Group, PLLC"
-            value={s.legalName}
-            onChange={(e) => set({ ...s, legalName: e.target.value })}
-          />
-        </Field>
-        <Field label="Practice type">
-          <select
-            value={s.practiceType}
-            onChange={(e) => set({ ...s, practiceType: e.target.value })}
-          >
-            <option value="dental">Dental clinic</option>
-            <option value="med-spa">Med spa</option>
-            <option value="derm">Dermatology</option>
-            <option value="vet">Veterinary</option>
-            <option value="vision">Vision / LASIK</option>
-          </select>
-        </Field>
-        <Field label="EIN" help="9 digits, no dash">
-          <input
-            type="text"
-            placeholder="88-1234567"
-            value={s.ein}
-            onChange={(e) => set({ ...s, ein: e.target.value.replace(/[^0-9]/g, '').slice(0, 9) })}
-          />
-        </Field>
-        <Field label="Group NPI (optional)">
-          <input
-            type="text"
-            placeholder="1234567890"
-            value={s.npi}
-            onChange={(e) => set({ ...s, npi: e.target.value })}
-          />
-        </Field>
-        <Field label="Street address">
-          <input
-            type="text"
-            placeholder="1418 Maple Dr"
-            value={s.streetAddr}
-            onChange={(e) => set({ ...s, streetAddr: e.target.value })}
-          />
-        </Field>
-        <Field label="State / ZIP">
-          <div className="mpf-fld-row">
-            <input
-              type="text"
-              placeholder="TX"
-              maxLength={2}
-              style={{ width: 80 }}
-              value={s.state}
-              onChange={(e) => set({ ...s, state: e.target.value.toUpperCase() })}
-            />
-            <input
-              type="text"
-              placeholder="78701"
-              value={s.zip}
-              onChange={(e) => set({ ...s, zip: e.target.value })}
-            />
-          </div>
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function Step2Form({ s, set }: { s: Step2; set: (x: Step2) => void }) {
-  return (
-    <div className="mpf-wiz-body-inner">
-      <h2 className="mpf-h2">Primary contact</h2>
-      <p className="mpf-section-sub">
-        Who signs the lender agreement and receives the funded-loan reports? Usually the practice
-        owner or a senior operator. They&apos;ll get the partner-portal admin seat.
-      </p>
-      <div className="mpf-fld-grid">
-        <Field label="Full name">
-          <input
-            type="text"
-            placeholder="Dr. Helio Park"
-            value={s.ownerName}
-            onChange={(e) => set({ ...s, ownerName: e.target.value })}
-          />
-        </Field>
-        <Field label="Role">
-          <select value={s.ownerRole} onChange={(e) => set({ ...s, ownerRole: e.target.value })}>
-            <option>Owner / Founder</option>
-            <option>Managing partner</option>
-            <option>Practice manager</option>
-            <option>Operations director</option>
-          </select>
-        </Field>
-        <Field label="Email">
-          <input
-            type="email"
-            placeholder="dr.park@helio.dental"
-            value={s.ownerEmail}
-            onChange={(e) => set({ ...s, ownerEmail: e.target.value })}
-          />
-        </Field>
-        <Field label="Mobile" help="Used for KYB verification SMS">
-          <input
-            type="tel"
-            placeholder="+1 (512) 555-0140"
-            value={s.ownerPhone}
-            onChange={(e) => set({ ...s, ownerPhone: e.target.value })}
-          />
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function Step3Form({ s, set }: { s: Step3; set: (x: Step3) => void }) {
-  return (
-    <div className="mpf-wiz-body-inner">
-      <h2 className="mpf-h2">Banking + payout</h2>
-      <p className="mpf-section-sub">
-        Where do funded loans land? Lenders wire directly to this business account, merchant-direct,
-        within 48-72 hours of the loan settling. No marketplace intermediary holds funds.
-      </p>
-      <div className="mpf-fld-grid">
-        <Field label="Bank name">
-          <input
-            type="text"
-            placeholder="Chase Business"
-            value={s.bankName}
-            onChange={(e) => set({ ...s, bankName: e.target.value })}
-          />
-        </Field>
-        <Field label="Payout cadence">
-          <select
-            value={s.cadence}
-            onChange={(e) => set({ ...s, cadence: e.target.value as 'next-day' | 'weekly' })}
-          >
-            <option value="next-day">Per-loan · next business day</option>
-            <option value="weekly">Aggregated · weekly Friday</option>
-          </select>
-        </Field>
-        <Field label="Routing number" help="9 digits">
-          <input
-            type="text"
-            placeholder="021000021"
-            value={s.routing}
-            onChange={(e) =>
-              set({ ...s, routing: e.target.value.replace(/[^0-9]/g, '').slice(0, 9) })
-            }
-          />
-        </Field>
-        <Field label="Account number">
-          <input
-            type="text"
-            placeholder="••••••••3401"
-            value={s.account}
-            onChange={(e) => set({ ...s, account: e.target.value })}
-          />
-        </Field>
-      </div>
-    </div>
-  );
-}
-
-function Step4Form({ s, set }: { s: Step4; set: (x: Step4) => void }) {
-  const docs: Array<{ k: keyof Step4; label: string; body: string }> = [
-    {
-      k: 'providerLicense',
-      label: 'Provider license',
-      body: 'Active medical, dental, derm, vet, or optometry license for at least one provider in the group.',
-    },
-    {
-      k: 'malpractice',
-      label: 'Malpractice / liability certificate',
-      body: 'Active COI showing the practice carries professional-liability coverage.',
-    },
-    {
-      k: 'w9',
-      label: 'W-9 (signed)',
-      body: 'Current W-9 for the practice entity, matching the EIN entered on step 1.',
-    },
-    {
-      k: 'voidedCheck',
-      label: 'Voided check or bank letter',
-      body: 'Confirms the routing + account number entered on step 3 belong to the practice.',
-    },
-  ];
-  return (
-    <div className="mpf-wiz-body-inner">
-      <h2 className="mpf-h2">Documents</h2>
-      <p className="mpf-section-sub">
-        Four documents. You can upload now, or check the box and email them to{' '}
-        <a href="mailto:onboarding@eazepay.io" style={{ color: 'var(--mp-teal)' }}>
-          onboarding@eazepay.io
-        </a>{' '}
-        within 24 hours.
-      </p>
-      <div className="mpf-doc-grid">
-        {docs.map((d) => (
-          <label key={d.k} className={`mpf-doc-row ${s[d.k] ? 'is-checked' : ''}`}>
-            <input
-              type="checkbox"
-              checked={s[d.k]}
-              onChange={(e) => set({ ...s, [d.k]: e.target.checked })}
-            />
-            <div className="mpf-doc-body">
-              <div className="mpf-doc-l">{d.label}</div>
-              <div className="mpf-doc-b">{d.body}</div>
-            </div>
-            <div className="mpf-doc-up">Upload</div>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Step5Form({
-  s,
-  set,
-  all,
-}: {
-  s: Step5;
-  set: (x: Step5) => void;
-  all: { s1: Step1; s2: Step2; s3: Step3; s4: Step4 };
-}) {
-  return (
-    <div className="mpf-wiz-body-inner">
-      <h2 className="mpf-h2">Review &amp; sign</h2>
-      <p className="mpf-section-sub">
-        Confirm the details below. After you sign, our team configures the account, integrates your
-        pixel, trains your staff, and validates the first soft-pull. Up to 5 business days.
-      </p>
-
-      <div className="mpf-review">
-        <ReviewBlock title="Business">
-          <ReviewRow k="Legal name" v={all.s1.legalName || '—'} />
-          <ReviewRow k="EIN" v={all.s1.ein || '—'} />
-          <ReviewRow k="Practice type" v={all.s1.practiceType} />
-          <ReviewRow
-            k="Address"
-            v={`${all.s1.streetAddr || '—'}, ${all.s1.state || '—'} ${all.s1.zip || ''}`}
-          />
-        </ReviewBlock>
-        <ReviewBlock title="Owner">
-          <ReviewRow k="Name" v={all.s2.ownerName || '—'} />
-          <ReviewRow k="Role" v={all.s2.ownerRole} />
-          <ReviewRow k="Email" v={all.s2.ownerEmail || '—'} />
-          <ReviewRow k="Phone" v={all.s2.ownerPhone || '—'} />
-        </ReviewBlock>
-        <ReviewBlock title="Banking">
-          <ReviewRow k="Bank" v={all.s3.bankName || '—'} />
-          <ReviewRow k="Routing" v={all.s3.routing || '—'} />
-          <ReviewRow k="Account" v={all.s3.account ? `••••${all.s3.account.slice(-4)}` : '—'} />
-          <ReviewRow
-            k="Payout"
-            v={all.s3.cadence === 'next-day' ? 'Per-loan · next day' : 'Weekly · Friday'}
-          />
-        </ReviewBlock>
-        <ReviewBlock title="Pricing (locked)">
-          <ReviewRow k="Platform setup" v="$10,000 · one-time" />
-          <ReviewRow k="Per smart-form lead" v="$3 · billed monthly" />
-          <ReviewRow k="Origination" v="4% of settled loan · monthly" />
-          <ReviewRow k="Monthly platform fee" v="$0" />
-        </ReviewBlock>
-      </div>
-
-      <div className="mpf-sign">
-        <Field label="Type your full legal name to e-sign">
-          <input
-            type="text"
-            placeholder="Dr. Helio Park"
-            value={s.signatureName}
-            onChange={(e) => set({ ...s, signatureName: e.target.value })}
-          />
-        </Field>
-        <label className="mpf-co-checkbox">
-          <input
-            type="checkbox"
-            checked={s.msa}
-            onChange={(e) => set({ ...s, msa: e.target.checked })}
-          />
-          <span>
-            I agree to the EazePay Master Service Agreement and the pricing above. Signing this form
-            is legally binding under the E-Sign Act.
-          </span>
-        </label>
-      </div>
-    </div>
-  );
-}
-
-function ReviewBlock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mpf-rev-block">
-      <div className="mpf-rev-block-h">{title}</div>
-      <div>{children}</div>
-    </div>
-  );
-}
-function ReviewRow({ k, v }: { k: string; v: string }) {
-  return (
-    <div className="mpf-rev-row">
-      <span className="mpf-rev-k">{k}</span>
-      <span className="mpf-rev-v">{v}</span>
-    </div>
-  );
-}
-
-/* ----------------------------- icons ----------------------- */
-
-function LogoIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
       <rect x="2" y="3" width="20" height="18" rx="4" stroke="currentColor" strokeWidth="1.6" />
       <path d="M7 12h10M12 7v10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
@@ -585,367 +306,390 @@ function ArrowIcon() {
     </svg>
   );
 }
+function CheckIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 12l5 5 9-11"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
-/* ================================== CSS ============================== */
+/* ---------- CSS (AureanAI port, MedPay teal accent) ---------- */
 
 const CSS = `
-.mpf-root {
-  --mp-teal: #0E7C66;
-  --mp-teal-2: #22B8A0;
-  --mp-teal-light: #ECFFFE;
-  --mp-deep: #062C29;
-  --mp-ink: #0A1F1D;
-  --mp-ink-2: #163936;
-  --mp-mute: #4B6864;
-  --mp-line: rgba(14, 124, 102, 0.12);
-  --mp-line-strong: rgba(14, 124, 102, 0.22);
+.mp-onb-root {
+  --brand: #0E7C66;
+  --brand-2: #22B8A0;
+  --brand-deep: #062C29;
+  --ink: #EEEEF2;
+  --ink-2: #B9B9C7;
+  --ink-3: #8A8AA0;
+  --bg: #0a0a14;
+  --bg-2: #101023;
+  --bg-3: #16162a;
 
-  background: linear-gradient(180deg, #ECFFFE 0%, #FFFFFF 30%, #F3FBFA 65%, #FFFFFF 100%);
-  color: var(--mp-ink);
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-  min-height: 100vh;
 }
-.mpf-root * { box-sizing: border-box; }
-.mpf-root a { color: inherit; text-decoration: none; }
-.mpf-container { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+.mp-onb-root * { box-sizing: border-box; }
+.mp-onb-root a { color: inherit; text-decoration: none; }
+
+.mp-onb-ambient-bg {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.ambient-glow {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(14, 124, 102, 0.40), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(34, 184, 160, 0.25), transparent 60%);
+}
+.ambient-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+.glass {
+  background: linear-gradient(180deg, rgba(35, 47, 45, 0.55), rgba(16, 22, 21, 0.55));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px);
+}
+.glass-hi {
+  background:
+    radial-gradient(ellipse 60% 100% at 0% 0%, rgba(34, 184, 160, 0.22), transparent 65%),
+    linear-gradient(180deg, rgba(35, 47, 45, 0.55), rgba(20, 26, 25, 0.55));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.grad-text {
+  background: linear-gradient(180deg, #fff, #b9b9c7);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.grad-text-brand {
+  background: linear-gradient(135deg, #fff, var(--brand-2) 60%, var(--brand));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.stat-num { font-variant-numeric: tabular-nums; }
 
 /* nav */
-.mpf-nav {
+.mp-onb-nav {
   position: sticky; top: 0; z-index: 30;
-  background: rgba(255,255,255,0.85);
-  border-bottom: 1px solid var(--mp-line);
-  backdrop-filter: blur(10px);
+  background: rgba(10, 10, 20, 0.65);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
-.mpf-nav-inner {
+.mp-onb-nav-inner {
   max-width: 1180px; margin: 0 auto;
   padding: 14px 32px;
   display: flex; align-items: center; gap: 32px;
 }
-.mpf-brand {
+.mp-onb-brand {
   display: inline-flex; align-items: center; gap: 10px;
-  color: var(--mp-teal);
+  color: var(--ink);
 }
-.mpf-brand-mark {
+.mp-onb-brand-mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
   color: #fff;
+  box-shadow: 0 8px 24px -8px rgba(34, 184, 160, 0.45);
 }
-.mpf-brand-word { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; color: var(--mp-ink); }
-.mpf-brand-sub { font-weight: 500; color: var(--mp-mute); margin-left: 2px; }
-.mpf-nav-cta-group { margin-left: auto; }
-.mpf-nav-step {
-  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-  font-size: 11px; letter-spacing: 0.10em; font-weight: 600;
-  color: var(--mp-teal);
-  padding: 6px 12px;
-  background: rgba(14, 124, 102, 0.08);
-  border: 1px solid var(--mp-line-strong);
-  border-radius: 999px;
+.mp-onb-brand-word { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+.mp-onb-brand-slash { color: var(--ink-3); margin: 0 1px; }
+.mp-onb-brand-suffix { color: var(--ink); }
+.mp-onb-nav-links {
+  margin-left: auto;
+  display: inline-flex; gap: 22px;
+  font-size: 13.5px; color: var(--ink-2);
 }
+.mp-onb-nav-links a:hover { color: var(--brand-2); }
 
-/* hero */
-.mpf-main { position: relative; }
-.mpf-hero { padding: 56px 0 16px; }
-.mpf-hero-tight { padding-bottom: 0; }
-.mpf-eyebrow-pill {
+/* main */
+.mp-onb-main { position: relative; z-index: 1; }
+
+.mp-onb-hero { padding: 56px 0 12px; }
+.mp-onb-container { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+.mp-onb-container-narrow { max-width: 920px; margin: 0 auto; padding: 0 32px; }
+
+.mp-onb-eyebrow-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(14, 124, 102, 0.10);
-  border: 1px solid var(--mp-line-strong);
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(34, 184, 160, 0.22);
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-teal); text-transform: uppercase;
+  color: var(--brand-2); text-transform: uppercase;
 }
-.mpf-pulse-dot {
+.mp-onb-pulse-dot {
   width: 6px; height: 6px; border-radius: 999px;
-  background: var(--mp-teal-2);
+  background: var(--brand-2);
   box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.55);
-  animation: mpfPulse 1.6s ease-in-out infinite;
+  animation: mpOnbPulse 1.6s ease-in-out infinite;
 }
-@keyframes mpfPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.55); } 50% { box-shadow: 0 0 0 6px rgba(34, 184, 160, 0); } }
-.mpf-h1 {
+@keyframes mpOnbPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 184, 160, 0); }
+}
+.mp-onb-h1 {
   margin: 18px 0 14px;
-  font-size: clamp(36px, 4.4vw, 52px); font-weight: 700;
-  letter-spacing: -0.026em; line-height: 1.05;
-  color: var(--mp-ink);
+  font-size: clamp(48px, 7vw, 96px);
+  font-weight: 700; letter-spacing: -0.03em; line-height: 1.02;
 }
-.mpf-h2 {
-  margin: 0 0 8px;
-  font-size: 26px; font-weight: 600; letter-spacing: -0.02em;
-  color: var(--mp-ink);
+.mp-onb-hero-sub {
+  max-width: 560px;
+  font-size: 16px; line-height: 1.55;
+  color: var(--ink-2);
 }
-.mpf-grad-teal { background: linear-gradient(120deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
-.mpf-grad-teal-deep { background: linear-gradient(120deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
-.mpf-hero-sub { margin: 0; max-width: 720px; font-size: 17px; line-height: 1.55; color: var(--mp-ink-2); }
-.mpf-section-sub { margin: 0 0 24px; font-size: 14.5px; line-height: 1.55; color: var(--mp-mute); max-width: 640px; }
 
-/* wizard */
-.mpf-section { padding: 40px 0 24px; }
-.mpf-wiz {
-  display: grid; grid-template-columns: 220px 1fr;
-  gap: 36px; align-items: start;
+/* progress */
+.mp-onb-body { padding: 12px 0 80px; }
+.mp-onb-progress {
+  padding: 16px 22px;
+  border-radius: 16px;
+  margin-bottom: 28px;
 }
-.mpf-wiz-rail {
-  display: flex; flex-direction: column; gap: 4px;
-  position: sticky; top: 96px;
+.mp-onb-progress-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px; color: var(--ink-2);
 }
-.mpf-wiz-rail-item {
-  display: grid; grid-template-columns: 28px 1fr;
-  gap: 12px; align-items: center;
-  padding: 11px 12px;
-  border-radius: 10px;
-  font-size: 13.5px; color: var(--mp-mute);
-}
-.mpf-wiz-rail-item.is-active {
-  background: rgba(14, 124, 102, 0.08);
-  border: 1px solid var(--mp-line-strong);
-  color: var(--mp-ink);
-  font-weight: 600;
-}
-.mpf-wiz-rail-item.is-done { color: var(--mp-ink-2); }
-.mpf-wiz-rail-n {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
+.mp-onb-progress-pct { color: var(--ink); font-weight: 600; }
+.progress-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
-  background: #fff;
-  border: 1px solid var(--mp-line-strong);
-  font-size: 11px; font-weight: 700;
-  color: var(--mp-mute);
+  overflow: hidden;
 }
-.mpf-wiz-rail-item.is-active .mpf-wiz-rail-n {
-  background: var(--mp-teal);
-  border-color: var(--mp-teal);
-  color: #fff;
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand) 0%, var(--brand-2) 100%);
+  box-shadow: 0 0 16px rgba(34, 184, 160, 0.55);
+  transition: width .6s cubic-bezier(.2,.7,.2,1);
 }
-.mpf-wiz-rail-item.is-done .mpf-wiz-rail-n {
-  background: rgba(34, 184, 160, 0.16);
-  border-color: rgba(34, 184, 160, 0.45);
-  color: var(--mp-teal);
-}
-.mpf-wiz-body {
-  padding: 32px 36px;
-  background: #fff;
-  border: 1px solid var(--mp-line-strong);
-  border-radius: 18px;
-  box-shadow: 0 28px 60px -32px rgba(14, 124, 102, 0.30);
-}
-.mpf-wiz-body-inner { display: flex; flex-direction: column; gap: 4px; }
 
-/* fields */
-.mpf-fld-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* steps */
+.mp-onb-steps { display: flex; flex-direction: column; gap: 14px; }
+.rounded-2xl { border-radius: 18px; }
+.step {
+  padding: 22px 22px 18px;
+  transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
 }
-.mpf-fld { display: flex; flex-direction: column; gap: 6px; }
-.mpf-fld-l { font-size: 12.5px; font-weight: 600; color: var(--mp-ink-2); letter-spacing: 0.02em; }
-.mpf-fld input,
-.mpf-fld select {
-  padding: 11px 14px;
-  font-size: 14px; color: var(--mp-ink);
-  background: #fff;
-  border: 1px solid var(--mp-line-strong);
-  border-radius: 10px;
-  outline: none; font-family: inherit;
-  transition: border-color .15s ease, box-shadow .15s ease;
+.step.is-active {
+  border-color: rgba(34, 184, 160, 0.45) !important;
+  box-shadow:
+    0 30px 60px -28px rgba(34, 184, 160, 0.55),
+    0 0 0 1px rgba(34, 184, 160, 0.20) inset;
 }
-.mpf-fld input:focus,
-.mpf-fld select:focus {
-  border-color: var(--mp-teal);
-  box-shadow: 0 0 0 3px rgba(34, 184, 160, 0.18);
+.step.is-done { opacity: 0.6; }
+.mp-onb-step-head {
+  display: grid; grid-template-columns: 44px 1fr;
+  gap: 18px; align-items: start;
 }
-.mpf-fld-help {
+.step-num {
+  width: 44px; height: 44px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: var(--ink);
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-  font-size: 11px; color: var(--mp-mute);
+  font-size: 13px; font-weight: 700;
 }
-.mpf-fld-row { display: flex; gap: 8px; }
-
-/* documents */
-.mpf-doc-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-.mpf-doc-row {
-  display: grid; grid-template-columns: 22px 1fr auto;
-  gap: 14px; align-items: center;
-  padding: 16px 18px;
-  background: #fff;
-  border: 1px solid var(--mp-line-strong);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: border-color .15s ease, background .15s ease;
+.step-num.is-active {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  border-color: var(--brand-2);
+  color: #fff;
+  box-shadow: 0 0 24px rgba(34, 184, 160, 0.55);
 }
-.mpf-doc-row.is-checked {
-  background: rgba(34, 184, 160, 0.06);
-  border-color: rgba(34, 184, 160, 0.45);
+.step.is-done .step-num {
+  background: rgba(34, 184, 160, 0.18);
+  border-color: rgba(34, 184, 160, 0.35);
+  color: var(--brand-2);
 }
-.mpf-doc-row input[type="checkbox"] {
-  appearance: none; -webkit-appearance: none;
-  width: 18px; height: 18px;
-  border: 1.5px solid var(--mp-line-strong);
-  border-radius: 5px;
-  background: #fff;
-  cursor: pointer;
-  position: relative;
-  margin: 0;
+.mp-onb-step-head-r { min-width: 0; }
+.mp-onb-step-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 6px;
 }
-.mpf-doc-row input[type="checkbox"]:checked {
-  background: var(--mp-teal);
-  border-color: var(--mp-teal);
-}
-.mpf-doc-row input[type="checkbox"]:checked::after {
-  content: '';
-  position: absolute;
-  left: 5px; top: 1px;
-  width: 5px; height: 10px;
-  border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-.mpf-doc-l { font-size: 14.5px; font-weight: 600; color: var(--mp-ink); margin-bottom: 4px; }
-.mpf-doc-b { font-size: 12.5px; line-height: 1.5; color: var(--mp-ink-2); }
-.mpf-doc-up {
+.agent-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-teal); text-transform: uppercase;
-  padding: 6px 12px;
-  background: rgba(14, 124, 102, 0.10);
-  border: 1px solid var(--mp-line-strong);
+  color: var(--brand-2); text-transform: uppercase;
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(34, 184, 160, 0.30);
+}
+.time-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px;
   border-radius: 999px;
-}
-
-/* review */
-.mpf-review {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 14px; margin-top: 8px; margin-bottom: 18px;
-}
-.mpf-rev-block {
-  padding: 16px 18px;
-  background: rgba(14, 124, 102, 0.04);
-  border: 1px solid var(--mp-line);
-  border-radius: 12px;
-}
-.mpf-rev-block-h {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
-  color: var(--mp-teal); text-transform: uppercase;
-  margin-bottom: 10px;
+  font-size: 10.5px;
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.mpf-rev-row {
-  display: grid; grid-template-columns: 110px 1fr;
-  gap: 14px; padding: 6px 0;
-  font-size: 13px;
-  border-bottom: 1px dashed var(--mp-line);
+.done-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; font-weight: 700;
+  color: var(--brand-2);
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(34, 184, 160, 0.30);
 }
-.mpf-rev-row:last-child { border-bottom: none; }
-.mpf-rev-k { color: var(--mp-mute); }
-.mpf-rev-v { color: var(--mp-ink); font-weight: 500; font-variant-numeric: tabular-nums; }
-
-/* sign */
-.mpf-sign {
-  margin-top: 16px;
-  padding-top: 18px;
-  border-top: 1px dashed var(--mp-line);
-  display: flex; flex-direction: column; gap: 14px;
+.mp-onb-step-title {
+  margin: 0;
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.mpf-co-checkbox {
-  display: grid; grid-template-columns: 22px 1fr;
-  gap: 10px; align-items: start;
-  font-size: 13px; line-height: 1.5; color: var(--mp-ink-2);
-  cursor: pointer;
+.mp-onb-step-body {
+  margin: 6px 0 14px;
+  font-size: 13.5px; line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 620px;
 }
-.mpf-co-checkbox input[type="checkbox"] {
-  appearance: none; -webkit-appearance: none;
+.mp-onb-step-items {
+  list-style: none; padding: 0; margin: 0 0 16px;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.mp-onb-step-items li {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--ink-2);
+}
+.mark {
+  display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px;
-  border: 1.5px solid var(--mp-line-strong);
-  border-radius: 5px;
-  background: #fff;
-  cursor: pointer;
-  position: relative;
-  margin-top: 2px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  color: #fff;
+  flex-shrink: 0;
 }
-.mpf-co-checkbox input[type="checkbox"]:checked {
-  background: var(--mp-teal);
-  border-color: var(--mp-teal);
-}
-.mpf-co-checkbox input[type="checkbox"]:checked::after {
-  content: '';
-  position: absolute;
-  left: 5px; top: 1px;
-  width: 5px; height: 10px;
-  border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-/* wizard actions */
-.mpf-wiz-actions {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--mp-line);
+.mp-onb-step-actions {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 6px;
 }
 
 /* buttons */
-.mpf-btn-primary {
+.btn-primary {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 12px 22px;
-  background: linear-gradient(135deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
-  color: #fff;
-  font-size: 14px; font-weight: 600;
-  border-radius: 999px;
+  padding: 10px 18px;
   border: 0; cursor: pointer;
-  box-shadow: 0 12px 24px -8px rgba(14, 124, 102, 0.45);
+  border-radius: 999px;
+  font-size: 13px; font-weight: 600;
+  color: #fff;
+  background: linear-gradient(180deg, var(--brand-2), var(--brand));
+  box-shadow:
+    0 14px 28px -10px rgba(34, 184, 160, 0.45),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.08);
   transition: transform .15s ease, box-shadow .15s ease;
 }
-.mpf-btn-primary:hover:not(:disabled) {
+.btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px -8px rgba(14, 124, 102, 0.55);
+  box-shadow:
+    0 18px 36px -10px rgba(34, 184, 160, 0.6),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.08);
 }
-.mpf-btn-lg { padding: 14px 28px; font-size: 15px; }
-.mpf-btn-primary.is-disabled,
-.mpf-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
-.mpf-btn-ghost {
-  padding: 12px 22px;
-  background: transparent;
-  border: 1px solid var(--mp-line-strong);
+.btn-lg { padding: 14px 26px; font-size: 14px; }
+.btn-ghost {
+  padding: 10px 16px;
   border-radius: 999px;
-  color: var(--mp-ink);
-  font-size: 14px; font-weight: 500;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--ink);
+  font-size: 13px; font-weight: 500;
   cursor: pointer;
+  transition: all .15s ease;
 }
-.mpf-btn-ghost:hover:not(:disabled) {
-  background: rgba(14, 124, 102, 0.06);
-  border-color: var(--mp-teal);
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.24);
 }
-.mpf-btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* footer */
-.mpf-footer {
-  margin-top: 64px;
-  padding: 32px 0;
-  border-top: 1px solid var(--mp-line);
-  background: rgba(255, 255, 255, 0.6);
-}
-.mpf-footer-inner {
+/* launch CTA */
+.mp-onb-launch {
+  margin-top: 28px;
+  padding: 26px 28px;
   display: flex; align-items: center; justify-content: space-between;
   gap: 24px;
 }
-.mpf-footer-brand {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-size: 13.5px; color: var(--mp-ink-2); font-weight: 500;
+.mp-onb-launch-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--brand-2); text-transform: uppercase;
+  margin-bottom: 6px;
 }
-.mpf-footer-meta { font-size: 12px; color: var(--mp-mute); text-align: right; }
+.mp-onb-launch-h {
+  margin: 0 0 6px;
+  font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.mp-onb-launch-b {
+  margin: 0;
+  font-size: 13.5px; line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 520px;
+}
+.mp-onb-foot-note {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 12.5px; color: var(--ink-3);
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.02em;
+}
 
-@media (max-width: 980px) {
-  .mpf-wiz { grid-template-columns: 1fr; }
-  .mpf-wiz-rail { position: static; flex-direction: row; flex-wrap: wrap; }
-  .mpf-fld-grid { grid-template-columns: 1fr; }
-  .mpf-review { grid-template-columns: 1fr; }
-  .mpf-footer-inner { flex-direction: column; align-items: flex-start; gap: 12px; text-align: left; }
-  .mpf-footer-meta { text-align: left; }
+/* footer */
+.mp-onb-footer {
+  position: relative; z-index: 1;
+  padding: 32px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 10, 20, 0.4);
+}
+.mp-onb-footer-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px;
+}
+.mp-onb-footer-brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13.5px; color: var(--ink-2);
+}
+.mp-onb-footer-links { display: inline-flex; gap: 22px; font-size: 13px; color: var(--ink-2); }
+.mp-onb-footer-links a:hover { color: var(--brand-2); }
+.mp-onb-footer-meta {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; letter-spacing: 0.10em;
+  color: var(--ink-3); text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .mp-onb-launch { flex-direction: column; align-items: flex-start; }
+  .mp-onb-footer-inner { flex-direction: column; align-items: flex-start; }
+  .mp-onb-nav-links { display: none; }
+  .mp-onb-step-head { grid-template-columns: 36px 1fr; gap: 12px; }
+  .step-num { width: 36px; height: 36px; }
 }
 `;
