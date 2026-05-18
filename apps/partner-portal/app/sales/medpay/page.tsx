@@ -1177,7 +1177,6 @@ const NARRATIVE_ORDER = [
   // ACT 5 — Trust + decide
   12, // 24 · Case studies
   13, // 25 · Vs competitors
-  14, // 26 · Security + compliance
 
   // ACT 6 — The ask
   30, // 27 · Full value stack (NEW)
@@ -2196,37 +2195,28 @@ function RoadmapStrip(): JSX.Element {
 function SmartRoutingViz(): JSX.Element {
   return (
     <div className="sld-funnel">
-      {/* Ambient depth — soft radial wash behind the whole funnel */}
-      <div className="sld-funnel-bg" aria-hidden />
-
-      {/* Tier 1 · widest — inbound traffic */}
-      <div className="sld-funnel-tier sld-funnel-tier-1">
-        <div className="sld-funnel-tier-band">
-          <span className="sld-funnel-tier-pct">100%</span>
-          <span className="sld-funnel-tier-h">All inbound leads</span>
-          <span className="sld-funnel-tier-b">Ads · site · referrals · campaigns</span>
+      {/* Tier stack — three linear stages, all the same width, no tilt */}
+      <div className="sld-funnel-stages">
+        <div className="sld-funnel-stage">
+          <span className="sld-funnel-stage-tag">01 · INBOUND</span>
+          <span className="sld-funnel-stage-h">All leads</span>
+          <span className="sld-funnel-stage-b">Ads · site · referrals · campaigns</span>
         </div>
-      </div>
-
-      {/* Tier 2 · narrower — HELIX smart form */}
-      <div className="sld-funnel-tier sld-funnel-tier-2">
-        <div className="sld-funnel-tier-band">
-          <span className="sld-funnel-tier-tag">HELIX · INTAKE</span>
-          <span className="sld-funnel-tier-h">Smart form reshapes on partial answers</span>
-          <span className="sld-funnel-tier-b">
-            Procedure · ticket · contact — order rewritten by intent signal
+        <div className="sld-funnel-connector" aria-hidden />
+        <div className="sld-funnel-stage">
+          <span className="sld-funnel-stage-tag">02 · HELIX INTAKE</span>
+          <span className="sld-funnel-stage-h">Smart form reshapes on partial answers</span>
+          <span className="sld-funnel-stage-b">
+            Procedure · ticket · contact — order rewritten by intent
           </span>
         </div>
-      </div>
-
-      {/* Tier 3 · narrower — ORACLE financial qualification */}
-      <div className="sld-funnel-tier sld-funnel-tier-3">
-        <div className="sld-funnel-tier-band">
-          <span className="sld-funnel-tier-tag">ORACLE · QUALIFY</span>
-          <span className="sld-funnel-tier-h">Financial qualification on every lead</span>
-          <div className="sld-funnel-tier-pills">
-            <span className="sld-funnel-pill">Credit score</span>
-            <span className="sld-funnel-pill">Available credit</span>
+        <div className="sld-funnel-connector" aria-hidden />
+        <div className="sld-funnel-stage">
+          <span className="sld-funnel-stage-tag">03 · ORACLE QUALIFY</span>
+          <span className="sld-funnel-stage-h">Financial qualification on every lead</span>
+          <div className="sld-funnel-pills">
+            <span className="sld-funnel-pill">Credit</span>
+            <span className="sld-funnel-pill">Available</span>
             <span className="sld-funnel-pill">Income</span>
             <span className="sld-funnel-pill">DTI</span>
             <span className="sld-funnel-pill">Pre-approval $</span>
@@ -2234,124 +2224,59 @@ function SmartRoutingViz(): JSX.Element {
         </div>
       </div>
 
-      {/* Fork — HELIX router splits into two paths */}
-      <div className="sld-funnel-fork" aria-hidden>
-        <svg viewBox="0 0 600 80" preserveAspectRatio="none">
-          <path
-            d="M 300 0 L 110 80"
-            stroke="rgba(14, 124, 102, 0.45)"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-            fill="none"
-          />
-          <path
-            d="M 300 0 L 490 80"
-            stroke="rgba(14, 124, 102, 0.25)"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-            fill="none"
-          />
-        </svg>
-        <div className="sld-funnel-fork-tag">
-          <span className="sld-funnel-fork-dot" />
-          HELIX router · multi-stage
-        </div>
+      {/* Router pill — quietly indicates the split */}
+      <div className="sld-funnel-router">
+        <span className="sld-funnel-router-dot" />
+        HELIX router · multi-stage
       </div>
 
-      {/* Two-branch fork */}
+      {/* Two-column branches — equal weight, flat, no 3D tilt */}
       <div className="sld-funnel-branches">
-        {/* HIGH-TICKET — leans forward (3D), deeper teal */}
         <div className="sld-funnel-branch sld-funnel-branch-high">
           <div className="sld-funnel-branch-head">
-            <span className="sld-funnel-branch-tag">HIGH-TICKET FUNNEL</span>
-            <span className="sld-funnel-branch-crit">
-              ≥ 680 score · ≥ $5k available · DTI &lt; 40%
-            </span>
+            <span className="sld-funnel-branch-tag">HIGH-TICKET</span>
+            <span className="sld-funnel-branch-crit">≥ 680 · ≥ $5k · DTI &lt; 40%</span>
           </div>
           <ol className="sld-funnel-branch-steps">
             <li>
               <span className="sld-funnel-step-n">01</span>
               <span className="sld-funnel-step-h">Filter by credit score</span>
-              <span className="sld-funnel-step-b">Below 680 → low-ticket lane</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">02</span>
               <span className="sld-funnel-step-h">Filter by income</span>
-              <span className="sld-funnel-step-b">≥ $75k household or co-signer flag</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">03</span>
               <span className="sld-funnel-step-h">Filter by available credit</span>
-              <span className="sld-funnel-step-b">≥ ticket size after pre-approval</span>
             </li>
           </ol>
-          <div className="sld-funnel-branch-outcome">
-            <span className="sld-funnel-branch-outcome-icon" aria-hidden>
-              →
-            </span>
-            <span>Booked on calendar · pre-approved</span>
-          </div>
+          <div className="sld-funnel-branch-outcome">Booked on calendar · pre-approved</div>
         </div>
 
-        {/* LOW-TICKET — leans back, lighter */}
         <div className="sld-funnel-branch sld-funnel-branch-low">
           <div className="sld-funnel-branch-head">
-            <span className="sld-funnel-branch-tag">LOW-TICKET FUNNEL</span>
-            <span className="sld-funnel-branch-crit">
-              Below score / income threshold · still warm
-            </span>
+            <span className="sld-funnel-branch-tag">LOW-TICKET</span>
+            <span className="sld-funnel-branch-crit">Below floor · still warm</span>
           </div>
           <ol className="sld-funnel-branch-steps">
             <li>
               <span className="sld-funnel-step-n">01</span>
               <span className="sld-funnel-step-h">Free guide / e-book</span>
-              <span className="sld-funnel-step-b">Capture email · educate · stay top-of-mind</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">02</span>
               <span className="sld-funnel-step-h">Low-ticket starter offer</span>
-              <span className="sld-funnel-step-b">$99 consult · $199 evaluation</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">03</span>
               <span className="sld-funnel-step-h">Nurture · re-pull in 90 days</span>
-              <span className="sld-funnel-step-b">Income / credit healed → re-qualify</span>
             </li>
           </ol>
-          <div className="sld-funnel-branch-outcome">
-            <span className="sld-funnel-branch-outcome-icon" aria-hidden>
-              ↩
-            </span>
-            <span>Routed back to high-ticket</span>
+          <div className="sld-funnel-branch-outcome sld-funnel-branch-outcome-low">
+            Routed back to high-ticket
           </div>
         </div>
-      </div>
-
-      {/* Convergence — both paths feed one revenue outcome */}
-      <div className="sld-funnel-converge" aria-hidden>
-        <svg viewBox="0 0 600 60" preserveAspectRatio="none">
-          <path
-            d="M 110 0 L 300 60"
-            stroke="rgba(14, 124, 102, 0.45)"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-            fill="none"
-          />
-          <path
-            d="M 490 0 L 300 60"
-            stroke="rgba(14, 124, 102, 0.25)"
-            strokeWidth="2"
-            strokeDasharray="4 4"
-            fill="none"
-          />
-        </svg>
-      </div>
-      <div className="sld-funnel-outcome">
-        <span className="sld-funnel-outcome-tag">Outcome</span>
-        <span className="sld-funnel-outcome-h">Every lead monetized — same platform</span>
-        <span className="sld-funnel-outcome-b">
-          Pre-approved patients book today · everyone else re-enters the funnel later
-        </span>
       </div>
     </div>
   );
@@ -3029,16 +2954,6 @@ function ValueStack(): JSX.Element {
         'Per-channel ROAS attribution',
       ],
       alt: '$900 / mo · CAPI vendor + analytics',
-    },
-    {
-      head: 'Compliance + audit',
-      items: [
-        'VEGA FCRA · ECOA · TILA enforcement',
-        'Adverse-action notice automation',
-        'State-by-state licensing under NMLS #2456701',
-        'Audit log per loan · 7-year retention',
-      ],
-      alt: '$800 / mo · compliance consultant',
     },
     {
       head: 'Reporting + support',
@@ -5861,192 +5776,124 @@ const CSS = `
 }
 
 /* ===== Smart-routing funnel (slide 12 · HELIX + ORACLE) =====
- * True funnel shape — each tier narrows down. Forks into two
- * lanes (HIGH-TICKET leans forward in 3D, LOW-TICKET recedes),
- * converges back to one revenue outcome. */
+ * Clean three-stage stack with a centered HELIX router pill,
+ * then two flat side-by-side branches (no 3D tilt). HIGH-TICKET
+ * is the winning path (deep teal outcome bar); LOW-TICKET is
+ * the recapture lane (lighter outcome bar). */
 .sld-funnel {
-  position: relative;
   display: flex; flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  gap: 12px;
   margin-top: 8px;
-  padding: 12px 4px 16px;
-  perspective: 1800px;
-  perspective-origin: 50% 25%;
 }
-.sld-funnel-bg {
-  position: absolute;
-  inset: -20px -32px;
-  background:
-    radial-gradient(ellipse 50% 50% at 50% 30%, rgba(34, 184, 160, 0.16), transparent 65%),
-    radial-gradient(ellipse 30% 40% at 30% 75%, rgba(14, 124, 102, 0.12), transparent 65%),
-    radial-gradient(ellipse 30% 40% at 70% 75%, rgba(14, 124, 102, 0.06), transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-  border-radius: 36px;
-  filter: blur(10px);
+.sld-funnel-stages {
+  display: flex; flex-direction: column;
+  gap: 4px;
 }
-.sld-funnel > * { position: relative; z-index: 1; }
-.sld-funnel-tier {
-  width: 100%;
-  display: flex; justify-content: center;
-  transform-style: preserve-3d;
-}
-.sld-funnel-tier-1 { width: 100%; }
-.sld-funnel-tier-2 { width: 86%; margin-top: -6px; }
-.sld-funnel-tier-3 { width: 72%; margin-top: -6px; }
-.sld-funnel-tier-band {
-  width: 100%;
+.sld-funnel-stage {
   display: flex; flex-direction: column; align-items: center;
-  gap: 6px;
-  padding: 16px 24px;
+  gap: 4px;
+  padding: 12px 20px;
   text-align: center;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.94);
+  background:
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.98) 100%);
   border: 1px solid var(--mp-line-strong);
-  box-shadow:
-    0 22px 50px -32px rgba(14, 124, 102, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  transform: rotateX(2deg);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px -28px rgba(14, 124, 102, 0.25);
 }
-.sld-funnel-tier-1 .sld-funnel-tier-band {
-  background:
-    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 253, 252, 0.97) 100%);
+.sld-funnel-connector {
+  align-self: center;
+  width: 1px;
+  height: 14px;
+  background: linear-gradient(180deg, rgba(14, 124, 102, 0.40), rgba(14, 124, 102, 0.10));
 }
-.sld-funnel-tier-2 .sld-funnel-tier-band {
-  background:
-    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(34, 184, 160, 0.14), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 252, 250, 0.98) 100%);
-}
-.sld-funnel-tier-3 .sld-funnel-tier-band {
-  background:
-    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(34, 184, 160, 0.20), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(236, 251, 248, 1) 100%);
-  border-color: rgba(14, 124, 102, 0.32);
-}
-.sld-funnel-tier-pct {
-  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
-  color: var(--mp-teal);
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-}
-.sld-funnel-tier-tag {
-  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
-  color: var(--mp-teal);
-  text-transform: uppercase;
+.sld-funnel-stage-tag {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
 }
-.sld-funnel-tier-h {
-  font-size: 17px; font-weight: 600;
-  letter-spacing: -0.015em;
+.sld-funnel-stage-h {
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.012em;
   color: var(--mp-ink);
 }
-.sld-funnel-tier-b {
-  font-size: 12.5px;
+.sld-funnel-stage-b {
+  font-size: 12px;
   color: var(--mp-mute);
-  line-height: 1.45;
+  line-height: 1.4;
 }
-.sld-funnel-tier-pills {
+.sld-funnel-pills {
   display: flex; flex-wrap: wrap; justify-content: center;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 5px;
+  margin-top: 2px;
 }
 .sld-funnel-pill {
-  font-size: 10.5px; font-weight: 600;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; font-weight: 600;
   color: var(--mp-teal);
   background: rgba(34, 184, 160, 0.10);
   border: 1px solid rgba(14, 124, 102, 0.18);
-  padding: 3px 9px;
+  padding: 2px 8px;
   border-radius: 999px;
-  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   letter-spacing: 0.02em;
 }
-
-/* Fork — SVG connector lines + HELIX router pill */
-.sld-funnel-fork {
-  position: relative;
-  width: 100%;
-  height: 60px;
-  margin-top: -2px;
-}
-.sld-funnel-fork svg {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-}
-.sld-funnel-fork-tag {
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
+.sld-funnel-router {
+  align-self: center;
   display: inline-flex; align-items: center; gap: 8px;
+  margin: 6px 0 2px;
+  padding: 7px 16px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
-  padding: 7px 16px;
   background: #fff;
   border: 1px solid rgba(14, 124, 102, 0.32);
   border-radius: 999px;
-  box-shadow: 0 8px 18px -10px rgba(14, 124, 102, 0.35);
+  box-shadow: 0 8px 18px -10px rgba(14, 124, 102, 0.30);
   white-space: nowrap;
 }
-.sld-funnel-fork-dot {
+.sld-funnel-router-dot {
   width: 6px; height: 6px; border-radius: 999px;
   background: var(--mp-teal-2);
   animation: sldPulse 1.5s ease-in-out infinite;
 }
-
-/* Branches */
 .sld-funnel-branches {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  width: 100%;
-  transform-style: preserve-3d;
+  gap: 14px;
 }
 .sld-funnel-branch {
   display: flex; flex-direction: column;
   gap: 10px;
   padding: 18px;
-  border-radius: 18px;
-  transform-style: preserve-3d;
-  transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1),
-              box-shadow .5s cubic-bezier(0.22, 0.61, 0.36, 1);
-  will-change: transform;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  box-shadow: 0 18px 40px -28px rgba(14, 124, 102, 0.22);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sld-funnel-branch:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 28px 56px -28px rgba(14, 124, 102, 0.34);
 }
 .sld-funnel-branch-high {
+  border-color: rgba(14, 124, 102, 0.28);
   background:
-    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(34, 184, 160, 0.22), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(232, 250, 246, 0.98) 100%);
-  border: 1px solid rgba(14, 124, 102, 0.30);
-  box-shadow:
-    0 50px 90px -36px rgba(14, 124, 102, 0.55),
-    0 18px 36px -16px rgba(14, 124, 102, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  transform: rotateY(-5deg) rotateX(2deg) translateZ(34px);
-}
-.sld-funnel-branch-high:hover {
-  transform: rotateY(-2deg) rotateX(1deg) translateZ(46px);
-  box-shadow:
-    0 60px 110px -36px rgba(14, 124, 102, 0.65),
-    0 24px 44px -16px rgba(14, 124, 102, 0.36);
-}
-.sld-funnel-branch-low {
-  background: rgba(248, 250, 250, 0.86);
-  border: 1px dashed rgba(15, 23, 42, 0.18);
-  opacity: 0.94;
-  transform: rotateY(5deg) rotateX(-1deg) translateZ(-12px);
-}
-.sld-funnel-branch-low:hover {
-  transform: rotateY(2deg) rotateX(0deg) translateZ(0);
-  opacity: 1;
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 250, 0.98) 100%);
 }
 .sld-funnel-branch-head {
-  display: flex; flex-direction: column; gap: 3px;
-  padding-bottom: 8px;
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px dashed var(--mp-line);
 }
 .sld-funnel-branch-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
-  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
 }
 .sld-funnel-branch-low .sld-funnel-branch-tag { color: var(--mp-mute); }
 .sld-funnel-branch-crit {
@@ -6055,129 +5902,46 @@ const CSS = `
 }
 .sld-funnel-branch-steps {
   list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: column; gap: 4px;
 }
 .sld-funnel-branch-steps li {
-  display: grid; grid-template-columns: 30px 1fr;
-  grid-template-rows: auto auto;
+  display: grid; grid-template-columns: 28px 1fr;
+  align-items: center;
   column-gap: 10px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid var(--mp-line);
-  border-radius: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--mp-line);
 }
-.sld-funnel-branch-low .sld-funnel-branch-steps li {
-  background: rgba(255, 255, 255, 0.7);
-}
+.sld-funnel-branch-steps li:last-child { border-bottom: none; }
 .sld-funnel-step-n {
-  grid-row: 1 / span 2;
-  display: flex; align-items: center; justify-content: center;
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-  font-size: 12px; font-weight: 700;
+  font-size: 11px; font-weight: 700;
   color: var(--mp-teal);
   font-variant-numeric: tabular-nums;
 }
 .sld-funnel-branch-low .sld-funnel-step-n { color: var(--mp-mute); }
 .sld-funnel-step-h {
-  font-size: 13px; font-weight: 600;
+  font-size: 13px; font-weight: 500;
   color: var(--mp-ink);
   letter-spacing: -0.01em;
 }
-.sld-funnel-step-b {
-  font-size: 11px;
-  color: var(--mp-ink-2);
-  line-height: 1.4;
-}
 .sld-funnel-branch-outcome {
-  display: flex; align-items: center; gap: 10px;
   margin-top: 4px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-size: 12.5px; font-weight: 600;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 600;
   letter-spacing: -0.01em;
   background:
     radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.32), transparent 70%),
     linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
   color: #fff;
-  box-shadow:
-    0 16px 36px -16px rgba(14, 124, 102, 0.55),
-    0 0 0 1px rgba(34, 184, 160, 0.30);
-  position: relative;
-  overflow: hidden;
-}
-.sld-funnel-branch-outcome::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at 100% 50%, rgba(34, 184, 160, 0.35), transparent 60%);
-  opacity: 0;
-  animation: sldFunnelPulse 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes sldFunnelPulse {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 1; }
-}
-.sld-funnel-branch-low .sld-funnel-branch-outcome {
-  background: linear-gradient(90deg, rgba(15, 23, 42, 0.10), transparent);
-  color: var(--mp-ink);
-  box-shadow: none;
-}
-.sld-funnel-branch-low .sld-funnel-branch-outcome::after { display: none; }
-.sld-funnel-branch-outcome-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px;
-  border-radius: 999px;
-  background: rgba(34, 184, 160, 0.20);
-  color: var(--mp-teal-2);
-  font-size: 14px;
-  flex-shrink: 0;
-}
-.sld-funnel-branch-low .sld-funnel-branch-outcome-icon {
-  background: rgba(15, 23, 42, 0.08);
-  color: var(--mp-mute);
-}
-
-/* Convergence + final outcome card */
-.sld-funnel-converge {
-  position: relative;
-  width: 100%;
-  height: 50px;
-  margin-top: -2px;
-}
-.sld-funnel-converge svg {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-}
-.sld-funnel-outcome {
-  width: 60%;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 6px;
-  padding: 16px 28px;
-  border-radius: 16px;
   text-align: center;
-  background:
-    radial-gradient(ellipse 80% 120% at 50% 0%, rgba(34, 184, 160, 0.45), transparent 70%),
-    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
-  color: #fff;
-  box-shadow:
-    0 28px 60px -22px rgba(14, 124, 102, 0.55),
-    0 0 0 1px rgba(34, 184, 160, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  box-shadow: 0 12px 28px -14px rgba(14, 124, 102, 0.50);
 }
-.sld-funnel-outcome-tag {
-  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
-  color: var(--mp-teal-2);
-  text-transform: uppercase;
-  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
-}
-.sld-funnel-outcome-h {
-  font-size: 18px; font-weight: 600;
-  letter-spacing: -0.018em;
-}
-.sld-funnel-outcome-b {
-  font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.5;
+.sld-funnel-branch-outcome-low {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--mp-ink-2);
+  box-shadow: none;
+  border: 1px dashed var(--mp-line-strong);
 }
 
 /* ===== Trusted by 1,000+ practices ===== */
