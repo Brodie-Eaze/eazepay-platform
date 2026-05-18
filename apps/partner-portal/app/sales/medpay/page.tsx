@@ -286,54 +286,13 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 06 — STAGE 2: AGENTIC INTAKE */
+  /* 06 — STAGE 2 (REMOVED in v8 — was PRISM agentic-intake slide.
+     Kept as a no-op placeholder so NARRATIVE_ORDER indices into
+     SLIDES_RAW above this point remain stable.) */
   {
     n: '06',
-    title: 'Stage 2 — Agentic intake',
-    build: () => (
-      <div className="sld-stack">
-        <Reveal>
-          <div className="sld-eyebrow">
-            <span className="sld-eyebrow-dot" />
-            How it works · 2 of 5 · PRISM
-          </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <h2 className="sld-h2">
-            <span className="grad-teal-deep">PRISM</span>{' '}
-            <span className="grad-teal">reshapes the apply flow in real time.</span>
-          </h2>
-        </Reveal>
-        <Reveal delay={240}>
-          <p className="sld-sub">
-            Every form session is watched by an agent. Question order is rewritten on partial
-            answers. High-intent patients skip qualifying steps and go straight to the financing
-            decision. Junk signals get extra verification.
-          </p>
-        </Reveal>
-        <Reveal delay={360}>
-          <PrismFlow />
-        </Reveal>
-        <Reveal delay={480}>
-          <div className="sld-mini-stats">
-            <MiniStat
-              v={
-                <span>
-                  −<AnimatedCounter to={41} suffix="%" />
-                </span>
-              }
-              k="Form drop-off"
-            />
-            <MiniStat
-              v={<AnimatedCounter to={2.3} decimals={1} suffix="x" />}
-              k="High-intent throughput"
-            />
-            <MiniStat v={<AnimatedCounter to={7} suffix=" agents" />} k="Pre-qual layer" />
-            <MiniStat v="Live" k="Per-session learning" />
-          </div>
-        </Reveal>
-      </div>
-    ),
+    title: 'Stage 2 — Reserved',
+    build: () => <></>,
   },
 
   /* 07 — STAGE 3: MARKETPLACE */
@@ -678,18 +637,29 @@ const SLIDES_RAW: Slide[] = [
                 <div className="sld-price-hero-sub">One-time · all-in</div>
               </div>
               <div className="sld-price-hero-includes">
-                <div className="sld-price-hero-includes-eyebrow">What&apos;s included</div>
+                <div className="sld-price-hero-includes-eyebrow">What you get</div>
                 <ul>
-                  <li>Full platform configured for your practice</li>
-                  <li>All 6 agents (ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</li>
-                  <li>Multi-lender marketplace activated</li>
-                  <li>Live in up to 5 business days</li>
-                  <li>Staff training · iPad / web setup</li>
-                  <li>Pixel + CAPI integration · Meta · Google · TikTok</li>
+                  <li>
+                    <strong>Pre-qualification agents</strong> — credit · income · DTI · pre-approval
+                    $ on every lead
+                  </li>
+                  <li>
+                    <strong>EazePay partner portal</strong> — full team access, live data, audit log
+                  </li>
+                  <li>
+                    <strong>Application submission + tracking</strong> — pipeline, decisions,
+                    payouts
+                  </li>
+                  <li>
+                    <strong>Lender marketplace</strong> — parallel quoting, best offer wins
+                  </li>
+                  <li>
+                    <strong>Payment processing</strong> — optional, included if you want it
+                  </li>
                 </ul>
               </div>
             </div>
-            <div className="sld-price-grid">
+            <div className="sld-price-grid sld-price-grid-single">
               <div>
                 <div className="sld-price-row">
                   <span className="sld-price-k">Monthly platform fee</span>
@@ -708,7 +678,6 @@ const SLIDES_RAW: Slide[] = [
                   <span className="sld-price-v">Buy once · run forever</span>
                 </div>
               </div>
-              <SampleInvoice />
             </div>
           </div>
         </Reveal>
@@ -1079,7 +1048,10 @@ const SLIDES_RAW: Slide[] = [
           </div>
         </Reveal>
         <Reveal delay={360}>
-          <div className="sld-cover-tagline">Patient financing decided at the chair.</div>
+          <div className="sld-cover-tagline">Outcomes when it matters most.</div>
+          <div className="sld-cover-subtagline">
+            A lender you can depend on. A platform you can depend on as a business owner.
+          </div>
         </Reveal>
         <Reveal delay={480}>
           <div className="sld-cover-meta">
@@ -1121,7 +1093,7 @@ const SLIDES_RAW: Slide[] = [
   {
     n: '28',
     title: 'Seven agents · one platform',
-    build: () => <SevenAgents />,
+    build: () => <SixAgents />,
   },
 
   /* 29 — ECHO PIXEL ATTRIBUTION (deep dive) */
@@ -1764,41 +1736,6 @@ function IpadFormMock(): JSX.Element {
   );
 }
 
-/** PRISM agent reordering form questions. */
-function PrismFlow(): JSX.Element {
-  const before = ['Email', 'Phone', 'SSN', 'Income', 'Employer', 'Procedure', 'Insurance'];
-  const after = ['Procedure', 'Income', 'SSN', 'Insurance', 'Phone', 'Email', 'Employer'];
-  return (
-    <div className="sld-prism">
-      <div className="sld-prism-col">
-        <div className="sld-prism-eyebrow">Before · static form</div>
-        <ol className="sld-prism-list">
-          {before.map((q, i) => (
-            <li key={i}>
-              <span className="sld-prism-i">{String(i + 1).padStart(2, '0')}</span>
-              {q}
-            </li>
-          ))}
-        </ol>
-        <div className="sld-prism-dropoff">−41% drop-off</div>
-      </div>
-      <div className="sld-prism-arrow">PRISM</div>
-      <div className="sld-prism-col accent">
-        <div className="sld-prism-eyebrow accent">After · reshaped by PRISM</div>
-        <ol className="sld-prism-list">
-          {after.map((q, i) => (
-            <li key={i}>
-              <span className="sld-prism-i accent">{String(i + 1).padStart(2, '0')}</span>
-              {q}
-            </li>
-          ))}
-        </ol>
-        <div className="sld-prism-dropoff accent">High-intent leads finish faster</div>
-      </div>
-    </div>
-  );
-}
-
 /** Three ranked offers (Stage 4). Cheapest first, star on winner. */
 function OfferStack(): JSX.Element {
   const offers = [
@@ -2020,7 +1957,7 @@ function OnboardingTimeline(): JSX.Element {
     {
       d: 'Day 4-5',
       t: 'Live · first real traffic',
-      b: 'Staff trained · iPad / web flow active · first funded patient in days',
+      b: 'Team trained on the partner portal · first funded patient in days',
     },
   ];
   return (
@@ -2351,36 +2288,36 @@ function WelcomeAgenda(): JSX.Element {
   );
 }
 
-/** Who is it for — 5 vertical icon grid + "not for" footer. */
+/** Who is it for — 5 vertical cards (text-only, professional) + "not for" footer. */
 function WhoIsItFor(): JSX.Element {
   const verticals = [
     {
+      code: 'V01',
       name: 'Dental',
-      icon: '\u{1FA77}',
       ticket: '$3k – $50k',
       who: 'Implants, ortho, sleep apnea, full-mouth reconstruction',
     },
     {
+      code: 'V02',
       name: 'Med spa',
-      icon: '✨',
       ticket: '$2k – $15k',
       who: 'Laser packages, injectable maintenance, body contouring series',
     },
     {
+      code: 'V03',
       name: 'Derm',
-      icon: '\u{1F9EC}',
       ticket: '$1k – $30k',
       who: 'Mohs, cosmetic, mole removal, laser resurfacing',
     },
     {
+      code: 'V04',
       name: 'Veterinary',
-      icon: '\u{1F436}',
       ticket: '$1k – $25k',
       who: 'Orthopedic surgery, oncology, dental + soft-tissue cases',
     },
     {
+      code: 'V05',
       name: 'Vision',
-      icon: '\u{1F441}',
       ticket: '$3k – $12k',
       who: 'LASIK, premium IOL, custom progressive lenses',
     },
@@ -2410,9 +2347,7 @@ function WhoIsItFor(): JSX.Element {
         <div className="sld-who-grid">
           {verticals.map((v, i) => (
             <div key={i} className="sld-who-card">
-              <div className="sld-who-icon" aria-hidden>
-                {v.icon}
-              </div>
+              <div className="sld-who-code">{v.code}</div>
               <div className="sld-who-name">{v.name}</div>
               <div className="sld-who-ticket">{v.ticket}</div>
               <div className="sld-who-who">{v.who}</div>
@@ -2434,9 +2369,9 @@ function WhoIsItFor(): JSX.Element {
   );
 }
 
-/** Seven autonomous agents · one platform. 4+3 grid of agents with
+/** Six autonomous agents · one platform. 3+3 grid of agents with
  *  role, what-they-watch, and output. */
-function SevenAgents(): JSX.Element {
+function SixAgents(): JSX.Element {
   const agents = [
     {
       code: 'ORACLE',
@@ -2896,16 +2831,15 @@ function BigFinaleCTA(): JSX.Element {
         </p>
       </Reveal>
       <Reveal delay={360}>
-        <div className="sld-finale-ctas">
+        <div className="sld-finale-ctas sld-finale-ctas-single">
           <a href="/medpay/checkout" className="sld-finale-primary">
-            <span className="sld-finale-primary-h">Get started · $10k</span>
+            <span className="sld-finale-primary-h">Get started · $10,000</span>
             <span className="sld-finale-primary-sub">
               Sign today · KYB clears in 60s · live in 5 days
             </span>
-          </a>
-          <a href="/help" className="sld-finale-secondary">
-            <span className="sld-finale-secondary-h">Book a walkthrough</span>
-            <span className="sld-finale-secondary-sub">30 min · live patient flow demo</span>
+            <span className="sld-finale-primary-arrow" aria-hidden>
+              →
+            </span>
           </a>
         </div>
       </Reveal>
@@ -4418,72 +4352,6 @@ const CSS = `
   font-weight: 600;
 }
 
-/* PRISM before/after flow */
-.sld-prism {
-  display: grid; grid-template-columns: 1fr 80px 1fr;
-  gap: 12px; align-items: center;
-  margin-top: 8px;
-}
-.sld-prism-col {
-  padding: 22px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid var(--mp-line);
-  border-radius: 16px;
-}
-.sld-prism-col.accent {
-  background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.14), transparent 70%),
-    rgba(255, 255, 255, 0.95);
-  border-color: var(--mp-line-strong);
-}
-.sld-prism-eyebrow {
-  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-mute);
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-.sld-prism-eyebrow.accent { color: var(--mp-teal); }
-.sld-prism-list {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.sld-prism-list li {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--mp-ink-2);
-  padding: 6px 0;
-}
-.sld-prism-i {
-  width: 24px; height: 24px;
-  border-radius: 6px;
-  background: rgba(15,23,42,0.06);
-  color: var(--mp-mute);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.sld-prism-i.accent {
-  background: rgba(34, 184, 160, 0.16);
-  color: var(--mp-teal);
-}
-.sld-prism-arrow {
-  text-align: center;
-  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
-  color: var(--mp-teal);
-  text-transform: uppercase;
-  padding: 12px 0;
-  background: linear-gradient(180deg, rgba(34, 184, 160, 0.10), transparent);
-  border-radius: 12px;
-}
-.sld-prism-dropoff {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--mp-line);
-  font-size: 11px; font-weight: 600;
-  color: var(--mp-mute);
-  text-align: right;
-}
-.sld-prism-dropoff.accent { color: var(--mp-teal); }
-
 /* Offer stack — slide 8 */
 .sld-offer-stack {
   background: rgba(255, 255, 255, 0.95);
@@ -4703,6 +4571,12 @@ const CSS = `
   gap: 18px;
   align-items: stretch;
   margin-top: 12px;
+}
+.sld-price-grid.sld-price-grid-single {
+  grid-template-columns: 1fr;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .sld-price-card { margin: 0 !important; padding: 8px 22px !important; }
 .sld-invoice {
@@ -4942,13 +4816,21 @@ const CSS = `
   transform: translateY(-3px);
   box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
 }
-.sld-who-icon {
-  font-size: 28px;
-  margin-bottom: 10px;
+.sld-who-code {
+  display: inline-block;
+  padding: 4px 8px;
+  margin-bottom: 14px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-teal);
+  background: rgba(14, 124, 102, 0.08);
+  border: 1px solid rgba(14, 124, 102, 0.18);
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
 }
 .sld-who-name {
-  font-size: 16px; font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -0.022em;
   color: var(--mp-ink);
 }
 .sld-who-ticket {
@@ -5597,8 +5479,16 @@ const CSS = `
   grid-template-columns: 1fr 1.05fr;
   border-top: 1px solid var(--mp-line);
 }
+.sld-price-hero .sld-price-grid.sld-price-grid-single {
+  grid-template-columns: 1fr;
+  max-width: none;
+}
 .sld-price-hero .sld-price-grid > div:first-child {
   padding: 22px 28px;
+}
+.sld-price-hero-includes li strong {
+  font-weight: 700;
+  color: var(--mp-ink);
 }
 
 /* ===== Cover · brand title (first slide of the deck) ===== */
@@ -5638,10 +5528,20 @@ const CSS = `
   margin-top: 6px;
 }
 .sld-cover-tagline {
-  font-size: 24px;
-  color: var(--mp-ink-2);
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--mp-ink);
   margin-top: -4px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.014em;
+}
+.sld-cover-subtagline {
+  margin-top: 12px;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--mp-mute);
 }
 .sld-cover-meta {
   margin-top: 18px;
@@ -6040,49 +5940,58 @@ const CSS = `
   max-width: 760px;
   margin: 12px auto 0;
 }
-.sld-finale-primary,
-.sld-finale-secondary {
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 28px 30px;
-  border-radius: 18px;
-  text-align: left;
-  transition: transform .15s ease, box-shadow .15s ease;
+.sld-finale-ctas.sld-finale-ctas-single {
+  grid-template-columns: minmax(420px, 560px);
+  justify-content: center;
 }
 .sld-finale-primary {
-  background: linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
-  color: #fff;
-  border: 1px solid var(--mp-deep);
-  box-shadow: 0 30px 60px -28px rgba(14, 124, 102, 0.55);
+  position: relative;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 32px 80px 32px 36px;
+  border-radius: 22px;
+  text-align: left;
+  background: linear-gradient(135deg, #FFFFFF 0%, #ECFFFE 100%);
+  color: var(--mp-deep);
+  border: 1px solid rgba(14, 124, 102, 0.30);
+  box-shadow:
+    0 30px 60px -28px rgba(14, 124, 102, 0.45),
+    0 10px 24px -16px rgba(14, 124, 102, 0.28);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .sld-finale-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 40px 80px -32px rgba(14, 124, 102, 0.7);
+  transform: translateY(-4px);
+  box-shadow:
+    0 50px 100px -36px rgba(14, 124, 102, 0.55),
+    0 14px 32px -16px rgba(14, 124, 102, 0.35);
+  border-color: rgba(14, 124, 102, 0.50);
 }
 .sld-finale-primary-h {
-  font-size: 26px; font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 30px; font-weight: 700;
+  letter-spacing: -0.024em;
+  color: var(--mp-deep);
+  background: linear-gradient(120deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .sld-finale-primary-sub {
-  font-size: 12px; letter-spacing: 0.04em;
-  opacity: 0.85;
-}
-.sld-finale-secondary {
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--mp-ink);
-  border: 1px solid var(--mp-line-strong);
-}
-.sld-finale-secondary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 22px 50px -22px rgba(14, 124, 102, 0.30);
-}
-.sld-finale-secondary-h {
-  font-size: 26px; font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--mp-teal);
-}
-.sld-finale-secondary-sub {
-  font-size: 12px; letter-spacing: 0.04em;
+  font-size: 13px; letter-spacing: 0.04em;
   color: var(--mp-mute);
+  font-weight: 500;
+}
+.sld-finale-primary-arrow {
+  position: absolute;
+  right: 30px; top: 50%;
+  transform: translateY(-50%);
+  width: 44px; height: 44px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
+  color: #fff;
+  font-size: 20px;
+  box-shadow: 0 8px 20px -8px rgba(14, 124, 102, 0.55);
+  transition: transform .18s ease;
+}
+.sld-finale-primary:hover .sld-finale-primary-arrow {
+  transform: translateY(-50%) translateX(4px);
 }
 .sld-finale-trust {
   margin-top: 18px;
