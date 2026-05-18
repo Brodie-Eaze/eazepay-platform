@@ -20,7 +20,7 @@ export default function MedPayFlowLayout({ children }: { children: ReactNode }):
 }
 
 export const metadata = {
-  title: 'MedPay · Patient Financing for Modern Practices',
+  title: 'MedPay · Outcomes When It Matters Most',
   description:
-    'Soft-pull pre-qualification at the chair. Multi-lender marketplace. Merchant-direct funding in 48 to 72 hours.',
+    'A lender you can depend on. A platform you can depend on. Soft-pull pre-qualification, multi-lender marketplace, merchant-direct funding in 48 to 72 hours.',
 };
