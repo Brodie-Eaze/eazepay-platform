@@ -27,32 +27,33 @@ interface Slide {
  * Transformation → Verticals (Dental, Med Spa, Derm/Vet/Vision) →
  * Trust → Pricing → Onboarding → Big finale CTA. */
 const SLIDES_RAW: Slide[] = [
-  /* 01 — TITLE */
+  /* 01 — WHAT IS MEDPAY (high-level product overview, comes right
+     after the brand title slide) */
   {
     n: '01',
-    title: 'Opening',
+    title: 'What is MedPay',
     build: () => (
       <div className="sld-stack sld-grid-hero">
         <div className="sld-hero-left">
           <Reveal>
             <div className="sld-eyebrow">
               <span className="sld-eyebrow-dot" />
-              MedPay · Patient Financing
+              What is MedPay
             </div>
           </Reveal>
           <Reveal delay={120}>
             <h1 className="sld-h1">
-              <span className="grad-teal-deep">Patient financing</span>{' '}
-              <span className="grad-teal">decided</span>
+              <span className="grad-teal-deep">MedPay is a</span>{' '}
+              <span className="grad-teal">patient-financing platform</span>
               <br />
-              <span className="grad-teal-deep">in 10 seconds.</span>{' '}
-              <span className="grad-teal">At the chair.</span>
+              <span className="grad-teal-deep">built for the chair.</span>
             </h1>
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
-              A soft-pull pre-qualification engine, a multi-lender marketplace, and merchant-direct
-              funding in 48 to 72 hours. One signup, one platform.
+              We help dental, med spa, derm, vet, and vision practices approve more patients at the
+              consult. Soft-pull pre-qualification, a real-time lender marketplace, and
+              merchant-direct funding in 48 to 72 hours. One signup, one platform.
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -1005,12 +1006,79 @@ const SLIDES_RAW: Slide[] = [
     title: 'Get started',
     build: () => <BigFinaleCTA />,
   },
+
+  /* 25 — BRAND TITLE (presentation cover slide — appears FIRST in
+     the narrative order, ahead of "What is MedPay"). */
+  {
+    n: '25',
+    title: 'MedPay',
+    build: () => (
+      <div className="sld-stack sld-cover">
+        <ParticleField count={42} />
+        <Reveal>
+          <div className="sld-cover-eyebrow">
+            <span className="sld-eyebrow-dot" />A presentation by EazePay
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <div className="sld-cover-mark">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect
+                x="2"
+                y="3"
+                width="20"
+                height="18"
+                rx="4"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              />
+              <path
+                d="M7 12h10M12 7v10"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </Reveal>
+        <Reveal delay={240}>
+          <div className="sld-cover-wordmark">
+            <span className="grad-teal-deep">Med</span>
+            <span className="grad-teal">Pay</span>
+          </div>
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-cover-tagline">Patient financing decided at the chair.</div>
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-cover-meta">
+            <div className="sld-cover-meta-row">
+              <span className="sld-cover-meta-k">For</span>
+              <span className="sld-cover-meta-v">Dental · Med spa · Derm · Vet · Vision</span>
+            </div>
+            <div className="sld-cover-meta-row">
+              <span className="sld-cover-meta-k">Presented by</span>
+              <span className="sld-cover-meta-v">EazePay · NMLS #2456701</span>
+            </div>
+          </div>
+        </Reveal>
+        <Reveal delay={600}>
+          <div className="sld-cover-hint">
+            <span className="sld-cover-hint-arrow">↓</span>
+            <span>Scroll to begin · 24 slides · ~12 min</span>
+          </div>
+        </Reveal>
+      </div>
+    ),
+  },
 ];
 
 /** Narrative ordering of SLIDES_RAW into the final sales-deck arc:
  *
- *  ACT 1 — Problem        (1 Opening → 2 Cost → 3 Why now)
- *  ACT 2 — Solution       (4 What MedPay is → 11 Patient journey overview
+ *  COVER                  (25 Brand title — slide 01 visible)
+ *  ACT 1 — Setup          (1 What is MedPay → 2 The cost of doing nothing
+ *                          → 3 Why now)
+ *  ACT 2 — Solution       (4 The 3 pillars → 11 Patient journey overview
  *                          → 5 Pre-qual → 6 PRISM → 19 Smart Routing
  *                          → 7 Marketplace → 8 Best offer
  *                          → 20 Smartphone continuity → 9 Merchant-direct)
@@ -1022,7 +1090,30 @@ const SLIDES_RAW: Slide[] = [
  *
  *  Indices are 0-based into SLIDES_RAW. */
 const NARRATIVE_ORDER = [
-  0, 1, 2, 3, 10, 4, 5, 18, 6, 7, 19, 8, 9, 11, 21, 20, 22, 12, 13, 14, 15, 16, 23,
+  24, // Cover · brand title
+  0,
+  1,
+  2,
+  3,
+  10,
+  4,
+  5,
+  18,
+  6,
+  7,
+  19,
+  8,
+  9,
+  11,
+  20, // Vertical: Dental (anchor vertical first)
+  21, // Vertical: Med Spa
+  22, // Vertical: Derm · Vet · Vision
+  12,
+  13,
+  14,
+  15,
+  16,
+  23,
 ];
 const SLIDES: Slide[] = NARRATIVE_ORDER.map((i, idx) => ({
   ...SLIDES_RAW[i]!,
@@ -4056,6 +4147,91 @@ const CSS = `
   background: transparent;
 }
 
+/* ===== Cover · brand title (first slide of the deck) ===== */
+.sld-cover {
+  align-items: center; text-align: center;
+  max-width: 900px;
+  gap: 18px;
+  position: relative;
+}
+.sld-cover-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 7px 16px;
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid var(--mp-line);
+  border-radius: 999px;
+  align-self: center;
+}
+.sld-cover-mark {
+  color: var(--mp-teal);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 110px; height: 110px;
+  background: linear-gradient(135deg, rgba(34, 184, 160, 0.15) 0%, rgba(14, 124, 102, 0.10) 100%);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 28px;
+  box-shadow:
+    0 30px 60px -30px rgba(14, 124, 102, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.sld-cover-wordmark {
+  font-size: 120px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  margin-top: 6px;
+}
+.sld-cover-tagline {
+  font-size: 24px;
+  color: var(--mp-ink-2);
+  margin-top: -4px;
+  letter-spacing: -0.01em;
+}
+.sld-cover-meta {
+  margin-top: 18px;
+  padding: 18px 28px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  align-self: center;
+}
+.sld-cover-meta-row {
+  display: flex; align-items: baseline; gap: 14px;
+  font-size: 13px;
+}
+.sld-cover-meta-k {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  min-width: 110px;
+  text-align: right;
+}
+.sld-cover-meta-v {
+  color: var(--mp-ink);
+  font-weight: 600;
+}
+.sld-cover-hint {
+  margin-top: 24px;
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  align-self: center;
+}
+.sld-cover-hint-arrow {
+  display: inline-block;
+  animation: sldCoverArrow 1.8s ease-in-out infinite;
+  color: var(--mp-teal);
+  font-size: 16px;
+}
+@keyframes sldCoverArrow {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(4px); opacity: 1; }
+}
+
 /* ===== Smart routing (HELIX) — slide 8 ===== */
 .sld-sr {
   display: grid; grid-template-columns: 220px 200px 1fr;
@@ -4480,6 +4656,9 @@ const CSS = `
   .sld-trust-grid { grid-template-columns: repeat(2, 1fr); }
   .sld-cta-grid { grid-template-columns: 1fr; }
   .sld-bar-row { grid-template-columns: 1fr; }
+  .sld-cover-wordmark { font-size: 80px; }
+  .sld-cover-tagline { font-size: 18px; }
+  .sld-cover-meta-k { min-width: 80px; }
   .sld-sr { grid-template-columns: 1fr; gap: 16px; }
   .sld-sr-arrow { padding: 12px 0; }
   .sld-vert-grid { grid-template-columns: 1fr; }
