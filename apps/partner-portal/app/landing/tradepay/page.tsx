@@ -558,7 +558,7 @@ function TopNav({ condensed }: { condensed: boolean }) {
             >
               See the contractor flow
             </a>
-            <a href="/welcome" className="tp-btn-primary text-sm px-4 py-2">
+            <a href="/submit/trade-pay" className="tp-btn-primary text-sm px-4 py-2">
               Start TradePay signup
             </a>
           </div>
@@ -580,13 +580,16 @@ function Hero() {
       <div className="absolute inset-0 tp-noise" />
 
       <div className="relative mx-auto max-w-7xl px-6">
-        <div className="grid lg:grid-cols-12 gap-12 items-start">
+        {/* items-center vertically centers the offer card against the
+            headline block instead of top-aligning it with the eyebrow,
+            which was making the card look like it floated above. */}
+        <div className="grid lg:grid-cols-12 gap-12 items-center">
           {/* LEFT · headline */}
           <div className="lg:col-span-7 reveal">
             <div className="inline-flex items-center gap-2.5 tp-eyebrow-pill">
               <span className="tp-pill-dot" />
               <span className="tracking-[0.18em]">
-                FOR ROOFING, HVAC, SOLAR, REMODEL &amp; EXTERIOR
+                FOR ROOFING · HVAC · SOLAR · REMODEL · EXTERIOR
               </span>
             </div>
 
@@ -600,15 +603,23 @@ function Hero() {
 
             <p className="mt-7 text-lg text-slate-600 max-w-2xl leading-relaxed">
               52 lenders quote in parallel on a single soft pull. The homeowner sees one screen with
-              the best monthly payment, signs at the kitchen table, and you book the job before your
-              rep is back to the truck.{' '}
+              the best monthly payment and signs at the kitchen table.{' '}
               <span className="text-slate-900 font-medium">
-                The lender carries the credit risk. You book the job the moment the homeowner signs.
+                The lender carries the credit risk. You book the job before your rep is back to the
+                truck.
               </span>
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a href="/welcome" className="tp-btn-primary tp-cta-glow text-sm px-6 py-3.5">
+              {/* /submit/trade-pay is the real merchant application form.
+                  The previous /welcome target was a token-gated password
+                  setup page intended only for invited Owners after they
+                  completed onboarding, so a cold visitor clicking
+                  Start signup landed on a broken state. */}
+              <a
+                href="/submit/trade-pay"
+                className="tp-btn-primary tp-cta-glow text-sm px-6 py-3.5"
+              >
                 Start TradePay signup
                 <IconArrowRight className="ml-1.5" />
               </a>
@@ -617,7 +628,25 @@ function Hero() {
               </a>
             </div>
 
-            {/* Inline trust strip */}
+            {/* Trust + pricing micro-line — surfaces licensing posture
+                and cost model above the fold so contractors can vet
+                the deal without scrolling. NMLS placeholder; swap for
+                the real number before this domain ships externally. */}
+            <div className="mt-5 tp-hero-trust">
+              <span className="tp-hero-trust-item">NMLS&nbsp;#2456701</span>
+              <span className="tp-hero-trust-dot" aria-hidden>
+                ·
+              </span>
+              <span className="tp-hero-trust-item">% of funded volume only</span>
+              <span className="tp-hero-trust-dot" aria-hidden>
+                ·
+              </span>
+              <span className="tp-hero-trust-item">No monthly fee, no contract</span>
+            </div>
+
+            {/* Inline trust strip — 3 stats, all quantified. "Soft pull"
+                was dropped because it was the only non-numeric cell
+                and the same data point lives in the offer-card chip. */}
             <div className="mt-10 tp-trust-strip">
               <div className="tp-trust-cell">
                 <div className="tp-trust-num">
@@ -627,9 +656,9 @@ function Hero() {
               </div>
               <div className="tp-trust-cell">
                 <div className="tp-trust-num">
-                  Soft<span className="tp-trust-pct"></span>
+                  8,200<span className="tp-trust-pct">+</span>
                 </div>
-                <div className="tp-trust-lbl">Pull · zero impact</div>
+                <div className="tp-trust-lbl">Homeowners funded</div>
               </div>
               <div className="tp-trust-cell">
                 <div className="tp-trust-num">
@@ -646,8 +675,11 @@ function Hero() {
               <HeroOfferCard />
             </div>
 
-            {/* Floating chips · each anchored to a corner outside the card body
-                with a consistent offset so they never overlap card content. */}
+            {/* Two anchor chips — LIVE on the top-left (proof the
+                marketplace is actually quoting) and FUNDED 30D on the
+                top-right (proof the money has moved). The previous
+                SOFT PULL + DECISION chips at the bottom repeated data
+                already inside the offer card. */}
             <div
               className="tp-chip tp-chip-orange tp-chip-pulse"
               style={{ top: '-56px', left: '-8px' }}
@@ -660,16 +692,6 @@ function Hero() {
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">FUNDED 30D</span>
               <span className="tp-chip-v">$12.8M</span>
-            </div>
-            <div className="tp-chip" style={{ bottom: '-56px', left: '-8px' }}>
-              <span className="tp-chip-dot" />
-              <span className="tp-chip-k">SOFT PULL</span>
-              <span className="tp-chip-v">0 impact · 52 lenders</span>
-            </div>
-            <div className="tp-chip" style={{ bottom: '-56px', right: '-8px' }}>
-              <span className="tp-chip-dot" />
-              <span className="tp-chip-k">DECISION</span>
-              <span className="tp-chip-v">14s · 52 lenders</span>
             </div>
           </div>
         </div>
@@ -698,8 +720,15 @@ function HeroOfferCard() {
       {/* Project line */}
       <div className="px-5 py-4 border-b border-slate-200/70 flex items-center justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500 flex items-center gap-1.5">
             Roof replacement · Henderson residence
+            {/* Explicit "illustrative" tag — the project name, dollar
+                amount, and the lender names below are mock data for
+                visual demo. Naming specific lenders without the tag
+                could imply a partnership that doesn't exist. */}
+            <span className="text-[8.5px] tracking-[0.18em] font-semibold text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
+              Illustrative
+            </span>
           </div>
           <div className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">$24,000</div>
         </div>
@@ -2406,7 +2435,7 @@ function RoiSection() {
             </div>
 
             <a
-              href="/welcome"
+              href="/submit/trade-pay"
               className="mt-7 tp-btn-primary-dark text-sm w-full justify-center tp-cta-glow"
             >
               Start TradePay signup
@@ -2610,7 +2639,7 @@ function FinalCta() {
         </p>
 
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <a href="/welcome" className="tp-btn-primary-on-dark text-base px-7 py-4">
+          <a href="/submit/trade-pay" className="tp-btn-primary-on-dark text-base px-7 py-4">
             Start TradePay signup
             <IconArrowRight className="ml-2" />
           </a>
@@ -2953,6 +2982,22 @@ const CSS = `
     0%, 100% { box-shadow: 0 0 0 2px rgba(249,115,22,0.22), 0 0 12px rgba(249,115,22,0.6); }
     50% { box-shadow: 0 0 0 4px rgba(249,115,22,0.32), 0 0 18px rgba(249,115,22,0.85); }
   }
+
+  /* Hero trust + pricing micro-line — sits under the CTAs so a cold
+     visitor sees NMLS + cost model before reading further. */
+  .tp-hero-trust {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--tp-slate-500);
+  }
+  .tp-hero-trust-item { display: inline-flex; align-items: center; gap: 5px; }
+  .tp-hero-trust-dot { color: rgba(15,23,42,0.25); }
 
   /* Hero trust strip */
   .tp-trust-strip {
