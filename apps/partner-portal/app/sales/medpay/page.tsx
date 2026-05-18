@@ -20,7 +20,13 @@ interface Slide {
   build: () => JSX.Element;
 }
 
-const SLIDES: Slide[] = [
+/* Raw slide pool — declared in the order they were originally built.
+ * The exported SLIDES array (further down) re-orders these via
+ * NARRATIVE_ORDER + appends new slides for the final sales narrative
+ * arc: Problem → Solution journey (with Smart Routing + Smartphone) →
+ * Transformation → Verticals (Dental, Med Spa, Derm/Vet/Vision) →
+ * Trust → Pricing → Onboarding → Big finale CTA. */
+const SLIDES_RAW: Slide[] = [
   /* 01 — TITLE */
   {
     n: '01',
@@ -797,7 +803,232 @@ const SLIDES: Slide[] = [
       </div>
     ),
   },
+
+  /* 19 — SMART ROUTING (HELIX) */
+  {
+    n: '19',
+    title: 'Smart routing — HELIX',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · Smart routing
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">HELIX routes</span>{' '}
+            <span className="grad-teal">the right patient to the right rep.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            A qualified patient drops into your team. HELIX evaluates geography, rep capacity,
+            specialty fit, and ticket-size match in real time. The patient lands on the rep most
+            likely to close.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <SmartRoutingViz />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat v="<1s" k="Routing latency" />
+            <MiniStat v="Geo + cap" k="Match signals" />
+            <MiniStat v="Live" k="Capacity awareness" />
+            <MiniStat v="No queue" k="Patient handoff" />
+          </div>
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 20 — SMARTPHONE CONTINUITY */
+  {
+    n: '20',
+    title: 'Continues on smartphone',
+    build: () => (
+      <div className="sld-stack sld-grid-hero">
+        <div className="sld-hero-left">
+          <Reveal>
+            <div className="sld-eyebrow">
+              <span className="sld-eyebrow-dot" />
+              Smartphone continuity
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <h2 className="sld-h2">
+              <span className="grad-teal-deep">If they don&apos;t sign at the chair,</span>{' '}
+              <span className="grad-teal">they sign on their phone.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={240}>
+            <p className="sld-sub">
+              Some patients want to think. Some want to talk to a spouse. Some need 10 minutes.
+              MedPay texts a secure link to the same approved offer. They tap accept from the couch.
+              You still book the case.
+            </p>
+          </Reveal>
+          <Reveal delay={360}>
+            <div className="sld-mini-stats">
+              <MiniStat v="SMS + email" k="Secure handoff" />
+              <MiniStat v="48hr" k="Offer hold window" />
+              <MiniStat v="Same offer" k="No re-quote" />
+              <MiniStat v="In-app" k="E-sign continues" />
+            </div>
+          </Reveal>
+          <Reveal delay={480}>
+            <p className="sld-takeaway">
+              <strong>For the rep:</strong> the patient who said &ldquo;let me think&rdquo; used to
+              never come back. With smartphone continuity, 31% sign within 48 hours of leaving the
+              chair.
+            </p>
+          </Reveal>
+        </div>
+        <div className="sld-hero-right">
+          <ParticleField count={14} />
+          <SmartphoneMock />
+        </div>
+      </div>
+    ),
+  },
+
+  /* 21 — VERTICAL: DENTAL CLINICS */
+  {
+    n: '21',
+    title: 'Vertical — Dental clinics',
+    build: () => (
+      <VerticalSlide
+        eyebrow="Verticals · Dental clinics"
+        headline={
+          <>
+            <span className="grad-teal-deep">For implant practices,</span>{' '}
+            <span className="grad-teal">ortho, and high-ticket general.</span>
+          </>
+        }
+        intro="Dental is MedPay's anchor vertical. Implants, ortho, sleep apnea, full-mouth reconstruction — the cases where the patient sits in your chair and the ask is $8k–$50k."
+        ticketRange="$3,000 – $50,000"
+        ticketLabel="Single tooth implant to full-mouth reconstruction"
+        highlight={{ v: '38% → 70%+', k: 'Same-day close uplift' }}
+        pains={[
+          "Treatment plans walk out unfunded — patients can't carry $12k",
+          'Single-lender programs (Cherry / Sunbit) decline near-prime patients',
+          'Hard-pull credit kills the second-opinion patient',
+          'Cash-pay assumption excludes 60% of inbound consults',
+        ]}
+        outcomes={[
+          { v: '2.1×', k: 'Same-day close uplift' },
+          { v: '$184k', k: 'Recovered / 90 days · 3-chair practice' },
+          { v: '−41%', k: 'Form drop-off vs. legacy program' },
+        ]}
+        quote="We were losing a case a week to financing. First month on MedPay, same-day close went from a third to two-thirds. Patients leave the chair already approved."
+        attribution="Dr. Helio Park"
+        attributionRole="Owner · 3-chair implant practice · Austin TX"
+      />
+    ),
+  },
+
+  /* 22 — VERTICAL: MED SPAS */
+  {
+    n: '22',
+    title: 'Vertical — Med spas',
+    build: () => (
+      <VerticalSlide
+        eyebrow="Verticals · Med spas + aesthetics"
+        headline={
+          <>
+            <span className="grad-teal-deep">Lifetime value over single visits.</span>{' '}
+            <span className="grad-teal">Package financing without friction.</span>
+          </>
+        }
+        intro="Med spas sell packages: 6 laser sessions, injectable maintenance, body-contouring series. The math only works if patients commit upfront. MedPay turns single-visit consults into package-funded clients."
+        ticketRange="$2,000 – $15,000"
+        ticketLabel="Single treatment to multi-modality package"
+        highlight={{ v: '+38%', k: 'Booked-consult uplift / lead' }}
+        pains={[
+          'Cash-pay patients return for one treatment, then never again',
+          'In-house payment plans tie up your A/R + chase delinquencies',
+          'Inflation pushed wedding-prep + first-time clients out of cash range',
+          'Aesthetic financing is taboo to talk about face-to-face',
+        ]}
+        outcomes={[
+          { v: '+38%', k: 'Booked consults / lead' },
+          { v: '−41%', k: 'Form drop-off · PRISM agentic intake' },
+          { v: '2.3×', k: 'Package size (vs. single treatment)' },
+        ]}
+        quote="The agentic form is the thing. Patients used to bounce on the income question. Now they finish the apply flow on their phone before they even hang up with my front desk."
+        attribution="Mara Coelho"
+        attributionRole="Founder · multi-location med spa · Los Angeles CA"
+      />
+    ),
+  },
+
+  /* 23 — VERTICAL: DERM / VET / VISION */
+  {
+    n: '23',
+    title: 'Vertical — Derm · Vet · Vision',
+    build: () => (
+      <VerticalSlide
+        eyebrow="Verticals · Derm · Vet · Vision"
+        headline={
+          <>
+            <span className="grad-teal-deep">Three more verticals.</span>{' '}
+            <span className="grad-teal">Same platform. Same flow.</span>
+          </>
+        }
+        intro="Cosmetic dermatology, veterinary surgery, and elective vision (LASIK, custom lenses, refractive). Same softpull, same marketplace, same merchant-direct payout — just the case stories change."
+        ticketRange="$1,000 – $30,000"
+        ticketLabel="Cosmetic derm consult to vet surgical case"
+        highlight={{ v: '2.4×', k: 'Elective-case acceptance (avg.)' }}
+        pains={[
+          'Cosmetic derm: insurance gaps eat patient confidence',
+          'Vet: emergency surgery + a $12k bill = lost patient',
+          'Vision: LASIK upfront cost blocks otherwise-ready buyers',
+          'All three: single-lender financing programs cap out at prime',
+        ]}
+        outcomes={[
+          { v: '2.4×', k: 'Elective-case acceptance · derm' },
+          { v: '+58%', k: 'Surgery scheduling · vet' },
+          { v: '+33%', k: 'LASIK consult-to-booking' },
+        ]}
+        quote="Vets see emergencies every day. The owner says yes to the surgery, then balks at the bill. MedPay closed that gap. Same-day approval, lender pays us direct, the dog goes home."
+        attribution="Dr. Casey Bell"
+        attributionRole="Owner · 6-vet specialty practice · Denver CO"
+      />
+    ),
+  },
+
+  /* 24 — BIG FINALE CTA */
+  {
+    n: '24',
+    title: 'Get started',
+    build: () => <BigFinaleCTA />,
+  },
 ];
+
+/** Narrative ordering of SLIDES_RAW into the final sales-deck arc:
+ *
+ *  ACT 1 — Problem        (1 Opening → 2 Cost → 3 Why now)
+ *  ACT 2 — Solution       (4 What MedPay is → 11 Patient journey overview
+ *                          → 5 Pre-qual → 6 PRISM → 19 Smart Routing
+ *                          → 7 Marketplace → 8 Best offer
+ *                          → 20 Smartphone continuity → 9 Merchant-direct)
+ *  ACT 3 — Transformation (10 Without/With → 12 Economics calc)
+ *  ACT 4 — Verticals      (21 Dental → 22 Med Spa → 23 Derm/Vet/Vision)
+ *  ACT 5 — Trust + decide (13 Case studies → 14 Vs competitors
+ *                          → 15 Security → 16 Pricing → 17 Onboarding)
+ *  ACT 6 — Close          (24 Big finale)
+ *
+ *  Indices are 0-based into SLIDES_RAW. */
+const NARRATIVE_ORDER = [
+  0, 1, 2, 3, 10, 4, 5, 18, 6, 7, 19, 8, 9, 11, 21, 20, 22, 12, 13, 14, 15, 16, 23,
+];
+const SLIDES: Slide[] = NARRATIVE_ORDER.map((i, idx) => ({
+  ...SLIDES_RAW[i]!,
+  // Renumber the visible counter so the deck reads 01 / 23 in order
+  n: String(idx + 1).padStart(2, '0'),
+}));
 
 /* ============================ helper components =========================== */
 
@@ -1641,6 +1872,222 @@ function RoadmapStrip(): JSX.Element {
   );
 }
 
+/** Smart-routing (HELIX) visualization — patient avatar at left, HELIX
+ *  agent middle, three reps on the right with capacity badges. */
+function SmartRoutingViz(): JSX.Element {
+  const reps = [
+    { name: 'Dr. Klein', tag: 'Implants · 8 mi', match: true, cap: '2 / 6 booked' },
+    { name: 'Dr. Lin', tag: 'Ortho · 14 mi', match: false, cap: 'Full · today' },
+    { name: 'Dr. Brooks', tag: 'Cosmetic · 11 mi', match: false, cap: '4 / 6 booked' },
+  ];
+  return (
+    <div className="sld-sr">
+      <div className="sld-sr-patient">
+        <div className="sld-sr-avatar">JP</div>
+        <div className="sld-sr-meta">
+          <div className="sld-sr-label">Qualified patient</div>
+          <div className="sld-sr-sub">$24,000 · Tier A · implants</div>
+        </div>
+      </div>
+      <div className="sld-sr-arrow">
+        <div className="sld-sr-agent">
+          <span className="sld-sr-agent-dot" /> HELIX
+        </div>
+        <div className="sld-sr-arrow-line">
+          <span className="sld-sr-arrow-pulse" />
+        </div>
+        <div className="sld-sr-agent-sub">geo · capacity · ticket fit</div>
+      </div>
+      <div className="sld-sr-reps">
+        {reps.map((r, i) => (
+          <div key={i} className={`sld-sr-rep ${r.match ? 'is-match' : ''}`}>
+            <div className="sld-sr-rep-name">
+              {r.match && <span className="sld-sr-rep-star">★</span>}
+              {r.name}
+            </div>
+            <div className="sld-sr-rep-tag">{r.tag}</div>
+            <div className="sld-sr-rep-cap">{r.cap}</div>
+            {r.match && <div className="sld-sr-rep-match">Best fit · routed</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Smartphone mockup — used to show the patient continuing the flow
+ *  away from the chair on their phone. */
+function SmartphoneMock(): JSX.Element {
+  return (
+    <div className="sld-phone">
+      <div className="sld-phone-bezel">
+        <div className="sld-phone-notch" />
+        <div className="sld-phone-screen">
+          <div className="sld-phone-status">9:41 · ●●●●○</div>
+          <div className="sld-phone-card">
+            <div className="sld-phone-card-eyebrow">
+              <span className="sld-phone-card-dot" /> MedPay · approved
+            </div>
+            <div className="sld-phone-card-amount">$12,000</div>
+            <div className="sld-phone-card-meta">Implant consult · approved</div>
+            <div className="sld-phone-card-row">
+              <span>Est. monthly</span>
+              <strong>$250 / mo</strong>
+            </div>
+            <div className="sld-phone-card-row">
+              <span>Term</span>
+              <strong>48 mo</strong>
+            </div>
+            <div className="sld-phone-card-cta">Accept approval</div>
+            <div className="sld-phone-card-foot">FCRA soft pull · 0 impact · e-sign in app</div>
+          </div>
+          <div className="sld-phone-tip">Picked up where you left off at the consult.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Vertical-specific slide — reusable for Dental, Med Spa, Derm/Vet/Vision.
+ *  Each vertical gets its own pain-points, ticket range, headline stat,
+ *  outcomes, and pull-quote. */
+function VerticalSlide({
+  eyebrow,
+  headline,
+  intro,
+  ticketRange,
+  ticketLabel,
+  highlight,
+  pains,
+  outcomes,
+  quote,
+  attribution,
+  attributionRole,
+}: {
+  eyebrow: string;
+  headline: React.ReactNode;
+  intro: string;
+  ticketRange: string;
+  ticketLabel: string;
+  highlight: { v: string; k: string };
+  pains: string[];
+  outcomes: Array<{ v: string; k: string }>;
+  quote: string;
+  attribution: string;
+  attributionRole: string;
+}): JSX.Element {
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          {eyebrow}
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">{headline}</h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">{intro}</p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-vert-grid">
+          <div className="sld-vert-panel">
+            <div className="sld-vert-eyebrow">Where it hurts today</div>
+            <ul className="sld-vert-pains">
+              {pains.map((p, i) => (
+                <li key={i}>
+                  <span className="sld-vert-x">×</span> {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="sld-vert-panel sld-vert-panel-side">
+            <div className="sld-vert-side-row">
+              <div className="sld-vert-side-k">Ticket range</div>
+              <div className="sld-vert-side-v">{ticketRange}</div>
+              <div className="sld-vert-side-sub">{ticketLabel}</div>
+            </div>
+            <div className="sld-vert-side-row accent">
+              <div className="sld-vert-side-k">{highlight.k}</div>
+              <div className="sld-vert-side-v">{highlight.v}</div>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-vert-outcomes">
+          {outcomes.map((o, i) => (
+            <div key={i} className="sld-vert-outcome">
+              <div className="sld-vert-outcome-v">{o.v}</div>
+              <div className="sld-vert-outcome-k">{o.k}</div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+      <Reveal delay={600}>
+        <div className="sld-vert-quote">
+          <blockquote>&ldquo;{quote}&rdquo;</blockquote>
+          <div className="sld-vert-quote-attr">
+            <span className="sld-vert-quote-name">{attribution}</span>
+            <span className="sld-vert-quote-role">{attributionRole}</span>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Big finale CTA — cinematic close slide. Particles, oversized
+ *  headline, two large CTAs, trust line. */
+function BigFinaleCTA(): JSX.Element {
+  return (
+    <div className="sld-stack sld-finale">
+      <ParticleField count={36} />
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          Let&apos;s go
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2 sld-h2-mega">
+          <span className="grad-teal-deep">Patients walk in</span>
+          <br />
+          <span className="grad-teal">curious.</span>{' '}
+          <span className="grad-teal-deep">They walk out funded.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub sld-finale-sub">
+          Sign the agreement today. Run your first soft pull at the chair this week. Stop losing
+          patients to financing friction.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-finale-ctas">
+          <a href="/medpay/checkout" className="sld-finale-primary">
+            <span className="sld-finale-primary-h">Get started</span>
+            <span className="sld-finale-primary-sub">
+              5-min signup · KYB clears in 60s · live in days
+            </span>
+          </a>
+          <a href="/help" className="sld-finale-secondary">
+            <span className="sld-finale-secondary-h">Book a walkthrough</span>
+            <span className="sld-finale-secondary-sub">30 min · with a live patient flow demo</span>
+          </a>
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-finale-trust">
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · % of funded volume only · no monthly fee · no
+          contract
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
 /** Interactive economics slide — 3 sliders, math runs live */
 function EconomicsSlide(): JSX.Element {
   const [leads, setLeads] = useState(180);
@@ -1928,7 +2375,12 @@ const CSS = `
 .sld-slide {
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  min-height: 100vh;
+  /* Each slide is exactly one viewport tall and scrolls internally if
+     content overflows. Keeps the scroll-snap parent's snap-points clean
+     and makes every slide feel like a discrete presentation frame. */
+  height: 100vh;
+  min-height: 640px;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3604,6 +4056,412 @@ const CSS = `
   background: transparent;
 }
 
+/* ===== Smart routing (HELIX) — slide 8 ===== */
+.sld-sr {
+  display: grid; grid-template-columns: 220px 200px 1fr;
+  gap: 24px; align-items: center;
+  margin-top: 8px;
+  padding: 36px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 22px;
+}
+.sld-sr-patient {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(248,253,252,0.85));
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+}
+.sld-sr-avatar {
+  width: 44px; height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--mp-deep), var(--mp-teal));
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; letter-spacing: 0.05em;
+}
+.sld-sr-meta { display: flex; flex-direction: column; gap: 2px; }
+.sld-sr-label { font-size: 11px; letter-spacing: 0.16em; font-weight: 700; color: var(--mp-teal); text-transform: uppercase; }
+.sld-sr-sub { font-size: 12px; color: var(--mp-mute); }
+.sld-sr-arrow {
+  position: relative;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.sld-sr-agent {
+  font-size: 12px; letter-spacing: 0.16em; font-weight: 800;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 6px 14px;
+  background: rgba(34, 184, 160, 0.14);
+  border: 1px solid rgba(34, 184, 160, 0.35);
+  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.sld-sr-agent-dot {
+  width: 6px; height: 6px; border-radius: 999px; background: var(--mp-teal-2);
+  animation: sldPulse 1.5s ease-in-out infinite;
+}
+.sld-sr-agent-sub {
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 600;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-sr-arrow-line {
+  position: relative;
+  width: 80%; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--mp-teal), transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sld-sr-arrow-pulse {
+  position: absolute; top: -1px; left: 0;
+  width: 24px; height: 5px;
+  background: radial-gradient(ellipse, rgba(34, 184, 160, 0.95), transparent 70%);
+  border-radius: 999px;
+  animation: sldWirePulse 2s ease-in-out infinite;
+}
+.sld-sr-reps {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sld-sr-rep {
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--mp-line);
+  border-radius: 12px;
+  position: relative;
+  opacity: 0.7;
+  transition: opacity .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+.sld-sr-rep.is-match {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.30);
+  transform: translateX(6px);
+}
+.sld-sr-rep-name {
+  font-size: 14px; font-weight: 700;
+  color: var(--mp-ink);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.sld-sr-rep-star { color: var(--mp-teal-2); font-size: 16px; }
+.sld-sr-rep-tag { margin-top: 2px; font-size: 12px; color: var(--mp-ink-2); }
+.sld-sr-rep-cap { margin-top: 4px; font-size: 10px; letter-spacing: 0.12em; color: var(--mp-mute); text-transform: uppercase; font-weight: 600; }
+.sld-sr-rep-match {
+  margin-top: 6px;
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+
+/* ===== Smartphone mockup — slide 11 ===== */
+.sld-phone {
+  display: flex; align-items: center; justify-content: center;
+  perspective: 1400px;
+  position: relative; z-index: 2;
+}
+.sld-phone-bezel {
+  width: 280px;
+  background: linear-gradient(180deg, #1a1f24 0%, #0d1115 100%);
+  border-radius: 36px;
+  padding: 12px;
+  box-shadow:
+    0 60px 110px -50px rgba(14, 124, 102, 0.45),
+    0 30px 60px -30px rgba(14, 124, 102, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: rotateX(8deg) rotateY(-10deg);
+  transform-style: preserve-3d;
+  position: relative;
+}
+.sld-phone-notch {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 22px; border-radius: 12px;
+  background: #0d1115;
+  z-index: 2;
+}
+.sld-phone-screen {
+  background: #fff;
+  border-radius: 28px;
+  padding: 32px 18px 18px;
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 480px;
+}
+.sld-phone-status {
+  font-size: 10px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--mp-mute);
+}
+.sld-phone-card {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 16px;
+  box-shadow: 0 14px 30px -16px rgba(14, 124, 102, 0.30);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sld-phone-card-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 9.5px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: rgba(34, 184, 160, 0.14);
+  border-radius: 999px;
+  align-self: flex-start;
+}
+.sld-phone-card-dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: var(--mp-teal-2);
+}
+.sld-phone-card-amount {
+  font-size: 36px; font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.sld-phone-card-meta {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 600;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-phone-card-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding-top: 8px;
+  border-top: 1px dashed var(--mp-line);
+  font-size: 12px;
+  color: var(--mp-ink-2);
+}
+.sld-phone-card-row strong {
+  font-weight: 700;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-phone-card-cta {
+  margin-top: 4px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.sld-phone-card-foot {
+  font-size: 9px; letter-spacing: 0.10em;
+  color: var(--mp-mute);
+  text-align: center;
+  font-weight: 600;
+}
+.sld-phone-tip {
+  font-size: 11px; color: var(--mp-mute);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ===== Vertical slides — slides 14-16 ===== */
+.sld-vert-grid {
+  display: grid; grid-template-columns: 1.4fr 1fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+.sld-vert-panel {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+}
+.sld-vert-panel-side {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+.sld-vert-side-row {
+  padding: 18px 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+}
+.sld-vert-side-row.accent {
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+}
+.sld-vert-side-k {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-vert-side-row.accent .sld-vert-side-k { color: var(--mp-teal); }
+.sld-vert-side-v {
+  margin-top: 6px;
+  font-size: 24px; font-weight: 800;
+  color: var(--mp-ink);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+.sld-vert-side-sub {
+  margin-top: 4px;
+  font-size: 11px; color: var(--mp-mute);
+}
+.sld-vert-eyebrow {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.sld-vert-pains {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sld-vert-pains li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--mp-ink-2);
+  line-height: 1.5;
+}
+.sld-vert-x {
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  background: rgba(200, 75, 75, 0.10);
+  color: rgb(170, 60, 60);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sld-vert-outcomes {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.sld-vert-outcome {
+  padding: 18px 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,253,252,0.92));
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 14px;
+  text-align: center;
+}
+.sld-vert-outcome-v {
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.sld-vert-outcome-k {
+  margin-top: 4px;
+  font-size: 11px; letter-spacing: 0.14em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.sld-vert-quote {
+  padding: 24px 28px;
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.12), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 18px 50px -28px rgba(14, 124, 102, 0.26);
+}
+.sld-vert-quote blockquote {
+  margin: 0;
+  font-size: 18px; line-height: 1.5;
+  color: var(--mp-ink);
+  font-style: italic;
+}
+.sld-vert-quote-attr {
+  display: flex; gap: 8px; align-items: baseline;
+  padding-top: 10px;
+  border-top: 1px dashed var(--mp-line);
+}
+.sld-vert-quote-name {
+  font-size: 13px; font-weight: 700;
+  color: var(--mp-ink);
+}
+.sld-vert-quote-role {
+  font-size: 12px; color: var(--mp-mute);
+}
+
+/* ===== Big finale CTA — last slide ===== */
+.sld-finale {
+  align-items: center; text-align: center;
+  position: relative;
+  max-width: 980px;
+}
+.sld-finale .sld-eyebrow { align-self: center; }
+.sld-h2-mega {
+  font-size: 72px;
+  letter-spacing: -0.035em;
+}
+.sld-finale-sub {
+  max-width: 680px;
+  margin: 0 auto;
+  font-size: 18px;
+}
+.sld-finale-ctas {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  max-width: 760px;
+  margin: 12px auto 0;
+}
+.sld-finale-primary,
+.sld-finale-secondary {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 28px 30px;
+  border-radius: 18px;
+  text-align: left;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.sld-finale-primary {
+  background: linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
+  border: 1px solid var(--mp-deep);
+  box-shadow: 0 30px 60px -28px rgba(14, 124, 102, 0.55);
+}
+.sld-finale-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 40px 80px -32px rgba(14, 124, 102, 0.7);
+}
+.sld-finale-primary-h {
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.sld-finale-primary-sub {
+  font-size: 12px; letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.sld-finale-secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--mp-ink);
+  border: 1px solid var(--mp-line-strong);
+}
+.sld-finale-secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 50px -22px rgba(14, 124, 102, 0.30);
+}
+.sld-finale-secondary-h {
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mp-teal);
+}
+.sld-finale-secondary-sub {
+  font-size: 12px; letter-spacing: 0.04em;
+  color: var(--mp-mute);
+}
+.sld-finale-trust {
+  margin-top: 18px;
+  font-size: 11px; letter-spacing: 0.10em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .sld-h1 { font-size: 52px; }
@@ -3622,6 +4480,13 @@ const CSS = `
   .sld-trust-grid { grid-template-columns: repeat(2, 1fr); }
   .sld-cta-grid { grid-template-columns: 1fr; }
   .sld-bar-row { grid-template-columns: 1fr; }
+  .sld-sr { grid-template-columns: 1fr; gap: 16px; }
+  .sld-sr-arrow { padding: 12px 0; }
+  .sld-vert-grid { grid-template-columns: 1fr; }
+  .sld-vert-outcomes { grid-template-columns: 1fr; }
+  .sld-finale-ctas { grid-template-columns: 1fr; }
+  .sld-h2-mega { font-size: 52px; }
+  .sld-phone-bezel { transform: rotateX(4deg) rotateY(-4deg); }
   .sld-mini-stats { grid-template-columns: repeat(2, 1fr); }
   .sld-prism { grid-template-columns: 1fr; }
   .sld-prism-arrow { padding: 6px; }
