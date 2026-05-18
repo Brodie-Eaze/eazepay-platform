@@ -599,6 +599,11 @@ export default function MedPayLandingPage(): JSX.Element {
   const [fundedRate, setFundedRate] = useState<number>(70); // % of closes that fund via MedPay
   const [ticket, setTicket] = useState<number>(8000); // avg ticket $
 
+  // Slider fill — drives --mp-fill so the teal portion of the track
+  // tracks the value instead of sitting at a static 50%.
+  const fillPct = (v: number, min: number, max: number): string =>
+    `${Math.round(((v - min) / (max - min)) * 100)}%`;
+
   // WITH MedPay: leads × qualified% × close% × funded%
   const withFundedPerMonth = Math.round(
     leads * (qualifiedRate / 100) * (closeRate / 100) * (fundedRate / 100),
@@ -1535,6 +1540,7 @@ export default function MedPayLandingPage(): JSX.Element {
                     value={leads}
                     onChange={(e) => setLeads(Number(e.target.value))}
                     className="mp-slider"
+                    style={{ '--mp-fill': fillPct(leads, 20, 1000) } as React.CSSProperties}
                   />
                   <div className="mp-slider-scale">
                     <span>20</span>
@@ -1556,6 +1562,7 @@ export default function MedPayLandingPage(): JSX.Element {
                     value={qualifiedRate}
                     onChange={(e) => setQualifiedRate(Number(e.target.value))}
                     className="mp-slider"
+                    style={{ '--mp-fill': fillPct(qualifiedRate, 10, 90) } as React.CSSProperties}
                   />
                   <div className="mp-slider-scale">
                     <span>10%</span>
@@ -1577,6 +1584,7 @@ export default function MedPayLandingPage(): JSX.Element {
                     value={closeRate}
                     onChange={(e) => setCloseRate(Number(e.target.value))}
                     className="mp-slider"
+                    style={{ '--mp-fill': fillPct(closeRate, 5, 90) } as React.CSSProperties}
                   />
                   <div className="mp-slider-scale">
                     <span>5%</span>
@@ -1598,6 +1606,7 @@ export default function MedPayLandingPage(): JSX.Element {
                     value={fundedRate}
                     onChange={(e) => setFundedRate(Number(e.target.value))}
                     className="mp-slider"
+                    style={{ '--mp-fill': fillPct(fundedRate, 10, 95) } as React.CSSProperties}
                   />
                   <div className="mp-slider-scale">
                     <span>10%</span>
@@ -1619,6 +1628,7 @@ export default function MedPayLandingPage(): JSX.Element {
                     value={ticket}
                     onChange={(e) => setTicket(Number(e.target.value))}
                     className="mp-slider"
+                    style={{ '--mp-fill': fillPct(ticket, 3000, 50000) } as React.CSSProperties}
                   />
                   <div className="mp-slider-scale">
                     <span>$3,000</span>
@@ -2862,30 +2872,38 @@ const CSS = `
 @media (max-width: 960px) {
   .mp-roi-grid { grid-template-columns: 1fr; }
 }
-.mp-roi-card {
-  background: rgba(255,255,255,0.85);
-  border: 1px solid var(--mp-line-strong);
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow: 0 24px 60px -30px rgba(14, 124, 102, 0.20);
-  display: flex; flex-direction: column; gap: 30px;
+/* The JSX was refactored from a single .mp-roi-card / .mp-roi-out pair
+   to a denser inputs-left + outputs-right layout with a 2-up Without/With
+   compare + a delta strip. Class names below match that JSX exactly. */
+
+.mp-roi-card-wrap {
+  position: relative;
 }
-.mp-roi-row { display: flex; flex-direction: column; gap: 12px; }
+
+.mp-roi-row { display: flex; flex-direction: column; gap: 10px; }
 .mp-roi-label {
   display: flex; justify-content: space-between; align-items: baseline;
   font-size: 13px; font-weight: 600; color: var(--mp-mute);
   letter-spacing: 0.02em;
 }
 .mp-roi-val {
-  font-size: 24px; font-weight: 700; color: var(--mp-ink);
+  font-size: 20px; font-weight: 700; color: var(--mp-ink);
   letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
 }
+
+/* Slider — fill driven by inline --mp-fill custom property so the
+   filled portion tracks the value rather than sitting at a static 50%. */
 .mp-slider {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 6px;
-  background: linear-gradient(90deg, var(--mp-teal-2) 0%, var(--mp-teal-2) 50%, rgba(14,124,102,0.10) 50%, rgba(14,124,102,0.10) 100%);
+  background: linear-gradient(90deg,
+    var(--mp-teal) 0%,
+    var(--mp-teal) var(--mp-fill, 50%),
+    rgba(14,124,102,0.12) var(--mp-fill, 50%),
+    rgba(14,124,102,0.12) 100%);
   border-radius: 999px;
   outline: none;
+  cursor: pointer;
 }
 .mp-slider::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
@@ -2897,6 +2915,7 @@ const CSS = `
   cursor: grab;
   transition: transform .15s ease;
 }
+.mp-slider::-webkit-slider-thumb:active { cursor: grabbing; }
 .mp-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
 .mp-slider::-moz-range-thumb {
   width: 22px; height: 22px;
@@ -2911,36 +2930,50 @@ const CSS = `
   color: var(--mp-mute);
   text-transform: uppercase;
 }
-.mp-roi-assump {
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: rgba(34, 184, 160, 0.08);
-  border: 1px solid rgba(34, 184, 160, 0.22);
-  font-size: 12px; color: var(--mp-ink-2); line-height: 1.5;
-  display: flex; gap: 10px; align-items: flex-start;
-}
-.mp-roi-assump-k {
-  flex-shrink: 0;
-  font-size: 10px; letter-spacing: 0.14em; font-weight: 700;
-  color: var(--mp-teal);
-  text-transform: uppercase;
-  padding: 2px 8px;
-  background: rgba(34, 184, 160, 0.18);
-  border-radius: 6px;
-}
 
-.mp-roi-out {
+/* ---------- LEFT card: 5 sliders ---------- */
+.mp-roi-inputs {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 24px 60px -30px rgba(14, 124, 102, 0.22);
+  display: flex; flex-direction: column; gap: 22px;
+}
+.mp-roi-inputs-head,
+.mp-roi-outputs-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--mp-line);
+}
+.mp-roi-eyebrow-light {
+  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  text-transform: uppercase;
+  color: var(--mp-teal);
+}
+.mp-roi-outputs-head .mp-roi-eyebrow-light { color: var(--mp-teal-2); }
+.mp-roi-outputs-head { border-bottom-color: rgba(255,255,255,0.12); }
+.mp-roi-inputs-meta {
+  font-size: 10px; letter-spacing: 0.10em; font-weight: 600;
+  text-transform: uppercase;
+  color: var(--mp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.mp-roi-outputs-head .mp-roi-inputs-meta { color: rgba(255,255,255,0.55); }
+
+/* ---------- RIGHT card: dark teal with compare + delta ---------- */
+.mp-roi-outputs {
+  position: relative; overflow: hidden;
   background:
     radial-gradient(ellipse 60% 60% at 80% 0%, rgba(34, 184, 160, 0.25), transparent 60%),
     linear-gradient(180deg, var(--mp-deep) 0%, #0A3B36 100%);
   color: #fff;
   border-radius: 24px;
-  padding: 40px;
-  display: flex; flex-direction: column;
-  position: relative; overflow: hidden;
+  padding: 32px;
+  display: flex; flex-direction: column; gap: 22px;
   box-shadow: 0 30px 80px -30px rgba(6, 44, 41, 0.55);
 }
-.mp-roi-out::before {
+.mp-roi-outputs::before {
   content: ""; position: absolute; inset: 0;
   background-image:
     linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -2948,87 +2981,96 @@ const CSS = `
   background-size: 40px 40px;
   pointer-events: none;
 }
-.mp-roi-eyebrow {
-  position: relative;
-  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-teal-2);
-  text-transform: uppercase;
+.mp-roi-outputs > * { position: relative; }
+
+.mp-roi-compare {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
-.mp-roi-bignum {
-  position: relative;
-  margin-top: 18px;
-  font-size: 88px; font-weight: 800;
-  letter-spacing: -0.04em;
+@media (max-width: 720px) {
+  .mp-roi-compare { grid-template-columns: 1fr; }
+}
+.mp-roi-compare-card {
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+}
+.mp-roi-compare-card.with {
+  border-color: rgba(34, 184, 160, 0.45);
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 0%, rgba(34, 184, 160, 0.18), transparent 70%),
+    rgba(34, 184, 160, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(34, 184, 160, 0.10);
+}
+.mp-roi-compare-eyebrow {
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+.mp-roi-compare-eyebrow.accent { color: var(--mp-teal-2); }
+.mp-roi-compare-meta {
+  font-size: 11px;
+  color: rgba(255,255,255,0.48);
+  margin-top: -10px;
+}
+.mp-roi-compare-block { display: flex; flex-direction: column; gap: 4px; }
+.mp-roi-compare-num {
+  font-size: 32px; font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+.mp-roi-compare-num.sm { font-size: 22px; font-weight: 700; }
+.mp-roi-compare-num.accent {
   background: linear-gradient(135deg, #fff 0%, var(--mp-teal-2) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
-.mp-roi-trailing {
-  font-size: 24px; font-weight: 500; color: rgba(255,255,255,0.45);
-  margin-left: 14px; letter-spacing: -0.02em;
+.mp-roi-compare-lab {
+  font-size: 11px; letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.55);
 }
-.mp-roi-sub {
-  position: relative;
-  margin-top: 14px;
-  font-size: 15px; color: #C4ECDF; line-height: 1.55;
+
+/* ---------- Delta strip ---------- */
+.mp-roi-delta {
+  padding: 18px 20px;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(34, 184, 160, 0.18) 0%, rgba(34, 184, 160, 0.06) 100%);
+  border: 1px solid rgba(34, 184, 160, 0.35);
+  display: flex; flex-direction: column; gap: 6px;
 }
-.mp-roi-grid-mini {
-  position: relative;
-  margin-top: 30px;
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: rgba(255,255,255,0.10);
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.12);
+.mp-roi-delta-main {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
 }
-.mp-roi-grid-mini > div {
-  padding: 16px;
-  background: rgba(6, 44, 41, 0.5);
+.mp-roi-delta-tag {
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 700;
+  text-transform: uppercase;
+  color: var(--mp-teal-2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(34, 184, 160, 0.22);
 }
-.mp-roi-mini-num {
-  font-size: 22px; font-weight: 700;
-  letter-spacing: -0.02em;
+.mp-roi-delta-val {
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.025em;
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
-.mp-roi-mini-lab {
-  margin-top: 4px;
-  font-size: 11px; letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.6);
-  text-transform: uppercase;
+.mp-roi-delta-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.62);
 }
-.mp-roi-out .btn-primary-teal {
-  position: relative;
-  margin-top: 30px;
-}
-.mp-roi-uplift-row {
-  position: relative;
-  margin-top: 22px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: rgba(34, 184, 160, 0.10);
-  border: 1px solid rgba(34, 184, 160, 0.28);
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  flex-wrap: wrap;
-}
-.mp-roi-uplift-k {
-  font-size: 11px; letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.72);
-  text-transform: uppercase;
-  font-weight: 600;
-}
-.mp-roi-uplift-v {
-  font-size: 18px; font-weight: 700;
-  color: var(--mp-teal-2);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
+
+.mp-roi-cta { margin-top: 4px; align-self: flex-start; }
+
+/* ---------- Foot ---------- */
 .mp-roi-foot {
-  position: relative;
-  margin-top: 16px;
-  font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.5;
+  margin-top: 18px;
+  font-size: 11px; color: var(--mp-mute); line-height: 1.5;
+  text-align: center;
 }
 
 /* ============== SYNERGY CALLOUT ============== */
