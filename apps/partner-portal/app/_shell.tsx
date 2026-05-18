@@ -326,6 +326,8 @@ const NAKED_ROUTES = [
   '/accept', // team-invite accept landing — recipient may have no cookie
   '/sales', // sales-team pitch decks (full-screen slide presentations)
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
+  '/tradepay', // TradePay flow pages (Checkout/Onboarding)
+  '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {

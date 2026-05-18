@@ -95,7 +95,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            Every patient who says <em>&ldquo;let me think about it&rdquo;</em>{' '}
+            Every consult that ends with <em>&ldquo;we&apos;ll get back to you&rdquo;</em>{' '}
             <span className="grad-teal-deep">walks out unfunded.</span>
           </h2>
         </Reveal>
@@ -502,8 +502,8 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={120}>
           <h2 className="sld-h2">
             <span className="grad-teal">Practices that turned</span>{' '}
-            <span className="grad-teal-deep">&ldquo;let me think about it&rdquo;</span>{' '}
-            <span className="grad-teal">into approved.</span>
+            <span className="grad-teal-deep">cash-pay walkaways</span>{' '}
+            <span className="grad-teal">into funded patients.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
@@ -877,8 +877,9 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              For the rep: the patient who said &ldquo;let me think&rdquo; used to never come back.
-              With smartphone continuity, 31% sign within 48 hours of leaving the office.
+              For the rep: the patient who used to ghost after walking out now signs from the couch.
+              With smartphone continuity, 31% complete the application within 48 hours of leaving
+              the office.
             </p>
           </Reveal>
         </div>
@@ -2499,8 +2500,8 @@ function WhoIsItFor(): JSX.Element {
           <span className="sld-notfor-k">Not for</span>
           <span className="sld-notfor-v">
             Low-ticket retail · single-visit walk-ins · cash-only practices · sub-$500 tickets. We
-            don&apos;t replace a credit-card terminal &mdash; we replace the &ldquo;let me think
-            about it&rdquo; conversation.
+            don&apos;t replace a credit-card terminal &mdash; we replace the cash-flow objection
+            that walks out of every high-ticket consult.
           </span>
         </div>
       </Reveal>
