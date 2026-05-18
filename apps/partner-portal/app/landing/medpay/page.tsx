@@ -2461,7 +2461,9 @@ const CSS = `
 }
 .mp-compare-list li {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
+  /* Track wide enough for word-based stats ("52 lenders", "Same-day",
+     "2-4 wks") to sit on a single line at the desktop size. */
+  grid-template-columns: 130px minmax(0, 1fr);
   gap: 14px;
   align-items: baseline;
   padding: 10px 0;
@@ -2470,11 +2472,15 @@ const CSS = `
 .mp-compare-list li > * { min-width: 0; }
 .mp-compare-list li:last-child { border-bottom: none; padding-bottom: 4px; }
 .mp-compare-stat {
-  font-size: 26px; font-weight: 700; letter-spacing: -0.022em;
+  font-size: 20px; font-weight: 700; letter-spacing: -0.018em;
   color: #fff;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.15;
   text-align: left;
+  /* Keep multi-word stats together — "Same-day" / "52 lenders" should
+     wrap as a unit at the space, never inside the word. */
+  word-break: keep-all;
+  hyphens: none;
 }
 .mp-compare-stat.muted { color: rgba(255,255,255,0.55); }
 .mp-compare-label {
@@ -3924,10 +3930,10 @@ const CSS = `
   .mp-chip { font-size: 10px; padding: 5px 9px; }
 
   .mp-compare-list li {
-    grid-template-columns: 90px 1fr;
+    grid-template-columns: 110px 1fr;
     gap: 12px;
   }
-  .mp-compare-stat { font-size: 22px; }
+  .mp-compare-stat { font-size: 18px; }
   .mp-compare-card { padding: 24px; }
 
   .mp-pillar { padding: 28px; }
