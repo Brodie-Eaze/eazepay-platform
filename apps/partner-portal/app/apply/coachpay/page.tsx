@@ -669,7 +669,7 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
         <div className="cp-calc-label">
           <span>Credit profile</span>
           <strong>
-            {activeTier.label} · {(APR * 100).toFixed(1)}% APR
+            {activeTier.label} · {activeTier.sub}
           </strong>
         </div>
         <div className="cp-calc-select-wrap">
@@ -681,7 +681,7 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
           >
             {CP_TIERS.map((t) => (
               <option key={t.key} value={t.key}>
-                {t.label} · {t.sub} · {(t.apr * 100).toFixed(1)}% APR
+                {t.label} · {t.sub}
               </option>
             ))}
           </select>
@@ -711,10 +711,6 @@ function CoachPayCalculator({ onApply }: { onApply: () => void }) {
           </div>
         </div>
         <div className="cp-calc-result-side">
-          <div>
-            <div className="cp-calc-result-k">APR · {activeTier.label.toLowerCase()}</div>
-            <div className="cp-calc-result-vs">{(APR * 100).toFixed(1)}%</div>
-          </div>
           <div>
             <div className="cp-calc-result-k">Total interest</div>
             <div className="cp-calc-result-vs">${totalInterest.toLocaleString('en-US')}</div>

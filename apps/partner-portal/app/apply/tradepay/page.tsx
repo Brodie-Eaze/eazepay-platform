@@ -665,7 +665,7 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
         <div className="tp-calc-label">
           <span>Credit profile</span>
           <strong>
-            {activeTier.label} · {(APR * 100).toFixed(1)}% APR
+            {activeTier.label} · {activeTier.sub}
           </strong>
         </div>
         <div className="tp-calc-select-wrap">
@@ -677,7 +677,7 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
           >
             {TP_TIERS.map((t) => (
               <option key={t.key} value={t.key}>
-                {t.label} · {t.sub} · {(t.apr * 100).toFixed(1)}% APR
+                {t.label} · {t.sub}
               </option>
             ))}
           </select>
@@ -707,10 +707,6 @@ function TradePayCalculator({ onApply }: { onApply: () => void }) {
           </div>
         </div>
         <div className="tp-calc-result-side">
-          <div>
-            <div className="tp-calc-result-k">APR · {activeTier.label.toLowerCase()}</div>
-            <div className="tp-calc-result-vs">{(APR * 100).toFixed(1)}%</div>
-          </div>
           <div>
             <div className="tp-calc-result-k">Total interest</div>
             <div className="tp-calc-result-vs">${totalInterest.toLocaleString('en-US')}</div>
