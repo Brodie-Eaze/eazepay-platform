@@ -96,7 +96,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            Every prospect who says <em>&ldquo;let me think about it&rdquo;</em>{' '}
+            Every discovery call that ends with <em>&ldquo;we&apos;ll circle back&rdquo;</em>{' '}
             <span className="grad-teal-deep">never enrols.</span>
           </h2>
         </Reveal>
@@ -525,15 +525,15 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={120}>
           <h2 className="sld-h2">
             <span className="grad-teal">Coaches that turned</span>{' '}
-            <span className="grad-teal-deep">&ldquo;let me think about it&rdquo;</span>{' '}
-            <span className="grad-teal">into approved.</span>
+            <span className="grad-teal-deep">ghosted discovery calls</span>{' '}
+            <span className="grad-teal">into funded enrolments.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <div className="sld-cases-grid">
             <CaseCard
               tag="Executive coach · NY"
-              quote="We sell a $24k twelve-month executive program. Before CoachPay, half the discovery calls ended with 'I need to think about it.' Now every qualified prospect gets a real offer on the call. Q1 we recovered $1.4M in enrolments that would have walked."
+              quote="We sell a $24k twelve-month executive program. Before CoachPay, half the qualified prospects ghosted after the price reveal. Now every qualified prospect gets a real offer on the call. Q1 we recovered $1.4M in enrolments that would have walked."
               outcomes={[
                 { v: '2.1×', l: 'Same-call enrol uplift' },
                 { v: '$1.4M', l: 'Recovered / quarter' },
@@ -900,8 +900,9 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              For the rep: the client who said &ldquo;let me think&rdquo; used to never come back.
-              With smartphone continuity, 31% sign within 48 hours of leaving the office.
+              For the closer: the prospect who used to ghost after the price reveal now finishes the
+              application from the couch. With smartphone continuity, 31% enrol within 48 hours of
+              the discovery call ending.
             </p>
           </Reveal>
         </div>
@@ -931,7 +932,7 @@ const SLIDES_RAW: Slide[] = [
         ticketLabel="6-month exec program to 12-month founder mentorship"
         highlight={{ v: '18% → 55%+', k: 'Same-call enrol uplift' }}
         pains={[
-          "Discovery calls end with 'let me think about it' — prospect never funds",
+          'Qualified prospects ghost after the price reveal — never funds',
           'Affirm/Klarna cap below $5k · single-underwriter declines mid-prime',
           'In-house Voxer payment plans tie up A/R and force collection chasing',
           'Card-stacking for a $35k mastermind is opaque without an aggregator',
@@ -941,7 +942,7 @@ const SLIDES_RAW: Slide[] = [
           { v: '$1.4M', k: 'Recovered / quarter · $2M coach' },
           { v: '−41%', k: 'Form drop-off vs. legacy program' },
         ]}
-        quote="We sell a $24k twelve-month executive program. Before CoachPay, half the discovery calls ended with 'I need to think about it.' Now every qualified prospect gets a real offer on the call. Closers stopped negotiating, they started enrolling."
+        quote="We sell a $24k twelve-month executive program. Before CoachPay, half the qualified prospects ghosted after the price reveal. Now every qualified prospect gets a real offer on the call. Closers stopped negotiating, they started enrolling."
         attribution="Lena Beck"
         attributionRole="Founder · Beck Executive Studio · New York NY"
       />
@@ -2542,9 +2543,9 @@ function WhoIsItFor(): JSX.Element {
         <div className="sld-notfor">
           <span className="sld-notfor-k">Not for</span>
           <span className="sld-notfor-v">
-            Low-ticket retail · single-visit walk-ins · cash-only coaches · sub-$500 tickets. We
-            don&apos;t replace a credit-card terminal &mdash; we replace the &ldquo;let me think
-            about it&rdquo; conversation.
+            Low-ticket retail · group-class drop-ins · cash-only coaches · sub-$500 tickets. We
+            don&apos;t replace a credit-card terminal &mdash; we replace the cash-flow objection
+            that walks every high-ticket discovery call.
           </span>
         </div>
       </Reveal>

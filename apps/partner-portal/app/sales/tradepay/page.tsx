@@ -514,8 +514,8 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={120}>
           <h2 className="sld-h2">
             <span className="grad-teal">Contractors that turned</span>{' '}
-            <span className="grad-teal-deep">&ldquo;let me think about it&rdquo;</span>{' '}
-            <span className="grad-teal">into approved.</span>
+            <span className="grad-teal-deep">walked estimates</span>{' '}
+            <span className="grad-teal">into signed jobs.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
@@ -889,8 +889,9 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              For the rep: the homeowner who said &ldquo;let me think&rdquo; used to never come
-              back. With smartphone continuity, 31% sign within 48 hours of leaving the office.
+              For the estimator: the homeowner who used to walk away to "get another quote" now
+              signs from the couch. With smartphone continuity, 31% complete the application within
+              48 hours of the estimator leaving the driveway.
             </p>
           </Reveal>
         </div>
@@ -2530,8 +2531,8 @@ function WhoIsItFor(): JSX.Element {
           <span className="sld-notfor-k">Not for</span>
           <span className="sld-notfor-v">
             Low-ticket retail · single-visit walk-ins · cash-only contractors · sub-$500 tickets. We
-            don&apos;t replace a credit-card terminal &mdash; we replace the &ldquo;let me think
-            about it&rdquo; conversation.
+            don&apos;t replace a credit-card terminal &mdash; we replace the cash-flow objection
+            that walks every high-ticket doorstep estimate.
           </span>
         </div>
       </Reveal>

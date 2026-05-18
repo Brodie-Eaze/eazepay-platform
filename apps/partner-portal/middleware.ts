@@ -39,6 +39,8 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/accept', // team-invite accept landing (/accept/<brand>?token=...)
   '/sales', // sales-team pitch decks (sales reps share links with prospects)
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
+  '/tradepay', // TradePay flow pages (Checkout/Onboarding)
+  '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
 ];
 
 const isPublic = (pathname: string): boolean => {
