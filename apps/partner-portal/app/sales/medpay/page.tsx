@@ -1065,55 +1065,104 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={600}>
           <div className="sld-cover-hint">
             <span className="sld-cover-hint-arrow">↓</span>
-            <span>Scroll to begin · 24 slides · ~12 min</span>
+            <span>Scroll to begin · 30 slides · ~15 min</span>
           </div>
         </Reveal>
       </div>
     ),
   },
+
+  /* 26 — WELCOME + AGENDA (rep-led intro after the cover slide) */
+  {
+    n: '26',
+    title: 'Welcome',
+    build: () => <WelcomeAgenda />,
+  },
+
+  /* 27 — WHO IS IT FOR (5 verticals + use-case grid) */
+  {
+    n: '27',
+    title: 'Who is MedPay for',
+    build: () => <WhoIsItFor />,
+  },
+
+  /* 28 — THE 7 AGENTS OVERVIEW */
+  {
+    n: '28',
+    title: 'Seven agents · one platform',
+    build: () => <SevenAgents />,
+  },
+
+  /* 29 — ECHO PIXEL ATTRIBUTION (deep dive) */
+  {
+    n: '29',
+    title: 'ECHO · Pixel attribution',
+    build: () => <EchoPixel />,
+  },
+
+  /* 30 — THE COMPOUND EFFECT (12-month projection) */
+  {
+    n: '30',
+    title: 'The compound effect',
+    build: () => <CompoundEffect />,
+  },
+
+  /* 31 — FULL VALUE STACK (what's included, side-by-side with cost) */
+  {
+    n: '31',
+    title: 'Full value stack',
+    build: () => <ValueStack />,
+  },
 ];
 
-/** Narrative ordering of SLIDES_RAW into the final sales-deck arc:
- *
- *  COVER                  (25 Brand title — slide 01 visible)
- *  ACT 1 — Setup          (1 What is MedPay → 2 The cost of doing nothing
- *                          → 3 Why now)
- *  ACT 2 — Solution       (4 The 3 pillars → 11 Patient journey overview
- *                          → 5 Pre-qual → 6 PRISM → 19 Smart Routing
- *                          → 7 Marketplace → 8 Best offer
- *                          → 20 Smartphone continuity → 9 Merchant-direct)
- *  ACT 3 — Transformation (10 Without/With → 12 Economics calc)
- *  ACT 4 — Verticals      (21 Dental → 22 Med Spa → 23 Derm/Vet/Vision)
- *  ACT 5 — Trust + decide (13 Case studies → 14 Vs competitors
- *                          → 15 Security → 16 Pricing → 17 Onboarding)
- *  ACT 6 — Close          (24 Big finale)
- *
- *  Indices are 0-based into SLIDES_RAW. */
+/** Narrative ordering of SLIDES_RAW into the final 30-slide rep-led
+ *  sales deck. Indices are 0-based into SLIDES_RAW. */
 const NARRATIVE_ORDER = [
-  24, // Cover · brand title
-  0,
-  1,
-  2,
-  3,
-  10,
-  4,
-  5,
-  18,
-  6,
-  7,
-  19,
-  8,
-  9,
-  11,
-  20, // Vertical: Dental (anchor vertical first)
-  21, // Vertical: Med Spa
-  22, // Vertical: Derm · Vet · Vision
-  12,
-  13,
-  14,
-  15,
-  16,
-  23,
+  // OPENING — set the stage
+  24, // 01 · Cover · brand title
+  25, // 02 · Welcome + agenda (NEW)
+  0, //  03 · What is MedPay
+  26, // 04 · Who is it for (NEW)
+
+  // ACT 1 — Problem
+  1, //  05 · The cost of doing nothing
+  2, //  06 · Why now
+
+  // ACT 2 — Solution (high level + agents + 7-stage journey)
+  3, //  07 · The 3 pillars
+  27, // 08 · Seven agents · one platform (NEW)
+  10, // 09 · Patient journey overview (4-panel storyboard)
+  4, //  10 · Stage 1: Soft-pull pre-qual (iPad)
+  5, //  11 · Stage 2: PRISM smart forms
+  18, // 12 · Stage 3: HELIX smart routing
+  6, //  13 · Stage 4: Lender marketplace
+  7, //  14 · Stage 5: Best offer wins
+  19, // 15 · Stage 6: Smartphone continuity
+  8, //  16 · Stage 7: Merchant-direct funding
+  28, // 17 · ECHO pixel attribution (NEW)
+
+  // ACT 3 — Transformation
+  9, //  18 · Without/With
+  11, // 19 · Economics calc (interactive)
+  29, // 20 · The compound effect (NEW · 12-month projection)
+
+  // ACT 4 — Verticals
+  20, // 21 · Vertical: Dental clinics
+  21, // 22 · Vertical: Med spas
+  22, // 23 · Vertical: Derm · Vet · Vision
+
+  // ACT 5 — Trust + decide
+  12, // 24 · Case studies
+  13, // 25 · Vs competitors
+  14, // 26 · Security + compliance
+
+  // ACT 6 — The ask
+  30, // 27 · Full value stack (NEW)
+  15, // 28 · Pricing
+  16, // 29 · Onboarding
+
+  // ACT 7 — Close
+  23, // 30 · Big finale CTA
 ];
 const SLIDES: Slide[] = NARRATIVE_ORDER.map((i, idx) => ({
   ...SLIDES_RAW[i]!,
@@ -2122,6 +2171,504 @@ function VerticalSlide({
           <div className="sld-vert-quote-attr">
             <span className="sld-vert-quote-name">{attribution}</span>
             <span className="sld-vert-quote-role">{attributionRole}</span>
+          </div>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Welcome + agenda — the rep's "hello, here's what we'll cover" slide.
+ *  Sits right after the brand cover. Two-column: agenda on the left,
+ *  presenter card on the right. */
+function WelcomeAgenda(): JSX.Element {
+  const agenda = [
+    { n: '01', t: 'What is MedPay', s: 'The product in one sentence' },
+    { n: '02', t: 'Who it’s for', s: 'Your vertical, your patient profile' },
+    { n: '03', t: 'The problem', s: 'Why your case acceptance is leaking' },
+    { n: '04', t: 'The solution', s: 'How the platform actually works' },
+    { n: '05', t: 'The transformation', s: 'What 12 months of MedPay looks like' },
+    { n: '06', t: 'The ask', s: 'What it costs, how to start' },
+  ];
+  return (
+    <div className="sld-stack sld-grid-hero">
+      <div className="sld-hero-left">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Welcome
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h1 className="sld-h1">
+            <span className="grad-teal-deep">Thanks for taking the call.</span>
+            <br />
+            <span className="grad-teal">Here&apos;s what we&apos;ll cover.</span>
+          </h1>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            About 15 minutes. Six chapters. By the end you&apos;ll know what MedPay is, whether it
+            fits your practice, what it costs, and the exact path to your first funded patient. Stop
+            me with questions anytime &mdash; this is your call.
+          </p>
+        </Reveal>
+      </div>
+      <div className="sld-hero-right">
+        <Reveal delay={360}>
+          <div className="sld-agenda">
+            {agenda.map((a, i) => (
+              <div key={i} className="sld-agenda-row">
+                <span className="sld-agenda-n">{a.n}</span>
+                <div>
+                  <div className="sld-agenda-t">{a.t}</div>
+                  <div className="sld-agenda-s">{a.s}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </div>
+    </div>
+  );
+}
+
+/** Who is it for — 5 vertical icon grid + "not for" footer. */
+function WhoIsItFor(): JSX.Element {
+  const verticals = [
+    {
+      name: 'Dental',
+      icon: '\u{1FA77}',
+      ticket: '$3k – $50k',
+      who: 'Implants, ortho, sleep apnea, full-mouth reconstruction',
+    },
+    {
+      name: 'Med spa',
+      icon: '✨',
+      ticket: '$2k – $15k',
+      who: 'Laser packages, injectable maintenance, body contouring series',
+    },
+    {
+      name: 'Derm',
+      icon: '\u{1F9EC}',
+      ticket: '$1k – $30k',
+      who: 'Mohs, cosmetic, mole removal, laser resurfacing',
+    },
+    {
+      name: 'Veterinary',
+      icon: '\u{1F436}',
+      ticket: '$1k – $25k',
+      who: 'Orthopedic surgery, oncology, dental + soft-tissue cases',
+    },
+    {
+      name: 'Vision',
+      icon: '\u{1F441}',
+      ticket: '$3k – $12k',
+      who: 'LASIK, premium IOL, custom progressive lenses',
+    },
+  ];
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          Who it&apos;s for
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal-deep">Built for high-ticket, elective,</span>{' '}
+          <span className="grad-teal">consult-at-the-chair healthcare.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          Anywhere a patient sits down, hears a number, and has to decide on the spot &mdash;
+          that&apos;s our sweet spot. Five verticals today. Same platform, same flow, same
+          merchant-direct payout. Just the case stories change.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-who-grid">
+          {verticals.map((v, i) => (
+            <div key={i} className="sld-who-card">
+              <div className="sld-who-icon" aria-hidden>
+                {v.icon}
+              </div>
+              <div className="sld-who-name">{v.name}</div>
+              <div className="sld-who-ticket">{v.ticket}</div>
+              <div className="sld-who-who">{v.who}</div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-notfor">
+          <span className="sld-notfor-k">Not for</span>
+          <span className="sld-notfor-v">
+            Low-ticket retail · single-visit walk-ins · cash-only practices · sub-$500 tickets. We
+            don&apos;t replace a credit-card terminal &mdash; we replace the &ldquo;let me think
+            about it&rdquo; conversation.
+          </span>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Seven autonomous agents · one platform. 4+3 grid of agents with
+ *  role, what-they-watch, and output. */
+function SevenAgents(): JSX.Element {
+  const agents = [
+    {
+      code: 'PRISM',
+      role: 'Smart forms',
+      watches: 'Every form session',
+      output: 'Reorders questions, kills friction',
+    },
+    {
+      code: 'ORACLE',
+      role: 'Fundability tier',
+      watches: 'Soft-pull financial data',
+      output: 'Tier A/B/C in <10s',
+    },
+    {
+      code: 'HELIX',
+      role: 'Smart routing',
+      watches: 'Patient + rep + capacity',
+      output: 'Best-fit estimator match',
+    },
+    {
+      code: 'NEXUS',
+      role: 'Lender marketplace',
+      watches: 'Lender appetite + rates',
+      output: 'Ranked parallel quotes',
+    },
+    {
+      code: 'FLUX',
+      role: 'Lender routing',
+      watches: 'Approval rates per tier',
+      output: 'Optimal lender order',
+    },
+    {
+      code: 'ECHO',
+      role: 'Pixel attribution',
+      watches: 'The funded-patient signal',
+      output: 'Re-trains Meta + Google',
+    },
+    {
+      code: 'VEGA',
+      role: 'Compliance audit',
+      watches: 'Every consent + disclosure',
+      output: 'FCRA / ECOA / TILA trail',
+    },
+  ];
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          The agentic layer
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal-deep">Seven autonomous agents.</span>{' '}
+          <span className="grad-teal">One platform.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          MedPay is not a single piece of software. It&apos;s a stack of seven specialised agents
+          working in parallel on every patient session &mdash; intake, scoring, routing, lender
+          selection, payment retry, pixel attribution, and compliance audit. Every agent is named,
+          observable, and logged.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-agents-grid">
+          {agents.map((a, i) => (
+            <div key={i} className="sld-agent-card">
+              <div className="sld-agent-code">{a.code}</div>
+              <div className="sld-agent-role">{a.role}</div>
+              <div className="sld-agent-meta">
+                <div>
+                  <div className="sld-agent-k">Watches</div>
+                  <div className="sld-agent-v">{a.watches}</div>
+                </div>
+                <div>
+                  <div className="sld-agent-k">Output</div>
+                  <div className="sld-agent-v">{a.output}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** ECHO pixel attribution — deep dive on the "fire on funded job"
+ *  feedback loop. */
+function EchoPixel(): JSX.Element {
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          ECHO · Pixel attribution
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal-deep">Stop training your pixel</span>{' '}
+          <span className="grad-teal">on form fillers.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          Today, your Meta and Google ad pixels fire on a Page View, a Lead, or a Form Submit. Most
+          of those leads never fund. Your algorithm optimises for garbage and your CPA drifts up
+          month over month. ECHO breaks the loop.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-echo-flow">
+          {[
+            { n: '01', label: 'Page view', sub: 'Cold click' },
+            { n: '02', label: 'Lead', sub: 'Form opened' },
+            { n: '03', label: 'Pre-qual', sub: 'Soft-pull tier' },
+            { n: '04', label: 'Approved', sub: 'Offer accepted' },
+            { n: '05', label: 'Funded', sub: 'Cash settles' },
+          ].map((s, i) => (
+            <div key={i} className={`sld-echo-node ${i === 4 ? 'is-fund' : ''}`}>
+              <div className="sld-echo-n">{s.n}</div>
+              <div className="sld-echo-label">{s.label}</div>
+              <div className="sld-echo-sub">{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-echo-loop">
+          <span className="sld-echo-loop-arrow">↑</span>
+          <span className="sld-echo-loop-label">
+            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta
+            + Google is a <strong>real funded patient</strong>, not a form-fill. Your algorithm
+            retrains on the right buyer profile.
+          </span>
+        </div>
+      </Reveal>
+      <Reveal delay={600}>
+        <div className="sld-mini-stats">
+          <MiniStat v="−38%" k="CPA in 90 days" />
+          <MiniStat v="+1.6×" k="Funded leads / spend" />
+          <MiniStat v="CAPI" k="Server-side · GDPR-safe" />
+          <MiniStat v="Per-channel" k="Meta · Google · TikTok" />
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Compound effect — 12-month growth chart showing what cumulative
+ *  MedPay revenue + lead-quality improvement looks like. */
+function CompoundEffect(): JSX.Element {
+  // 12 monthly points: revenue uplift (cumulative) + CPA reduction
+  const months = [
+    { m: 'M01', rev: 14, cpa: 0 },
+    { m: 'M02', rev: 32, cpa: -4 },
+    { m: 'M03', rev: 54, cpa: -9 },
+    { m: 'M04', rev: 81, cpa: -14 },
+    { m: 'M05', rev: 113, cpa: -19 },
+    { m: 'M06', rev: 148, cpa: -25 },
+    { m: 'M07', rev: 186, cpa: -29 },
+    { m: 'M08', rev: 226, cpa: -32 },
+    { m: 'M09', rev: 268, cpa: -34 },
+    { m: 'M10', rev: 311, cpa: -36 },
+    { m: 'M11', rev: 354, cpa: -37 },
+    { m: 'M12', rev: 398, cpa: -38 },
+  ];
+  const maxRev = Math.max(...months.map((m) => m.rev));
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          The compound effect
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal">Better data in</span>{' '}
+          <span className="grad-teal-deep">means cheaper, better leads out.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          MedPay does not just close more patients today. It compounds. Each funded patient
+          re-trains your pixel. The pixel sends better leads. Better leads close at a higher rate.
+          The cycle accelerates. Twelve months in, the practice is unrecognisable.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-comp-chart">
+          <div className="sld-comp-bars">
+            {months.map((m, i) => (
+              <div key={i} className="sld-comp-col">
+                <div
+                  className="sld-comp-bar"
+                  style={{ height: `${(m.rev / maxRev) * 100}%`, animationDelay: `${i * 0.06}s` }}
+                  title={`+$${m.rev}k recovered · CPA ${m.cpa}%`}
+                />
+                <div className="sld-comp-m">{m.m}</div>
+              </div>
+            ))}
+          </div>
+          <div className="sld-comp-legend">
+            <div>
+              <div className="sld-comp-legend-k">Cumulative recovered revenue</div>
+              <div className="sld-comp-legend-v">
+                ~$398k by month 12 · 3-chair practice · illustrative
+              </div>
+            </div>
+            <div>
+              <div className="sld-comp-legend-k">CPA trajectory</div>
+              <div className="sld-comp-legend-v">
+                −38% by month 12 · driven by ECHO pixel retraining
+              </div>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-mini-stats">
+          <MiniStat v="~$398k" k="Cum. recovered / yr" />
+          <MiniStat v="−38%" k="CPA by month 12" />
+          <MiniStat v="2.4×" k="Funded patients / 1k spend" />
+          <MiniStat v="+27%" k="Form completion (vs. M01)" />
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Full value stack — what you actually get with MedPay, side-by-side
+ *  with "if you bought separately" cost. The most important slide for
+ *  the close — anchors price perception. */
+function ValueStack(): JSX.Element {
+  const groups: Array<{ head: string; items: string[]; alt: string }> = [
+    {
+      head: 'Pre-qualification layer',
+      items: [
+        'Soft-pull fundability tier (FCRA-compliant)',
+        'Last-4-SSN + DOB + income at the chair',
+        'PRISM smart-form intake (−41% drop-off)',
+        'Real-time signal scoring · ORACLE',
+      ],
+      alt: '$2,400 / mo · standalone form + scoring vendor',
+    },
+    {
+      head: 'Lender marketplace',
+      items: [
+        'Parallel quoting across the marketplace',
+        'NEXUS lender selection · ranked total-cost',
+        'FLUX adaptive routing by tier',
+        'Ticket coverage from $1k to $50k',
+      ],
+      alt: '$1,800 / mo + 1.5% take-rate · single-lender programs',
+    },
+    {
+      head: 'Smart routing + ops',
+      items: [
+        'HELIX best-fit estimator routing',
+        'Capacity + geo + ticket-fit matching',
+        'Smartphone continuity for off-chair signing',
+        'Merchant-direct ACH disbursement',
+      ],
+      alt: '$1,200 / mo · routing tool + payment processor',
+    },
+    {
+      head: 'Pixel + attribution',
+      items: [
+        'ECHO funded-event pixel retraining',
+        'Server-side CAPI to Meta + Google + TikTok',
+        'Funnel-stage event ledger',
+        'Per-channel ROAS attribution',
+      ],
+      alt: '$900 / mo · CAPI vendor + analytics',
+    },
+    {
+      head: 'Compliance + audit',
+      items: [
+        'VEGA FCRA · ECOA · TILA enforcement',
+        'Adverse-action notice automation',
+        'State-by-state licensing under NMLS #2456701',
+        'Audit log per loan · 7-year retention',
+      ],
+      alt: '$800 / mo · compliance consultant',
+    },
+    {
+      head: 'Reporting + support',
+      items: [
+        'Daily funded summary + monthly invoice',
+        'Per-rep performance dashboards',
+        'Live chat + dedicated CSM',
+        'Free implementation + staff training',
+      ],
+      alt: '$600 / mo · BI tool + support seat',
+    },
+  ];
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          Full value stack
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal-deep">Everything you get</span>{' '}
+          <span className="grad-teal">in one platform.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          MedPay replaces a stack of six vendors that most practices duct-tape together. Here&apos;s
+          everything included &mdash; and what you&apos;d typically pay if you bought it piecemeal.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-stack-grid">
+          {groups.map((g, i) => (
+            <div key={i} className="sld-stack-card">
+              <div className="sld-stack-head">{g.head}</div>
+              <ul className="sld-stack-items">
+                {g.items.map((it, j) => (
+                  <li key={j}>
+                    <span className="sld-stack-check">✓</span> {it}
+                  </li>
+                ))}
+              </ul>
+              <div className="sld-stack-alt">
+                <span className="sld-stack-alt-k">If bought separately</span>
+                <span className="sld-stack-alt-v">{g.alt}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-stack-total">
+          <div className="sld-stack-total-row">
+            <span className="sld-stack-total-k">Equivalent vendor stack</span>
+            <span className="sld-stack-total-v">~$7,700 / month</span>
+          </div>
+          <div className="sld-stack-total-row accent">
+            <span className="sld-stack-total-k">MedPay</span>
+            <span className="sld-stack-total-v">$0 monthly · % of funded volume only</span>
           </div>
         </div>
       </Reveal>
@@ -4147,6 +4694,359 @@ const CSS = `
   background: transparent;
 }
 
+/* ===== Welcome + agenda ===== */
+.sld-agenda {
+  display: flex; flex-direction: column;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.28);
+}
+.sld-agenda-row {
+  display: grid; grid-template-columns: 56px 1fr;
+  align-items: center; gap: 16px;
+  padding: 16px 22px;
+  border-bottom: 1px dashed var(--mp-line);
+  transition: background .15s ease;
+}
+.sld-agenda-row:last-child { border-bottom: none; }
+.sld-agenda-row:hover { background: rgba(34, 184, 160, 0.04); }
+.sld-agenda-n {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--mp-deep), var(--mp-teal));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.sld-agenda-t {
+  font-size: 16px; font-weight: 700;
+  color: var(--mp-ink);
+  letter-spacing: -0.01em;
+}
+.sld-agenda-s {
+  font-size: 12px; color: var(--mp-mute);
+  margin-top: 2px;
+}
+
+/* ===== Who is it for ===== */
+.sld-who-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+.sld-who-card {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  text-align: left;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.sld-who-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
+}
+.sld-who-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+.sld-who-name {
+  font-size: 16px; font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+}
+.sld-who-ticket {
+  margin-top: 4px;
+  font-size: 11px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.sld-who-who {
+  margin-top: 10px;
+  font-size: 12px; line-height: 1.5;
+  color: var(--mp-ink-2);
+}
+.sld-notfor {
+  margin-top: 8px;
+  padding: 16px 20px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px dashed var(--mp-line-strong);
+  border-radius: 12px;
+  display: grid; grid-template-columns: 100px 1fr;
+  gap: 16px;
+  align-items: baseline;
+}
+.sld-notfor-k {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-notfor-v {
+  font-size: 13px; color: var(--mp-ink-2); line-height: 1.5;
+}
+
+/* ===== Seven agents grid ===== */
+.sld-agents-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.sld-agent-card {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.sld-agent-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.30);
+  border-color: var(--mp-line-strong);
+}
+.sld-agent-code {
+  font-size: 13px; letter-spacing: 0.20em; font-weight: 800;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-agent-role {
+  font-size: 15px; font-weight: 700;
+  color: var(--mp-ink);
+  letter-spacing: -0.01em;
+}
+.sld-agent-meta {
+  display: flex; flex-direction: column; gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--mp-line);
+}
+.sld-agent-k {
+  font-size: 9px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-agent-v {
+  font-size: 12px;
+  color: var(--mp-ink-2);
+  line-height: 1.45;
+}
+
+/* ===== ECHO pixel attribution ===== */
+.sld-echo-flow {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+  position: relative;
+}
+.sld-echo-node {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+  position: relative;
+  text-align: center;
+  opacity: 0.85;
+}
+.sld-echo-node.is-fund {
+  background:
+    radial-gradient(ellipse 80% 100% at 50% 100%, rgba(34, 184, 160, 0.20), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.35);
+  opacity: 1;
+}
+.sld-echo-node + .sld-echo-node::before {
+  content: '→';
+  position: absolute;
+  left: -14px; top: 50%; transform: translateY(-50%);
+  color: var(--mp-line-strong);
+  font-size: 14px; font-weight: 700;
+}
+.sld-echo-n {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-echo-node.is-fund .sld-echo-n { color: var(--mp-teal); }
+.sld-echo-label {
+  margin-top: 6px;
+  font-size: 15px; font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--mp-ink);
+}
+.sld-echo-sub {
+  margin-top: 2px;
+  font-size: 11px; color: var(--mp-mute);
+}
+.sld-echo-loop {
+  margin-top: 10px;
+  padding: 18px 22px;
+  background:
+    linear-gradient(90deg, rgba(34, 184, 160, 0.14) 0%, rgba(34, 184, 160, 0.04) 100%);
+  border: 1px solid rgba(34, 184, 160, 0.35);
+  border-radius: 14px;
+  display: grid; grid-template-columns: 36px 1fr;
+  gap: 14px; align-items: center;
+}
+.sld-echo-loop-arrow {
+  font-size: 28px; font-weight: 800;
+  color: var(--mp-teal);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  background: rgba(34, 184, 160, 0.22);
+}
+.sld-echo-loop-label {
+  font-size: 14px; line-height: 1.55;
+  color: var(--mp-ink-2);
+}
+.sld-echo-loop-label strong { color: var(--mp-teal); font-weight: 700; }
+
+/* ===== Compound effect 12-month bar chart ===== */
+.sld-comp-chart {
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 18px;
+  margin-top: 8px;
+}
+.sld-comp-bars {
+  display: grid; grid-template-columns: repeat(12, 1fr);
+  gap: 8px;
+  height: 200px;
+  align-items: flex-end;
+}
+.sld-comp-col {
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+  height: 100%;
+}
+.sld-comp-bar {
+  width: 100%;
+  background: linear-gradient(180deg, var(--mp-teal-2) 0%, var(--mp-deep) 100%);
+  border-radius: 6px 6px 0 0;
+  transform-origin: bottom;
+  animation: sldCompBarGrow 1.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: opacity .15s ease;
+}
+.sld-comp-bar:hover { opacity: 0.85; }
+@keyframes sldCompBarGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+.sld-comp-m {
+  font-size: 9px; letter-spacing: 0.10em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.sld-comp-legend {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--mp-line);
+}
+.sld-comp-legend-k {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-comp-legend-v {
+  margin-top: 4px;
+  font-size: 13px; color: var(--mp-ink-2); line-height: 1.5;
+}
+
+/* ===== Full value stack ===== */
+.sld-stack-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+.sld-stack-card {
+  padding: 20px 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.sld-stack-head {
+  font-size: 13px; letter-spacing: 0.14em; font-weight: 800;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--mp-line);
+}
+.sld-stack-items {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sld-stack-items li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--mp-ink-2);
+}
+.sld-stack-check {
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  background: rgba(34, 184, 160, 0.18);
+  color: var(--mp-teal);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.sld-stack-alt {
+  margin-top: auto;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 10px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sld-stack-alt-k {
+  font-size: 9.5px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-stack-alt-v {
+  font-size: 12px; font-weight: 600;
+  color: var(--mp-ink);
+}
+.sld-stack-total {
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.sld-stack-total-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 18px 24px;
+  border-bottom: 1px dashed var(--mp-line);
+}
+.sld-stack-total-row:last-child { border-bottom: none; }
+.sld-stack-total-row.accent {
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(34, 184, 160, 0.18), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+}
+.sld-stack-total-k {
+  font-size: 13px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-stack-total-row.accent .sld-stack-total-k { color: var(--mp-teal); }
+.sld-stack-total-v {
+  font-size: 22px; font-weight: 800;
+  color: var(--mp-ink);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+.sld-stack-total-row.accent .sld-stack-total-v {
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
 /* ===== Cover · brand title (first slide of the deck) ===== */
 .sld-cover {
   align-items: center; text-align: center;
@@ -4659,6 +5559,15 @@ const CSS = `
   .sld-cover-wordmark { font-size: 80px; }
   .sld-cover-tagline { font-size: 18px; }
   .sld-cover-meta-k { min-width: 80px; }
+  .sld-agenda-row { grid-template-columns: 44px 1fr; padding: 12px 16px; }
+  .sld-who-grid { grid-template-columns: repeat(2, 1fr); }
+  .sld-notfor { grid-template-columns: 1fr; gap: 6px; }
+  .sld-agents-grid { grid-template-columns: repeat(2, 1fr); }
+  .sld-echo-flow { grid-template-columns: 1fr; gap: 8px; }
+  .sld-echo-node + .sld-echo-node::before { display: none; }
+  .sld-comp-bars { height: 140px; }
+  .sld-comp-legend { grid-template-columns: 1fr; }
+  .sld-stack-grid { grid-template-columns: 1fr; }
   .sld-sr { grid-template-columns: 1fr; gap: 16px; }
   .sld-sr-arrow { padding: 12px 0; }
   .sld-vert-grid { grid-template-columns: 1fr; }
