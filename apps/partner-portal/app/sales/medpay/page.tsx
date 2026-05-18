@@ -110,6 +110,12 @@ const SLIDES: Slide[] = [
             <CountStat label="2–4 wks" k="Consult → deposit" />
           </div>
         </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-section-title">Where the $1.4M actually goes</div>
+        </Reveal>
+        <Reveal delay={560}>
+          <MoneyBreakdown />
+        </Reveal>
       </div>
     ),
   },
@@ -228,26 +234,47 @@ const SLIDES: Slide[] = [
     n: '05',
     title: 'Stage 1 — Pre-qual',
     build: () => (
-      <div className="sld-stack">
-        <Reveal>
-          <div className="sld-eyebrow">
-            <span className="sld-eyebrow-dot" />
-            How it works · 1 of 5
-          </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <h2 className="sld-h2">
-            <span className="grad-teal-deep">Soft-pull EZ Check</span>{' '}
-            <span className="grad-teal">on the iPad.</span>
-          </h2>
-        </Reveal>
-        <Reveal delay={240}>
-          <StageRow
-            metric={<AnimatedCounter to={10} prefix="< " suffix="s" />}
-            label="Pre-qual"
-            body="Patient enters last 4 of SSN, date of birth, income, and address. Soft pull returns a fundability tier in under 10 seconds. Zero credit impact. FCRA-compliant. The patient has not yet authorized a hard pull — they can walk away with no consequence."
-          />
-        </Reveal>
+      <div className="sld-stack sld-grid-hero">
+        <div className="sld-hero-left">
+          <Reveal>
+            <div className="sld-eyebrow">
+              <span className="sld-eyebrow-dot" />
+              How it works · 1 of 5 · Pre-qual
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <h2 className="sld-h2">
+              <span className="grad-teal-deep">Soft-pull EZ Check</span>{' '}
+              <span className="grad-teal">on the iPad.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={240}>
+            <p className="sld-sub">
+              Four fields. Ten seconds. A real fundability tier comes back before the patient hands
+              the iPad back. They haven&apos;t authorized a hard pull, so they can still walk away
+              with zero credit consequence.
+            </p>
+          </Reveal>
+          <Reveal delay={360}>
+            <div className="sld-mini-stats">
+              <MiniStat v={<AnimatedCounter to={10} prefix="< " suffix="s" />} k="Decision time" />
+              <MiniStat v="0" k="Credit impact" />
+              <MiniStat v="FCRA" k="Compliant" />
+              <MiniStat v="4 fields" k="Friction" />
+            </div>
+          </Reveal>
+          <Reveal delay={480}>
+            <p className="sld-takeaway">
+              <strong>For the rep:</strong> the patient walks back with the iPad already knowing
+              they qualify. The next sentence is &ldquo;here&apos;s your treatment plan,&rdquo; not
+              &ldquo;let me check if you can afford it.&rdquo;
+            </p>
+          </Reveal>
+        </div>
+        <div className="sld-hero-right">
+          <ParticleField count={14} />
+          <IpadFormMock />
+        </div>
       </div>
     ),
   },
@@ -261,25 +288,42 @@ const SLIDES: Slide[] = [
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            How it works · 2 of 5
+            How it works · 2 of 5 · PRISM
           </div>
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
             <span className="grad-teal-deep">PRISM</span>{' '}
-            <span className="grad-teal">reshapes the apply flow.</span>
+            <span className="grad-teal">reshapes the apply flow in real time.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <StageRow
-            metric={
-              <span>
-                −<AnimatedCounter to={41} suffix="%" />
-              </span>
-            }
-            label="Form drop-off"
-            body="Every form session is watched by PRISM. It reorders questions on partial answers, skips qualifying steps for high-intent patients, and adds verification when the signal looks junky. High-intent patients skip straight to the financing decision."
-          />
+          <p className="sld-sub">
+            Every form session is watched by an agent. Question order is rewritten on partial
+            answers. High-intent patients skip qualifying steps and go straight to the financing
+            decision. Junk signals get extra verification.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <PrismFlow />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat
+              v={
+                <span>
+                  −<AnimatedCounter to={41} suffix="%" />
+                </span>
+              }
+              k="Form drop-off"
+            />
+            <MiniStat
+              v={<AnimatedCounter to={2.3} decimals={1} suffix="x" />}
+              k="High-intent throughput"
+            />
+            <MiniStat v={<AnimatedCounter to={7} suffix=" agents" />} k="Pre-qual layer" />
+            <MiniStat v="Live" k="Per-session learning" />
+          </div>
         </Reveal>
       </div>
     ),
@@ -325,7 +369,7 @@ const SLIDES: Slide[] = [
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            How it works · 4 of 5
+            How it works · 4 of 5 · The offer
           </div>
         </Reveal>
         <Reveal delay={120}>
@@ -335,11 +379,22 @@ const SLIDES: Slide[] = [
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <StageRow
-            metric={<span>One tap</span>}
-            label="To accept"
-            body="Offers ranked consumer-best (lowest total cost). Patient sees one screen with the recommended offer and two alternates. Tap to accept the approval. E-loan documents are signed right there. The patient is funded."
-          />
+          <p className="sld-sub">
+            Three ranked offers on one screen. Sorted by total cost, not commission. The starred row
+            is what your patient actually picks 80% of the time. One tap to accept. E-signature on
+            the same screen. They&apos;re funded before they leave the chair.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <OfferStack />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat v={<AnimatedCounter to={3} />} k="Offers shown" />
+            <MiniStat v="One tap" k="To accept" />
+            <MiniStat v="E-SIGN" k="Legally binding" />
+            <MiniStat v="$0" k="Patient pays today" />
+          </div>
         </Reveal>
       </div>
     ),
@@ -354,7 +409,7 @@ const SLIDES: Slide[] = [
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            How it works · 5 of 5
+            How it works · 5 of 5 · Disbursement
           </div>
         </Reveal>
         <Reveal delay={120}>
@@ -364,17 +419,30 @@ const SLIDES: Slide[] = [
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <StageRow
-            metric={
-              <span>
-                <AnimatedCounter to={48} />
-                –<AnimatedCounter to={72} delay={300} />
-                hr
-              </span>
-            }
-            label="Merchant-direct"
-            body="No intermediary holds the funds. Payouts land within 48 to 72 hours of the loan settling. The lender carries the credit risk. No clawback on routine defaults. Credit risk sits with the lender, not the practice."
-          />
+          <p className="sld-sub">
+            No marketplace intermediary holding the funds. No reseller skim. The lender wires the
+            full amount straight to your practice account within 48 to 72 hours of the loan
+            settling. The lender holds the credit risk. No clawback on routine defaults.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <BankWire />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat
+              v={
+                <span>
+                  <AnimatedCounter to={48} />–<AnimatedCounter to={72} delay={300} />
+                  hr
+                </span>
+              }
+              k="Wire-to-account"
+            />
+            <MiniStat v="No" k="Clawback on default" />
+            <MiniStat v="ACH" k="Disbursement rail" />
+            <MiniStat v="Daily" k="Reconciliation report" />
+          </div>
         </Reveal>
       </div>
     ),
@@ -414,33 +482,34 @@ const SLIDES: Slide[] = [
     n: '11',
     title: 'What the patient sees',
     build: () => (
-      <div className="sld-stack sld-grid-hero">
-        <div className="sld-hero-left">
-          <Reveal>
-            <div className="sld-eyebrow">
-              <span className="sld-eyebrow-dot" />
-              The patient experience
-            </div>
-          </Reveal>
-          <Reveal delay={120}>
-            <h2 className="sld-h2">
-              <span className="grad-teal-deep">One screen.</span>{' '}
-              <span className="grad-teal">Approved. Pick a plan.</span>
-            </h2>
-          </Reveal>
-          <Reveal delay={240}>
-            <p className="sld-sub">
-              Three ranked offers, lowest total cost first. Tap to accept. E-sign docs right there.
-              Funded.
-            </p>
-          </Reveal>
-        </div>
-        <div className="sld-hero-right">
-          <ParticleField count={20} />
-          <TiltCard>
-            <OfferCardMock />
-          </TiltCard>
-        </div>
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            The patient experience
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Four taps.</span>{' '}
+            <span className="grad-teal">Walks out approved and funded.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            The entire patient journey happens at the chair, on the iPad, in under three minutes.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <Storyboard />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-hero-stat-row">
+            <HeroStat n={3} suffix=" min" k="Total flow time" />
+            <HeroStat n={4} k="Taps to fund" />
+            <HeroStat n={0} suffix="%" k="Credit impact (until accept)" />
+          </div>
+        </Reveal>
       </div>
     ),
   },
@@ -594,27 +663,30 @@ const SLIDES: Slide[] = [
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <div className="sld-price-card">
-            <div className="sld-price-row">
-              <span className="sld-price-k">Platform fee</span>
-              <span className="sld-price-v">% of funded volume only</span>
+          <div className="sld-price-grid">
+            <div className="sld-price-card">
+              <div className="sld-price-row">
+                <span className="sld-price-k">Platform fee</span>
+                <span className="sld-price-v">% of funded volume only</span>
+              </div>
+              <div className="sld-price-row">
+                <span className="sld-price-k">Monthly fee</span>
+                <span className="sld-price-v">$0</span>
+              </div>
+              <div className="sld-price-row">
+                <span className="sld-price-k">Per-application fee</span>
+                <span className="sld-price-v">$0</span>
+              </div>
+              <div className="sld-price-row">
+                <span className="sld-price-k">Setup fee</span>
+                <span className="sld-price-v">$0</span>
+              </div>
+              <div className="sld-price-row">
+                <span className="sld-price-k">Contract length</span>
+                <span className="sld-price-v">Month to month · cancel anytime</span>
+              </div>
             </div>
-            <div className="sld-price-row">
-              <span className="sld-price-k">Monthly fee</span>
-              <span className="sld-price-v">$0</span>
-            </div>
-            <div className="sld-price-row">
-              <span className="sld-price-k">Per-application fee</span>
-              <span className="sld-price-v">$0</span>
-            </div>
-            <div className="sld-price-row">
-              <span className="sld-price-k">Setup fee</span>
-              <span className="sld-price-v">$0</span>
-            </div>
-            <div className="sld-price-row">
-              <span className="sld-price-k">Contract length</span>
-              <span className="sld-price-v">Month to month · cancel anytime</span>
-            </div>
+            <SampleInvoice />
           </div>
         </Reveal>
         <Reveal delay={360}>
@@ -645,28 +717,20 @@ const SLIDES: Slide[] = [
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <ol className="sld-steps">
-            <Step
-              n="01"
-              h="Practice signup"
-              b="Business details (EIN, address, owner info, last 4 SSN). 5 minutes. KYB clears in under 60 seconds."
-            />
-            <Step
-              n="02"
-              h="iPad / web setup"
-              b="Open the apply link on any iPad at the chair, or share it as a URL. No hardware to install. No new POS terminal."
-            />
-            <Step
-              n="03"
-              h="First live application"
-              b="Run your first soft-pull on a real patient within hours of signup. Real approval. Real funds. Real disbursement."
-            />
-            <Step
-              n="04"
-              h="Reports + reconciliation"
-              b="Daily funded summary, monthly invoice for the platform fee, full audit trail per loan."
-            />
-          </ol>
+          <OnboardingTimeline />
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-section-title">What you need to bring</div>
+        </Reveal>
+        <Reveal delay={420}>
+          <div className="sld-checklist">
+            <Check k="EIN + business address" />
+            <Check k="Owner name, DOB, last 4 SSN, ownership %" />
+            <Check k="Business bank account (routing + account)" />
+            <Check k="Driver's license + business license (uploaded)" />
+            <Check k="iPad or any web browser (no hardware to install)" />
+            <Check k="One signature on the agreement (e-sign)" />
+          </div>
         </Reveal>
       </div>
     ),
@@ -717,6 +781,12 @@ const SLIDES: Slide[] = [
               </div>
             </a>
           </div>
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-section-title">What happens after you sign</div>
+        </Reveal>
+        <Reveal delay={540}>
+          <RoadmapStrip />
         </Reveal>
         <p className="sld-disclaimer">
           MedPay is a multi-lender marketplace. Lender names shown are illustrative unless
@@ -1228,6 +1298,346 @@ function VsTable(): JSX.Element {
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** Compact 4-up stats row for stage slides. */
+function MiniStat({ v, k }: { v: React.ReactNode; k: string }): JSX.Element {
+  return (
+    <div className="sld-mini-stat">
+      <div className="sld-mini-stat-v">{v}</div>
+      <div className="sld-mini-stat-k">{k}</div>
+    </div>
+  );
+}
+
+/** Checklist row used on slide 17 (onboarding requirements). */
+function Check({ k }: { k: string }): JSX.Element {
+  return (
+    <div className="sld-check">
+      <span className="sld-check-icon">✓</span>
+      <span>{k}</span>
+    </div>
+  );
+}
+
+/** iPad mockup with auto-typing soft-pull form. Used on Stage 1
+ *  to show what the patient sees. */
+function IpadFormMock(): JSX.Element {
+  return (
+    <div className="sld-ipad">
+      <div className="sld-ipad-bezel">
+        <div className="sld-ipad-screen">
+          <div className="sld-ipad-header">
+            <span className="sld-ipad-brand">MedPay · Soft-pull pre-qual</span>
+            <span className="sld-ipad-meta">FCRA · 0 impact</span>
+          </div>
+          <div className="sld-ipad-title">Quick pre-qual</div>
+          <div className="sld-ipad-sub">Takes 10 seconds. Your score is unchanged.</div>
+          <div className="sld-ipad-form">
+            {[
+              { k: 'Last 4 of SSN', v: '••••' },
+              { k: 'Date of birth', v: '04 / 12 / 1985' },
+              { k: 'Annual income', v: '$96,000' },
+              { k: 'Home address', v: '1418 Maple Dr, Austin TX' },
+            ].map((f, i) => (
+              <div key={i} className="sld-ipad-field" style={{ animationDelay: `${i * 0.4}s` }}>
+                <div className="sld-ipad-field-k">{f.k}</div>
+                <div className="sld-ipad-field-v">{f.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="sld-ipad-btn">Check my rate →</div>
+          <div className="sld-ipad-foot">FCRA-compliant · Soft pull only · You can walk away</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** PRISM agent reordering form questions. */
+function PrismFlow(): JSX.Element {
+  const before = ['Email', 'Phone', 'SSN', 'Income', 'Employer', 'Procedure', 'Insurance'];
+  const after = ['Procedure', 'Income', 'SSN', 'Insurance', 'Phone', 'Email', 'Employer'];
+  return (
+    <div className="sld-prism">
+      <div className="sld-prism-col">
+        <div className="sld-prism-eyebrow">Before · static form</div>
+        <ol className="sld-prism-list">
+          {before.map((q, i) => (
+            <li key={i}>
+              <span className="sld-prism-i">{String(i + 1).padStart(2, '0')}</span>
+              {q}
+            </li>
+          ))}
+        </ol>
+        <div className="sld-prism-dropoff">−41% drop-off</div>
+      </div>
+      <div className="sld-prism-arrow">PRISM</div>
+      <div className="sld-prism-col accent">
+        <div className="sld-prism-eyebrow accent">After · reshaped by PRISM</div>
+        <ol className="sld-prism-list">
+          {after.map((q, i) => (
+            <li key={i}>
+              <span className="sld-prism-i accent">{String(i + 1).padStart(2, '0')}</span>
+              {q}
+            </li>
+          ))}
+        </ol>
+        <div className="sld-prism-dropoff accent">High-intent leads finish faster</div>
+      </div>
+    </div>
+  );
+}
+
+/** Three ranked offers (Stage 4). Cheapest first, star on winner. */
+function OfferStack(): JSX.Element {
+  const offers = [
+    { lender: 'BuildBank', monthly: '$436', term: '60 mo', tag: 'Best total cost', star: true },
+    { lender: 'CoreCredit', monthly: '$480', term: '60 mo', tag: '2nd cheapest' },
+    { lender: 'FinWise', monthly: '$510', term: '60 mo', tag: '3rd' },
+  ];
+  return (
+    <div className="sld-offer-stack">
+      {offers.map((o, i) => (
+        <div key={i} className={`sld-offer-row ${o.star ? 'is-winner' : ''}`}>
+          <div className="sld-offer-lender">
+            {o.star ? (
+              <span className="sld-offer-star">★</span>
+            ) : (
+              <span className="sld-offer-bullet" />
+            )}
+            <span>{o.lender}</span>
+            <span className="sld-offer-tag">{o.tag}</span>
+          </div>
+          <div className="sld-offer-monthly">
+            {o.monthly}
+            <span> / mo</span>
+          </div>
+          <div className="sld-offer-term">{o.term}</div>
+        </div>
+      ))}
+      <div className="sld-offer-foot">
+        Ranked lowest-total-cost first · patient picks · e-signs in 30s
+      </div>
+    </div>
+  );
+}
+
+/** Bank-wire animation for Stage 5 — money flows lender → MedPay → practice. */
+function BankWire(): JSX.Element {
+  return (
+    <div className="sld-wire">
+      <div className="sld-wire-node">
+        <div className="sld-wire-icon">L</div>
+        <div className="sld-wire-label">Lender</div>
+        <div className="sld-wire-sub">Cross River, Lead, etc.</div>
+      </div>
+      <div className="sld-wire-flow">
+        <div className="sld-wire-amount">$24,000</div>
+        <div className="sld-wire-line">
+          <span className="sld-wire-pulse" />
+        </div>
+        <div className="sld-wire-time">48 – 72 hr</div>
+      </div>
+      <div className="sld-wire-node sld-wire-node-end">
+        <div className="sld-wire-icon">$</div>
+        <div className="sld-wire-label">Your business account</div>
+        <div className="sld-wire-sub">Merchant-direct · no intermediary</div>
+      </div>
+    </div>
+  );
+}
+
+/** 4-panel patient storyboard for slide 11. */
+function Storyboard(): JSX.Element {
+  const panels = [
+    {
+      n: '01',
+      t: 'Enter info',
+      b: 'Patient taps in last 4 of SSN, DOB, income, address on the iPad. 30 seconds.',
+    },
+    {
+      n: '02',
+      t: 'Soft pull',
+      b: 'Marketplace returns fundability tier in <10s. Zero credit impact. FCRA-compliant.',
+    },
+    {
+      n: '03',
+      t: 'See offers',
+      b: 'Three ranked offers on one screen. Cheapest first. Recommended star.',
+    },
+    {
+      n: '04',
+      t: 'Tap to fund',
+      b: 'Patient signs e-loan docs at the chair. Funds settle merchant-direct in 48-72 hr.',
+    },
+  ];
+  return (
+    <div className="sld-storyboard">
+      {panels.map((p, i) => (
+        <div key={i} className="sld-story-panel">
+          <div className="sld-story-n">{p.n}</div>
+          <div className="sld-story-t">{p.t}</div>
+          <div className="sld-story-b">{p.b}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Money-flow breakdown — where the $1.4M goes. Slide 2 supplement. */
+function MoneyBreakdown(): JSX.Element {
+  const rows = [
+    { k: 'Filler chair hours', sub: '~7 unfit consults/wk × 1.5 hr × $400/hr × 52', v: '$218,400' },
+    {
+      k: 'Truck-roll + estimator costs',
+      sub: 'fuel + opportunity cost on no-fund visits',
+      v: '$96,000',
+    },
+    {
+      k: 'Lost case acceptance',
+      sub: '~24 declined cases/yr × $48k avg ticket × 95%',
+      v: '$1,094,400',
+    },
+    {
+      k: 'Total annual leakage',
+      sub: 'illustrative · 3-chair implant practice',
+      v: '$1.41M',
+      total: true,
+    },
+  ];
+  return (
+    <div className="sld-money">
+      {rows.map((r, i) => (
+        <div key={i} className={`sld-money-row ${r.total ? 'is-total' : ''}`}>
+          <div>
+            <div className="sld-money-k">{r.k}</div>
+            <div className="sld-money-sub">{r.sub}</div>
+          </div>
+          <div className="sld-money-v">{r.v}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Sample invoice mock for slide 16. */
+function SampleInvoice(): JSX.Element {
+  return (
+    <div className="sld-invoice">
+      <div className="sld-invoice-head">
+        <div>
+          <div className="sld-invoice-from">MedPay · A vertical of EazePay</div>
+          <div className="sld-invoice-meta">NMLS #2456701 · ein 88-1234567</div>
+        </div>
+        <div className="sld-invoice-no">
+          <div className="sld-invoice-no-k">Invoice</div>
+          <div className="sld-invoice-no-v">INV-2026-04</div>
+        </div>
+      </div>
+      <div className="sld-invoice-period">Period · April 2026 · Helio Dental Group</div>
+      <table className="sld-invoice-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Funded volume</th>
+            <th>Rate</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Platform fee · % of funded volume</td>
+            <td>$184,200</td>
+            <td>4.0%</td>
+            <td>$7,368.00</td>
+          </tr>
+          <tr>
+            <td>Monthly platform fee</td>
+            <td>—</td>
+            <td>—</td>
+            <td>$0.00</td>
+          </tr>
+          <tr>
+            <td>Per-application fee (137 apps)</td>
+            <td>—</td>
+            <td>$0</td>
+            <td>$0.00</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={3}>
+              <strong>Total due</strong>
+            </td>
+            <td>
+              <strong>$7,368.00</strong>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <div className="sld-invoice-foot">
+        Auto-debited 5th of the following month · only when you fund · zero fixed cost
+      </div>
+    </div>
+  );
+}
+
+/** Onboarding timeline — day 1 → day 7 milestones. Slide 17 supplement. */
+function OnboardingTimeline(): JSX.Element {
+  const ms = [
+    { d: 'Day 0', t: 'Sign agreement', b: '5-min business signup · KYB clears in 60s' },
+    {
+      d: 'Day 1',
+      t: 'Wire setup',
+      b: 'Bank account verified via micro-deposit · ACH consent signed',
+    },
+    {
+      d: 'Day 2',
+      t: 'iPad / web flow live',
+      b: 'Apply link active · staff trained · first soft-pull live',
+    },
+    {
+      d: 'Day 3-7',
+      t: 'First funded patient',
+      b: 'Lender disburses to your account · daily reports flowing',
+    },
+  ];
+  return (
+    <div className="sld-timeline">
+      <div className="sld-timeline-line" />
+      {ms.map((m, i) => (
+        <div key={i} className="sld-timeline-node">
+          <div className="sld-timeline-dot" />
+          <div className="sld-timeline-day">{m.d}</div>
+          <div className="sld-timeline-t">{m.t}</div>
+          <div className="sld-timeline-b">{m.b}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 30-day roadmap for slide 18. */
+function RoadmapStrip(): JSX.Element {
+  const ms = [
+    { w: 'This week', t: 'Sign agreement + KYB', icon: '✎' },
+    { w: 'Week 1', t: 'Bank verify + staff training', icon: '⚙' },
+    { w: 'Week 2', t: 'First live patient applications', icon: '✦' },
+    { w: 'Day 30', t: 'First MedPay invoice (only if you fund)', icon: '◷' },
+  ];
+  return (
+    <div className="sld-roadmap">
+      {ms.map((m, i) => (
+        <div key={i} className="sld-roadmap-step">
+          <div className="sld-roadmap-icon">{m.icon}</div>
+          <div className="sld-roadmap-w">{m.w}</div>
+          <div className="sld-roadmap-t">{m.t}</div>
+          {i < ms.length - 1 && <div className="sld-roadmap-arrow">→</div>}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -2581,6 +2991,619 @@ const CSS = `
 }
 .sld-dot:hover { background: var(--mp-teal-2); }
 
+/* ===== New v3 components ===== */
+
+/* Section title — used to break up dense slides */
+.sld-section-title {
+  font-size: 12px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+/* Sub-row of 3-4 mini stats for stage slides */
+.sld-mini-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+.sld-mini-stat {
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--mp-line);
+  border-radius: 12px;
+}
+.sld-mini-stat-v {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.sld-mini-stat-k {
+  margin-top: 6px;
+  font-size: 10px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+
+/* Takeaway line for rep talk-track */
+.sld-takeaway {
+  margin: 0;
+  padding: 14px 18px;
+  background: rgba(34, 184, 160, 0.06);
+  border: 1px solid rgba(34, 184, 160, 0.18);
+  border-radius: 10px;
+  font-size: 13px; line-height: 1.6;
+  color: var(--mp-ink-2);
+}
+.sld-takeaway strong { color: var(--mp-teal); }
+
+/* iPad mockup */
+.sld-ipad {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  perspective: 1400px;
+}
+.sld-ipad-bezel {
+  width: 380px;
+  background: linear-gradient(180deg, #1a1f24 0%, #0d1115 100%);
+  border-radius: 28px;
+  padding: 14px;
+  box-shadow:
+    0 60px 110px -50px rgba(14, 124, 102, 0.40),
+    0 30px 60px -30px rgba(14, 124, 102, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: rotateX(6deg) rotateY(-8deg);
+  transform-style: preserve-3d;
+}
+.sld-ipad-screen {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.sld-ipad-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--mp-line);
+}
+.sld-ipad-brand {
+  font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-ipad-meta {
+  font-size: 9px; letter-spacing: 0.14em; font-weight: 600;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: rgba(15,23,42,0.04);
+  border-radius: 6px;
+}
+.sld-ipad-title {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+}
+.sld-ipad-sub {
+  font-size: 12px; color: var(--mp-mute);
+  margin-top: -8px;
+}
+.sld-ipad-form {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sld-ipad-field {
+  padding: 10px 14px;
+  background: rgba(15,23,42,0.04);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+  opacity: 0;
+  animation: sldIpadFieldIn .6s ease forwards;
+}
+@keyframes sldIpadFieldIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sld-ipad-field-k {
+  font-size: 9px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-ipad-field-v {
+  margin-top: 4px;
+  font-size: 13px; font-weight: 600;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-ipad-btn {
+  padding: 12px 18px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.sld-ipad-foot {
+  font-size: 9.5px; letter-spacing: 0.14em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* PRISM before/after flow */
+.sld-prism {
+  display: grid; grid-template-columns: 1fr 80px 1fr;
+  gap: 12px; align-items: center;
+  margin-top: 8px;
+}
+.sld-prism-col {
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+}
+.sld-prism-col.accent {
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.14), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+}
+.sld-prism-eyebrow {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.sld-prism-eyebrow.accent { color: var(--mp-teal); }
+.sld-prism-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.sld-prism-list li {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: var(--mp-ink-2);
+  padding: 6px 0;
+}
+.sld-prism-i {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  background: rgba(15,23,42,0.06);
+  color: var(--mp-mute);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sld-prism-i.accent {
+  background: rgba(34, 184, 160, 0.16);
+  color: var(--mp-teal);
+}
+.sld-prism-arrow {
+  text-align: center;
+  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 12px 0;
+  background: linear-gradient(180deg, rgba(34, 184, 160, 0.10), transparent);
+  border-radius: 12px;
+}
+.sld-prism-dropoff {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--mp-line);
+  font-size: 11px; font-weight: 600;
+  color: var(--mp-mute);
+  text-align: right;
+}
+.sld-prism-dropoff.accent { color: var(--mp-teal); }
+
+/* Offer stack — slide 8 */
+.sld-offer-stack {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 18px;
+  padding: 8px 22px;
+  margin-top: 8px;
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
+}
+.sld-offer-row {
+  display: grid; grid-template-columns: 2fr 1fr 0.6fr;
+  gap: 16px; align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px dashed var(--mp-line);
+  font-variant-numeric: tabular-nums;
+}
+.sld-offer-row:last-of-type { border-bottom: none; }
+.sld-offer-row.is-winner {
+  background: linear-gradient(90deg, rgba(34, 184, 160, 0.08), transparent);
+  margin: 0 -22px; padding: 16px 22px;
+}
+.sld-offer-lender {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 600;
+  color: var(--mp-ink);
+}
+.sld-offer-star { color: var(--mp-teal-2); font-size: 18px; }
+.sld-offer-bullet {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: rgba(15, 23, 42, 0.18);
+  display: inline-block;
+}
+.sld-offer-tag {
+  font-size: 9.5px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: rgba(15,23,42,0.04);
+  border-radius: 6px;
+  margin-left: 4px;
+}
+.sld-offer-row.is-winner .sld-offer-tag {
+  background: rgba(34, 184, 160, 0.18);
+  color: var(--mp-teal);
+}
+.sld-offer-monthly {
+  font-size: 20px; font-weight: 800;
+  text-align: right;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+}
+.sld-offer-monthly span { font-size: 12px; font-weight: 500; color: var(--mp-mute); }
+.sld-offer-term {
+  font-size: 13px; font-weight: 600;
+  text-align: right;
+  color: var(--mp-ink-2);
+}
+.sld-offer-foot {
+  padding: 14px 0 6px;
+  font-size: 10.5px; letter-spacing: 0.14em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Bank wire — slide 9 */
+.sld-wire {
+  display: grid; grid-template-columns: 220px 1fr 220px;
+  gap: 24px; align-items: center;
+  margin-top: 8px;
+  padding: 36px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 22px;
+}
+.sld-wire-node {
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.sld-wire-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800;
+  box-shadow: 0 14px 30px -14px rgba(14, 124, 102, 0.45);
+}
+.sld-wire-node-end .sld-wire-icon {
+  background: linear-gradient(135deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
+}
+.sld-wire-label {
+  font-size: 13px; font-weight: 700;
+  color: var(--mp-ink);
+}
+.sld-wire-sub {
+  font-size: 11px; color: var(--mp-mute);
+}
+.sld-wire-flow {
+  text-align: center;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.sld-wire-amount {
+  font-size: 28px; font-weight: 800;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-wire-line {
+  position: relative;
+  width: 100%; height: 4px;
+  background: linear-gradient(90deg, var(--mp-deep), var(--mp-teal), var(--mp-teal-2));
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sld-wire-pulse {
+  position: absolute; top: -3px; left: 0;
+  width: 30px; height: 10px;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.9), transparent 70%);
+  border-radius: 999px;
+  animation: sldWirePulse 2.4s ease-in-out infinite;
+}
+@keyframes sldWirePulse {
+  from { left: -30px; }
+  to { left: 100%; }
+}
+.sld-wire-time {
+  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+
+/* Storyboard — slide 11 */
+.sld-storyboard {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 8px;
+}
+.sld-story-panel {
+  padding: 24px 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sld-story-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
+}
+.sld-story-panel::before {
+  content: '';
+  position: absolute; top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(34, 184, 160, 0.10), transparent 70%);
+  pointer-events: none;
+}
+.sld-story-n {
+  font-size: 11px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal);
+}
+.sld-story-t {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--mp-ink);
+}
+.sld-story-b {
+  font-size: 13.5px; color: var(--mp-ink-2);
+  line-height: 1.55;
+}
+
+/* Money breakdown — slide 2 */
+.sld-money {
+  display: flex; flex-direction: column;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.sld-money-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px dashed var(--mp-line);
+  gap: 24px;
+}
+.sld-money-row:last-child { border-bottom: none; }
+.sld-money-row.is-total {
+  background: linear-gradient(90deg, rgba(34, 184, 160, 0.10) 0%, transparent 100%);
+  border-top: 1px solid var(--mp-line-strong);
+}
+.sld-money-k {
+  font-size: 14px; font-weight: 700;
+  color: var(--mp-ink);
+}
+.sld-money-sub {
+  margin-top: 3px;
+  font-size: 12px; color: var(--mp-mute);
+}
+.sld-money-v {
+  font-size: 22px; font-weight: 800;
+  color: var(--mp-ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.sld-money-row.is-total .sld-money-v {
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-size: 28px;
+}
+
+/* Pricing 2-col grid + sample invoice */
+.sld-price-grid {
+  display: grid; grid-template-columns: 1fr 1.05fr;
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 12px;
+}
+.sld-price-card { margin: 0 !important; padding: 8px 22px !important; }
+.sld-invoice {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 18px;
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.25);
+  font-size: 13px;
+}
+.sld-invoice-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--mp-line);
+}
+.sld-invoice-from { font-weight: 700; color: var(--mp-ink); }
+.sld-invoice-meta { font-size: 11px; color: var(--mp-mute); margin-top: 2px; }
+.sld-invoice-no { text-align: right; }
+.sld-invoice-no-k {
+  font-size: 9px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-invoice-no-v {
+  font-size: 14px; font-weight: 700;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-invoice-period {
+  font-size: 11px; letter-spacing: 0.16em;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 14px;
+  margin-bottom: 12px;
+}
+.sld-invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.sld-invoice-table th,
+.sld-invoice-table td {
+  text-align: left;
+  padding: 9px 8px;
+  font-size: 12px;
+  border-bottom: 1px dashed var(--mp-line);
+}
+.sld-invoice-table th {
+  font-size: 9.5px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-invoice-table td:nth-child(2),
+.sld-invoice-table td:nth-child(3),
+.sld-invoice-table td:nth-child(4),
+.sld-invoice-table th:nth-child(2),
+.sld-invoice-table th:nth-child(3),
+.sld-invoice-table th:nth-child(4) {
+  text-align: right;
+}
+.sld-invoice-table tfoot td {
+  border-bottom: none;
+  border-top: 1px solid var(--mp-line-strong);
+  padding-top: 12px;
+  color: var(--mp-teal);
+}
+.sld-invoice-foot {
+  margin-top: 12px;
+  font-size: 10.5px; color: var(--mp-mute);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* Onboarding timeline — slide 17 */
+.sld-timeline {
+  position: relative;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+  padding: 30px 12px 0;
+}
+.sld-timeline-line {
+  position: absolute;
+  top: 38px; left: 6%; right: 6%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--mp-deep), var(--mp-teal-2));
+  border-radius: 999px;
+  z-index: 0;
+}
+.sld-timeline-node {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  z-index: 1;
+}
+.sld-timeline-dot {
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  background: var(--mp-teal-2);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 4px rgba(34, 184, 160, 0.2);
+  margin-bottom: 14px;
+}
+.sld-timeline-day {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.sld-timeline-t {
+  font-size: 16px; font-weight: 700;
+  color: var(--mp-ink);
+  margin-bottom: 6px;
+}
+.sld-timeline-b {
+  font-size: 12.5px; color: var(--mp-ink-2);
+  line-height: 1.5;
+  max-width: 220px;
+}
+
+/* Onboarding checklist */
+.sld-checklist {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+.sld-check {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+  font-size: 13px; color: var(--mp-ink-2);
+}
+.sld-check-icon {
+  width: 20px; height: 20px;
+  border-radius: 999px;
+  background: rgba(34, 184, 160, 0.18);
+  color: var(--mp-teal);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+
+/* Roadmap strip — slide 18 */
+.sld-roadmap {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+  align-items: stretch;
+}
+.sld-roadmap-step {
+  position: relative;
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sld-roadmap-icon {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: rgba(34, 184, 160, 0.14);
+  color: var(--mp-teal);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+}
+.sld-roadmap-w {
+  font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-roadmap-t {
+  font-size: 14px; font-weight: 600;
+  color: var(--mp-ink);
+  line-height: 1.4;
+}
+.sld-roadmap-arrow {
+  position: absolute;
+  top: 50%; right: -10px;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--mp-line-strong);
+  background: transparent;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .sld-h1 { font-size: 52px; }
@@ -2599,6 +3622,18 @@ const CSS = `
   .sld-trust-grid { grid-template-columns: repeat(2, 1fr); }
   .sld-cta-grid { grid-template-columns: 1fr; }
   .sld-bar-row { grid-template-columns: 1fr; }
+  .sld-mini-stats { grid-template-columns: repeat(2, 1fr); }
+  .sld-prism { grid-template-columns: 1fr; }
+  .sld-prism-arrow { padding: 6px; }
+  .sld-storyboard { grid-template-columns: repeat(2, 1fr); }
+  .sld-timeline { grid-template-columns: repeat(2, 1fr); }
+  .sld-timeline-line { display: none; }
+  .sld-roadmap { grid-template-columns: 1fr; }
+  .sld-roadmap-arrow { display: none; }
+  .sld-wire { grid-template-columns: 1fr; }
+  .sld-checklist { grid-template-columns: 1fr; }
+  .sld-price-grid { grid-template-columns: 1fr; }
+  .sld-ipad-bezel { transform: rotateX(4deg) rotateY(-4deg); }
   .sld-slide { padding: 60px 32px; }
 }
 @media (max-width: 640px) {
