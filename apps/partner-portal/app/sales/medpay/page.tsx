@@ -46,7 +46,7 @@ const SLIDES_RAW: Slide[] = [
               <span className="grad-teal-deep">MedPay is a</span>{' '}
               <span className="grad-teal">patient-financing platform</span>
               <br />
-              <span className="grad-teal-deep">built for the chair.</span>
+              <span className="grad-teal-deep">built for elective care.</span>
             </h1>
           </Reveal>
           <Reveal delay={240}>
@@ -101,7 +101,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            A 3-chair practice loses an estimated{' '}
+            A mid-size practice loses an estimated{' '}
             <strong>
               $<AnimatedCounter to={1.4} decimals={1} />M a year
             </strong>{' '}
@@ -202,7 +202,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">Soft-pull pre-qual at the chair.</span>
+            <span className="grad-teal-deep">Soft-pull pre-qual, in-session.</span>
             <br />
             <span className="grad-teal">Lender marketplace.</span>{' '}
             <span className="grad-teal-deep">Funds in 48 to 72 hours.</span>
@@ -218,7 +218,7 @@ const SLIDES_RAW: Slide[] = [
             <Pillar
               n="01"
               head="Speed"
-              body="Patient enters last 4 of SSN + DOB on your iPad. Fundability tier returns in under 10 seconds. Zero credit impact."
+              body="Patient enters last 4 of SSN + DOB on any browser, on any device. Fundability tier returns in under 10 seconds. Zero credit impact."
             />
             <Pillar
               n="02"
@@ -251,14 +251,14 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={120}>
             <h2 className="sld-h2">
-              <span className="grad-teal-deep">Soft-pull EZ Check</span>{' '}
-              <span className="grad-teal">on the iPad.</span>
+              <span className="grad-teal-deep">Soft-pull EZ Check.</span>{' '}
+              <span className="grad-teal">Ten seconds. Zero impact.</span>
             </h2>
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
               Four fields. Ten seconds. A real fundability tier comes back before the patient hands
-              the iPad back. They haven&apos;t authorized a hard pull, so they can still walk away
+              the screen back. They have not authorized a hard pull, so they can still walk away
               with zero credit consequence.
             </p>
           </Reveal>
@@ -272,9 +272,9 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              <strong>For the rep:</strong> the patient walks back with the iPad already knowing
-              they qualify. The next sentence is &ldquo;here&apos;s your treatment plan,&rdquo; not
-              &ldquo;let me check if you can afford it.&rdquo;
+              For the rep: the patient walks back already knowing they qualify. The next sentence is
+              &ldquo;here&apos;s your treatment plan,&rdquo; not &ldquo;let me check if you can
+              afford it.&rdquo;
             </p>
           </Reveal>
         </div>
@@ -341,14 +341,14 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={120}>
           <h2 className="sld-h2">
             <span className="grad-teal-deep">Best offer wins.</span>{' '}
-            <span className="grad-teal">Patient signs at the chair.</span>
+            <span className="grad-teal">Patient signs in the same visit.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
             Three ranked offers on one screen. Sorted by total cost, not commission. The starred row
             is what your patient actually picks 80% of the time. One tap to accept. E-signature on
-            the same screen. They&apos;re funded before they leave the chair.
+            the same screen. They are funded before they walk out the door.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -432,7 +432,7 @@ const SLIDES_RAW: Slide[] = [
               <AnimatedCounter to={38} suffix="%" /> closes
             </span>{' '}
             <span className="grad-teal-deep">
-              becomes <AnimatedCounter to={70} suffix="%+" delay={400} /> at the chair.
+              becomes <AnimatedCounter to={70} suffix="%+" delay={400} /> same-day.
             </span>
           </h2>
         </Reveal>
@@ -463,7 +463,8 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            The entire patient journey happens at the chair, on the iPad, in under three minutes.
+            The entire patient journey happens in one session, on a single screen, in under three
+            minutes.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -516,7 +517,7 @@ const SLIDES_RAW: Slide[] = [
                 { v: '$184k', l: 'Recovered / 90 days' },
               ]}
               name="Dr. Helio Park"
-              role="Owner · 3-chair implant practice"
+              role="Owner · implant practice"
             />
             <CaseCard
               tag="Med spa · CA"
@@ -640,21 +641,28 @@ const SLIDES_RAW: Slide[] = [
                 <div className="sld-price-hero-includes-eyebrow">What you get</div>
                 <ul>
                   <li>
-                    <strong>Pre-qualification agents</strong> — credit · income · DTI · pre-approval
-                    $ on every lead
+                    <span className="sld-price-li-h">Pre-qualification agents</span>
+                    <span className="sld-price-li-b">
+                      Credit · income · DTI · pre-approval $ on every lead
+                    </span>
                   </li>
                   <li>
-                    <strong>EazePay partner portal</strong> — full team access, live data, audit log
+                    <span className="sld-price-li-h">EazePay partner portal</span>
+                    <span className="sld-price-li-b">
+                      Full team access, live data, complete audit log
+                    </span>
                   </li>
                   <li>
-                    <strong>Application submission + tracking</strong> — pipeline, decisions,
-                    payouts
+                    <span className="sld-price-li-h">Application submission + tracking</span>
+                    <span className="sld-price-li-b">Pipeline, decisions, payouts</span>
                   </li>
                   <li>
-                    <strong>Lender marketplace</strong> — parallel quoting, best offer wins
+                    <span className="sld-price-li-h">Lender marketplace</span>
+                    <span className="sld-price-li-b">Parallel quoting, best offer wins</span>
                   </li>
                   <li>
-                    <strong>Payment processing</strong> — optional, included if you want it
+                    <span className="sld-price-li-h">Payment processing</span>
+                    <span className="sld-price-li-b">Optional, included if you want it</span>
                   </li>
                 </ul>
               </div>
@@ -686,8 +694,8 @@ const SLIDES_RAW: Slide[] = [
             className="sld-sub"
             style={{ marginTop: '20px', textAlign: 'center', fontSize: '15px' }}
           >
-            One <strong>$10,000 setup</strong> fee unlocks the full platform. No monthly bill, no
-            per-application charge. Live and running traffic inside <strong>5 days</strong>.
+            One $10,000 setup fee unlocks the full platform. No monthly bill, no per-application
+            charge. Live and running traffic inside five business days.
           </p>
         </Reveal>
       </div>
@@ -732,7 +740,7 @@ const SLIDES_RAW: Slide[] = [
             <Check k="Owner name, DOB, last 4 SSN, ownership %" />
             <Check k="Business bank account (routing + account)" />
             <Check k="Driver's license + business license (uploaded)" />
-            <Check k="iPad or any web browser (no hardware to install)" />
+            <Check k="Any web browser, any device (no hardware to install)" />
             <Check k="One signature on the agreement (e-sign)" />
           </div>
         </Reveal>
@@ -860,7 +868,7 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={120}>
             <h2 className="sld-h2">
-              <span className="grad-teal-deep">If they don&apos;t sign at the chair,</span>{' '}
+              <span className="grad-teal-deep">If they don&apos;t sign in-session,</span>{' '}
               <span className="grad-teal">they sign on their phone.</span>
             </h2>
           </Reveal>
@@ -881,9 +889,8 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              <strong>For the rep:</strong> the patient who said &ldquo;let me think&rdquo; used to
-              never come back. With smartphone continuity, 31% sign within 48 hours of leaving the
-              chair.
+              For the rep: the patient who said &ldquo;let me think&rdquo; used to never come back.
+              With smartphone continuity, 31% sign within 48 hours of leaving the office.
             </p>
           </Reveal>
         </div>
@@ -908,7 +915,7 @@ const SLIDES_RAW: Slide[] = [
             <span className="grad-teal">ortho, and high-ticket general.</span>
           </>
         }
-        intro="Dental is MedPay's anchor vertical. Implants, ortho, sleep apnea, full-mouth reconstruction — the cases where the patient sits in your chair and the ask is $8k–$50k."
+        intro="Dental is MedPay's anchor vertical. Implants, ortho, sleep apnea, full-mouth reconstruction — the cases where the patient sits down with you and the ask is $8k–$50k."
         ticketRange="$3,000 – $50,000"
         ticketLabel="Single tooth implant to full-mouth reconstruction"
         highlight={{ v: '38% → 70%+', k: 'Same-day close uplift' }}
@@ -920,12 +927,12 @@ const SLIDES_RAW: Slide[] = [
         ]}
         outcomes={[
           { v: '2.1×', k: 'Same-day close uplift' },
-          { v: '$184k', k: 'Recovered / 90 days · 3-chair practice' },
+          { v: '$184k', k: 'Recovered / 90 days · mid-size practice' },
           { v: '−41%', k: 'Form drop-off vs. legacy program' },
         ]}
-        quote="We were losing a case a week to financing. First month on MedPay, same-day close went from a third to two-thirds. Patients leave the chair already approved."
+        quote="We were losing a case a week to financing. First month on MedPay, same-day close went from a third to two-thirds. Patients walk out already approved."
         attribution="Dr. Helio Park"
-        attributionRole="Owner · 3-chair implant practice · Austin TX"
+        attributionRole="Owner · implant practice · Austin TX"
       />
     ),
   },
@@ -1143,7 +1150,7 @@ const NARRATIVE_ORDER = [
   3, //  · The 3 pillars
   27, // · Six agents · one platform
   10, // · Patient journey overview (4-panel storyboard)
-  4, //  · Stage 1: Soft-pull pre-qual (iPad)
+  4, //  · Stage 1: Soft-pull pre-qual
   18, // · Stage 2: HELIX smart forms + multi-stage routing
   6, //  · Stage 3: Lender marketplace
   7, //  · Stage 4: Best offer wins
@@ -1541,59 +1548,91 @@ function ParticleField({ count = 24 }: { count?: number }): JSX.Element {
 /** Animated lender marketplace — 8 chips fire in parallel from a
  *  central dot, return with offers, sort by price. Used on slide 7. */
 function MarketplaceViz(): JSX.Element {
-  const LENDERS = ['L01', 'L02', 'L03', 'L04', 'L05', 'L06', 'L07', 'L08'];
+  // Each row represents a lender quoting in parallel from the same
+  // single submission. APRs/terms intentionally illustrative.
+  const QUOTES = [
+    { lender: 'BuildBank', apr: '14.9%', mo: '$436', term: '60', winner: true },
+    { lender: 'CoreCredit', apr: '15.6%', mo: '$480', term: '60' },
+    { lender: 'FinWise', apr: '16.4%', mo: '$510', term: '60' },
+    { lender: 'PrimeArc', apr: '17.2%', mo: '$534', term: '60' },
+    { lender: 'NorthLend', apr: '18.0%', mo: '$556', term: '60' },
+    { lender: 'OakCapital', apr: '19.4%', mo: '$598', term: '60' },
+  ];
   return (
-    <div className="sld-mp-scene">
-      <div className="sld-mp-core">
-        <span className="sld-mp-core-dot" />
-        <span className="sld-mp-core-label">Apply</span>
+    <div className="sld-mp">
+      {/* LEFT: one application */}
+      <div className="sld-mp-app">
+        <div className="sld-mp-app-eyebrow">ONE APPLICATION</div>
+        <div className="sld-mp-app-card">
+          <div className="sld-mp-app-row">
+            <span className="sld-mp-app-k">Ticket</span>
+            <span className="sld-mp-app-v">$18,000</span>
+          </div>
+          <div className="sld-mp-app-row">
+            <span className="sld-mp-app-k">Term</span>
+            <span className="sld-mp-app-v">60 mo</span>
+          </div>
+          <div className="sld-mp-app-row">
+            <span className="sld-mp-app-k">Credit</span>
+            <span className="sld-mp-app-v">724</span>
+          </div>
+          <div className="sld-mp-app-row">
+            <span className="sld-mp-app-k">Soft pull</span>
+            <span className="sld-mp-app-v">FCRA · 0 impact</span>
+          </div>
+        </div>
+        <div className="sld-mp-app-sig">
+          <span className="sld-mp-app-sig-dot" />
+          Submitted in parallel to every lender
+        </div>
       </div>
-      <div className="sld-mp-orbit">
-        {LENDERS.map((l, i) => {
-          const angle = (i / LENDERS.length) * Math.PI * 2;
-          const x = Math.cos(angle) * 220;
-          const y = Math.sin(angle) * 140;
-          return (
-            <div
-              key={l}
-              className="sld-mp-chip"
-              style={{
-                transform: `translate(${x}px, ${y}px)`,
-                animationDelay: `${i * 0.08}s`,
-              }}
-            >
-              <span className="sld-mp-chip-dot" />
-              <span className="sld-mp-chip-label">{l}</span>
-            </div>
-          );
-        })}
-        <svg className="sld-mp-rays" viewBox="-300 -200 600 400" aria-hidden>
-          {LENDERS.map((l, i) => {
-            const angle = (i / LENDERS.length) * Math.PI * 2;
-            const x = Math.cos(angle) * 220;
-            const y = Math.sin(angle) * 140;
-            return (
-              <line
-                key={l}
-                x1="0"
-                y1="0"
-                x2={x}
-                y2={y}
-                stroke="rgba(34, 184, 160, 0.32)"
-                strokeWidth="1"
-                strokeDasharray="3 4"
-              />
-            );
-          })}
+
+      {/* CENTER: parallel quoting bus */}
+      <div className="sld-mp-bus" aria-hidden>
+        <svg viewBox="0 0 100 240" preserveAspectRatio="none">
+          {QUOTES.map((_, i) => (
+            <path
+              key={i}
+              d={`M 0 120 C 50 120, 50 ${20 + i * 36}, 100 ${20 + i * 36}`}
+              stroke={i === 0 ? 'rgba(14, 124, 102, 0.55)' : 'rgba(14, 124, 102, 0.25)'}
+              strokeWidth={i === 0 ? '2' : '1.4'}
+              strokeDasharray="4 4"
+              fill="none"
+            />
+          ))}
         </svg>
       </div>
-      <div className="sld-mp-result">
-        <div className="sld-mp-result-eyebrow">
-          <span className="sld-mp-pulse" /> Best offer wins
+
+      {/* RIGHT: ranked lender quotes — cheapest first, winner starred */}
+      <div className="sld-mp-quotes">
+        <div className="sld-mp-quotes-eyebrow">
+          <span className="sld-mp-quotes-pulse" />
+          PARALLEL QUOTES · CHEAPEST FIRST
         </div>
-        <div className="sld-mp-result-row">
-          <span className="sld-mp-result-star">★</span>
-          <span>$250 / mo · 48 mo · cheapest</span>
+        {QUOTES.map((q, i) => (
+          <div
+            key={q.lender}
+            className={`sld-mp-quote ${q.winner ? 'is-winner' : ''}`}
+            style={{ animationDelay: `${i * 0.08}s` }}
+          >
+            <span className="sld-mp-quote-rank">{String(i + 1).padStart(2, '0')}</span>
+            <div className="sld-mp-quote-body">
+              <span className="sld-mp-quote-lender">{q.lender}</span>
+              <span className="sld-mp-quote-meta">
+                {q.apr} APR · {q.term} mo
+              </span>
+            </div>
+            <span className="sld-mp-quote-mo">{q.mo}/mo</span>
+            {q.winner && (
+              <span className="sld-mp-quote-star" aria-hidden>
+                ★
+              </span>
+            )}
+          </div>
+        ))}
+        <div className="sld-mp-quotes-foot">
+          <span className="sld-mp-quotes-foot-k">Best offer wins</span>
+          <span className="sld-mp-quotes-foot-v">$436/mo · 60 mo · BuildBank</span>
         </div>
       </div>
     </div>
@@ -1623,7 +1662,7 @@ function BarRace(): JSX.Element {
       <div className="sld-bar-delta">
         <span className="sld-bar-delta-tag">Delta</span>
         <span className="sld-bar-delta-val">+32 pts same-day close</span>
-        <span className="sld-bar-delta-sub">Financing-at-chair baseline · illustrative</span>
+        <span className="sld-bar-delta-sub">In-session financing baseline · illustrative</span>
       </div>
     </div>
   );
@@ -1643,7 +1682,7 @@ function VsTable(): JSX.Element {
       med: 'Marketplace coverage · $3k to $50k',
     },
     {
-      k: 'Pre-qual at the chair',
+      k: 'Pre-qual in-session',
       single: 'Soft pull with that lender',
       med: 'Soft pull across the marketplace',
     },
@@ -1801,7 +1840,7 @@ function Storyboard(): JSX.Element {
     {
       n: '01',
       t: 'Enter info',
-      b: 'Patient taps in last 4 of SSN, DOB, income, address on the iPad. 30 seconds.',
+      b: 'Patient taps in last 4 of SSN, DOB, income, address on any device. 30 seconds.',
     },
     {
       n: '02',
@@ -1816,7 +1855,7 @@ function Storyboard(): JSX.Element {
     {
       n: '04',
       t: 'Tap to fund',
-      b: 'Patient signs e-loan docs at the chair. Funds settle merchant-direct in 48-72 hr.',
+      b: 'Patient signs e-loan docs in-session. Funds settle merchant-direct in 48-72 hr.',
     },
   ];
   return (
@@ -1835,7 +1874,11 @@ function Storyboard(): JSX.Element {
 /** Money-flow breakdown — where the $1.4M goes. Slide 2 supplement. */
 function MoneyBreakdown(): JSX.Element {
   const rows = [
-    { k: 'Filler chair hours', sub: '~7 unfit consults/wk × 1.5 hr × $400/hr × 52', v: '$218,400' },
+    {
+      k: 'Filler clinical hours',
+      sub: '~7 unfit consults/wk × 1.5 hr × $400/hr × 52',
+      v: '$218,400',
+    },
     {
       k: 'Truck-roll + estimator costs',
       sub: 'fuel + opportunity cost on no-fund visits',
@@ -1848,7 +1891,7 @@ function MoneyBreakdown(): JSX.Element {
     },
     {
       k: 'Total annual leakage',
-      sub: 'illustrative · 3-chair implant practice',
+      sub: 'illustrative · implant practice',
       v: '$1.41M',
       total: true,
     },
@@ -2001,119 +2044,170 @@ function RoadmapStrip(): JSX.Element {
  *  agent middle, three reps on the right with capacity badges. */
 function SmartRoutingViz(): JSX.Element {
   return (
-    <div className="sld-flow">
-      {/* Top row — linear stages before the fork */}
-      <div className="sld-flow-row sld-flow-row-pre">
-        <div className="sld-flow-node sld-flow-node-start">
-          <div className="sld-flow-node-eyebrow">Inbound</div>
-          <div className="sld-flow-node-title">New lead</div>
-          <div className="sld-flow-node-sub">From your ads, site, or referral</div>
+    <div className="sld-funnel">
+      {/* Ambient depth — soft radial wash behind the whole funnel */}
+      <div className="sld-funnel-bg" aria-hidden />
+
+      {/* Tier 1 · widest — inbound traffic */}
+      <div className="sld-funnel-tier sld-funnel-tier-1">
+        <div className="sld-funnel-tier-band">
+          <span className="sld-funnel-tier-pct">100%</span>
+          <span className="sld-funnel-tier-h">All inbound leads</span>
+          <span className="sld-funnel-tier-b">Ads · site · referrals · campaigns</span>
         </div>
-        <div className="sld-flow-arrow" aria-hidden>
-          →
+      </div>
+
+      {/* Tier 2 · narrower — HELIX smart form */}
+      <div className="sld-funnel-tier sld-funnel-tier-2">
+        <div className="sld-funnel-tier-band">
+          <span className="sld-funnel-tier-tag">HELIX · INTAKE</span>
+          <span className="sld-funnel-tier-h">Smart form reshapes on partial answers</span>
+          <span className="sld-funnel-tier-b">
+            Procedure · ticket · contact — order rewritten by intent signal
+          </span>
         </div>
-        <div className="sld-flow-node">
-          <div className="sld-flow-node-eyebrow">HELIX · intake</div>
-          <div className="sld-flow-node-title">Smart form</div>
-          <div className="sld-flow-node-sub">Reshapes on partial answers</div>
-        </div>
-        <div className="sld-flow-arrow" aria-hidden>
-          →
-        </div>
-        <div className="sld-flow-node sld-flow-node-oracle">
-          <div className="sld-flow-node-eyebrow">ORACLE</div>
-          <div className="sld-flow-node-title">Financial qualification</div>
-          <div className="sld-flow-node-sub">
-            Credit score · available credit · income · DTI · pre-approval $
+      </div>
+
+      {/* Tier 3 · narrower — ORACLE financial qualification */}
+      <div className="sld-funnel-tier sld-funnel-tier-3">
+        <div className="sld-funnel-tier-band">
+          <span className="sld-funnel-tier-tag">ORACLE · QUALIFY</span>
+          <span className="sld-funnel-tier-h">Financial qualification on every lead</span>
+          <div className="sld-funnel-tier-pills">
+            <span className="sld-funnel-pill">Credit score</span>
+            <span className="sld-funnel-pill">Available credit</span>
+            <span className="sld-funnel-pill">Income</span>
+            <span className="sld-funnel-pill">DTI</span>
+            <span className="sld-funnel-pill">Pre-approval $</span>
           </div>
         </div>
       </div>
 
-      {/* HELIX router strip */}
-      <div className="sld-flow-fork">
-        <div className="sld-flow-fork-tag">
-          <span className="sld-flow-fork-dot" /> HELIX router · multi-stage
+      {/* Fork — HELIX router splits into two paths */}
+      <div className="sld-funnel-fork" aria-hidden>
+        <svg viewBox="0 0 600 80" preserveAspectRatio="none">
+          <path
+            d="M 300 0 L 110 80"
+            stroke="rgba(14, 124, 102, 0.45)"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            fill="none"
+          />
+          <path
+            d="M 300 0 L 490 80"
+            stroke="rgba(14, 124, 102, 0.25)"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            fill="none"
+          />
+        </svg>
+        <div className="sld-funnel-fork-tag">
+          <span className="sld-funnel-fork-dot" />
+          HELIX router · multi-stage
         </div>
       </div>
 
-      {/* Two-branch routing */}
-      <div className="sld-flow-branches">
-        {/* HIGH-TICKET path */}
-        <div className="sld-flow-branch sld-flow-branch-high">
-          <div className="sld-flow-branch-head">
-            <div className="sld-flow-branch-tag">HIGH-TICKET FUNNEL</div>
-            <div className="sld-flow-branch-criteria">
+      {/* Two-branch fork */}
+      <div className="sld-funnel-branches">
+        {/* HIGH-TICKET — leans forward (3D), deeper teal */}
+        <div className="sld-funnel-branch sld-funnel-branch-high">
+          <div className="sld-funnel-branch-head">
+            <span className="sld-funnel-branch-tag">HIGH-TICKET FUNNEL</span>
+            <span className="sld-funnel-branch-crit">
               ≥ 680 score · ≥ $5k available · DTI &lt; 40%
-            </div>
+            </span>
           </div>
-          <div className="sld-flow-steps">
-            <div className="sld-flow-step">
-              <div className="sld-flow-step-n">01</div>
-              <div className="sld-flow-step-h">Filter by credit score</div>
-              <div className="sld-flow-step-b">Drop below 680 to low-ticket lane</div>
-            </div>
-            <div className="sld-flow-step-arrow">↓</div>
-            <div className="sld-flow-step">
-              <div className="sld-flow-step-n">02</div>
-              <div className="sld-flow-step-h">Filter by income</div>
-              <div className="sld-flow-step-b">≥ $75k household · or co-signer flagged</div>
-            </div>
-            <div className="sld-flow-step-arrow">↓</div>
-            <div className="sld-flow-step">
-              <div className="sld-flow-step-n">03</div>
-              <div className="sld-flow-step-h">Filter by available credit</div>
-              <div className="sld-flow-step-b">≥ ticket size after lender pre-approval</div>
-            </div>
-            <div className="sld-flow-step-arrow">↓</div>
-            <div className="sld-flow-step sld-flow-step-final">
-              <div className="sld-flow-step-n">→</div>
-              <div className="sld-flow-step-h">Booked on calendar</div>
-              <div className="sld-flow-step-b">Right rep · right slot · pre-approved</div>
-            </div>
+          <ol className="sld-funnel-branch-steps">
+            <li>
+              <span className="sld-funnel-step-n">01</span>
+              <span className="sld-funnel-step-h">Filter by credit score</span>
+              <span className="sld-funnel-step-b">Below 680 → low-ticket lane</span>
+            </li>
+            <li>
+              <span className="sld-funnel-step-n">02</span>
+              <span className="sld-funnel-step-h">Filter by income</span>
+              <span className="sld-funnel-step-b">≥ $75k household or co-signer flag</span>
+            </li>
+            <li>
+              <span className="sld-funnel-step-n">03</span>
+              <span className="sld-funnel-step-h">Filter by available credit</span>
+              <span className="sld-funnel-step-b">≥ ticket size after pre-approval</span>
+            </li>
+          </ol>
+          <div className="sld-funnel-branch-outcome">
+            <span className="sld-funnel-branch-outcome-icon" aria-hidden>
+              →
+            </span>
+            <span>Booked on calendar · pre-approved</span>
           </div>
         </div>
 
-        {/* LOW-TICKET path */}
-        <div className="sld-flow-branch sld-flow-branch-low">
-          <div className="sld-flow-branch-head">
-            <div className="sld-flow-branch-tag">LOW-TICKET FUNNEL</div>
-            <div className="sld-flow-branch-criteria">
+        {/* LOW-TICKET — leans back, lighter */}
+        <div className="sld-funnel-branch sld-funnel-branch-low">
+          <div className="sld-funnel-branch-head">
+            <span className="sld-funnel-branch-tag">LOW-TICKET FUNNEL</span>
+            <span className="sld-funnel-branch-crit">
               Below score / income threshold · still warm
-            </div>
+            </span>
           </div>
-          <div className="sld-flow-steps">
-            <div className="sld-flow-step">
-              <div className="sld-flow-step-n">01</div>
-              <div className="sld-flow-step-h">Free guide / e-book</div>
-              <div className="sld-flow-step-b">Capture email · educate · stay top-of-mind</div>
-            </div>
-            <div className="sld-flow-step-arrow">↓</div>
-            <div className="sld-flow-step">
-              <div className="sld-flow-step-n">02</div>
-              <div className="sld-flow-step-h">Low-ticket offer</div>
-              <div className="sld-flow-step-b">$99 consult, $199 evaluation, starter package</div>
-            </div>
-            <div className="sld-flow-step-arrow">↓</div>
-            <div className="sld-flow-step">
-              <div className="sld-flow-step-n">03</div>
-              <div className="sld-flow-step-h">Nurture · re-pull in 90d</div>
-              <div className="sld-flow-step-b">Income changes · credit heals · re-qualify</div>
-            </div>
-            <div className="sld-flow-step-arrow">↓</div>
-            <div className="sld-flow-step sld-flow-step-final">
-              <div className="sld-flow-step-n">→</div>
-              <div className="sld-flow-step-h">Routed back to high-ticket</div>
-              <div className="sld-flow-step-b">Or stays converted on the entry offer</div>
-            </div>
+          <ol className="sld-funnel-branch-steps">
+            <li>
+              <span className="sld-funnel-step-n">01</span>
+              <span className="sld-funnel-step-h">Free guide / e-book</span>
+              <span className="sld-funnel-step-b">Capture email · educate · stay top-of-mind</span>
+            </li>
+            <li>
+              <span className="sld-funnel-step-n">02</span>
+              <span className="sld-funnel-step-h">Low-ticket starter offer</span>
+              <span className="sld-funnel-step-b">$99 consult · $199 evaluation</span>
+            </li>
+            <li>
+              <span className="sld-funnel-step-n">03</span>
+              <span className="sld-funnel-step-h">Nurture · re-pull in 90 days</span>
+              <span className="sld-funnel-step-b">Income / credit healed → re-qualify</span>
+            </li>
+          </ol>
+          <div className="sld-funnel-branch-outcome">
+            <span className="sld-funnel-branch-outcome-icon" aria-hidden>
+              ↩
+            </span>
+            <span>Routed back to high-ticket</span>
           </div>
         </div>
+      </div>
+
+      {/* Convergence — both paths feed one revenue outcome */}
+      <div className="sld-funnel-converge" aria-hidden>
+        <svg viewBox="0 0 600 60" preserveAspectRatio="none">
+          <path
+            d="M 110 0 L 300 60"
+            stroke="rgba(14, 124, 102, 0.45)"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            fill="none"
+          />
+          <path
+            d="M 490 0 L 300 60"
+            stroke="rgba(14, 124, 102, 0.25)"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            fill="none"
+          />
+        </svg>
+      </div>
+      <div className="sld-funnel-outcome">
+        <span className="sld-funnel-outcome-tag">Outcome</span>
+        <span className="sld-funnel-outcome-h">Every lead monetized — same platform</span>
+        <span className="sld-funnel-outcome-b">
+          Pre-approved patients book today · everyone else re-enters the funnel later
+        </span>
       </div>
     </div>
   );
 }
 
 /** Smartphone mockup — used to show the patient continuing the flow
- *  away from the chair on their phone. */
+ *  later on their phone. */
 function SmartphoneMock(): JSX.Element {
   return (
     <div className="sld-phone">
@@ -2333,7 +2427,7 @@ function WhoIsItFor(): JSX.Element {
       <Reveal delay={120}>
         <h2 className="sld-h2">
           <span className="grad-teal-deep">Built for high-ticket, elective,</span>{' '}
-          <span className="grad-teal">consult-at-the-chair healthcare.</span>
+          <span className="grad-teal">high-ticket elective healthcare.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
@@ -2501,8 +2595,8 @@ function EchoPixel(): JSX.Element {
           <span className="sld-echo-loop-arrow">↑</span>
           <span className="sld-echo-loop-label">
             ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta
-            + Google is a <strong>real funded patient</strong>, not a form-fill. Your algorithm
-            retrains on the right buyer profile.
+            and Google is a real funded patient, not a form-fill. Your algorithm retrains on the
+            right buyer profile.
           </span>
         </div>
       </Reveal>
@@ -2576,7 +2670,7 @@ function CompoundEffect(): JSX.Element {
             <div>
               <div className="sld-comp-legend-k">Cumulative recovered revenue</div>
               <div className="sld-comp-legend-v">
-                ~$398k by month 12 · 3-chair practice · illustrative
+                ~$398k by month 12 · mid-size practice · illustrative
               </div>
             </div>
             <div>
@@ -2609,7 +2703,7 @@ function ValueStack(): JSX.Element {
       head: 'Pre-qualification layer',
       items: [
         'Soft-pull fundability tier (FCRA-compliant)',
-        'Last-4-SSN + DOB + income at the chair',
+        'Last-4-SSN + DOB + income in-session',
         'HELIX smart-form intake (−41% drop-off)',
         'Real-time signal scoring · ORACLE',
       ],
@@ -2630,7 +2724,7 @@ function ValueStack(): JSX.Element {
       items: [
         'HELIX best-fit estimator routing',
         'Capacity + geo + ticket-fit matching',
-        'Smartphone continuity for off-chair signing',
+        'Smartphone continuity for off-site signing',
         'Merchant-direct ACH disbursement',
       ],
       alt: '$1,200 / mo · routing tool + payment processor',
@@ -2826,8 +2920,8 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
-          One platform fee of <strong>$10,000</strong>. Live in{' '}
-          <strong>up to 5 business days</strong>. 1,000+ practices already running on MedPay.
+          One platform fee of $10,000. Live in up to five business days. 1,000+ practices already
+          running on MedPay.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3596,119 +3690,174 @@ const CSS = `
   100% { transform: translateY(-80px) translateX(-10px); opacity: 0; }
 }
 
-/* ===== Marketplace viz (slide 07) ===== */
-.sld-mp-scene {
-  position: relative;
-  height: 380px;
-  display: flex; align-items: center; justify-content: center;
+/* ===== Marketplace viz (slide 07) — one app → parallel quotes =====
+ * LEFT: the single application submitted by the patient.
+ * CENTER: dashed lines fan out (parallel submission).
+ * RIGHT: ranked lender quotes streaming back, cheapest first.
+ * Winner gets a teal star + glowing card. */
+.sld-mp {
+  display: grid;
+  grid-template-columns: 260px 100px 1fr;
+  gap: 16px;
+  align-items: center;
   margin-top: 8px;
 }
-.sld-mp-orbit {
-  position: relative;
-  width: 0; height: 0;
+.sld-mp-app {
+  display: flex; flex-direction: column;
+  gap: 8px;
 }
-.sld-mp-rays {
-  position: absolute;
-  top: -200px; left: -300px;
-  width: 600px; height: 400px;
-  pointer-events: none;
-  opacity: 0;
-  animation: sldFadeIn .8s ease forwards .2s;
-}
-@keyframes sldFadeIn {
-  to { opacity: 1; }
-}
-.sld-mp-core {
-  position: absolute;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  z-index: 3;
-}
-.sld-mp-core-dot {
-  width: 18px; height: 18px; border-radius: 999px;
-  background: linear-gradient(135deg, var(--mp-deep), var(--mp-teal));
-  box-shadow:
-    0 0 0 0 rgba(34, 184, 160, 0.4),
-    0 12px 24px -8px rgba(14, 124, 102, 0.5);
-  animation: sldCoreP 2s ease-in-out infinite;
-}
-@keyframes sldCoreP {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.5), 0 12px 24px -8px rgba(14, 124, 102, 0.5); }
-  50% { box-shadow: 0 0 0 16px rgba(34, 184, 160, 0), 0 12px 24px -8px rgba(14, 124, 102, 0.5); }
-}
-.sld-mp-core-label {
-  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-ink-2);
+.sld-mp-app-eyebrow {
+  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal);
   text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
 }
-.sld-mp-chip {
-  position: absolute;
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.95);
+.sld-mp-app-card {
+  padding: 16px;
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
+    rgba(255, 255, 255, 0.96);
   border: 1px solid var(--mp-line-strong);
-  border-radius: 999px;
-  font-size: 11px; font-weight: 700; color: var(--mp-ink);
-  letter-spacing: 0.08em;
-  box-shadow: 0 8px 18px -10px rgba(14, 124, 102, 0.4);
-  opacity: 0;
-  animation: sldChipIn .8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
-  z-index: 2;
+  border-radius: 14px;
+  box-shadow:
+    0 22px 50px -28px rgba(14, 124, 102, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  display: flex; flex-direction: column; gap: 8px;
 }
-@keyframes sldChipIn {
-  from { opacity: 0; transform: translate(0, 0) scale(0.3); }
-  to { opacity: 1; transform: var(--tw-translate, none) scale(1); }
+.sld-mp-app-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--mp-line);
+  font-size: 12.5px;
 }
-/* Re-apply the inline transform after animation by using compound
-   selectors. Simpler approach: keep the inline transform AND fade via
-   opacity transition. */
-.sld-mp-chip {
-  animation: sldChipFade .5s ease forwards;
+.sld-mp-app-row:last-child { border-bottom: none; }
+.sld-mp-app-k { color: var(--mp-mute); }
+.sld-mp-app-v {
+  font-weight: 600;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
 }
-@keyframes sldChipFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.sld-mp-app-sig {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px;
+  color: var(--mp-mute);
 }
-.sld-mp-chip-dot {
+.sld-mp-app-sig-dot {
   width: 6px; height: 6px; border-radius: 999px;
   background: var(--mp-teal-2);
-  animation: sldChipDot 1.4s ease-in-out infinite;
+  animation: sldPulse 1.5s ease-in-out infinite;
 }
-@keyframes sldChipDot {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+.sld-mp-bus {
+  position: relative;
+  height: 240px;
 }
-.sld-mp-chip-label { color: var(--mp-mute); font-weight: 600; }
-.sld-mp-result {
-  position: absolute;
-  bottom: -10px; left: 50%; transform: translateX(-50%);
-  padding: 14px 22px;
-  background: linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
-  color: #fff;
+.sld-mp-bus svg {
+  width: 100%; height: 100%;
+}
+.sld-mp-quotes {
+  display: flex; flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
   border-radius: 16px;
-  box-shadow: 0 22px 50px -22px rgba(6, 44, 41, 0.55);
-  z-index: 4;
-  display: flex; flex-direction: column; gap: 6px;
-  min-width: 320px;
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.25);
 }
-.sld-mp-result-eyebrow {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-teal-2);
+.sld-mp-quotes-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--mp-teal);
   text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  margin-bottom: 4px;
 }
-.sld-mp-pulse {
+.sld-mp-quotes-pulse {
   width: 6px; height: 6px; border-radius: 999px;
   background: var(--mp-teal-2);
-  box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.6);
   animation: sldPulse 1.4s ease-in-out infinite;
 }
-.sld-mp-result-row {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 15px; font-weight: 600;
+.sld-mp-quote {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+  opacity: 0;
+  animation: sldQuoteIn .5s ease forwards;
+  font-variant-numeric: tabular-nums;
 }
-.sld-mp-result-star {
-  color: var(--mp-teal-2);
-  font-size: 18px;
+@keyframes sldQuoteIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.sld-mp-quote.is-winner {
+  background:
+    radial-gradient(ellipse 80% 120% at 100% 50%, rgba(34, 184, 160, 0.28), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  border-color: rgba(34, 184, 160, 0.45);
+  color: #fff;
+  box-shadow:
+    0 18px 36px -20px rgba(14, 124, 102, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-mp-quote-rank {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--mp-teal);
+}
+.sld-mp-quote.is-winner .sld-mp-quote-rank { color: var(--mp-teal-2); }
+.sld-mp-quote-body {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.sld-mp-quote-lender {
+  font-size: 13px; font-weight: 600;
+  color: var(--mp-ink);
+  letter-spacing: -0.01em;
+}
+.sld-mp-quote.is-winner .sld-mp-quote-lender { color: #fff; }
+.sld-mp-quote-meta {
+  font-size: 11px;
+  color: var(--mp-mute);
+}
+.sld-mp-quote.is-winner .sld-mp-quote-meta { color: rgba(255, 255, 255, 0.70); }
+.sld-mp-quote-mo {
+  font-size: 14px; font-weight: 700;
+  color: var(--mp-ink);
+  letter-spacing: -0.015em;
+}
+.sld-mp-quote.is-winner .sld-mp-quote-mo { color: #fff; }
+.sld-mp-quote-star {
+  position: absolute;
+  top: 50%; right: -8px;
+  transform: translateY(-50%);
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--mp-teal-2) 0%, var(--mp-teal) 100%);
+  color: #062C29;
+  border-radius: 999px;
+  font-size: 12px;
+  box-shadow: 0 6px 14px -4px rgba(14, 124, 102, 0.55);
+}
+.sld-mp-quotes-foot {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--mp-line);
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px;
+}
+.sld-mp-quotes-foot-k {
+  color: var(--mp-mute);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10.5px; font-weight: 700;
+}
+.sld-mp-quotes-foot-v {
+  color: var(--mp-deep);
+  font-weight: 700;
 }
 
 /* ===== Bar race (slide 10) ===== */
@@ -5124,237 +5273,324 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
-/* ===== Multi-stage routing flow (slide 12 · HELIX) ===== */
-.sld-flow {
-  display: flex; flex-direction: column;
-  gap: 16px;
-  margin-top: 8px;
+/* ===== Smart-routing funnel (slide 12 · HELIX + ORACLE) =====
+ * True funnel shape — each tier narrows down. Forks into two
+ * lanes (HIGH-TICKET leans forward in 3D, LOW-TICKET recedes),
+ * converges back to one revenue outcome. */
+.sld-funnel {
   position: relative;
-  perspective: 1600px;
-  perspective-origin: 50% 30%;
+  display: flex; flex-direction: column;
+  align-items: center;
+  margin-top: 8px;
+  padding: 12px 4px 16px;
+  perspective: 1800px;
+  perspective-origin: 50% 25%;
 }
-.sld-flow::before {
-  content: '';
+.sld-funnel-bg {
   position: absolute;
-  inset: -40px -40px;
+  inset: -20px -32px;
   background:
-    radial-gradient(ellipse 50% 60% at 30% 70%, rgba(34, 184, 160, 0.14), transparent 65%),
-    radial-gradient(ellipse 40% 50% at 80% 30%, rgba(14, 124, 102, 0.10), transparent 65%);
+    radial-gradient(ellipse 50% 50% at 50% 30%, rgba(34, 184, 160, 0.16), transparent 65%),
+    radial-gradient(ellipse 30% 40% at 30% 75%, rgba(14, 124, 102, 0.12), transparent 65%),
+    radial-gradient(ellipse 30% 40% at 70% 75%, rgba(14, 124, 102, 0.06), transparent 65%);
   pointer-events: none;
   z-index: 0;
-  border-radius: 32px;
-  filter: blur(8px);
+  border-radius: 36px;
+  filter: blur(10px);
 }
-.sld-flow > * { position: relative; z-index: 1; }
-.sld-flow-row {
-  display: grid;
-  grid-template-columns: 1fr 24px 1fr 24px 1fr;
-  gap: 8px;
-  align-items: stretch;
-}
-.sld-flow-node {
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--mp-line);
-  border-radius: 14px;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-.sld-flow-node:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.30);
-}
-.sld-flow-node-start {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,253,252,0.92));
-}
-.sld-flow-node-oracle {
-  background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
-    rgba(255, 255, 255, 0.95);
-  border-color: var(--mp-line-strong);
-}
-.sld-flow-node-eyebrow {
-  font-size: 10px; letter-spacing: 0.20em; font-weight: 800;
-  color: var(--mp-teal);
-  text-transform: uppercase;
-}
-.sld-flow-node-title {
-  margin-top: 4px;
-  font-size: 15px; font-weight: 700;
-  color: var(--mp-ink);
-  letter-spacing: -0.01em;
-}
-.sld-flow-node-sub {
-  margin-top: 6px;
-  font-size: 12px; color: var(--mp-ink-2);
-  line-height: 1.45;
-}
-.sld-flow-arrow {
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  color: var(--mp-line-strong);
-  font-weight: 700;
-}
-.sld-flow-fork {
+.sld-funnel > * { position: relative; z-index: 1; }
+.sld-funnel-tier {
+  width: 100%;
   display: flex; justify-content: center;
-  padding: 4px 0;
-}
-.sld-flow-fork-tag {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12px; letter-spacing: 0.16em; font-weight: 800;
-  color: var(--mp-teal);
-  text-transform: uppercase;
-  padding: 8px 18px;
-  background: rgba(34, 184, 160, 0.14);
-  border: 1px solid rgba(34, 184, 160, 0.35);
-  border-radius: 999px;
-}
-.sld-flow-fork-dot {
-  width: 6px; height: 6px; border-radius: 999px; background: var(--mp-teal-2);
-  animation: sldPulse 1.5s ease-in-out infinite;
-}
-.sld-flow-branches {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 14px;
   transform-style: preserve-3d;
 }
-.sld-flow-branch {
+.sld-funnel-tier-1 { width: 100%; }
+.sld-funnel-tier-2 { width: 86%; margin-top: -6px; }
+.sld-funnel-tier-3 { width: 72%; margin-top: -6px; }
+.sld-funnel-tier-band {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  padding: 16px 24px;
+  text-align: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--mp-line-strong);
+  box-shadow:
+    0 22px 50px -32px rgba(14, 124, 102, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transform: rotateX(2deg);
+}
+.sld-funnel-tier-1 .sld-funnel-tier-band {
+  background:
+    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 253, 252, 0.97) 100%);
+}
+.sld-funnel-tier-2 .sld-funnel-tier-band {
+  background:
+    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(34, 184, 160, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 252, 250, 0.98) 100%);
+}
+.sld-funnel-tier-3 .sld-funnel-tier-band {
+  background:
+    radial-gradient(ellipse 60% 90% at 50% 0%, rgba(34, 184, 160, 0.20), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(236, 251, 248, 1) 100%);
+  border-color: rgba(14, 124, 102, 0.32);
+}
+.sld-funnel-tier-pct {
+  font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.sld-funnel-tier-tag {
+  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+.sld-funnel-tier-h {
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--mp-ink);
+}
+.sld-funnel-tier-b {
+  font-size: 12.5px;
+  color: var(--mp-mute);
+  line-height: 1.45;
+}
+.sld-funnel-tier-pills {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.sld-funnel-pill {
+  font-size: 10.5px; font-weight: 600;
+  color: var(--mp-teal);
+  background: rgba(34, 184, 160, 0.10);
+  border: 1px solid rgba(14, 124, 102, 0.18);
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Fork — SVG connector lines + HELIX router pill */
+.sld-funnel-fork {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  margin-top: -2px;
+}
+.sld-funnel-fork svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+.sld-funnel-fork-tag {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 7px 16px;
+  background: #fff;
+  border: 1px solid rgba(14, 124, 102, 0.32);
+  border-radius: 999px;
+  box-shadow: 0 8px 18px -10px rgba(14, 124, 102, 0.35);
+  white-space: nowrap;
+}
+.sld-funnel-fork-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--mp-teal-2);
+  animation: sldPulse 1.5s ease-in-out infinite;
+}
+
+/* Branches */
+.sld-funnel-branches {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  width: 100%;
+  transform-style: preserve-3d;
+}
+.sld-funnel-branch {
   display: flex; flex-direction: column;
-  padding: 22px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid var(--mp-line);
+  gap: 10px;
+  padding: 18px;
   border-radius: 18px;
-  gap: 14px;
   transform-style: preserve-3d;
   transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1),
               box-shadow .5s cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
 }
-.sld-flow-branch-high {
+.sld-funnel-branch-high {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.22), transparent 70%),
-    linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(240, 252, 250, 0.97) 100%);
-  border-color: var(--mp-line-strong);
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(34, 184, 160, 0.22), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(232, 250, 246, 0.98) 100%);
+  border: 1px solid rgba(14, 124, 102, 0.30);
   box-shadow:
-    0 40px 80px -32px rgba(14, 124, 102, 0.45),
-    0 14px 30px -14px rgba(14, 124, 102, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  /* 3D tilt — leans toward the viewer to emphasise the winning path */
-  transform: rotateY(-4deg) rotateX(2deg) translateZ(30px);
+    0 50px 90px -36px rgba(14, 124, 102, 0.55),
+    0 18px 36px -16px rgba(14, 124, 102, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transform: rotateY(-5deg) rotateX(2deg) translateZ(34px);
 }
-.sld-flow-branch-high:hover {
-  transform: rotateY(-2deg) rotateX(1deg) translateZ(40px);
+.sld-funnel-branch-high:hover {
+  transform: rotateY(-2deg) rotateX(1deg) translateZ(46px);
   box-shadow:
-    0 50px 100px -32px rgba(14, 124, 102, 0.55),
-    0 20px 40px -16px rgba(14, 124, 102, 0.30);
+    0 60px 110px -36px rgba(14, 124, 102, 0.65),
+    0 24px 44px -16px rgba(14, 124, 102, 0.36);
 }
-.sld-flow-branch-low {
-  background: rgba(15, 23, 42, 0.025);
-  border-style: dashed;
-  /* Recedes — the loser path sits back from the viewer */
-  transform: rotateY(4deg) rotateX(-1deg) translateZ(-10px);
-  opacity: 0.92;
+.sld-funnel-branch-low {
+  background: rgba(248, 250, 250, 0.86);
+  border: 1px dashed rgba(15, 23, 42, 0.18);
+  opacity: 0.94;
+  transform: rotateY(5deg) rotateX(-1deg) translateZ(-12px);
 }
-.sld-flow-branch-low:hover {
-  transform: rotateY(2deg) rotateX(0deg) translateZ(0px);
+.sld-funnel-branch-low:hover {
+  transform: rotateY(2deg) rotateX(0deg) translateZ(0);
   opacity: 1;
 }
-.sld-flow-branch-head {
-  display: flex; flex-direction: column; gap: 4px;
-  padding-bottom: 10px;
+.sld-funnel-branch-head {
+  display: flex; flex-direction: column; gap: 3px;
+  padding-bottom: 8px;
   border-bottom: 1px dashed var(--mp-line);
 }
-.sld-flow-branch-tag {
-  font-size: 11px; letter-spacing: 0.20em; font-weight: 800;
+.sld-funnel-branch-tag {
+  font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--mp-teal);
   text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
 }
-.sld-flow-branch-low .sld-flow-branch-tag { color: var(--mp-mute); }
-.sld-flow-branch-criteria {
+.sld-funnel-branch-low .sld-funnel-branch-tag { color: var(--mp-mute); }
+.sld-funnel-branch-crit {
   font-size: 11px; color: var(--mp-mute);
   font-variant-numeric: tabular-nums;
 }
-.sld-flow-steps {
-  display: flex; flex-direction: column;
-  gap: 6px;
+.sld-funnel-branch-steps {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.sld-flow-step {
-  display: grid; grid-template-columns: 36px 1fr;
-  gap: 12px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.92);
+.sld-funnel-branch-steps li {
+  display: grid; grid-template-columns: 30px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.86);
   border: 1px solid var(--mp-line);
   border-radius: 10px;
 }
-.sld-flow-step-final {
+.sld-funnel-branch-low .sld-funnel-branch-steps li {
+  background: rgba(255, 255, 255, 0.7);
+}
+.sld-funnel-step-n {
+  grid-row: 1 / span 2;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px; font-weight: 700;
+  color: var(--mp-teal);
+  font-variant-numeric: tabular-nums;
+}
+.sld-funnel-branch-low .sld-funnel-step-n { color: var(--mp-mute); }
+.sld-funnel-step-h {
+  font-size: 13px; font-weight: 600;
+  color: var(--mp-ink);
+  letter-spacing: -0.01em;
+}
+.sld-funnel-step-b {
+  font-size: 11px;
+  color: var(--mp-ink-2);
+  line-height: 1.4;
+}
+.sld-funnel-branch-outcome {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 12.5px; font-weight: 600;
+  letter-spacing: -0.01em;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.30), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.32), transparent 70%),
     linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
-  border-color: transparent;
   color: #fff;
   box-shadow:
-    0 22px 50px -22px rgba(14, 124, 102, 0.55),
-    0 0 0 1px rgba(34, 184, 160, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    0 16px 36px -16px rgba(14, 124, 102, 0.55),
+    0 0 0 1px rgba(34, 184, 160, 0.30);
   position: relative;
   overflow: hidden;
 }
-.sld-flow-step-final::after {
+.sld-funnel-branch-outcome::after {
   content: '';
   position: absolute; inset: 0;
   background: radial-gradient(circle at 100% 50%, rgba(34, 184, 160, 0.35), transparent 60%);
   opacity: 0;
-  animation: sldFlowGlow 2.6s ease-in-out infinite;
+  animation: sldFunnelPulse 2.6s ease-in-out infinite;
   pointer-events: none;
 }
-@keyframes sldFlowGlow {
+@keyframes sldFunnelPulse {
   0%, 100% { opacity: 0; }
   50% { opacity: 1; }
 }
-.sld-flow-step-final .sld-flow-step-n {
-  color: var(--mp-teal-2);
-}
-.sld-flow-step-final .sld-flow-step-h {
-  color: #fff;
-}
-.sld-flow-step-final .sld-flow-step-b {
-  color: rgba(255, 255, 255, 0.75);
-}
-.sld-flow-branch-low .sld-flow-step-final {
-  background:
-    linear-gradient(90deg, rgba(15, 23, 42, 0.12), transparent);
-  border-color: rgba(15, 23, 42, 0.18);
+.sld-funnel-branch-low .sld-funnel-branch-outcome {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.10), transparent);
   color: var(--mp-ink);
   box-shadow: none;
 }
-.sld-flow-branch-low .sld-flow-step-final::after { display: none; }
-.sld-flow-branch-low .sld-flow-step-final .sld-flow-step-n { color: var(--mp-mute); }
-.sld-flow-branch-low .sld-flow-step-final .sld-flow-step-h { color: var(--mp-ink); }
-.sld-flow-branch-low .sld-flow-step-final .sld-flow-step-b { color: var(--mp-ink-2); }
-.sld-flow-branch-low .sld-flow-step { background: rgba(255, 255, 255, 0.78); }
-.sld-flow-step-n {
-  font-size: 14px; font-weight: 800;
-  color: var(--mp-teal);
-  letter-spacing: -0.025em;
-  display: flex; align-items: center; justify-content: center;
+.sld-funnel-branch-low .sld-funnel-branch-outcome::after { display: none; }
+.sld-funnel-branch-outcome-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 999px;
+  background: rgba(34, 184, 160, 0.20);
+  color: var(--mp-teal-2);
+  font-size: 14px;
+  flex-shrink: 0;
 }
-.sld-flow-step-h {
-  font-size: 13.5px; font-weight: 700;
-  color: var(--mp-ink);
+.sld-funnel-branch-low .sld-funnel-branch-outcome-icon {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--mp-mute);
 }
-.sld-flow-step-b {
-  margin-top: 2px;
-  font-size: 11.5px;
-  color: var(--mp-ink-2);
-  line-height: 1.45;
+
+/* Convergence + final outcome card */
+.sld-funnel-converge {
+  position: relative;
+  width: 100%;
+  height: 50px;
+  margin-top: -2px;
 }
-.sld-flow-step-arrow {
+.sld-funnel-converge svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+.sld-funnel-outcome {
+  width: 60%;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  padding: 16px 28px;
+  border-radius: 16px;
   text-align: center;
-  font-size: 12px;
-  color: var(--mp-line-strong);
-  font-weight: 700;
-  padding: 0;
-  margin: -2px 0;
+  background:
+    radial-gradient(ellipse 80% 120% at 50% 0%, rgba(34, 184, 160, 0.45), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
+  box-shadow:
+    0 28px 60px -22px rgba(14, 124, 102, 0.55),
+    0 0 0 1px rgba(34, 184, 160, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-funnel-outcome-tag {
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal-2);
+  text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+.sld-funnel-outcome-h {
+  font-size: 18px; font-weight: 600;
+  letter-spacing: -0.018em;
+}
+.sld-funnel-outcome-b {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
 }
 
 /* ===== Trusted by 1,000+ practices ===== */
@@ -5454,25 +5690,43 @@ const CSS = `
 }
 .sld-price-hero-includes ul {
   list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: 14px;
 }
 .sld-price-hero-includes li {
   position: relative;
-  padding-left: 22px;
-  font-size: 13.5px;
-  color: var(--mp-ink-2);
+  padding-left: 28px;
   line-height: 1.5;
+  display: flex; flex-direction: column; gap: 2px;
 }
 .sld-price-hero-includes li::before {
-  content: '✓';
+  content: '';
   position: absolute;
-  left: 0; top: 0;
-  width: 16px; height: 16px;
+  left: 0; top: 4px;
+  width: 18px; height: 18px;
   border-radius: 999px;
-  background: rgba(34, 184, 160, 0.18);
-  color: var(--mp-teal);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(34, 184, 160, 0.45), transparent 70%),
+    linear-gradient(135deg, rgba(34, 184, 160, 0.18) 0%, rgba(14, 124, 102, 0.10) 100%);
+  border: 1px solid rgba(14, 124, 102, 0.30);
+}
+.sld-price-hero-includes li::after {
+  content: '';
+  position: absolute;
+  left: 5px; top: 8px;
+  width: 8px; height: 4px;
+  border-left: 1.6px solid var(--mp-teal);
+  border-bottom: 1.6px solid var(--mp-teal);
+  transform: rotate(-45deg);
+}
+.sld-price-li-h {
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mp-ink);
+}
+.sld-price-li-b {
+  font-size: 12.5px; font-weight: 400;
+  color: var(--mp-mute);
+  line-height: 1.45;
 }
 .sld-price-hero ~ .sld-price-grid,
 .sld-price-hero .sld-price-grid {
@@ -5485,10 +5739,6 @@ const CSS = `
 }
 .sld-price-hero .sld-price-grid > div:first-child {
   padding: 22px 28px;
-}
-.sld-price-hero-includes li strong {
-  font-weight: 700;
-  color: var(--mp-ink);
 }
 
 /* ===== Cover · brand title (first slide of the deck) ===== */
@@ -6031,9 +6281,11 @@ const CSS = `
   .sld-comp-bars { height: 140px; }
   .sld-comp-legend { grid-template-columns: 1fr; }
   .sld-stack-grid { grid-template-columns: 1fr; }
-  .sld-flow-row { grid-template-columns: 1fr; gap: 8px; }
-  .sld-flow-arrow { transform: rotate(90deg); }
-  .sld-flow-branches { grid-template-columns: 1fr; }
+  .sld-funnel-branches { grid-template-columns: 1fr; }
+  .sld-funnel-tier-2, .sld-funnel-tier-3 { width: 100%; }
+  .sld-funnel-outcome { width: 100%; }
+  .sld-mp { grid-template-columns: 1fr; }
+  .sld-mp-bus { display: none; }
   .sld-trust-hero-row { grid-template-columns: repeat(2, 1fr); }
   .sld-trust-hero-row > div { border-right: none; border-bottom: 1px dashed var(--mp-line); padding-bottom: 16px; }
   .sld-price-hero-row { grid-template-columns: 1fr; }
@@ -6064,6 +6316,6 @@ const CSS = `
   .sld-stat-row { grid-template-columns: 1fr; }
   .sld-trust-grid { grid-template-columns: 1fr; }
   .sld-brand { display: none; }
-  .sld-mp-scene { transform: scale(0.7); transform-origin: center; }
+  .sld-mp { transform: none; }
 }
 `;
