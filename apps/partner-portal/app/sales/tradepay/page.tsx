@@ -46,14 +46,15 @@ const SLIDES_RAW: Slide[] = [
               <span className="grad-teal-deep">TradePay is a</span>{' '}
               <span className="grad-teal">homeowner-financing platform</span>
               <br />
-              <span className="grad-teal-deep">built for home-improvement.</span>
+              <span className="grad-teal-deep">built for home-improvement work.</span>
             </h1>
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
-              We help roofing, HVAC, solar, remodel, and exterior contractors approve more
-              homeowners at the doorstep estimate. Soft-pull pre-qualification, a real-time lender
-              marketplace, and merchant-direct funding in 48 to 72 hours. One signup, one platform.
+              We help roofing crews, HVAC businesses, solar installers, remodel generals, and
+              exterior contractors approve more homeowners at the doorstep estimate. Soft-pull
+              pre-qualification, a real-time multi-lender marketplace, and merchant-direct funding
+              in 48 to 72 hours. One signup, one platform.
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -95,30 +96,30 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            Every homeowner who says <em>&ldquo;let me think about it&rdquo;</em>{' '}
-            <span className="grad-teal-deep">walks out unfunded.</span>
+            Every homeowner who says <em>&ldquo;I&apos;ll get another quote&rdquo;</em>{' '}
+            <span className="grad-teal-deep">never books the job.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            A mid-size business loses an estimated{' '}
+            A mid-size contractor loses an estimated{' '}
             <strong>
-              $<AnimatedCounter to={1.4} decimals={1} />M a year
+              $<AnimatedCounter to={1.6} decimals={1} />M a year
             </strong>{' '}
-            to financing friction. The objection isn&apos;t price. It&apos;s cash flow. Homeowners
-            don&apos;t carry $12,000.
+            on doorstep estimates that walk. The objection isn&apos;t price. It&apos;s cash flow.
+            Homeowners don&apos;t carry $18,000 for a re-roof.
           </p>
         </Reveal>
         <Reveal delay={360}>
           <div className="sld-stat-row">
-            <CountStat to={38} suffix="%" k="Industry same-day close (no financing)" />
-            <CountStat to={1.4} decimals={1} prefix="$" suffix="M" k="Case acceptance lost / yr" />
-            <CountStat to={54} suffix="%" k="Inbound never pre-qualified" />
-            <CountStat label="2–4 wks" k="Consult → deposit" />
+            <CountStat to={22} suffix="%" k="Industry same-day close at the estimate" />
+            <CountStat to={1.6} decimals={1} prefix="$" suffix="M" k="Job acceptance lost / yr" />
+            <CountStat to={62} suffix="%" k="Estimates never financed" />
+            <CountStat label="3–6 wks" k="Estimate → install" />
           </div>
         </Reveal>
         <Reveal delay={480}>
-          <div className="sld-section-title">Where the $1.4M actually goes</div>
+          <div className="sld-section-title">Where the $1.6M actually goes</div>
         </Reveal>
         <Reveal delay={560}>
           <MoneyBreakdown />
@@ -147,9 +148,10 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            Cherry, Sunbit, and GreenSky proved the model. But single-lender programs cap out at one
-            approval algorithm. When their model declines, your homeowner walks. TradePay solves the
-            ceiling.
+            GreenSky, Sunlight, and Service Finance proved the model. But single-lender programs cap
+            out at one approval algorithm — and Home Depot installer financing already beats you on
+            the deferred-interest pitch. When their model declines, your homeowner walks. TradePay
+            solves the ceiling.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -161,24 +163,32 @@ const SLIDES_RAW: Slide[] = [
                   <span className="sld-vs-icon sld-vs-x">×</span> One approval algorithm
                 </li>
                 <li>
-                  <span className="sld-vs-icon sld-vs-x">×</span> One ticket range
+                  <span className="sld-vs-icon sld-vs-x">×</span> Caps at $50k, declines mid-prime
                 </li>
                 <li>
-                  <span className="sld-vs-icon sld-vs-x">×</span> Decline = lost homeowner
+                  <span className="sld-vs-icon sld-vs-x">×</span> Deferred-interest clawback risk
+                </li>
+                <li>
+                  <span className="sld-vs-icon sld-vs-x">×</span> Decline = homeowner gets another
+                  quote
                 </li>
               </ul>
             </div>
             <div className="sld-vs-side sld-vs-med">
-              <div className="sld-vs-eyebrow accent">Multi-lender marketplace</div>
+              <div className="sld-vs-eyebrow accent">TradePay marketplace</div>
               <ul>
                 <li>
                   <span className="sld-vs-icon sld-vs-check">✓</span> Every lender in parallel
                 </li>
                 <li>
-                  <span className="sld-vs-icon sld-vs-check">✓</span> $3k to $50k coverage
+                  <span className="sld-vs-icon sld-vs-check">✓</span> $3k to $100k ticket coverage
                 </li>
                 <li>
-                  <span className="sld-vs-icon sld-vs-check">✓</span> Cheapest offer wins
+                  <span className="sld-vs-icon sld-vs-check">✓</span> No clawback on routine
+                  defaults
+                </li>
+                <li>
+                  <span className="sld-vs-icon sld-vs-check">✓</span> Cheapest monthly payment wins
                 </li>
               </ul>
             </div>
@@ -202,7 +212,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">Soft-pull pre-qual, in-session.</span>
+            <span className="grad-teal-deep">Soft-pull pre-qual at the doorstep.</span>
             <br />
             <span className="grad-teal">Lender marketplace.</span>{' '}
             <span className="grad-teal-deep">Funds in 48 to 72 hours.</span>
@@ -210,30 +220,30 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            Three things matter to a business owner. TradePay nails all three.
+            Three things matter to a contractor at the doorstep estimate. TradePay nails all three.
           </p>
         </Reveal>
         <Reveal delay={360}>
           <div className="sld-pillars">
             <Pillar
               n="01"
-              head="Speed"
+              head="Doorstep speed"
               metric="< 10s"
-              body="Last 4 of SSN + DOB on any browser, on any device. Fundability tier returns instantly. Zero credit impact, full FCRA compliance."
-              tags={['Soft pull', 'FCRA', '0 friction']}
+              body="Estimator runs the soft pull on the iPad in the driveway. Homeowner sees a real fundability tier before the estimator unpacks the laser measure. Zero credit impact, full FCRA compliance."
+              tags={['Soft pull', 'FCRA', '0 hard-pull']}
             />
             <Pillar
               n="02"
-              head="Coverage"
-              metric="Every lender"
-              body="One soft pull queries every lender in parallel. Homeowner sees the cheapest qualifying offer. Decline rate is the floor of the marketplace, not the floor of a single lender."
-              tags={['Parallel quoting', 'Best-price wins', 'Higher approvals']}
+              head="Lender coverage"
+              metric="$3k – $100k"
+              body="One soft pull queries every trades lender in parallel — GreenSky, Sunlight, Service Finance, Synchrony, EnerBank, Mosaic. Homeowner sees the cheapest monthly payment. Decline rate is the floor of the marketplace, not a single carrier."
+              tags={['Parallel quoting', 'Cheapest mo. wins', 'Prime → subprime']}
             />
             <Pillar
               n="03"
               head="Cash flow"
               metric="48–72 hr"
-              body="Lender disburses to your business account merchant-direct. No clawback on routine defaults — the lender carries the credit risk, not you."
+              body="Lender disburses straight to your business account — no rebate hold, no payment-processor escrow. No clawback on routine defaults. The lender holds the credit risk; you just install the job."
               tags={['Merchant-direct', 'No clawback', 'Lender holds risk']}
             />
           </div>
@@ -263,24 +273,24 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
-              Four fields. Ten seconds. A real fundability tier comes back before the homeowner
-              hands the screen back. They have not authorized a hard pull, so they can still walk
-              away with zero credit consequence.
+              Estimator hands the homeowner the iPad in the driveway. Four fields, ten seconds — a
+              real fundability tier comes back before the homeowner hands the screen back. No hard
+              pull, so they can still walk away with zero credit consequence.
             </p>
           </Reveal>
           <Reveal delay={360}>
             <div className="sld-mini-stats">
               <MiniStat v={<AnimatedCounter to={10} prefix="< " suffix="s" />} k="Decision time" />
               <MiniStat v="0" k="Credit impact" />
-              <MiniStat v="FCRA" k="Compliant" />
-              <MiniStat v="4 fields" k="Friction" />
+              <MiniStat v="FCRA" k="Soft pull only" />
+              <MiniStat v="4 fields" k="Driveway-friendly" />
             </div>
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              For the estimator: the homeowner already knows they qualify. The next sentence is
-              &ldquo;here&apos;s the scope of work,&rdquo; not &ldquo;let me check if you can afford
-              it.&rdquo;
+              For the estimator: the homeowner already knows they qualify before you walk the roof.
+              The next sentence is &ldquo;here&apos;s the scope of work,&rdquo; not &ldquo;let me
+              check if you can afford it.&rdquo;
             </p>
           </Reveal>
         </div>
@@ -315,14 +325,16 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">Lender marketplace</span>{' '}
-            <span className="grad-teal">runs in parallel.</span>
+            <span className="grad-teal-deep">Six trades lenders.</span>{' '}
+            <span className="grad-teal">One soft pull.</span>{' '}
+            <span className="grad-teal-deep">Parallel quotes.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            One application fires across every lender simultaneously. Quotes return in seconds,
-            ranked cheapest-first.
+            One application fires across GreenSky, Sunlight, Service Finance, Synchrony Home Design,
+            EnerBank, and Mosaic at the same instant. Quotes return ranked by cheapest monthly
+            payment to the homeowner.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -435,10 +447,10 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={120}>
           <h2 className="sld-h2">
             <span className="grad-teal">
-              <AnimatedCounter to={38} suffix="%" /> closes
+              <AnimatedCounter to={22} suffix="%" /> doorstep closes
             </span>{' '}
             <span className="grad-teal-deep">
-              becomes <AnimatedCounter to={70} suffix="%+" delay={400} /> same-day.
+              becomes <AnimatedCounter to={65} suffix="%+" delay={400} /> signed in the driveway.
             </span>
           </h2>
         </Reveal>
@@ -510,9 +522,9 @@ const SLIDES_RAW: Slide[] = [
           <div className="sld-cases-grid">
             <CaseCard
               tag="Roofing · FL"
-              quote="We were losing one job a week to financing. TradePay killed that. The first month we ran it, our same-day close went from a third to two-thirds."
+              quote="Home Depot installers were beating us on the deferred-interest pitch every week. Plugged in TradePay and our close rate on $20k+ re-roofs jumped. Same crew, same prices."
               outcomes={[
-                { v: '2.1x', l: 'Same-day close uplift' },
+                { v: '2.1×', l: 'Doorstep close uplift' },
                 { v: '$184k', l: 'Recovered / 90 days' },
               ]}
               name="Carter Holloway"
@@ -624,78 +636,75 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">One platform fee.</span>{' '}
-            <span className="grad-teal">$10,000. Live in 5 days.</span>
+            <span className="grad-teal-deep">Three line items.</span>{' '}
+            <span className="grad-teal">No surprises.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <div className="sld-price-card sld-price-hero">
-            <div className="sld-price-hero-row">
-              <div>
-                <div className="sld-price-hero-eyebrow">Platform setup</div>
-                <div className="sld-price-hero-amount">$10,000</div>
-                <div className="sld-price-hero-sub">One-time · all-in</div>
+          <div className="sld-pricing-stack">
+            <div className="sld-pricing-tier sld-pricing-tier-hero">
+              <div className="sld-pricing-tier-l">
+                <div className="sld-pricing-tier-tag">01 · PLATFORM SETUP</div>
+                <div className="sld-pricing-tier-h">One-time platform fee</div>
+                <div className="sld-pricing-tier-b">
+                  Full configuration, agent training, marketplace activation, partner-portal
+                  provisioning. Paid once.
+                </div>
               </div>
-              <div className="sld-price-hero-includes">
-                <div className="sld-price-hero-includes-eyebrow">What you get</div>
-                <ul>
-                  <li>
-                    <span className="sld-price-li-h">Pre-qualification agents</span>
-                    <span className="sld-price-li-b">
-                      Credit · income · DTI · pre-approval $ on every lead
-                    </span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">EazePay partner portal</span>
-                    <span className="sld-price-li-b">
-                      Full team access, live data, complete audit log
-                    </span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">Application submission + tracking</span>
-                    <span className="sld-price-li-b">Pipeline, decisions, payouts</span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">Lender marketplace</span>
-                    <span className="sld-price-li-b">Parallel quoting, best offer wins</span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">Payment processing</span>
-                    <span className="sld-price-li-b">Optional, included if you want it</span>
-                  </li>
-                </ul>
+              <div className="sld-pricing-tier-r">
+                <div className="sld-pricing-tier-v">$10,000</div>
+                <div className="sld-pricing-tier-when">USD · paid on signing</div>
               </div>
             </div>
-            <div className="sld-price-grid sld-price-grid-single">
-              <div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Monthly platform fee</span>
-                  <span className="sld-price-v">$0</span>
+            <div className="sld-pricing-tier">
+              <div className="sld-pricing-tier-l">
+                <div className="sld-pricing-tier-tag">02 · USAGE</div>
+                <div className="sld-pricing-tier-h">Per lead through the smart form</div>
+                <div className="sld-pricing-tier-b">
+                  Every lead that runs through HELIX intake and the ORACLE soft-pull is billed at
+                  flat rate. No charge for traffic that never reaches the form.
                 </div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Per-application fee</span>
-                  <span className="sld-price-v">$0</span>
+              </div>
+              <div className="sld-pricing-tier-r">
+                <div className="sld-pricing-tier-v">$3</div>
+                <div className="sld-pricing-tier-when">per lead · billed monthly</div>
+              </div>
+            </div>
+            <div className="sld-pricing-tier">
+              <div className="sld-pricing-tier-l">
+                <div className="sld-pricing-tier-tag">03 · ORIGINATION</div>
+                <div className="sld-pricing-tier-h">% of loan amount settled</div>
+                <div className="sld-pricing-tier-b">
+                  We invoice 4% of the funded loan amount at the end of each month, based on loans
+                  that actually settled. No funded loan → no fee.
                 </div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Time to live</span>
-                  <span className="sld-price-v">Up to 5 business days</span>
-                </div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Contract</span>
-                  <span className="sld-price-v">Buy once · run forever</span>
-                </div>
+              </div>
+              <div className="sld-pricing-tier-r">
+                <div className="sld-pricing-tier-v">4%</div>
+                <div className="sld-pricing-tier-when">of settled loan · monthly invoice</div>
               </div>
             </div>
           </div>
         </Reveal>
         <Reveal delay={360}>
-          <p
-            className="sld-sub"
-            style={{ marginTop: '20px', textAlign: 'center', fontSize: '15px' }}
-          >
-            One $10,000 setup fee unlocks the full platform. No monthly bill, no per-application
-            charge. Live and running traffic inside five business days.
-          </p>
+          <div className="sld-pricing-foot">
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">No monthly platform fee</span>
+              <span className="sld-pricing-foot-v">$0</span>
+            </div>
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">No per-application fee</span>
+              <span className="sld-pricing-foot-v">$0</span>
+            </div>
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">Time to live</span>
+              <span className="sld-pricing-foot-v">Up to 5 business days</span>
+            </div>
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">Contract</span>
+              <span className="sld-pricing-foot-v">Buy once · run forever</span>
+            </div>
+          </div>
         </Reveal>
       </div>
     ),
@@ -902,26 +911,26 @@ const SLIDES_RAW: Slide[] = [
         eyebrow="Verticals · Roofing"
         headline={
           <>
-            <span className="grad-teal-deep">For roofing crews, storm-damage</span>{' '}
-            <span className="grad-teal">restorers, and exterior generals.</span>
+            <span className="grad-teal-deep">For full re-roof crews,</span>{' '}
+            <span className="grad-teal">storm-damage restorers, and gutter/fascia generals.</span>
           </>
         }
-        intro="Roofing is TradePay's anchor vertical. Full re-roofs, storm-damage rebuilds, gutters, fascia — the doorstep estimates where the homeowner hears a number between $8k and $80k and has to decide whether to greenlight before the next storm rolls in."
+        intro="Roofing is TradePay's anchor vertical. Full re-roofs, storm-damage rebuilds, gutters, fascia — the doorstep estimates where the homeowner hears $18k for a re-roof and decides whether to greenlight before the next storm rolls in."
         ticketRange="$8,000 – $80,000"
-        ticketLabel="Asphalt re-roof to full storm-damage rebuild"
-        highlight={{ v: '38% → 70%+', k: 'Same-day close uplift' }}
+        ticketLabel="Asphalt re-roof to full storm-damage rebuild + gutters"
+        highlight={{ v: '22% → 65%+', k: 'Doorstep close uplift' }}
         pains={[
-          "Homeowner gets the estimate and says they'll think about it — never funds",
-          'Single-lender programs (GreenSky / Sunlight) decline near-prime applicants',
-          'Hard-pull credit kills the second-opinion homeowner',
-          'Cash-pay assumption excludes 60% of inbound estimates',
+          "Homeowner gets the estimate and says 'I'll get another quote' — never funds",
+          'Single-lender programs (GreenSky alone) decline near-prime homeowners',
+          'Home Depot Roof Pros beats you on the deferred-interest pitch',
+          'Insurance-funded repairs cover patches, not full re-roofs',
         ]}
         outcomes={[
-          { v: '2.1×', k: 'Same-day close uplift' },
+          { v: '2.1×', k: 'Doorstep close uplift' },
           { v: '$184k', k: 'Recovered / 90 days · mid-size crew' },
           { v: '−41%', k: 'Form drop-off vs. legacy program' },
         ]}
-        quote="We were losing a job a week to financing. First month on TradePay, same-day close went from a third to two-thirds. Homeowners sign the estimate already approved."
+        quote="We were losing a job a week to financing. First month on TradePay, doorstep close went from a third to two-thirds. Homeowners sign on the spot, fully approved."
         attribution="Carter Holloway"
         attributionRole="Owner · Holloway Roofing · Tampa FL"
       />
@@ -937,26 +946,26 @@ const SLIDES_RAW: Slide[] = [
         eyebrow="Verticals · HVAC + mechanical"
         headline={
           <>
-            <span className="grad-teal-deep">Full-system swaps in 72 hours.</span>{' '}
-            <span className="grad-teal">Heat-pump financing without friction.</span>
+            <span className="grad-teal-deep">Full-system swaps approved at the truck.</span>{' '}
+            <span className="grad-teal">Heat-pump financing without the dealer-fee hit.</span>
           </>
         }
-        intro="HVAC contractors sell big mechanical packages: full-system swaps, heat-pump conversions, ductwork rebuilds. The math only works if the homeowner greenlights at the doorstep. TradePay turns the truck-roll estimate into a same-day signed install."
+        intro="HVAC sells big mechanical packages: full-system swaps, heat-pump conversions, ductwork rebuilds. The math only works if the homeowner greenlights at the truck. TradePay turns the no-fund truck-roll into a same-day signed install."
         ticketRange="$6,000 – $40,000"
         ticketLabel="Single split-system to whole-home heat-pump conversion"
         highlight={{ v: '+38%', k: 'Booked-install uplift / estimate' }}
         pains={[
           'Cash-pay homeowner balks at $14k for a full swap',
-          'In-house payment plans tie up your A/R + chase delinquencies',
-          'Home Depot installer financing beats you on the deferred-interest pitch',
-          'Promo 0% APR plans look great but the clawback math is brutal',
+          'In-house payment plans tie up your A/R · chase delinquencies',
+          'Home Depot Pro Installer financing beats you on deferred 0% APR',
+          'Promo 0% APR plans look great until you eat the dealer-fee clawback',
         ]}
         outcomes={[
           { v: '+38%', k: 'Booked installs / lead' },
           { v: '−41%', k: 'Form drop-off · HELIX smart intake' },
           { v: '2.3×', k: 'System tier (vs. patch repair)' },
         ]}
-        quote="The agentic form is the thing. Homeowners used to bounce on the income question. Now they finish the apply flow on their phone before our estimator even leaves the driveway."
+        quote="The agentic form is the thing. Homeowners used to bounce on the income question. Now they finish the apply flow before our estimator even unloads the meter."
         attribution="Marco Reyes"
         attributionRole="Owner · Iron Horse HVAC · Las Vegas NV"
       />
@@ -976,22 +985,22 @@ const SLIDES_RAW: Slide[] = [
             <span className="grad-teal">Same platform. Same flow.</span>
           </>
         }
-        intro="Solar + battery installs, kitchen / bath / ADU remodels, and exterior work (windows, siding, decking). Same soft-pull, same marketplace, same merchant-direct payout — just the job stories change."
+        intro="Solar + battery installs, kitchen / bath / ADU remodels, and exterior work (windows, siding, decking, fencing). Same soft pull, same marketplace, same merchant-direct payout — just the job stories change."
         ticketRange="$5,000 – $100,000"
         ticketLabel="Window swap to full PV + battery install"
         highlight={{ v: '2.4×', k: 'Job acceptance (avg.)' }}
         pains={[
-          'Solar: $35k upfront blocks otherwise-qualified buyers',
-          'Remodel: scope creep + change orders = financing has to flex',
+          'Solar: $35k upfront blocks otherwise-qualified buyers · Sunlight cap declines',
+          'Remodel: scope creep + change orders mean the financing has to flex',
           'Exterior: windows + siding sit in the "let me get another quote" trap',
-          'All three: single-lender financing caps out at prime',
+          'All three: single-lender financing caps out at prime credit',
         ]}
         outcomes={[
           { v: '2.4×', k: 'PV-install acceptance · solar' },
           { v: '+58%', k: 'Kitchen-remodel scope · remodel' },
           { v: '+33%', k: 'Window-package upsell · exterior' },
         ]}
-        quote="Solar margins live and die on the doorstep close. TradePay closed that gap. Same-day approval, lender pays us direct, panels go up the next week."
+        quote="Solar margins live and die at the doorstep close. TradePay closed that gap. Same-day approval, lender wires us direct, panels go up the next week."
         attribution="Hannah Voss"
         attributionRole="Founder · Voss Solar + Battery · Phoenix AZ"
       />
@@ -1160,7 +1169,6 @@ const NARRATIVE_ORDER = [
   22, // 23 · Vertical: Solar · Remodel · Exterior
 
   // ACT 5 — Trust + decide
-  12, // 24 · Case studies
   13, // 25 · Vs competitors
 
   // ACT 6 — The ask
@@ -1495,7 +1503,7 @@ function OfferCardMock(): JSX.Element {
         </span>
         <span className="sld-mock-meta">Illustrative</span>
       </div>
-      <div className="sld-mock-project">HVAC swap · approved</div>
+      <div className="sld-mock-project">Full re-roof · approved</div>
       <div className="sld-mock-amount">
         $12,000
         <span className="sld-mock-amount-sub">approved</span>
@@ -1564,12 +1572,12 @@ function MarketplaceViz(): JSX.Element {
   // Each row represents a lender quoting in parallel from the same
   // single submission. APRs/terms intentionally illustrative.
   const QUOTES = [
-    { lender: 'BuildBank', apr: '14.9%', mo: '$436', term: '60', winner: true },
-    { lender: 'CoreCredit', apr: '15.6%', mo: '$480', term: '60' },
-    { lender: 'FinWise', apr: '16.4%', mo: '$510', term: '60' },
-    { lender: 'PrimeArc', apr: '17.2%', mo: '$534', term: '60' },
-    { lender: 'NorthLend', apr: '18.0%', mo: '$556', term: '60' },
-    { lender: 'OakCapital', apr: '19.4%', mo: '$598', term: '60' },
+    { lender: 'GreenSky', apr: '8.99%', mo: '$372', term: '84', winner: true },
+    { lender: 'Sunlight Financial', apr: '9.49%', mo: '$386', term: '84' },
+    { lender: 'Service Finance', apr: '10.99%', mo: '$417', term: '84' },
+    { lender: 'Synchrony Home', apr: '12.99%', mo: '$465', term: '60' },
+    { lender: 'EnerBank', apr: '13.99%', mo: '$487', term: '60' },
+    { lender: 'Mosaic', apr: '15.99%', mo: '$534', term: '60' },
   ];
   return (
     <div className="sld-mp">
@@ -1645,7 +1653,7 @@ function MarketplaceViz(): JSX.Element {
         ))}
         <div className="sld-mp-quotes-foot">
           <span className="sld-mp-quotes-foot-k">Best offer wins</span>
-          <span className="sld-mp-quotes-foot-v">$436/mo · 60 mo · BuildBank</span>
+          <span className="sld-mp-quotes-foot-v">$372/mo · 84 mo · GreenSky</span>
         </div>
       </div>
     </div>
@@ -1657,25 +1665,25 @@ function BarRace(): JSX.Element {
   return (
     <div className="sld-bar-race">
       <div className="sld-bar-row">
-        <div className="sld-bar-label">Without TradePay (38% close)</div>
+        <div className="sld-bar-label">Without TradePay (22% doorstep close)</div>
         <div className="sld-bar-track">
-          <div className="sld-bar-fill without" style={{ width: '38%' }}>
-            <span>38%</span>
+          <div className="sld-bar-fill without" style={{ width: '22%' }}>
+            <span>22%</span>
           </div>
         </div>
       </div>
       <div className="sld-bar-row">
-        <div className="sld-bar-label">With TradePay (70%+ close · illustrative)</div>
+        <div className="sld-bar-label">With TradePay (65%+ doorstep close · illustrative)</div>
         <div className="sld-bar-track">
-          <div className="sld-bar-fill with" style={{ width: '70%' }}>
-            <span>70%+</span>
+          <div className="sld-bar-fill with" style={{ width: '65%' }}>
+            <span>65%+</span>
           </div>
         </div>
       </div>
       <div className="sld-bar-delta">
         <span className="sld-bar-delta-tag">Delta</span>
-        <span className="sld-bar-delta-val">+32 pts same-day close</span>
-        <span className="sld-bar-delta-sub">In-session financing baseline · illustrative</span>
+        <span className="sld-bar-delta-val">+43 pts doorstep close rate</span>
+        <span className="sld-bar-delta-sub">Cash-only baseline · illustrative</span>
       </div>
     </div>
   );
@@ -1685,25 +1693,44 @@ function BarRace(): JSX.Element {
 function VsTable(): JSX.Element {
   const rows = [
     {
+      k: 'Lender coverage',
+      single: 'One lender · their underwriting only',
+      med: 'GreenSky + Sunlight + Service Finance + Synchrony + EnerBank + Mosaic in parallel',
+    },
+    {
       k: 'Decline = homeowner walks',
-      single: 'Yes',
-      med: 'No · marketplace routes to next eligible lender',
+      single: 'Yes — they get another quote',
+      med: 'No — marketplace routes to next eligible lender',
     },
     {
       k: 'Ticket range',
-      single: 'Capped by one lender',
-      med: 'Marketplace coverage · $3k to $50k',
+      single: 'Capped by one lender (often $50k)',
+      med: '$3k to $100k · prime to subprime',
     },
     {
-      k: 'Pre-qual in-session',
-      single: 'Soft pull with that lender',
-      med: 'Soft pull across the marketplace',
+      k: 'Clawback on routine defaults',
+      single: 'Promo-plan clawback risk',
+      med: 'No clawback on standard plans',
     },
-    { k: 'Agent layer', single: 'None', med: 'Six autonomous agents' },
+    {
+      k: 'Doorstep close',
+      single: 'Apply on phone post-visit',
+      med: 'Soft pull + approval at the driveway',
+    },
+    {
+      k: 'Agent layer',
+      single: 'None',
+      med: 'Six autonomous agents · ORACLE/HELIX/NEXUS/FLUX/ECHO/VEGA',
+    },
     {
       k: 'Pixel attribution',
       single: 'On form-fill (junk signal)',
       med: 'ECHO fires on funded job (real signal)',
+    },
+    {
+      k: 'Vs Home Depot installer financing',
+      single: 'Beats you on the deferred-interest pitch',
+      med: 'Match deferred plans · own the homeowner relationship',
     },
   ];
   return (
@@ -1711,8 +1738,8 @@ function VsTable(): JSX.Element {
       <thead>
         <tr>
           <th></th>
-          <th>Single-lender (Cherry, Sunbit, GreenSky)</th>
-          <th className="accent">TradePay</th>
+          <th>Single-lender (GreenSky alone, Sunlight alone, Synchrony alone)</th>
+          <th className="accent">TradePay marketplace</th>
         </tr>
       </thead>
       <tbody>
@@ -1770,9 +1797,9 @@ function IpadFormMock(): JSX.Element {
           <div className="sld-ipad-form">
             {[
               { k: 'Last 4 of SSN', v: '••••' },
-              { k: 'Date of birth', v: '04 / 12 / 1985' },
-              { k: 'Annual income', v: '$96,000' },
-              { k: 'Home address', v: '1418 Maple Dr, Austin TX' },
+              { k: 'Date of birth', v: '11 / 03 / 1982' },
+              { k: 'Annual household income', v: '$124,000' },
+              { k: 'Service address', v: '4218 Pinebrook Way, Tampa FL' },
             ].map((f, i) => (
               <div key={i} className="sld-ipad-field" style={{ animationDelay: `${i * 0.4}s` }}>
                 <div className="sld-ipad-field-k">{f.k}</div>
@@ -1791,9 +1818,9 @@ function IpadFormMock(): JSX.Element {
 /** Three ranked offers (Stage 4). Cheapest first, star on winner. */
 function OfferStack(): JSX.Element {
   const offers = [
-    { lender: 'BuildBank', monthly: '$436', term: '60 mo', tag: 'Best total cost', star: true },
-    { lender: 'CoreCredit', monthly: '$480', term: '60 mo', tag: '2nd cheapest' },
-    { lender: 'FinWise', monthly: '$510', term: '60 mo', tag: '3rd' },
+    { lender: 'GreenSky', monthly: '$372', term: '84 mo', tag: 'Lowest monthly', star: true },
+    { lender: 'Sunlight Financial', monthly: '$386', term: '84 mo', tag: '2nd cheapest' },
+    { lender: 'Service Finance', monthly: '$417', term: '84 mo', tag: '3rd' },
   ];
   return (
     <div className="sld-offer-stack">
@@ -1859,8 +1886,8 @@ function Storyboard(): JSX.Element {
     {
       n: '01',
       t: 'Enter info',
-      b: 'Homeowner taps in last 4 of SSN, DOB, income, address on any device.',
-      meta: '30 sec',
+      b: 'Estimator hands the iPad in the driveway. SSN-4, DOB, income, address. Done in a minute.',
+      meta: 'In the driveway',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
           <rect
@@ -1882,7 +1909,7 @@ function Storyboard(): JSX.Element {
     {
       n: '02',
       t: 'Soft pull',
-      b: 'Marketplace returns fundability tier with zero credit impact. FCRA-compliant.',
+      b: 'Soft pull across GreenSky, Sunlight, Service Finance, Synchrony, EnerBank, Mosaic. FCRA-compliant.',
       meta: '< 10 sec',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
@@ -1906,7 +1933,7 @@ function Storyboard(): JSX.Element {
     {
       n: '03',
       t: 'See offers',
-      b: 'Three ranked offers on one screen. Cheapest first. Best total cost is starred.',
+      b: 'Three ranked offers on one screen. Cheapest monthly payment first. Recommended starred.',
       meta: '3 offers',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
@@ -1951,7 +1978,7 @@ function Storyboard(): JSX.Element {
     {
       n: '04',
       t: 'Tap to fund',
-      b: 'Homeowner e-signs in-session. Funds settle merchant-direct in 48-72 hours.',
+      b: 'Homeowner e-signs in the driveway. Funds wire merchant-direct in 48-72 hours. Job goes in the schedule.',
       meta: '48–72 hr',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
@@ -1985,25 +2012,25 @@ function Storyboard(): JSX.Element {
 
 /** Money-flow breakdown — where the $1.4M goes. Slide 2 supplement. */
 function MoneyBreakdown(): JSX.Element {
-  // Quiet teal-only breakdown of where the $1.41M leaks.
+  // Quiet orange-only breakdown of where the $1.6M leaks for a trades business.
   const rows = [
     {
-      k: 'Lost case acceptance',
-      sub: '~24 declined cases/yr · $48k avg ticket · 95%',
-      v: '$1,094,400',
-      pct: '77.7%',
+      k: 'Lost job acceptance',
+      sub: '~28 walked estimates/yr · $42k avg ticket · 90%',
+      v: '$1,058,400',
+      pct: '66.2%',
     },
     {
-      k: 'Filler clinical hours',
-      sub: '~7 unfit estimates/wk · 1.5 hr · $400/hr · 52',
-      v: '$218,400',
-      pct: '15.5%',
+      k: 'Wasted truck-roll hours',
+      sub: '~9 unfit estimates/wk · 2.5 hr drive + estimate · $180/hr × 52',
+      v: '$421,200',
+      pct: '26.3%',
     },
     {
-      k: 'Truck-roll + estimator costs',
-      sub: 'fuel + opportunity cost on no-fund visits',
-      v: '$96,000',
-      pct: '6.8%',
+      k: 'Fuel + estimator opportunity cost',
+      sub: 'fuel @ $0.65/mi × 380 mi/wk × 52 + lost callouts',
+      v: '$120,400',
+      pct: '7.5%',
     },
   ];
   return (
@@ -2023,10 +2050,10 @@ function MoneyBreakdown(): JSX.Element {
       <div className="sld-money-row sld-money-row-total">
         <div className="sld-money-row-l">
           <div className="sld-money-row-k">Total annual leakage</div>
-          <div className="sld-money-row-sub">illustrative · mid-size HVAC crew</div>
+          <div className="sld-money-row-sub">illustrative · mid-size roofing or HVAC crew</div>
         </div>
         <div className="sld-money-row-r">
-          <div className="sld-money-row-v sld-money-row-v-total">$1.41M</div>
+          <div className="sld-money-row-v sld-money-row-v-total">$1.60M</div>
         </div>
       </div>
     </div>
@@ -2065,19 +2092,19 @@ function SampleInvoice(): JSX.Element {
             <td>$10,000.00</td>
           </tr>
           <tr>
-            <td>All 6 agents (ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</td>
-            <td>incl.</td>
-            <td>—</td>
-            <td>$0.00</td>
+            <td>Smart-form lead pass-through · sample month</td>
+            <td>420</td>
+            <td>$3.00</td>
+            <td>$1,260.00</td>
           </tr>
           <tr>
-            <td>Pixel + CAPI integration · staff training</td>
-            <td>incl.</td>
-            <td>—</td>
-            <td>$0.00</td>
+            <td>Origination · 4% of settled loans · sample month</td>
+            <td>$184,400</td>
+            <td>4%</td>
+            <td>$7,376.00</td>
           </tr>
           <tr>
-            <td>Monthly platform fee · forever</td>
+            <td>Monthly platform fee</td>
             <td>—</td>
             <td>—</td>
             <td>$0.00</td>
@@ -2086,16 +2113,17 @@ function SampleInvoice(): JSX.Element {
         <tfoot>
           <tr>
             <td colSpan={3}>
-              <strong>Total · paid once</strong>
+              <strong>Month 1 total · sample</strong>
             </td>
             <td>
-              <strong>$10,000.00</strong>
+              <strong>$18,636.00</strong>
             </td>
           </tr>
         </tfoot>
       </table>
       <div className="sld-invoice-foot">
-        One-time platform setup · live in up to 5 business days · no recurring fee
+        $10,000 setup is one-time. After that you only pay $3 per smart-form lead and 4% of loans
+        that actually settled.
       </div>
     </div>
   );
@@ -2206,47 +2234,47 @@ function SmartRoutingViz(): JSX.Element {
       <div className="sld-funnel-branches">
         <div className="sld-funnel-branch sld-funnel-branch-high">
           <div className="sld-funnel-branch-head">
-            <span className="sld-funnel-branch-tag">HIGH-TICKET</span>
-            <span className="sld-funnel-branch-crit">≥ 680 · ≥ $5k · DTI &lt; 40%</span>
+            <span className="sld-funnel-branch-tag">FULL-JOB LANE</span>
+            <span className="sld-funnel-branch-crit">≥ 680 · ≥ $10k ticket · DTI &lt; 45%</span>
           </div>
           <ol className="sld-funnel-branch-steps">
             <li>
               <span className="sld-funnel-step-n">01</span>
-              <span className="sld-funnel-step-h">Filter by credit score</span>
+              <span className="sld-funnel-step-h">Filter by homeowner credit</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">02</span>
-              <span className="sld-funnel-step-h">Filter by income</span>
+              <span className="sld-funnel-step-h">Filter by ticket fit</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">03</span>
               <span className="sld-funnel-step-h">Filter by available credit</span>
             </li>
           </ol>
-          <div className="sld-funnel-branch-outcome">Booked on calendar · pre-approved</div>
+          <div className="sld-funnel-branch-outcome">Estimator dispatched · job pre-approved</div>
         </div>
 
         <div className="sld-funnel-branch sld-funnel-branch-low">
           <div className="sld-funnel-branch-head">
-            <span className="sld-funnel-branch-tag">LOW-TICKET</span>
-            <span className="sld-funnel-branch-crit">Below floor · still warm</span>
+            <span className="sld-funnel-branch-tag">REPAIR / NURTURE LANE</span>
+            <span className="sld-funnel-branch-crit">Below floor · partial-scope warm</span>
           </div>
           <ol className="sld-funnel-branch-steps">
             <li>
               <span className="sld-funnel-step-n">01</span>
-              <span className="sld-funnel-step-h">Free guide / e-book</span>
+              <span className="sld-funnel-step-h">Offer repair / maintenance scope</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">02</span>
-              <span className="sld-funnel-step-h">Low-ticket starter offer</span>
+              <span className="sld-funnel-step-h">Storm-damage rebate / financing guide</span>
             </li>
             <li>
               <span className="sld-funnel-step-n">03</span>
-              <span className="sld-funnel-step-h">Nurture · re-pull in 90 days</span>
+              <span className="sld-funnel-step-h">Re-pull in 90 days · score recovery</span>
             </li>
           </ol>
           <div className="sld-funnel-branch-outcome sld-funnel-branch-outcome-low">
-            Routed back to high-ticket
+            Routed back to full-job lane
           </div>
         </div>
       </div>
@@ -2268,7 +2296,7 @@ function SmartphoneMock(): JSX.Element {
               <span className="sld-phone-card-dot" /> TradePay · approved
             </div>
             <div className="sld-phone-card-amount">$12,000</div>
-            <div className="sld-phone-card-meta">HVAC swap · approved</div>
+            <div className="sld-phone-card-meta">Full re-roof · approved</div>
             <div className="sld-phone-card-row">
               <span>Est. monthly</span>
               <strong>$250 / mo</strong>
@@ -2437,7 +2465,7 @@ function WhoIsItFor(): JSX.Element {
       code: 'V01',
       name: 'Roofing',
       ticket: '$8k – $80k',
-      who: 'Full re-roofs, gutters, fascia, storm-damage rebuilds',
+      who: 'Full re-roofs, storm-damage rebuilds, gutters, fascia',
     },
     {
       code: 'V02',
@@ -2526,9 +2554,9 @@ function SixAgents(): JSX.Element {
   }> = [
     {
       code: 'ORACLE',
-      role: 'Financial qualification',
-      watches: 'Reporting-bureau pull on every lead',
-      output: 'Credit · available credit · income · DTI · pre-approval $',
+      role: 'Homeowner qualification',
+      watches: 'Reporting-bureau soft pull on every estimate',
+      output: 'Credit · DTI · available credit · income · pre-approval $',
       version: 'v4.2',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2545,9 +2573,9 @@ function SixAgents(): JSX.Element {
     },
     {
       code: 'HELIX',
-      role: 'Smart forms + smart routing',
-      watches: 'Form behaviour + financial signals',
-      output: 'Reshapes the form · routes by credit → income → DTI',
+      role: 'Smart intake + ticket routing',
+      watches: 'Form behaviour + ticket size + zip code',
+      output: 'Routes full-job leads to estimator · maintenance leads to nurture',
       version: 'v3.8',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2569,9 +2597,9 @@ function SixAgents(): JSX.Element {
     },
     {
       code: 'NEXUS',
-      role: 'Lender marketplace',
-      watches: 'Lender appetite + rates',
-      output: 'Ranked parallel quotes',
+      role: 'Trades lender marketplace',
+      watches: 'GreenSky · Sunlight · Service Finance · Synchrony · EnerBank · Mosaic',
+      output: 'Ranked parallel quotes · cheapest monthly wins',
       version: 'v6.1',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2592,9 +2620,9 @@ function SixAgents(): JSX.Element {
     },
     {
       code: 'FLUX',
-      role: 'Lender routing',
-      watches: 'Approval rates per tier',
-      output: 'Optimal lender order',
+      role: 'Adaptive lender ordering',
+      watches: 'Approval rates · stip pull-throughs · dealer fee · clawback risk',
+      output: 'Optimal lender sequence per homeowner profile',
       version: 'v2.5',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2619,9 +2647,9 @@ function SixAgents(): JSX.Element {
     },
     {
       code: 'ECHO',
-      role: 'Pixel attribution',
-      watches: 'The funded-homeowner signal',
-      output: 'Re-trains Meta + Google',
+      role: 'Pixel + ad attribution',
+      watches: 'Funded-install signal · CAPI server-side',
+      output: 'Re-trains Meta + Google + TikTok on real installs',
       version: 'v5.0',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2779,21 +2807,56 @@ function EchoPixel(): JSX.Element {
         </div>
       </Reveal>
       <Reveal delay={480}>
-        <div className="sld-echo-loop">
-          <span className="sld-echo-loop-arrow">↑</span>
-          <span className="sld-echo-loop-label">
-            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta
-            and Google is a real funded homeowner, not a form-fill. Your algorithm retrains on the
-            right buyer profile.
-          </span>
-        </div>
-      </Reveal>
-      <Reveal delay={600}>
-        <div className="sld-mini-stats">
-          <MiniStat v="−38%" k="CPA in 90 days" />
-          <MiniStat v="+1.6×" k="Funded leads / spend" />
-          <MiniStat v="CAPI" k="Server-side · GDPR-safe" />
-          <MiniStat v="Per-channel" k="Meta · Google · TikTok" />
+        <div className="sld-echo-3d">
+          <div className="sld-echo-3d-stage">
+            <span className="sld-echo-3d-tag">STAGE 05 · FIRES</span>
+            <span className="sld-echo-3d-h">Funded homeowner</span>
+            <span className="sld-echo-3d-sub">ECHO holds the pixel until cash settles</span>
+          </div>
+          <div className="sld-echo-3d-stream" aria-hidden>
+            <svg viewBox="0 0 400 140" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="echoBeam" x1="0" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(251, 146, 60, 0.0)" />
+                  <stop offset="50%" stopColor="rgba(251, 146, 60, 0.55)" />
+                  <stop offset="100%" stopColor="rgba(251, 146, 60, 0.0)" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 0 130 Q 100 60, 200 70 T 400 10"
+                stroke="url(#echoBeam)"
+                strokeWidth="2.5"
+                fill="none"
+                strokeDasharray="6 6"
+                strokeLinecap="round"
+              />
+              <circle cx="200" cy="70" r="3" fill="var(--mp-teal-2)" opacity="0.7" />
+              <circle cx="100" cy="100" r="2" fill="var(--mp-teal)" opacity="0.4" />
+              <circle cx="300" cy="32" r="2.5" fill="var(--mp-teal-2)" opacity="0.85" />
+            </svg>
+          </div>
+          <div className="sld-echo-3d-platforms" aria-hidden>
+            <div className="sld-echo-3d-platform sld-echo-3d-platform-meta">
+              <span className="sld-echo-3d-platform-k">META</span>
+              <span className="sld-echo-3d-platform-sig">conversion received</span>
+              <span className="sld-echo-3d-platform-dot" />
+            </div>
+            <div className="sld-echo-3d-platform sld-echo-3d-platform-google">
+              <span className="sld-echo-3d-platform-k">GOOGLE</span>
+              <span className="sld-echo-3d-platform-sig">conversion received</span>
+              <span className="sld-echo-3d-platform-dot" />
+            </div>
+            <div className="sld-echo-3d-platform sld-echo-3d-platform-tiktok">
+              <span className="sld-echo-3d-platform-k">TIKTOK</span>
+              <span className="sld-echo-3d-platform-sig">conversion received</span>
+              <span className="sld-echo-3d-platform-dot" />
+            </div>
+          </div>
+          <div className="sld-echo-3d-caption">
+            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta,
+            Google, and TikTok is a real funded homeowner — not a form-fill. Your algorithm retrains
+            on the right buyer profile.
+          </div>
         </div>
       </Reveal>
     </div>
@@ -2803,20 +2866,21 @@ function EchoPixel(): JSX.Element {
 /** Compound effect — 12-month growth chart showing what cumulative
  *  TradePay revenue + lead-quality improvement looks like. */
 function CompoundEffect(): JSX.Element {
-  // 12 monthly points: revenue uplift (cumulative) + CPA reduction
+  // 12 monthly points · trades-scale cumulative recovered revenue ($ thousands)
+  // Mid-size contractor: ~$120k extra recovered in M01, ramping with pixel retrain.
   const months = [
-    { m: 'M01', rev: 14, cpa: 0 },
-    { m: 'M02', rev: 32, cpa: -4 },
-    { m: 'M03', rev: 54, cpa: -9 },
-    { m: 'M04', rev: 81, cpa: -14 },
-    { m: 'M05', rev: 113, cpa: -19 },
-    { m: 'M06', rev: 148, cpa: -25 },
-    { m: 'M07', rev: 186, cpa: -29 },
-    { m: 'M08', rev: 226, cpa: -32 },
-    { m: 'M09', rev: 268, cpa: -34 },
-    { m: 'M10', rev: 311, cpa: -36 },
-    { m: 'M11', rev: 354, cpa: -37 },
-    { m: 'M12', rev: 398, cpa: -38 },
+    { m: 'M01', rev: 120, cpa: 0 },
+    { m: 'M02', rev: 252, cpa: -4 },
+    { m: 'M03', rev: 396, cpa: -9 },
+    { m: 'M04', rev: 552, cpa: -14 },
+    { m: 'M05', rev: 720, cpa: -19 },
+    { m: 'M06', rev: 900, cpa: -25 },
+    { m: 'M07', rev: 1092, cpa: -29 },
+    { m: 'M08', rev: 1296, cpa: -32 },
+    { m: 'M09', rev: 1512, cpa: -34 },
+    { m: 'M10', rev: 1740, cpa: -36 },
+    { m: 'M11', rev: 1980, cpa: -37 },
+    { m: 'M12', rev: 2232, cpa: -38 },
   ];
   const maxRev = Math.max(...months.map((m) => m.rev));
   return (
@@ -2835,9 +2899,10 @@ function CompoundEffect(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          TradePay does not just close more homeowners today. It compounds. Each funded homeowner
-          re-trains your pixel. The pixel sends better leads. Better leads close at a higher rate.
-          The cycle accelerates. Twelve months in, the business is unrecognisable.
+          TradePay does not just close more homeowners at today&apos;s estimate. It compounds. Each
+          funded install re-trains your pixel. Meta and Google start sending you homeowners who
+          actually buy, not tire-kickers. Better leads close at a higher rate. The cycle
+          accelerates. Twelve months in, the truck schedule is unrecognisable.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -2858,7 +2923,7 @@ function CompoundEffect(): JSX.Element {
             <div>
               <div className="sld-comp-legend-k">Cumulative recovered revenue</div>
               <div className="sld-comp-legend-v">
-                ~$398k by month 12 · mid-size business · illustrative
+                ~$2.2M by month 12 · mid-size contractor · illustrative
               </div>
             </div>
             <div>
@@ -2872,10 +2937,10 @@ function CompoundEffect(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-mini-stats">
-          <MiniStat v="~$398k" k="Cum. recovered / yr" />
+          <MiniStat v="~$2.2M" k="Cum. recovered / yr" />
           <MiniStat v="−38%" k="CPA by month 12" />
-          <MiniStat v="2.4×" k="Funded homeowners / 1k spend" />
-          <MiniStat v="+27%" k="Form completion (vs. M01)" />
+          <MiniStat v="2.4×" k="Funded jobs / $1k ad spend" />
+          <MiniStat v="+27%" k="Estimate-to-install rate (vs. M01)" />
         </div>
       </Reveal>
     </div>
@@ -2987,7 +3052,9 @@ function ValueStack(): JSX.Element {
           </div>
           <div className="sld-stack-total-row accent">
             <span className="sld-stack-total-k">TradePay</span>
-            <span className="sld-stack-total-v">$10,000 one-time · live in 5 days</span>
+            <span className="sld-stack-total-v">
+              $10,000 one-time · $3 / lead · 4% of settled loans
+            </span>
           </div>
         </div>
       </Reveal>
@@ -3099,8 +3166,8 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
-          One platform fee of $10,000. Live in up to five business days. 1,000+ contractors already
-          running on TradePay.
+          $10,000 to set up. $3 per smart-form lead. 4% of loans that actually settle. Live in up to
+          five business days. 1,000+ contractors already running on TradePay.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3118,22 +3185,32 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ contractors · $10,000 one-time · no
-          monthly fee
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ contractors · $10k setup · $3 / lead · 4%
+          settled
         </div>
       </Reveal>
     </div>
   );
 }
 
-/** Interactive economics slide — 3 sliders, math runs live */
+/** Interactive economics slide — 5 sliders covering the full funnel,
+ *  with the actual math shown as a formula below each output. */
 function EconomicsSlide(): JSX.Element {
-  const [leads, setLeads] = useState(180);
+  // Defaults tuned for a mid-size contractor: 120 estimates/month, ~50%
+  // homeowner-qualifies, $18k average ticket (HVAC swap / kitchen reno).
+  // Close rates: 22% baseline doorstep close without financing, 65% with
+  // TradePay. 80% of approved offers actually fund (some homeowners
+  // back out, some lenders pull stips at funding).
+  const [leads, setLeads] = useState(120);
   const [qualPct, setQualPct] = useState(50);
-  const [ticket, setTicket] = useState(8000);
+  const [ticket, setTicket] = useState(18000);
+  const [closeWithout, setCloseWithout] = useState(22);
+  const [closeWith, setCloseWith] = useState(65);
+  const [fundPct, setFundPct] = useState(80);
 
-  const fundedWith = Math.round(leads * (qualPct / 100) * 0.7 * 0.7);
-  const fundedWithout = Math.round(leads * (qualPct / 100) * 0.18);
+  const qualified = Math.round(leads * (qualPct / 100));
+  const fundedWith = Math.round(qualified * (closeWith / 100) * (fundPct / 100));
+  const fundedWithout = Math.round(qualified * (closeWithout / 100));
   const revWith = fundedWith * 12 * ticket;
   const revWithout = fundedWithout * 12 * ticket;
   const delta = Math.max(0, revWith - revWithout);
@@ -3163,7 +3240,7 @@ function EconomicsSlide(): JSX.Element {
           <div className="sld-econ-inputs">
             <div className="sld-econ-input">
               <label>
-                Inbound leads / month <strong>{leads}</strong>
+                Inbound leads / month <span className="sld-econ-input-v">{leads}</span>
               </label>
               <input
                 type="range"
@@ -3176,7 +3253,7 @@ function EconomicsSlide(): JSX.Element {
             </div>
             <div className="sld-econ-input">
               <label>
-                Qualified % <strong>{qualPct}%</strong>
+                Qualified % <span className="sld-econ-input-v">{qualPct}%</span>
               </label>
               <input
                 type="range"
@@ -3189,33 +3266,85 @@ function EconomicsSlide(): JSX.Element {
             </div>
             <div className="sld-econ-input">
               <label>
-                Avg ticket <strong>${ticket.toLocaleString('en-US')}</strong>
+                Avg ticket{' '}
+                <span className="sld-econ-input-v">${ticket.toLocaleString('en-US')}</span>
               </label>
               <input
                 type="range"
-                min={3000}
-                max={25000}
+                min={5000}
+                max={80000}
                 step={500}
                 value={ticket}
                 onChange={(e) => setTicket(Number(e.target.value))}
               />
             </div>
+            <div className="sld-econ-input">
+              <label>
+                Close % · without TradePay <span className="sld-econ-input-v">{closeWithout}%</span>
+              </label>
+              <input
+                type="range"
+                min={10}
+                max={35}
+                step={1}
+                value={closeWithout}
+                onChange={(e) => setCloseWithout(Number(e.target.value))}
+              />
+            </div>
+            <div className="sld-econ-input">
+              <label>
+                Close % · with TradePay <span className="sld-econ-input-v">{closeWith}%</span>
+              </label>
+              <input
+                type="range"
+                min={40}
+                max={90}
+                step={1}
+                value={closeWith}
+                onChange={(e) => setCloseWith(Number(e.target.value))}
+              />
+            </div>
+            <div className="sld-econ-input">
+              <label>
+                Funded % · lender approval <span className="sld-econ-input-v">{fundPct}%</span>
+              </label>
+              <input
+                type="range"
+                min={50}
+                max={95}
+                step={1}
+                value={fundPct}
+                onChange={(e) => setFundPct(Number(e.target.value))}
+              />
+            </div>
           </div>
           <div className="sld-econ-outputs">
             <div className="sld-econ-card">
-              <div className="sld-econ-eyebrow">Without TradePay · 18% close</div>
+              <div className="sld-econ-eyebrow">Without TradePay</div>
               <div className="sld-econ-num">{fmt(revWithout)}</div>
               <div className="sld-econ-sub">Recovered revenue / yr</div>
               <div className="sld-econ-sub-sm">
                 {fundedWithout.toLocaleString('en-US')} funded homeowners / mo
               </div>
+              <div className="sld-econ-math">
+                {leads} leads × {qualPct}% qualified × {closeWithout}% close = {fundedWithout}/mo
+                <br />
+                {fundedWithout} × ${ticket.toLocaleString('en-US')} × 12 ={' '}
+                <strong>{fmt(revWithout)}</strong>
+              </div>
             </div>
             <div className="sld-econ-card with">
-              <div className="sld-econ-eyebrow accent">With TradePay · 70% close · 70% funded</div>
+              <div className="sld-econ-eyebrow accent">With TradePay</div>
               <div className="sld-econ-num accent">{fmt(revWith)}</div>
               <div className="sld-econ-sub">Recovered revenue / yr</div>
               <div className="sld-econ-sub-sm">
                 {fundedWith.toLocaleString('en-US')} funded homeowners / mo
+              </div>
+              <div className="sld-econ-math accent">
+                {leads} × {qualPct}% × {closeWith}% × {fundPct}% funded = {fundedWith}/mo
+                <br />
+                {fundedWith} × ${ticket.toLocaleString('en-US')} × 12 ={' '}
+                <strong>{fmt(revWith)}</strong>
               </div>
             </div>
           </div>
@@ -4168,26 +4297,26 @@ const CSS = `
 }
 .sld-econ-inputs {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 .sld-econ-input {
-  padding: 20px 22px;
-  background: rgba(255, 255, 255, 0.92);
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--mp-line);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 .sld-econ-input label {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 12px; font-weight: 600;
+  font-size: 11.5px; font-weight: 600;
   color: var(--mp-mute);
-  letter-spacing: 0.04em;
-  margin-bottom: 12px;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
 }
-.sld-econ-input strong {
-  font-size: 22px; font-weight: 800;
+.sld-econ-input-v {
+  font-size: 16px; font-weight: 700;
   color: var(--mp-teal);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.012em;
 }
 .sld-econ-input input[type="range"] {
   -webkit-appearance: none; appearance: none;
@@ -4250,6 +4379,22 @@ const CSS = `
 .sld-econ-sub-sm {
   margin-top: 2px;
   font-size: 12px; color: var(--mp-mute);
+}
+.sld-econ-math {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--mp-line);
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11.5px; line-height: 1.55;
+  color: var(--mp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.sld-econ-math strong {
+  color: var(--mp-ink);
+  font-weight: 700;
+}
+.sld-econ-math.accent strong {
+  color: var(--mp-teal);
 }
 .sld-econ-delta {
   padding: 18px 22px;
@@ -5044,6 +5189,111 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
+/* Pricing v14 — three-line-item stack */
+.sld-pricing-stack {
+  display: flex; flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.sld-pricing-tier {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  padding: 22px 26px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px -28px rgba(234, 88, 12, 0.22);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sld-pricing-tier:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 50px -28px rgba(234, 88, 12, 0.32);
+  border-color: rgba(234, 88, 12, 0.22);
+}
+.sld-pricing-tier-hero {
+  background:
+    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(251, 146, 60, 0.16), transparent 65%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #7C2D12 100%);
+  color: #fff;
+  border-color: rgba(251, 146, 60, 0.30);
+  box-shadow:
+    0 28px 60px -28px rgba(234, 88, 12, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-pricing-tier-hero .sld-pricing-tier-tag { color: var(--mp-teal-2); }
+.sld-pricing-tier-hero .sld-pricing-tier-h { color: #fff; }
+.sld-pricing-tier-hero .sld-pricing-tier-b { color: rgba(255, 255, 255, 0.72); }
+.sld-pricing-tier-hero .sld-pricing-tier-when { color: rgba(255, 255, 255, 0.60); }
+.sld-pricing-tier-hero .sld-pricing-tier-v {
+  background: linear-gradient(135deg, #fff 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-pricing-tier-l {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sld-pricing-tier-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-pricing-tier-h {
+  font-size: 18px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--mp-ink);
+}
+.sld-pricing-tier-b {
+  font-size: 13px;
+  color: var(--mp-mute);
+  line-height: 1.5;
+}
+.sld-pricing-tier-r {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.sld-pricing-tier-v {
+  font-size: 42px; font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 1;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-pricing-tier:not(.sld-pricing-tier-hero) .sld-pricing-tier-v {
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-pricing-tier-when {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--mp-mute);
+  letter-spacing: 0.04em;
+}
+.sld-pricing-foot {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+.sld-pricing-foot-row {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+}
+.sld-pricing-foot-k {
+  font-size: 10.5px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+.sld-pricing-foot-v {
+  font-size: 16px; font-weight: 600;
+  color: var(--mp-ink);
+  letter-spacing: -0.012em;
+}
+
 /* Pricing 2-col grid + sample invoice */
 .sld-price-grid {
   display: grid; grid-template-columns: 1fr 1.05fr;
@@ -5501,29 +5751,114 @@ const CSS = `
   margin-top: 2px;
   font-size: 11px; color: var(--mp-mute);
 }
-.sld-echo-loop {
-  margin-top: 10px;
-  padding: 18px 22px;
+/* ECHO 3D feedback loop — funded stage signals back to ad platforms */
+.sld-echo-3d {
+  position: relative;
+  margin-top: 16px;
+  padding: 32px 28px 24px;
+  border-radius: 20px;
   background:
-    linear-gradient(90deg, rgba(251, 146, 60, 0.14) 0%, rgba(251, 146, 60, 0.04) 100%);
-  border: 1px solid rgba(251, 146, 60, 0.35);
+    radial-gradient(ellipse 70% 100% at 0% 100%, rgba(251, 146, 60, 0.16), transparent 65%),
+    radial-gradient(ellipse 60% 80% at 100% 0%, rgba(234, 88, 12, 0.12), transparent 65%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 250, 0.98) 100%);
+  border: 1px solid var(--mp-line-strong);
+  overflow: hidden;
+  box-shadow: 0 28px 60px -32px rgba(234, 88, 12, 0.30);
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 18px;
+  align-items: center;
+  perspective: 1400px;
+}
+.sld-echo-3d-stage {
+  grid-column: 1; grid-row: 1;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 20px;
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(251, 146, 60, 0.32), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #7C2D12 100%);
+  color: #fff;
   border-radius: 14px;
-  display: grid; grid-template-columns: 36px 1fr;
-  gap: 14px; align-items: center;
+  box-shadow:
+    0 22px 50px -22px rgba(234, 88, 12, 0.55),
+    0 0 0 1px rgba(251, 146, 60, 0.32);
+  transform: rotateY(8deg) translateZ(20px);
+  transform-style: preserve-3d;
 }
-.sld-echo-loop-arrow {
-  font-size: 28px; font-weight: 800;
+.sld-echo-3d-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal-2);
+  text-transform: uppercase;
+}
+.sld-echo-3d-h {
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: #fff;
+}
+.sld-echo-3d-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+}
+.sld-echo-3d-stream {
+  grid-column: 2; grid-row: 1;
+  position: relative;
+  height: 140px;
+}
+.sld-echo-3d-stream svg {
+  width: 100%; height: 100%;
+}
+.sld-echo-3d-platforms {
+  grid-column: 3; grid-row: 1;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  transform-style: preserve-3d;
+}
+.sld-echo-3d-platform {
+  position: relative;
+  display: grid;
+  grid-template-columns: 70px 1fr 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--mp-line-strong);
+  box-shadow: 0 10px 22px -12px rgba(234, 88, 12, 0.30);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.sld-echo-3d-platform-meta { transform: rotateY(-8deg) translateZ(28px); }
+.sld-echo-3d-platform-google { transform: rotateY(-8deg) translateZ(14px); }
+.sld-echo-3d-platform-tiktok { transform: rotateY(-8deg) translateZ(0); }
+.sld-echo-3d-platform-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 700;
   color: var(--mp-teal);
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
+  letter-spacing: 0.10em;
+}
+.sld-echo-3d-platform-sig {
+  font-size: 11px;
+  color: var(--mp-mute);
+}
+.sld-echo-3d-platform-dot {
+  width: 8px; height: 8px;
   border-radius: 999px;
-  background: rgba(251, 146, 60, 0.22);
+  background: var(--mp-teal-2);
+  box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.55);
+  animation: sldLivePulse 1.8s ease-in-out infinite;
 }
-.sld-echo-loop-label {
-  font-size: 14px; line-height: 1.55;
+.sld-echo-3d-caption {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding-top: 16px;
+  border-top: 1px dashed var(--mp-line);
+  font-size: 13px; line-height: 1.55;
   color: var(--mp-ink-2);
+  text-align: center;
 }
-.sld-echo-loop-label strong { color: var(--mp-teal); font-weight: 700; }
 
 /* ===== Compound effect 12-month bar chart ===== */
 .sld-comp-chart {
@@ -5677,30 +6012,72 @@ const CSS = `
 .sld-funnel {
   display: flex; flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: 8px;
   margin-top: 8px;
+  perspective: 1800px;
+  perspective-origin: 50% 0%;
 }
 .sld-funnel-stages {
   display: flex; flex-direction: column;
-  gap: 4px;
+  gap: 0;
+  transform-style: preserve-3d;
 }
 .sld-funnel-stage {
+  position: relative;
   display: flex; flex-direction: column; align-items: center;
   gap: 4px;
-  padding: 12px 20px;
+  padding: 14px 22px;
   text-align: center;
   background:
-    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(251, 146, 60, 0.10), transparent 70%),
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(251, 146, 60, 0.12), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.98) 100%);
   border: 1px solid var(--mp-line-strong);
   border-radius: 14px;
-  box-shadow: 0 16px 36px -28px rgba(234, 88, 12, 0.25);
+  box-shadow:
+    0 22px 50px -32px rgba(234, 88, 12, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform-style: preserve-3d;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+/* Subtle stacking — each stage sits slightly forward of the previous,
+   reinforcing the flow direction without tilting anything. */
+.sld-funnel-stage:nth-of-type(1) { transform: translateZ(0px); }
+.sld-funnel-stage:nth-of-type(3) { transform: translateZ(8px); }
+.sld-funnel-stage:nth-of-type(5) {
+  transform: translateZ(16px);
+  box-shadow:
+    0 30px 60px -30px rgba(234, 88, 12, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 .sld-funnel-connector {
   align-self: center;
-  width: 1px;
-  height: 14px;
-  background: linear-gradient(180deg, rgba(234, 88, 12, 0.40), rgba(234, 88, 12, 0.10));
+  position: relative;
+  width: 28px;
+  height: 36px;
+  margin: -2px 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sld-funnel-connector::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 14px;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.0), rgba(234, 88, 12, 0.55));
+  border-radius: 999px;
+}
+.sld-funnel-connector::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  margin-left: -5px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid var(--mp-teal);
+  filter: drop-shadow(0 2px 4px rgba(234, 88, 12, 0.35));
 }
 .sld-funnel-stage-tag {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
@@ -5735,18 +6112,45 @@ const CSS = `
 }
 .sld-funnel-router {
   align-self: center;
+  position: relative;
   display: inline-flex; align-items: center; gap: 8px;
-  margin: 6px 0 2px;
-  padding: 7px 16px;
+  margin: 14px 0 22px;
+  padding: 9px 20px;
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-teal);
+  color: #fff;
   text-transform: uppercase;
-  background: #fff;
-  border: 1px solid rgba(234, 88, 12, 0.32);
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(251, 146, 60, 0.40), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #7C2D12 100%);
+  border: 1px solid rgba(251, 146, 60, 0.45);
   border-radius: 999px;
-  box-shadow: 0 8px 18px -10px rgba(234, 88, 12, 0.30);
+  box-shadow:
+    0 18px 36px -16px rgba(234, 88, 12, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   white-space: nowrap;
+  transform: translateZ(24px);
+}
+/* Diverging arms — SVG-free pure-CSS fork from router to the two branches */
+.sld-funnel-router::before,
+.sld-funnel-router::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  width: 2px;
+  height: 22px;
+  background: linear-gradient(180deg, rgba(234, 88, 12, 0.55), rgba(234, 88, 12, 0.10));
+}
+.sld-funnel-router::before {
+  left: 30%;
+  transform: rotate(-22deg);
+  transform-origin: 50% 0%;
+}
+.sld-funnel-router::after {
+  right: 30%;
+  transform: rotate(22deg);
+  transform-origin: 50% 0%;
 }
 .sld-funnel-router-dot {
   width: 6px; height: 6px; border-radius: 999px;
@@ -5756,6 +6160,7 @@ const CSS = `
 .sld-funnel-branches {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 14px;
+  transform-style: preserve-3d;
 }
 .sld-funnel-branch {
   display: flex; flex-direction: column;
@@ -5764,18 +6169,28 @@ const CSS = `
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--mp-line);
   border-radius: 16px;
-  box-shadow: 0 18px 40px -28px rgba(234, 88, 12, 0.22);
-  transition: transform .25s ease, box-shadow .25s ease;
+  box-shadow:
+    0 28px 56px -28px rgba(234, 88, 12, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow .35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform: translateZ(8px);
 }
 .sld-funnel-branch:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 28px 56px -28px rgba(234, 88, 12, 0.34);
+  transform: translateY(-4px) translateZ(16px);
+  box-shadow:
+    0 40px 72px -28px rgba(234, 88, 12, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 .sld-funnel-branch-high {
-  border-color: rgba(234, 88, 12, 0.28);
+  border-color: rgba(234, 88, 12, 0.30);
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251, 146, 60, 0.10), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 250, 0.98) 100%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251, 146, 60, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 252, 250, 0.98) 100%);
+  box-shadow:
+    0 36px 68px -28px rgba(234, 88, 12, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: translateZ(14px);
 }
 .sld-funnel-branch-head {
   display: flex; align-items: baseline; justify-content: space-between;
