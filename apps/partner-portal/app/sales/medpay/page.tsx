@@ -624,78 +624,75 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">One platform fee.</span>{' '}
-            <span className="grad-teal">$10,000. Live in 5 days.</span>
+            <span className="grad-teal-deep">Three line items.</span>{' '}
+            <span className="grad-teal">No surprises.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <div className="sld-price-card sld-price-hero">
-            <div className="sld-price-hero-row">
-              <div>
-                <div className="sld-price-hero-eyebrow">Platform setup</div>
-                <div className="sld-price-hero-amount">$10,000</div>
-                <div className="sld-price-hero-sub">One-time · all-in</div>
+          <div className="sld-pricing-stack">
+            <div className="sld-pricing-tier sld-pricing-tier-hero">
+              <div className="sld-pricing-tier-l">
+                <div className="sld-pricing-tier-tag">01 · PLATFORM SETUP</div>
+                <div className="sld-pricing-tier-h">One-time platform fee</div>
+                <div className="sld-pricing-tier-b">
+                  Full configuration, agent training, marketplace activation, partner-portal
+                  provisioning. Paid once.
+                </div>
               </div>
-              <div className="sld-price-hero-includes">
-                <div className="sld-price-hero-includes-eyebrow">What you get</div>
-                <ul>
-                  <li>
-                    <span className="sld-price-li-h">Pre-qualification agents</span>
-                    <span className="sld-price-li-b">
-                      Credit · income · DTI · pre-approval $ on every lead
-                    </span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">EazePay partner portal</span>
-                    <span className="sld-price-li-b">
-                      Full team access, live data, complete audit log
-                    </span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">Application submission + tracking</span>
-                    <span className="sld-price-li-b">Pipeline, decisions, payouts</span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">Lender marketplace</span>
-                    <span className="sld-price-li-b">Parallel quoting, best offer wins</span>
-                  </li>
-                  <li>
-                    <span className="sld-price-li-h">Payment processing</span>
-                    <span className="sld-price-li-b">Optional, included if you want it</span>
-                  </li>
-                </ul>
+              <div className="sld-pricing-tier-r">
+                <div className="sld-pricing-tier-v">$10,000</div>
+                <div className="sld-pricing-tier-when">USD · paid on signing</div>
               </div>
             </div>
-            <div className="sld-price-grid sld-price-grid-single">
-              <div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Monthly platform fee</span>
-                  <span className="sld-price-v">$0</span>
+            <div className="sld-pricing-tier">
+              <div className="sld-pricing-tier-l">
+                <div className="sld-pricing-tier-tag">02 · USAGE</div>
+                <div className="sld-pricing-tier-h">Per lead through the smart form</div>
+                <div className="sld-pricing-tier-b">
+                  Every lead that runs through HELIX intake and the ORACLE soft-pull is billed at
+                  flat rate. No charge for traffic that never reaches the form.
                 </div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Per-application fee</span>
-                  <span className="sld-price-v">$0</span>
+              </div>
+              <div className="sld-pricing-tier-r">
+                <div className="sld-pricing-tier-v">$3</div>
+                <div className="sld-pricing-tier-when">per lead · billed monthly</div>
+              </div>
+            </div>
+            <div className="sld-pricing-tier">
+              <div className="sld-pricing-tier-l">
+                <div className="sld-pricing-tier-tag">03 · ORIGINATION</div>
+                <div className="sld-pricing-tier-h">% of loan amount settled</div>
+                <div className="sld-pricing-tier-b">
+                  We invoice 4% of the funded loan amount at the end of each month, based on loans
+                  that actually settled. No funded loan → no fee.
                 </div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Time to live</span>
-                  <span className="sld-price-v">Up to 5 business days</span>
-                </div>
-                <div className="sld-price-row">
-                  <span className="sld-price-k">Contract</span>
-                  <span className="sld-price-v">Buy once · run forever</span>
-                </div>
+              </div>
+              <div className="sld-pricing-tier-r">
+                <div className="sld-pricing-tier-v">4%</div>
+                <div className="sld-pricing-tier-when">of settled loan · monthly invoice</div>
               </div>
             </div>
           </div>
         </Reveal>
         <Reveal delay={360}>
-          <p
-            className="sld-sub"
-            style={{ marginTop: '20px', textAlign: 'center', fontSize: '15px' }}
-          >
-            One $10,000 setup fee unlocks the full platform. No monthly bill, no per-application
-            charge. Live and running traffic inside five business days.
-          </p>
+          <div className="sld-pricing-foot">
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">No monthly platform fee</span>
+              <span className="sld-pricing-foot-v">$0</span>
+            </div>
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">No per-application fee</span>
+              <span className="sld-pricing-foot-v">$0</span>
+            </div>
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">Time to live</span>
+              <span className="sld-pricing-foot-v">Up to 5 business days</span>
+            </div>
+            <div className="sld-pricing-foot-row">
+              <span className="sld-pricing-foot-k">Contract</span>
+              <span className="sld-pricing-foot-v">Buy once · run forever</span>
+            </div>
+          </div>
         </Reveal>
       </div>
     ),
@@ -1160,7 +1157,6 @@ const NARRATIVE_ORDER = [
   22, // 23 · Vertical: Derm · Vet · Vision
 
   // ACT 5 — Trust + decide
-  12, // 24 · Case studies
   13, // 25 · Vs competitors
 
   // ACT 6 — The ask
@@ -2065,19 +2061,19 @@ function SampleInvoice(): JSX.Element {
             <td>$10,000.00</td>
           </tr>
           <tr>
-            <td>All 6 agents (ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</td>
-            <td>incl.</td>
-            <td>—</td>
-            <td>$0.00</td>
+            <td>Smart-form lead pass-through · sample month</td>
+            <td>420</td>
+            <td>$3.00</td>
+            <td>$1,260.00</td>
           </tr>
           <tr>
-            <td>Pixel + CAPI integration · staff training</td>
-            <td>incl.</td>
-            <td>—</td>
-            <td>$0.00</td>
+            <td>Origination · 4% of settled loans · sample month</td>
+            <td>$184,400</td>
+            <td>4%</td>
+            <td>$7,376.00</td>
           </tr>
           <tr>
-            <td>Monthly platform fee · forever</td>
+            <td>Monthly platform fee</td>
             <td>—</td>
             <td>—</td>
             <td>$0.00</td>
@@ -2086,16 +2082,17 @@ function SampleInvoice(): JSX.Element {
         <tfoot>
           <tr>
             <td colSpan={3}>
-              <strong>Total · paid once</strong>
+              <strong>Month 1 total · sample</strong>
             </td>
             <td>
-              <strong>$10,000.00</strong>
+              <strong>$18,636.00</strong>
             </td>
           </tr>
         </tfoot>
       </table>
       <div className="sld-invoice-foot">
-        One-time platform setup · live in up to 5 business days · no recurring fee
+        $10,000 setup is one-time. After that you only pay $3 per smart-form lead and 4% of loans
+        that actually settled.
       </div>
     </div>
   );
@@ -2779,21 +2776,56 @@ function EchoPixel(): JSX.Element {
         </div>
       </Reveal>
       <Reveal delay={480}>
-        <div className="sld-echo-loop">
-          <span className="sld-echo-loop-arrow">↑</span>
-          <span className="sld-echo-loop-label">
-            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta
-            and Google is a real funded patient, not a form-fill. Your algorithm retrains on the
-            right buyer profile.
-          </span>
-        </div>
-      </Reveal>
-      <Reveal delay={600}>
-        <div className="sld-mini-stats">
-          <MiniStat v="−38%" k="CPA in 90 days" />
-          <MiniStat v="+1.6×" k="Funded leads / spend" />
-          <MiniStat v="CAPI" k="Server-side · GDPR-safe" />
-          <MiniStat v="Per-channel" k="Meta · Google · TikTok" />
+        <div className="sld-echo-3d">
+          <div className="sld-echo-3d-stage">
+            <span className="sld-echo-3d-tag">STAGE 05 · FIRES</span>
+            <span className="sld-echo-3d-h">Funded patient</span>
+            <span className="sld-echo-3d-sub">ECHO holds the pixel until cash settles</span>
+          </div>
+          <div className="sld-echo-3d-stream" aria-hidden>
+            <svg viewBox="0 0 400 140" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="echoBeam" x1="0" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="rgba(34, 184, 160, 0.0)" />
+                  <stop offset="50%" stopColor="rgba(34, 184, 160, 0.55)" />
+                  <stop offset="100%" stopColor="rgba(34, 184, 160, 0.0)" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 0 130 Q 100 60, 200 70 T 400 10"
+                stroke="url(#echoBeam)"
+                strokeWidth="2.5"
+                fill="none"
+                strokeDasharray="6 6"
+                strokeLinecap="round"
+              />
+              <circle cx="200" cy="70" r="3" fill="var(--mp-teal-2)" opacity="0.7" />
+              <circle cx="100" cy="100" r="2" fill="var(--mp-teal)" opacity="0.4" />
+              <circle cx="300" cy="32" r="2.5" fill="var(--mp-teal-2)" opacity="0.85" />
+            </svg>
+          </div>
+          <div className="sld-echo-3d-platforms" aria-hidden>
+            <div className="sld-echo-3d-platform sld-echo-3d-platform-meta">
+              <span className="sld-echo-3d-platform-k">META</span>
+              <span className="sld-echo-3d-platform-sig">conversion received</span>
+              <span className="sld-echo-3d-platform-dot" />
+            </div>
+            <div className="sld-echo-3d-platform sld-echo-3d-platform-google">
+              <span className="sld-echo-3d-platform-k">GOOGLE</span>
+              <span className="sld-echo-3d-platform-sig">conversion received</span>
+              <span className="sld-echo-3d-platform-dot" />
+            </div>
+            <div className="sld-echo-3d-platform sld-echo-3d-platform-tiktok">
+              <span className="sld-echo-3d-platform-k">TIKTOK</span>
+              <span className="sld-echo-3d-platform-sig">conversion received</span>
+              <span className="sld-echo-3d-platform-dot" />
+            </div>
+          </div>
+          <div className="sld-echo-3d-caption">
+            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta,
+            Google, and TikTok is a real funded patient — not a form-fill. Your algorithm retrains
+            on the right buyer profile.
+          </div>
         </div>
       </Reveal>
     </div>
@@ -2986,7 +3018,9 @@ function ValueStack(): JSX.Element {
           </div>
           <div className="sld-stack-total-row accent">
             <span className="sld-stack-total-k">MedPay</span>
-            <span className="sld-stack-total-v">$10,000 one-time · live in 5 days</span>
+            <span className="sld-stack-total-v">
+              $10,000 one-time · $3 / lead · 4% of settled loans
+            </span>
           </div>
         </div>
       </Reveal>
@@ -3098,8 +3132,8 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
-          One platform fee of $10,000. Live in up to five business days. 1,000+ practices already
-          running on MedPay.
+          $10,000 to set up. $3 per smart-form lead. 4% of loans that actually settle. Live in up to
+          five business days. 1,000+ practices already running on MedPay.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3117,22 +3151,32 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $10,000 one-time · no monthly
-          fee
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $10k setup · $3 / lead · 4%
+          settled
         </div>
       </Reveal>
     </div>
   );
 }
 
-/** Interactive economics slide — 3 sliders, math runs live */
+/** Interactive economics slide — 5 sliders covering the full funnel,
+ *  with the actual math shown as a formula below each output. */
 function EconomicsSlide(): JSX.Element {
   const [leads, setLeads] = useState(180);
   const [qualPct, setQualPct] = useState(50);
   const [ticket, setTicket] = useState(8000);
+  // Close rates are tunable — defaults match a typical industry baseline
+  // and a conservative MedPay uplift.
+  const [closeWithout, setCloseWithout] = useState(18);
+  const [closeWith, setCloseWith] = useState(70);
+  // What share of accepted offers actually fund (lender approval × patient
+  // accepts the offer). 100% on the without-MedPay side because the existing
+  // "close" rate already includes funding by definition there.
+  const [fundPct, setFundPct] = useState(70);
 
-  const fundedWith = Math.round(leads * (qualPct / 100) * 0.7 * 0.7);
-  const fundedWithout = Math.round(leads * (qualPct / 100) * 0.18);
+  const qualified = Math.round(leads * (qualPct / 100));
+  const fundedWith = Math.round(qualified * (closeWith / 100) * (fundPct / 100));
+  const fundedWithout = Math.round(qualified * (closeWithout / 100));
   const revWith = fundedWith * 12 * ticket;
   const revWithout = fundedWithout * 12 * ticket;
   const delta = Math.max(0, revWith - revWithout);
@@ -3162,7 +3206,7 @@ function EconomicsSlide(): JSX.Element {
           <div className="sld-econ-inputs">
             <div className="sld-econ-input">
               <label>
-                Inbound leads / month <strong>{leads}</strong>
+                Inbound leads / month <span className="sld-econ-input-v">{leads}</span>
               </label>
               <input
                 type="range"
@@ -3175,7 +3219,7 @@ function EconomicsSlide(): JSX.Element {
             </div>
             <div className="sld-econ-input">
               <label>
-                Qualified % <strong>{qualPct}%</strong>
+                Qualified % <span className="sld-econ-input-v">{qualPct}%</span>
               </label>
               <input
                 type="range"
@@ -3188,7 +3232,8 @@ function EconomicsSlide(): JSX.Element {
             </div>
             <div className="sld-econ-input">
               <label>
-                Avg ticket <strong>${ticket.toLocaleString('en-US')}</strong>
+                Avg ticket{' '}
+                <span className="sld-econ-input-v">${ticket.toLocaleString('en-US')}</span>
               </label>
               <input
                 type="range"
@@ -3199,22 +3244,73 @@ function EconomicsSlide(): JSX.Element {
                 onChange={(e) => setTicket(Number(e.target.value))}
               />
             </div>
+            <div className="sld-econ-input">
+              <label>
+                Close % · without MedPay <span className="sld-econ-input-v">{closeWithout}%</span>
+              </label>
+              <input
+                type="range"
+                min={5}
+                max={40}
+                step={1}
+                value={closeWithout}
+                onChange={(e) => setCloseWithout(Number(e.target.value))}
+              />
+            </div>
+            <div className="sld-econ-input">
+              <label>
+                Close % · with MedPay <span className="sld-econ-input-v">{closeWith}%</span>
+              </label>
+              <input
+                type="range"
+                min={40}
+                max={90}
+                step={1}
+                value={closeWith}
+                onChange={(e) => setCloseWith(Number(e.target.value))}
+              />
+            </div>
+            <div className="sld-econ-input">
+              <label>
+                Funded % · lender approval <span className="sld-econ-input-v">{fundPct}%</span>
+              </label>
+              <input
+                type="range"
+                min={50}
+                max={95}
+                step={1}
+                value={fundPct}
+                onChange={(e) => setFundPct(Number(e.target.value))}
+              />
+            </div>
           </div>
           <div className="sld-econ-outputs">
             <div className="sld-econ-card">
-              <div className="sld-econ-eyebrow">Without MedPay · 18% close</div>
+              <div className="sld-econ-eyebrow">Without MedPay</div>
               <div className="sld-econ-num">{fmt(revWithout)}</div>
               <div className="sld-econ-sub">Recovered revenue / yr</div>
               <div className="sld-econ-sub-sm">
                 {fundedWithout.toLocaleString('en-US')} funded patients / mo
               </div>
+              <div className="sld-econ-math">
+                {leads} leads × {qualPct}% qualified × {closeWithout}% close = {fundedWithout}/mo
+                <br />
+                {fundedWithout} × ${ticket.toLocaleString('en-US')} × 12 ={' '}
+                <strong>{fmt(revWithout)}</strong>
+              </div>
             </div>
             <div className="sld-econ-card with">
-              <div className="sld-econ-eyebrow accent">With MedPay · 70% close · 70% funded</div>
+              <div className="sld-econ-eyebrow accent">With MedPay</div>
               <div className="sld-econ-num accent">{fmt(revWith)}</div>
               <div className="sld-econ-sub">Recovered revenue / yr</div>
               <div className="sld-econ-sub-sm">
                 {fundedWith.toLocaleString('en-US')} funded patients / mo
+              </div>
+              <div className="sld-econ-math accent">
+                {leads} × {qualPct}% × {closeWith}% × {fundPct}% funded = {fundedWith}/mo
+                <br />
+                {fundedWith} × ${ticket.toLocaleString('en-US')} × 12 ={' '}
+                <strong>{fmt(revWith)}</strong>
               </div>
             </div>
           </div>
@@ -4166,26 +4262,26 @@ const CSS = `
 }
 .sld-econ-inputs {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 .sld-econ-input {
-  padding: 20px 22px;
-  background: rgba(255, 255, 255, 0.92);
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--mp-line);
-  border-radius: 16px;
+  border-radius: 12px;
 }
 .sld-econ-input label {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 12px; font-weight: 600;
+  font-size: 11.5px; font-weight: 600;
   color: var(--mp-mute);
-  letter-spacing: 0.04em;
-  margin-bottom: 12px;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
 }
-.sld-econ-input strong {
-  font-size: 22px; font-weight: 800;
+.sld-econ-input-v {
+  font-size: 16px; font-weight: 700;
   color: var(--mp-teal);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.012em;
 }
 .sld-econ-input input[type="range"] {
   -webkit-appearance: none; appearance: none;
@@ -4248,6 +4344,22 @@ const CSS = `
 .sld-econ-sub-sm {
   margin-top: 2px;
   font-size: 12px; color: var(--mp-mute);
+}
+.sld-econ-math {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--mp-line);
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11.5px; line-height: 1.55;
+  color: var(--mp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.sld-econ-math strong {
+  color: var(--mp-ink);
+  font-weight: 700;
+}
+.sld-econ-math.accent strong {
+  color: var(--mp-teal);
 }
 .sld-econ-delta {
   padding: 18px 22px;
@@ -5042,6 +5154,111 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
+/* Pricing v14 — three-line-item stack */
+.sld-pricing-stack {
+  display: flex; flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.sld-pricing-tier {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  padding: 22px 26px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px -28px rgba(14, 124, 102, 0.22);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sld-pricing-tier:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 50px -28px rgba(14, 124, 102, 0.32);
+  border-color: rgba(14, 124, 102, 0.22);
+}
+.sld-pricing-tier-hero {
+  background:
+    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(34, 184, 160, 0.16), transparent 65%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
+  border-color: rgba(34, 184, 160, 0.30);
+  box-shadow:
+    0 28px 60px -28px rgba(14, 124, 102, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-pricing-tier-hero .sld-pricing-tier-tag { color: var(--mp-teal-2); }
+.sld-pricing-tier-hero .sld-pricing-tier-h { color: #fff; }
+.sld-pricing-tier-hero .sld-pricing-tier-b { color: rgba(255, 255, 255, 0.72); }
+.sld-pricing-tier-hero .sld-pricing-tier-when { color: rgba(255, 255, 255, 0.60); }
+.sld-pricing-tier-hero .sld-pricing-tier-v {
+  background: linear-gradient(135deg, #fff 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-pricing-tier-l {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sld-pricing-tier-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-pricing-tier-h {
+  font-size: 18px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--mp-ink);
+}
+.sld-pricing-tier-b {
+  font-size: 13px;
+  color: var(--mp-mute);
+  line-height: 1.5;
+}
+.sld-pricing-tier-r {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.sld-pricing-tier-v {
+  font-size: 42px; font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 1;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-pricing-tier:not(.sld-pricing-tier-hero) .sld-pricing-tier-v {
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-pricing-tier-when {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px;
+  color: var(--mp-mute);
+  letter-spacing: 0.04em;
+}
+.sld-pricing-foot {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+.sld-pricing-foot-row {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+}
+.sld-pricing-foot-k {
+  font-size: 10.5px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+.sld-pricing-foot-v {
+  font-size: 16px; font-weight: 600;
+  color: var(--mp-ink);
+  letter-spacing: -0.012em;
+}
+
 /* Pricing 2-col grid + sample invoice */
 .sld-price-grid {
   display: grid; grid-template-columns: 1fr 1.05fr;
@@ -5499,29 +5716,114 @@ const CSS = `
   margin-top: 2px;
   font-size: 11px; color: var(--mp-mute);
 }
-.sld-echo-loop {
-  margin-top: 10px;
-  padding: 18px 22px;
+/* ECHO 3D feedback loop — funded stage signals back to ad platforms */
+.sld-echo-3d {
+  position: relative;
+  margin-top: 16px;
+  padding: 32px 28px 24px;
+  border-radius: 20px;
   background:
-    linear-gradient(90deg, rgba(34, 184, 160, 0.14) 0%, rgba(34, 184, 160, 0.04) 100%);
-  border: 1px solid rgba(34, 184, 160, 0.35);
+    radial-gradient(ellipse 70% 100% at 0% 100%, rgba(34, 184, 160, 0.16), transparent 65%),
+    radial-gradient(ellipse 60% 80% at 100% 0%, rgba(14, 124, 102, 0.12), transparent 65%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 250, 0.98) 100%);
+  border: 1px solid var(--mp-line-strong);
+  overflow: hidden;
+  box-shadow: 0 28px 60px -32px rgba(14, 124, 102, 0.30);
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 18px;
+  align-items: center;
+  perspective: 1400px;
+}
+.sld-echo-3d-stage {
+  grid-column: 1; grid-row: 1;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 20px;
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.32), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
   border-radius: 14px;
-  display: grid; grid-template-columns: 36px 1fr;
-  gap: 14px; align-items: center;
+  box-shadow:
+    0 22px 50px -22px rgba(14, 124, 102, 0.55),
+    0 0 0 1px rgba(34, 184, 160, 0.32);
+  transform: rotateY(8deg) translateZ(20px);
+  transform-style: preserve-3d;
 }
-.sld-echo-loop-arrow {
-  font-size: 28px; font-weight: 800;
+.sld-echo-3d-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal-2);
+  text-transform: uppercase;
+}
+.sld-echo-3d-h {
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: #fff;
+}
+.sld-echo-3d-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+}
+.sld-echo-3d-stream {
+  grid-column: 2; grid-row: 1;
+  position: relative;
+  height: 140px;
+}
+.sld-echo-3d-stream svg {
+  width: 100%; height: 100%;
+}
+.sld-echo-3d-platforms {
+  grid-column: 3; grid-row: 1;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  transform-style: preserve-3d;
+}
+.sld-echo-3d-platform {
+  position: relative;
+  display: grid;
+  grid-template-columns: 70px 1fr 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--mp-line-strong);
+  box-shadow: 0 10px 22px -12px rgba(14, 124, 102, 0.30);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.sld-echo-3d-platform-meta { transform: rotateY(-8deg) translateZ(28px); }
+.sld-echo-3d-platform-google { transform: rotateY(-8deg) translateZ(14px); }
+.sld-echo-3d-platform-tiktok { transform: rotateY(-8deg) translateZ(0); }
+.sld-echo-3d-platform-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 700;
   color: var(--mp-teal);
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
+  letter-spacing: 0.10em;
+}
+.sld-echo-3d-platform-sig {
+  font-size: 11px;
+  color: var(--mp-mute);
+}
+.sld-echo-3d-platform-dot {
+  width: 8px; height: 8px;
   border-radius: 999px;
-  background: rgba(34, 184, 160, 0.22);
+  background: var(--mp-teal-2);
+  box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.55);
+  animation: sldLivePulse 1.8s ease-in-out infinite;
 }
-.sld-echo-loop-label {
-  font-size: 14px; line-height: 1.55;
+.sld-echo-3d-caption {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding-top: 16px;
+  border-top: 1px dashed var(--mp-line);
+  font-size: 13px; line-height: 1.55;
   color: var(--mp-ink-2);
+  text-align: center;
 }
-.sld-echo-loop-label strong { color: var(--mp-teal); font-weight: 700; }
 
 /* ===== Compound effect 12-month bar chart ===== */
 .sld-comp-chart {
@@ -5675,30 +5977,72 @@ const CSS = `
 .sld-funnel {
   display: flex; flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: 8px;
   margin-top: 8px;
+  perspective: 1800px;
+  perspective-origin: 50% 0%;
 }
 .sld-funnel-stages {
   display: flex; flex-direction: column;
-  gap: 4px;
+  gap: 0;
+  transform-style: preserve-3d;
 }
 .sld-funnel-stage {
+  position: relative;
   display: flex; flex-direction: column; align-items: center;
   gap: 4px;
-  padding: 12px 20px;
+  padding: 14px 22px;
   text-align: center;
   background:
-    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(34, 184, 160, 0.12), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.98) 100%);
   border: 1px solid var(--mp-line-strong);
   border-radius: 14px;
-  box-shadow: 0 16px 36px -28px rgba(14, 124, 102, 0.25);
+  box-shadow:
+    0 22px 50px -32px rgba(14, 124, 102, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform-style: preserve-3d;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+/* Subtle stacking — each stage sits slightly forward of the previous,
+   reinforcing the flow direction without tilting anything. */
+.sld-funnel-stage:nth-of-type(1) { transform: translateZ(0px); }
+.sld-funnel-stage:nth-of-type(3) { transform: translateZ(8px); }
+.sld-funnel-stage:nth-of-type(5) {
+  transform: translateZ(16px);
+  box-shadow:
+    0 30px 60px -30px rgba(14, 124, 102, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 .sld-funnel-connector {
   align-self: center;
-  width: 1px;
-  height: 14px;
-  background: linear-gradient(180deg, rgba(14, 124, 102, 0.40), rgba(14, 124, 102, 0.10));
+  position: relative;
+  width: 28px;
+  height: 36px;
+  margin: -2px 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sld-funnel-connector::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 14px;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, rgba(34, 184, 160, 0.0), rgba(14, 124, 102, 0.55));
+  border-radius: 999px;
+}
+.sld-funnel-connector::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  margin-left: -5px;
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid var(--mp-teal);
+  filter: drop-shadow(0 2px 4px rgba(14, 124, 102, 0.35));
 }
 .sld-funnel-stage-tag {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
@@ -5733,18 +6077,45 @@ const CSS = `
 }
 .sld-funnel-router {
   align-self: center;
+  position: relative;
   display: inline-flex; align-items: center; gap: 8px;
-  margin: 6px 0 2px;
-  padding: 7px 16px;
+  margin: 14px 0 22px;
+  padding: 9px 20px;
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-teal);
+  color: #fff;
   text-transform: uppercase;
-  background: #fff;
-  border: 1px solid rgba(14, 124, 102, 0.32);
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.40), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  border: 1px solid rgba(34, 184, 160, 0.45);
   border-radius: 999px;
-  box-shadow: 0 8px 18px -10px rgba(14, 124, 102, 0.30);
+  box-shadow:
+    0 18px 36px -16px rgba(14, 124, 102, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   white-space: nowrap;
+  transform: translateZ(24px);
+}
+/* Diverging arms — SVG-free pure-CSS fork from router to the two branches */
+.sld-funnel-router::before,
+.sld-funnel-router::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  width: 2px;
+  height: 22px;
+  background: linear-gradient(180deg, rgba(14, 124, 102, 0.55), rgba(14, 124, 102, 0.10));
+}
+.sld-funnel-router::before {
+  left: 30%;
+  transform: rotate(-22deg);
+  transform-origin: 50% 0%;
+}
+.sld-funnel-router::after {
+  right: 30%;
+  transform: rotate(22deg);
+  transform-origin: 50% 0%;
 }
 .sld-funnel-router-dot {
   width: 6px; height: 6px; border-radius: 999px;
@@ -5754,6 +6125,7 @@ const CSS = `
 .sld-funnel-branches {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 14px;
+  transform-style: preserve-3d;
 }
 .sld-funnel-branch {
   display: flex; flex-direction: column;
@@ -5762,18 +6134,28 @@ const CSS = `
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--mp-line);
   border-radius: 16px;
-  box-shadow: 0 18px 40px -28px rgba(14, 124, 102, 0.22);
-  transition: transform .25s ease, box-shadow .25s ease;
+  box-shadow:
+    0 28px 56px -28px rgba(14, 124, 102, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow .35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform: translateZ(8px);
 }
 .sld-funnel-branch:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 28px 56px -28px rgba(14, 124, 102, 0.34);
+  transform: translateY(-4px) translateZ(16px);
+  box-shadow:
+    0 40px 72px -28px rgba(14, 124, 102, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 .sld-funnel-branch-high {
-  border-color: rgba(14, 124, 102, 0.28);
+  border-color: rgba(14, 124, 102, 0.30);
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34, 184, 160, 0.10), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 250, 0.98) 100%);
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34, 184, 160, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 252, 250, 0.98) 100%);
+  box-shadow:
+    0 36px 68px -28px rgba(14, 124, 102, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: translateZ(14px);
 }
 .sld-funnel-branch-head {
   display: flex; align-items: baseline; justify-content: space-between;
