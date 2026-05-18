@@ -85,8 +85,8 @@ const WATERFALL = [
     n: '03',
     stage: 'Decision',
     title: 'Marketplace waterfalls in parallel',
-    body: 'CoachPay routes one application across 52 lenders in parallel, engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.',
-    metric: '52 lenders',
+    body: 'CoachPay routes one application across the lender marketplace, engine.tech, FinWise, Affirm, Cross River, EazePay Direct. 5-second SLA per round-trip across the marketplace.',
+    metric: 'Marketplace',
   },
   {
     n: '04',
@@ -152,7 +152,7 @@ const INTEGRATION_LOGOS = [
 const OBJECTIONS = [
   {
     q: 'How is CoachPay different from Affirm, Klarna, or AfterPay sitting on my checkout?',
-    a: "Affirm and Klarna are built for retail cart-level BNPL on physical goods. They cap tickets well below high-ticket coaching, and they're a single lender. If they decline, the buyer is gone. CoachPay waterfalls across 52 lenders in parallel (Affirm included), handles tickets from $5,000 to $50,000, surfaces multiple ranked offers tailored to the client's situation, and ships with seven autonomous agents running intake, scoring, routing, and the lender marketplace. All white-labelled under your brand.",
+    a: "Affirm and Klarna are built for retail cart-level BNPL on physical goods. They cap tickets well below high-ticket coaching, and they're a single lender. If they decline, the buyer is gone. CoachPay waterfalls across the lender marketplace (Affirm included), handles tickets from $5,000 to $50,000, surfaces multiple ranked offers tailored to the client's situation, and ships with seven autonomous agents running intake, scoring, routing, and the lender marketplace. All white-labelled under your brand.",
   },
   {
     q: "Won't offering financing make my $20k program look like a credit-card sale?",
@@ -164,7 +164,7 @@ const OBJECTIONS = [
   },
   {
     q: 'What underwriting does CoachPay support for high-ticket programs?',
-    a: "Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to 60 months for lower monthly repayments. 0% interest plans available for qualifying programs (T&Cs apply). Multiple ranked offers tailored to the client's situation. The waterfall picks the cheapest total cost for the prospect across 52 lenders quoted in parallel.",
+    a: "Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to 60 months for lower monthly repayments. 0% interest plans available for qualifying programs (T&Cs apply). Multiple ranked offers tailored to the client's situation. The waterfall picks the cheapest total cost for the prospect across the lender marketplace quotes in parallel.",
   },
   {
     q: 'How does the merchant payout actually work?',
@@ -200,7 +200,13 @@ const HERO_CHIPS: Array<{
     delay: '0s',
     accent: true,
   },
-  { top: '-12%', right: '2%', label: 'MARKETPLACE', value: '52 lenders · 5s SLA', delay: '0.5s' },
+  {
+    top: '-12%',
+    right: '2%',
+    label: 'MARKETPLACE',
+    value: 'Lender marketplace · 5s SLA',
+    delay: '0.5s',
+  },
   {
     bottom: '-12%',
     left: '2%',
@@ -409,7 +415,7 @@ export default function CoachPayLandingPage() {
               {/* hero metric strip */}
               <div className="cp-hero-stats">
                 <div className="cp-hero-stat">
-                  <div className="cp-hero-stat-v">52</div>
+                  <div className="cp-hero-stat-v">Real-time</div>
                   <div className="cp-hero-stat-l">lenders in parallel</div>
                 </div>
                 <div className="cp-hero-stat">
@@ -469,7 +475,7 @@ export default function CoachPayLandingPage() {
                 <div className="cp-card-livebar">
                   <div className="cp-card-livebar-row">
                     <span className="cp-card-livebar-k">lenders queried</span>
-                    <span className="cp-card-livebar-v">52 parallel</span>
+                    <span className="cp-card-livebar-v">parallel quotes</span>
                   </div>
                   <div className="cp-card-livebar-row">
                     <span className="cp-card-livebar-k">decision time</span>
@@ -633,9 +639,9 @@ export default function CoachPayLandingPage() {
               <p className="cp-h2-sub">
                 Loans from $5,000 to $50,000. APR from 5.9% for qualifying clients. Terms from 12 to
                 60 months for lower monthly repayments. 0% interest plans available for qualifying
-                programs (T&amp;Cs apply). 52 lenders quoted in parallel with a 5-second SLA per
-                round-trip. The lender disburses straight to your business account, no intermediary
-                holding funds.
+                programs (T&amp;Cs apply). the lender marketplace quotes in parallel with a 5-second
+                SLA per round-trip. The lender disburses straight to your business account, no
+                intermediary holding funds.
               </p>
               <div className="cp-pillar-roi">
                 <span className="cp-pillar-roi-blip" />
@@ -654,8 +660,8 @@ export default function CoachPayLandingPage() {
             />
             <PillarFeature
               icon="grid"
-              title="52 lenders · 5s SLA"
-              body="One application, 52 parallel lender quotes. Multiple ranked offers tailored to the client's situation, Cross River, engine.tech, FinWise, Affirm, EazePay Direct. Best total-cost offer ranked first."
+              title="Lender marketplace · 5s SLA"
+              body="One application, parallel lender quotes from the marketplace. Multiple ranked offers tailored to the client's situation, Cross River, engine.tech, FinWise, Affirm, EazePay Direct. Best total-cost offer ranked first."
             />
             <PillarFeature
               icon="zero"
@@ -931,7 +937,7 @@ export default function CoachPayLandingPage() {
               icon="nexus"
               desc="NEXUS routes every qualified prospect through a curated multi-lender marketplace, prime to subprime, $5k through $50k+. Soft pull only. It learns which lenders approve which prospect profiles, watches stip rates in real time, and reroutes around lenders that tighten overnight."
               stats={[
-                { k: 'Lenders', v: '52' },
+                { k: 'Marketplace', v: 'parallel quoting' },
                 { k: 'Funding time', v: '< 4h' },
                 { k: 'SLA', v: '5s' },
               ]}
@@ -1487,7 +1493,7 @@ function FinancingMockup() {
                 PROSPECT VIEW · WHITE-LABELLED
               </div>
               <div className="cp-fin-offers-title">Atlas Executive Coaching · $24,000</div>
-              <div className="cp-fin-offers-sub">3 of 52 lenders returned offers in 4.2s</div>
+              <div className="cp-fin-offers-sub">3 marketplace offers returned in 4.2s</div>
             </div>
             <div className="cp-fin-offers-stamp">approved</div>
           </div>
@@ -1613,7 +1619,7 @@ function FinancingMockup() {
               ))}
             </div>
             <div className="cp-fin-marketplace-foot">
-              <span>52 lenders queried in parallel</span>
+              <span>the lender marketplace runs in parallel</span>
               <span className="cp-fin-marketplace-counter">
                 <span className="cp-fin-marketplace-counter-v">38</span> responded · 4.2s
               </span>

@@ -401,7 +401,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
                 </div>
               </div>
               <div>
-                <div className="strip-val">52</div>
+                <div className="strip-val">Real-time</div>
                 <div className="strip-label">Lenders parallel</div>
               </div>
               <div>
@@ -535,7 +535,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
               {
                 n: '02',
                 title: 'We match you',
-                body: '52 medical lenders quoted in parallel. Pre-qualified offers ranked by lowest total cost.',
+                body: 'medical lenders across the marketplace quote in parallel. Pre-qualified offers ranked by lowest total cost.',
               },
               {
                 n: '03',
@@ -882,7 +882,7 @@ function IntakeStep({
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// ENGINE STEP — animated "checking with 52 lenders" loading screen.
+// ENGINE STEP — animated "checking with the lender marketplace" loading screen.
 // Pulse dot + progress bar fill animation lifted from landing.
 // ─────────────────────────────────────────────────────────────────────
 function EngineStep() {
@@ -890,7 +890,7 @@ function EngineStep() {
     'Soft credit pull · FCRA permissible purpose',
     'Affordability check · debt-to-income ratio',
     'Routing decision · brand + tier match',
-    'Quoting 52 lenders in parallel',
+    'Quoting the lender marketplace in parallel',
     'Ranking by lowest total cost',
   ];
   const [activeIdx, setActiveIdx] = useState(0);
@@ -908,7 +908,7 @@ function EngineStep() {
       <h2 className="mp-h2">
         <span className="grad-teal">Matching you with</span>
         <br />
-        <span className="grad-teal-deep">52 lenders in parallel.</span>
+        <span className="grad-teal-deep">the lender marketplace in parallel.</span>
       </h2>
 
       <div className="mp-offer-bar mp-engine-bar">
@@ -1006,8 +1006,8 @@ function OffersStep({
           <span className="grad-teal">You&apos;ve been matched!</span>
         </h2>
         <p className="mp-step-body">
-          52 lenders quoted in parallel. Ranked by lowest total cost. Soft pull only — your credit
-          score is unchanged.
+          the lender marketplace quotes in parallel. Ranked by lowest total cost. Soft pull only —
+          your credit score is unchanged.
         </p>
         <p className="mp-offers-meta">
           Expires in {mm}:{ss} · {tierLabel[tier]} · FICO {tierFico[tier]}

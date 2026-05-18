@@ -64,8 +64,8 @@ const HERO_OFFER: RankedOffer[] = [
 const TICKER = [
   { value: '$12.8M', label: 'Funded last 30 days', delta: '+18% vs prior month' },
   { value: '8,200+', label: 'Homeowners financed', delta: '+940 in 30d' },
-  { value: '52', label: 'Lender marketplace', delta: 'soft pull only' },
-  { value: '14s', label: 'Average decision time', delta: 'Soft pull · 52 lenders' },
+  { value: 'Real-time', label: 'Lender marketplace', delta: 'soft pull only' },
+  { value: '14s', label: 'Average decision time', delta: 'Soft pull · lender marketplace' },
 ];
 
 const WATERFALL: Stage[] = [
@@ -86,7 +86,7 @@ const WATERFALL: Stage[] = [
   {
     n: 3,
     stage: 'Decision',
-    title: '52 lenders run in parallel',
+    title: 'the lender marketplace runs in parallel',
     body: 'TradePay fans the application across every enabled marketplace simultaneously. No waterfall sequencing. Every lender quotes at once.',
     metric: '5s SLA',
   },
@@ -110,7 +110,7 @@ const PILLAR_FINANCE_BULLETS = [
   'Loans $3,000 to $100,000 · APR from 5.9% for qualifying clients',
   'Terms up to 72 months · lower monthly repayments at the kitchen table',
   '0% interest plans available for qualifying programs (T&Cs apply)',
-  '52 lenders quoted in parallel at point of sale with a 5-second SLA per round-trip',
+  'the lender marketplace quotes in parallel at point of sale with a 5-second SLA per round-trip',
   'Merchant-direct payout · funds generally land within 48 to 72 hours of settlement',
   'Lender carries the credit risk · no clawback on routine defaults',
   'White-labeled · homeowner sees YOUR brand on the apply flow',
@@ -234,7 +234,7 @@ const AGENTS: Agent[] = [
     description:
       'NEXUS routes every qualified homeowner through a curated multi-lender marketplace, prime to subprime, $3,000 to $100,000. Soft pull only. It learns which lenders approve which buyer profiles, watches stip rates in real time, and reroutes around lenders that tighten overnight.',
     stats: [
-      { k: 'Lenders', v: '52' },
+      { k: 'Marketplace', v: 'parallel quoting' },
       { k: 'Pull type', v: 'Soft' },
       { k: 'Decision', v: '< 10s' },
     ],
@@ -350,7 +350,7 @@ const INTEGRATIONS = [
 const OBJECTIONS: Objection[] = [
   {
     q: 'How are you different from PowerPay, Service Finance, EnerBank, or GoodLeap?',
-    a: 'Those are single-lender or two-lender programs. TradePay is a parallel marketplace of 52 lenders. Every quote fires at the same instant, ranked by consumer-best monthly payment. You can keep your incumbent program AND run TradePay; most contractors stack us. One portal, one apply flow, one agentic layer behind it.',
+    a: 'Those are single-lender or two-lender programs. TradePay is a parallel lender marketplace. Every quote fires at the same instant, ranked by consumer-best monthly payment. You can keep your incumbent program AND run TradePay; most contractors stack us. One portal, one apply flow, one agentic layer behind it.',
   },
   {
     q: 'What are the lending terms?',
@@ -602,8 +602,8 @@ function Hero() {
             </h1>
 
             <p className="mt-7 text-lg text-slate-600 max-w-2xl leading-relaxed">
-              52 lenders quote in parallel on a single soft pull. The homeowner sees one screen with
-              the best monthly payment and signs at the kitchen table.{' '}
+              the lender marketplace quotes in parallel on a single soft pull. The homeowner sees
+              one screen with the best monthly payment and signs at the kitchen table.{' '}
               <span className="text-slate-900 font-medium">
                 The lender carries the credit risk. You book the job before your rep is back to the
                 truck.
@@ -650,7 +650,7 @@ function Hero() {
             <div className="mt-10 tp-trust-strip">
               <div className="tp-trust-cell">
                 <div className="tp-trust-num">
-                  52<span className="tp-trust-pct"></span>
+                  Real-time<span className="tp-trust-pct"></span>
                 </div>
                 <div className="tp-trust-lbl">Lenders in parallel</div>
               </div>
@@ -797,8 +797,8 @@ function HeroOfferCard() {
           <div className="tp-stat-lbl">Pull · zero impact</div>
         </div>
         <div className="tp-stat-cell">
-          <div className="tp-stat-num">52</div>
-          <div className="tp-stat-lbl">Lenders in parallel</div>
+          <div className="tp-stat-num">Real-time</div>
+          <div className="tp-stat-lbl">Lender marketplace</div>
         </div>
       </div>
 
@@ -913,12 +913,15 @@ function ProblemSection() {
             </div>
             <div className="space-y-4">
               <ResultRow value="One" label="Apply flow on the rep iPad · branded as you" />
-              <ResultRow value="52" label="Lenders quoting in parallel on a single soft pull" />
+              <ResultRow value="Real-time" label="Lender marketplace · single soft pull" />
               <ResultRow
                 value="320ms"
                 label="HELIX routes every qualified homeowner to the right rep"
               />
-              <ResultRow value="14s" label="Decision at the door · 52 lenders quote in parallel" />
+              <ResultRow
+                value="14s"
+                label="Decision at the door · the lender marketplace quotes in parallel"
+              />
             </div>
             <div className="mt-7 pt-5 border-t border-slate-600/70 text-[12.5px] text-slate-200 leading-relaxed">
               One apply flow. One ranked-offer screen. The homeowner signs at the kitchen table.{' '}
@@ -970,9 +973,9 @@ function WaterfallSection() {
           </h2>
           <p className="mt-5 text-lg text-slate-600 leading-relaxed">
             Every TradePay deal moves through the same deterministic pipeline. Soft-pull pre-qual at
-            the door. The agentic layer pre-qualifies on the financial data. 52 lenders quote in
-            parallel. Best offer wins. Lender disburses merchant-direct within 48 to 72 hours. Every
-            stage is logged, replayable, and instrumented.
+            the door. The agentic layer pre-qualifies on the financial data. the lender marketplace
+            quote in parallel. Best offer wins. Lender disburses merchant-direct within 48 to 72
+            hours. Every stage is logged, replayable, and instrumented.
           </p>
         </div>
 
@@ -1015,7 +1018,7 @@ function WaterfallSection() {
 const SCHEMATIC_CAPTIONS: Record<number, string> = {
   1: 'Soft-pull pre-qual at the door',
   2: 'Pre-call brief for the rep',
-  3: '52 lenders run in parallel',
+  3: 'the lender marketplace runs in parallel',
   4: 'Best offer wins',
   5: 'Lender disburses direct',
 };
@@ -1263,7 +1266,7 @@ function PillarFinancing() {
               Beat Home Depot to the financing pitch on every single doorstep.
             </h2>
             <p className="mt-5 text-lg text-slate-600 leading-relaxed">
-              TradePay fans every application across 52 lenders in parallel. No sequential
+              TradePay fans every application across the lender marketplace. No sequential
               waterfall, no manual rerouting. The homeowner sees one ranked-offer screen with the
               best monthly payment first. Soft pull only. Lender carries the credit risk and
               disburses direct on the signed install.
@@ -1279,7 +1282,7 @@ function PillarFinancing() {
             </ul>
 
             <div className="mt-9 tp-roi-badge">
-              <span className="tp-roi-badge-orange">52</span>
+              <span className="tp-roi-badge-orange">Multi</span>
               <span>lender marketplace · parallel quotes on a single soft pull</span>
             </div>
           </div>
@@ -1804,7 +1807,7 @@ function FinanceMockup() {
           <div className="flex items-center gap-2.5">
             <span className="tp-live-dot" />
             <span className="text-[11px] uppercase tracking-[0.22em] font-semibold text-slate-700">
-              MARKETPLACE · 52 LENDERS IN PARALLEL
+              MARKETPLACE · PARALLEL QUOTING
             </span>
           </div>
           <span className="text-[10.5px] uppercase tracking-[0.18em] text-slate-500">
@@ -1844,8 +1847,8 @@ function FinanceMockup() {
         {/* Marketplace activity bar */}
         <div className="px-6 py-3 border-b border-slate-200/70 bg-slate-50/60">
           <div className="flex items-center justify-between text-[10.5px] uppercase tracking-[0.18em] text-slate-600">
-            <span>52 lenders · quoting now</span>
-            <span className="tabular-nums">42 / 52 returned</span>
+            <span>Lender marketplace · quoting now</span>
+            <span className="tabular-nums">42 quotes returned</span>
           </div>
           <div className="mt-2 tp-progress">
             <div className="tp-progress-fill" style={{ width: '81%' }} />
@@ -1936,7 +1939,7 @@ function FinanceMockup() {
         {/* Decision footer */}
         <div className="px-6 py-4 border-t border-slate-200/70 bg-slate-50/60 flex items-center justify-between">
           <div className="text-sm text-slate-700">
-            <span className="font-semibold text-slate-900">3 of 52 routed primary.</span> Homeowner
+            <span className="font-semibold text-slate-900">3 routed primary.</span> Homeowner
             selects monthly payment, signs in-app.
           </div>
           <div className="flex items-center gap-3">
@@ -2652,7 +2655,7 @@ function FinalCta() {
         </div>
 
         <div className="mt-10 text-[11px] font-medium uppercase tracking-[0.22em] text-slate-500">
-          Soft pull, zero credit impact, instant decisions at the door across 52 lenders
+          Soft pull, zero credit impact, instant decisions at the door across the lender marketplace
         </div>
       </div>
     </section>
@@ -4624,7 +4627,7 @@ const CSS = `
   }
 
   /* ============================================================
-     52-LENDER MARKETPLACE BAR · sequential lighting animation
+     LENDER MARKETPLACE BAR · sequential lighting animation
      Adds a perspective tilt + a left-to-right traveling tick highlight.
      Wraps existing .tp-progress styling without breaking it.
      ============================================================ */

@@ -361,10 +361,10 @@ function LandingStep({ onApply }: { onApply: () => void }) {
               <span className="tp-grad-text-darker">Decision in 14 seconds.</span>
             </h1>
             <p className="tp-hero-sub">
-              HVAC, roofing, solar, kitchens, baths and exteriors. 52 lenders quote in parallel on a
-              single soft pull. <strong>Pre-qualify in 60 seconds.</strong> Loans from $3,000 to
-              $100,000. Terms up to 72 months. APR from 5.9% for qualifying borrowers. Funds land
-              within 48 to 72 hours.
+              HVAC, roofing, solar, kitchens, baths and exteriors. the lender marketplace quotes in
+              parallel on a single soft pull. <strong>Pre-qualify in 60 seconds.</strong> Loans from
+              $3,000 to $100,000. Terms up to 72 months. APR from 5.9% for qualifying borrowers.
+              Funds land within 48 to 72 hours.
             </p>
             <div className="tp-hero-ctas">
               <button type="button" className="tp-btn-primary tp-cta-glow lg" onClick={onApply}>
@@ -383,7 +383,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
                 <div className="tp-trust-lbl">Pre-qualification</div>
               </div>
               <div className="tp-trust-cell">
-                <div className="tp-trust-num">52</div>
+                <div className="tp-trust-num">Real-time</div>
                 <div className="tp-trust-lbl">Lenders parallel</div>
               </div>
               <div className="tp-trust-cell">
@@ -475,7 +475,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
                     <div className="tp-stat-lbl">Pull · zero impact</div>
                   </div>
                   <div className="tp-stat-cell">
-                    <div className="tp-stat-num">52</div>
+                    <div className="tp-stat-num">Real-time</div>
                     <div className="tp-stat-lbl">Lenders parallel</div>
                   </div>
                 </div>
@@ -514,7 +514,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
             <div className="tp-chip tp-chip-funded" style={{ top: '-16px', right: '-8px' }}>
               <span className="tp-chip-dot" />
               <span className="tp-chip-k">DECISION</span>
-              <span className="tp-chip-v">14s · 52 lenders</span>
+              <span className="tp-chip-v">14s · lender marketplace</span>
             </div>
             <div className="tp-chip" style={{ bottom: '-16px', left: '-8px' }}>
               <span className="tp-chip-dot" />
@@ -550,7 +550,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
               {
                 n: '02',
                 title: 'We match you',
-                body: '52 contractor-friendly lenders quoted in parallel. Pre-qualified offers ranked by lowest total cost.',
+                body: 'contractor-friendly lenders across the marketplace quote in parallel. Pre-qualified offers ranked by lowest total cost.',
               },
               {
                 n: '03',
@@ -899,7 +899,7 @@ function IntakeStep({
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// ENGINE STEP — animated "quoting 52 lenders in parallel" loading
+// ENGINE STEP — animated "quoting the lender marketplace in parallel" loading
 // screen. Mirrors the 5-stage waterfall schematic from the landing
 // page: Pre-qual → Brief → Decision → Match → Funded. Progress bar
 // fill + status pill scanline lifted from landing.
@@ -909,7 +909,7 @@ function EngineStep() {
     'Soft credit pull · FCRA permissible purpose',
     'Affordability check · debt-to-income ratio',
     'Brief reshaped for routing · tier + amount',
-    'Quoting 52 lenders in parallel · 5s SLA',
+    'Quoting the lender marketplace in parallel · 5s SLA',
     'Ranking by lowest monthly payment',
   ];
   const [activeIdx, setActiveIdx] = useState(0);
@@ -927,7 +927,7 @@ function EngineStep() {
       <h2 className="tp-h2">
         <span className="tp-grad-text">Quoting</span>
         <br />
-        <span className="tp-grad-text-darker">52 lenders in parallel.</span>
+        <span className="tp-grad-text-darker">the lender marketplace in parallel.</span>
       </h2>
 
       <div className="tp-engine-bar">
@@ -1025,8 +1025,8 @@ function OffersStep({
           <span className="tp-grad-text">You&apos;ve been matched.</span>
         </h2>
         <p className="tp-step-body">
-          52 lenders quoted in parallel. Ranked by lowest monthly payment. Soft pull only — your
-          credit score is unchanged.
+          the lender marketplace quotes in parallel. Ranked by lowest monthly payment. Soft pull
+          only — your credit score is unchanged.
         </p>
         <p className="tp-offers-meta">
           Expires in {mm}:{ss} · {tierLabel[tier]} · FICO {tierFico[tier]}

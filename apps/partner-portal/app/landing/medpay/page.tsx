@@ -45,7 +45,7 @@ const HERO_CHIPS: Array<{
 const TICKER: Array<{ value: string; label: string; delta: string }> = [
   { value: '$240M+', label: 'Funded to date', delta: '+$18M this quarter' },
   { value: '12,400+', label: 'Patients funded', delta: '+1,420 in 30d' },
-  { value: 'Real-time', label: 'Lender marketplace', delta: '52 lenders parallel' },
+  { value: 'Real-time', label: 'Lender marketplace', delta: 'Lender marketplace · parallel' },
   { value: '60 sec', label: 'Pre-qualification', delta: 'Soft pull · zero impact' },
 ];
 
@@ -61,7 +61,7 @@ const WITH_MEDPAY: Array<{ stat: string; label: string }> = [
   // baseline above. Flagged as illustrative in the section disclaimer.
   { stat: '70%+', label: 'Same-day close when financing is at-chair (illustrative)' },
   { stat: 'Same-day', label: 'Consult → approval → funded' },
-  { stat: '52 lenders', label: 'Soft-pull marketplace · parallel quote' },
+  { stat: 'Real-time', label: 'Soft-pull lender marketplace' },
   { stat: 'Direct', label: 'Lender disburses merchant-direct · 48 to 72hr' },
 ];
 
@@ -85,7 +85,7 @@ const STAGES: Array<{ n: string; stage: string; title: string; body: string; met
     stage: 'Marketplace',
     title: 'Decision engine waterfalls',
     body: 'MedPay routes the application across every marketplace enabled. engine.tech, HSP Medical, EazePay Direct. Parallel quote, 5s SLA.',
-    metric: '52 lenders',
+    metric: 'Marketplace',
   },
   {
     n: '04',
@@ -228,7 +228,7 @@ const AGENTS: Array<{
     stats: [
       { k: 'Decision', v: '< 10s' },
       { k: 'Pull type', v: 'Soft only' },
-      { k: 'Lenders', v: '52' },
+      { k: 'Marketplace', v: 'parallel quoting' },
     ],
     lastAction:
       'matched patient profile (V4=712, DTI=0.34, ask=$12k) to lender_07 + 2 backups · 12s ago',
@@ -307,7 +307,7 @@ const CASES: Array<{
     role: 'CFO · MedFirst Solutions · New York, NY',
     outcomes: [
       { value: '< 10s', label: 'Decision time' },
-      { value: '52 lenders', label: 'Marketplace' },
+      { value: 'Real-time', label: 'Marketplace' },
     ],
     primaryTag: 'Financing outcome',
   },
@@ -344,7 +344,7 @@ const OBJECTIONS: Array<{ q: string; a: string }> = [
   },
   {
     q: 'How is this different from Sunbit / Cherry / Affirm?',
-    a: 'Two reasons. (1) We are a marketplace. Sunbit/Cherry are single lenders. We waterfall across 52, so when their algorithm declines, ours keeps going. The marketplace coverage opens up real-lender approvals where a single lender would decline. (2) The agentic layer is bundled. Seven autonomous agents covering intake, enrichment, scoring, routing, lender selection, payment retry, and attribution. Sunbit will never answer your phone or recover a failed disbursement.',
+    a: 'Two reasons. (1) We are a marketplace. Sunbit/Cherry are single lenders. We waterfall across the marketplace, so when their algorithm declines, ours keeps going. The marketplace coverage opens up real-lender approvals where a single lender would decline. (2) The agentic layer is bundled. Seven autonomous agents covering intake, enrichment, scoring, routing, lender selection, payment retry, and attribution. Sunbit will never answer your phone or recover a failed disbursement.',
   },
 ];
 
@@ -701,8 +701,9 @@ export default function MedPayLandingPage(): JSX.Element {
               </h1>
 
               <p className="mp-hero-sub">
-                <strong>Soft-pull pre-qual in 10 seconds at the chair.</strong> 52 lenders quote in
-                parallel. Funds settle merchant-direct in 48 to 72 hours. One signup, one platform.
+                <strong>Soft-pull pre-qual in 10 seconds at the chair.</strong> the lender
+                marketplace quote in parallel. Funds settle merchant-direct in 48 to 72 hours. One
+                signup, one platform.
               </p>
 
               <div className="mp-hero-ctas">
@@ -760,9 +761,9 @@ export default function MedPayLandingPage(): JSX.Element {
                 </div>
                 <div>
                   <div className="strip-val">
-                    52<span className="strip-unit"> lenders</span>
+                    Real-time<span className="strip-unit"></span>
                   </div>
-                  <div className="strip-label">Parallel waterfall</div>
+                  <div className="strip-label">Lender marketplace · parallel</div>
                 </div>
               </div>
             </div>
@@ -947,9 +948,9 @@ export default function MedPayLandingPage(): JSX.Element {
             <p className="mp-section-body">
               The financing waterfall runs end-to-end inside MedPay. Soft-pull pre-qual, the agentic
               layer pre-qualifying every application on the financial data, a marketplace decision
-              engine that fires 52 lenders in parallel, the best offer winning, and the lender
-              disbursing direct to your business account on approval, generally within 48 to 72
-              hours of settlement.
+              engine that fires the lender marketplace in parallel, the best offer winning, and the
+              lender disbursing direct to your business account on approval, generally within 48 to
+              72 hours of settlement.
             </p>
           </div>
 
@@ -1236,7 +1237,7 @@ export default function MedPayLandingPage(): JSX.Element {
                     'Merchant-direct payout · funds land generally within 48 to 72 hours',
                     'Lender carries the credit risk · no clawback on routine defaults',
                     'Premium patient experience · clean accept-and-go flow',
-                    '52 lenders quoted in parallel · 5-second SLA per round-trip',
+                    'the lender marketplace quotes in parallel · 5-second SLA per round-trip',
                   ].map((b, i) => (
                     <li key={i}>
                       <span className="mp-bullet-tick">
@@ -1269,7 +1270,8 @@ export default function MedPayLandingPage(): JSX.Element {
                   <div className="mock-body">
                     <div className="mock-greet">Welcome, M. Alvarez · approved for $12,000</div>
                     <div className="mock-sub">
-                      52 lenders quoted in parallel. Your three best offers, ranked by total cost.
+                      the lender marketplace quotes in parallel. Your three best offers, ranked by
+                      total cost.
                     </div>
 
                     {/* waterfall mini-bar */}
@@ -1280,7 +1282,7 @@ export default function MedPayLandingPage(): JSX.Element {
                         <span className="seg seg-best">3 surfaced</span>
                       </div>
                       <div className="mock-waterfall-meta">
-                        52 lenders · 4.8s round-trip · soft pull only
+                        the lender marketplace · 4.8s round-trip · soft pull only
                       </div>
                     </div>
 
@@ -2463,7 +2465,7 @@ const CSS = `
 }
 .mp-compare-list li {
   display: grid;
-  /* Track wide enough for word-based stats ("52 lenders", "Same-day",
+  /* Track wide enough for word-based stats ("the lender marketplace", "Same-day",
      "2-4 wks") to sit on a single line at the desktop size. */
   grid-template-columns: 130px minmax(0, 1fr);
   gap: 14px;
@@ -2479,7 +2481,7 @@ const CSS = `
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
   text-align: left;
-  /* Keep multi-word stats together — "Same-day" / "52 lenders" should
+  /* Keep multi-word stats together — "Same-day" / "the lender marketplace" should
      wrap as a unit at the space, never inside the word. */
   word-break: keep-all;
   hyphens: none;
