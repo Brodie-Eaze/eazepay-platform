@@ -681,7 +681,7 @@ const SLIDES_RAW: Slide[] = [
                 <div className="sld-price-hero-includes-eyebrow">What&apos;s included</div>
                 <ul>
                   <li>Full platform configured for your practice</li>
-                  <li>All 7 agents (PRISM · ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</li>
+                  <li>All 6 agents (ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</li>
                   <li>Multi-lender marketplace activated</li>
                   <li>Live in up to 5 business days</li>
                   <li>Staff training · iPad / web setup</li>
@@ -986,7 +986,7 @@ const SLIDES_RAW: Slide[] = [
         ]}
         outcomes={[
           { v: '+38%', k: 'Booked consults / lead' },
-          { v: '−41%', k: 'Form drop-off · PRISM agentic intake' },
+          { v: '−41%', k: 'Form drop-off · HELIX smart intake' },
           { v: '2.3×', k: 'Package size (vs. single treatment)' },
         ]}
         quote="The agentic form is the thing. Patients used to bounce on the income question. Now they finish the apply flow on their phone before they even hang up with my front desk."
@@ -1167,18 +1167,17 @@ const NARRATIVE_ORDER = [
   1, //  06 · The cost of doing nothing
   2, //  07 · Why now
 
-  // ACT 2 — Solution (high level + agents + 7-stage journey)
-  3, //  07 · The 3 pillars
-  27, // 08 · Seven agents · one platform (NEW)
-  10, // 09 · Patient journey overview (4-panel storyboard)
-  4, //  10 · Stage 1: Soft-pull pre-qual (iPad)
-  5, //  11 · Stage 2: PRISM smart forms
-  18, // 12 · Stage 3: HELIX smart routing
-  6, //  13 · Stage 4: Lender marketplace
-  7, //  14 · Stage 5: Best offer wins
-  19, // 15 · Stage 6: Smartphone continuity
-  8, //  16 · Stage 7: Merchant-direct funding
-  28, // 17 · ECHO pixel attribution (NEW)
+  // ACT 2 — Solution (high level + agents + journey)
+  3, //  · The 3 pillars
+  27, // · Six agents · one platform
+  10, // · Patient journey overview (4-panel storyboard)
+  4, //  · Stage 1: Soft-pull pre-qual (iPad)
+  18, // · Stage 2: HELIX smart forms + multi-stage routing
+  6, //  · Stage 3: Lender marketplace
+  7, //  · Stage 4: Best offer wins
+  19, // · Stage 5: Smartphone continuity
+  8, //  · Stage 6: Merchant-direct funding
+  28, // · ECHO pixel attribution
 
   // ACT 3 — Transformation
   9, //  18 · Without/With
@@ -1676,7 +1675,7 @@ function VsTable(): JSX.Element {
       single: 'Soft pull with that lender',
       med: 'Soft pull across the marketplace',
     },
-    { k: 'Agent layer', single: 'None', med: 'Seven autonomous agents' },
+    { k: 'Agent layer', single: 'None', med: 'Six autonomous agents' },
     {
       k: 'Pixel attribution',
       single: 'On form-fill (junk signal)',
@@ -1964,7 +1963,7 @@ function SampleInvoice(): JSX.Element {
             <td>$10,000.00</td>
           </tr>
           <tr>
-            <td>All 7 agents (PRISM · ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</td>
+            <td>All 6 agents (ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</td>
             <td>incl.</td>
             <td>—</td>
             <td>$0.00</td>
@@ -2016,7 +2015,7 @@ function OnboardingTimeline(): JSX.Element {
     {
       d: 'Day 2-3',
       t: 'Smart-form + routing built',
-      b: 'PRISM form deployed · HELIX routes published · ORACLE wired to bureaus',
+      b: 'HELIX smart form deployed · routes published · ORACLE wired to bureaus',
     },
     {
       d: 'Day 4-5',
@@ -2077,7 +2076,7 @@ function SmartRoutingViz(): JSX.Element {
           →
         </div>
         <div className="sld-flow-node">
-          <div className="sld-flow-node-eyebrow">PRISM</div>
+          <div className="sld-flow-node-eyebrow">HELIX · intake</div>
           <div className="sld-flow-node-title">Smart form</div>
           <div className="sld-flow-node-sub">Reshapes on partial answers</div>
         </div>
@@ -2440,12 +2439,6 @@ function WhoIsItFor(): JSX.Element {
 function SevenAgents(): JSX.Element {
   const agents = [
     {
-      code: 'PRISM',
-      role: 'Smart forms',
-      watches: 'Every form session',
-      output: 'Reorders questions, kills friction',
-    },
-    {
       code: 'ORACLE',
       role: 'Financial qualification',
       watches: 'Reporting-bureau pull on every lead',
@@ -2453,9 +2446,9 @@ function SevenAgents(): JSX.Element {
     },
     {
       code: 'HELIX',
-      role: 'Multi-stage smart routing',
-      watches: 'Financial signals + funnel type',
-      output: 'Routes by credit → income → DTI · low or high-ticket path',
+      role: 'Smart forms + smart routing',
+      watches: 'Form behaviour + financial signals',
+      output: 'Reshapes the form · routes by credit → income → DTI',
     },
     {
       code: 'NEXUS',
@@ -2492,16 +2485,15 @@ function SevenAgents(): JSX.Element {
       </Reveal>
       <Reveal delay={120}>
         <h2 className="sld-h2">
-          <span className="grad-teal-deep">Seven autonomous agents.</span>{' '}
+          <span className="grad-teal-deep">Six autonomous agents.</span>{' '}
           <span className="grad-teal">One platform.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          MedPay is not a single piece of software. It&apos;s a stack of seven specialised agents
-          working in parallel on every patient session &mdash; intake, scoring, routing, lender
-          selection, payment retry, pixel attribution, and compliance audit. Every agent is named,
-          observable, and logged.
+          MedPay is a stack of six specialised agents working in parallel on every lead session
+          &mdash; financial qualification, smart forms + routing, lender selection, lender quoting,
+          pixel attribution, and compliance audit. Every agent is named, observable, and logged.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -2683,7 +2675,7 @@ function ValueStack(): JSX.Element {
       items: [
         'Soft-pull fundability tier (FCRA-compliant)',
         'Last-4-SSN + DOB + income at the chair',
-        'PRISM smart-form intake (−41% drop-off)',
+        'HELIX smart-form intake (−41% drop-off)',
         'Real-time signal scoring · ORACLE',
       ],
       alt: '$2,400 / mo · standalone form + scoring vendor',
@@ -3284,19 +3276,21 @@ const CSS = `
   50% { box-shadow: 0 0 0 8px rgba(34, 184, 160, 0); }
 }
 
-/* ===== Headlines ===== */
+/* ===== Headlines — lighter editorial weight (was 800), more
+   refined tracking, kept punchy via the gradient text fills. ===== */
 .sld-h1 {
-  font-size: 80px; font-weight: 800;
-  letter-spacing: -0.035em; line-height: 1.02;
+  font-size: 80px; font-weight: 600;
+  letter-spacing: -0.04em; line-height: 1.02;
   margin: 0;
 }
 .sld-h2 {
-  font-size: 56px; font-weight: 800;
-  letter-spacing: -0.03em; line-height: 1.08;
+  font-size: 56px; font-weight: 600;
+  letter-spacing: -0.034em; line-height: 1.08;
   margin: 0;
 }
 .sld-h2-big { font-size: 64px; }
 .sld-h2 em {
+  font-weight: 400;
   font-style: italic;
   color: var(--mp-ink-2);
 }
@@ -3441,7 +3435,7 @@ const CSS = `
 }
 .sld-pillar-h {
   margin-top: 8px;
-  font-size: 26px; font-weight: 700;
+  font-size: 26px; font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--mp-ink);
 }
@@ -5253,7 +5247,23 @@ const CSS = `
   display: flex; flex-direction: column;
   gap: 16px;
   margin-top: 8px;
+  position: relative;
+  perspective: 1600px;
+  perspective-origin: 50% 30%;
 }
+.sld-flow::before {
+  content: '';
+  position: absolute;
+  inset: -40px -40px;
+  background:
+    radial-gradient(ellipse 50% 60% at 30% 70%, rgba(34, 184, 160, 0.14), transparent 65%),
+    radial-gradient(ellipse 40% 50% at 80% 30%, rgba(14, 124, 102, 0.10), transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 32px;
+  filter: blur(8px);
+}
+.sld-flow > * { position: relative; z-index: 1; }
 .sld-flow-row {
   display: grid;
   grid-template-columns: 1fr 24px 1fr 24px 1fr;
@@ -5324,25 +5334,48 @@ const CSS = `
 .sld-flow-branches {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 14px;
+  transform-style: preserve-3d;
 }
 .sld-flow-branch {
   display: flex; flex-direction: column;
-  padding: 18px;
+  padding: 22px;
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid var(--mp-line);
-  border-radius: 16px;
+  border-radius: 18px;
   gap: 14px;
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow .5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
 }
 .sld-flow-branch-high {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
-    rgba(255, 255, 255, 0.95);
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.22), transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(240, 252, 250, 0.97) 100%);
   border-color: var(--mp-line-strong);
-  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.20);
+  box-shadow:
+    0 40px 80px -32px rgba(14, 124, 102, 0.45),
+    0 14px 30px -14px rgba(14, 124, 102, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  /* 3D tilt — leans toward the viewer to emphasise the winning path */
+  transform: rotateY(-4deg) rotateX(2deg) translateZ(30px);
+}
+.sld-flow-branch-high:hover {
+  transform: rotateY(-2deg) rotateX(1deg) translateZ(40px);
+  box-shadow:
+    0 50px 100px -32px rgba(14, 124, 102, 0.55),
+    0 20px 40px -16px rgba(14, 124, 102, 0.30);
 }
 .sld-flow-branch-low {
-  background: rgba(15, 23, 42, 0.03);
+  background: rgba(15, 23, 42, 0.025);
   border-style: dashed;
+  /* Recedes — the loser path sits back from the viewer */
+  transform: rotateY(4deg) rotateX(-1deg) translateZ(-10px);
+  opacity: 0.92;
+}
+.sld-flow-branch-low:hover {
+  transform: rotateY(2deg) rotateX(0deg) translateZ(0px);
+  opacity: 1;
 }
 .sld-flow-branch-head {
   display: flex; flex-direction: column; gap: 4px;
@@ -5373,9 +5406,49 @@ const CSS = `
 }
 .sld-flow-step-final {
   background:
-    linear-gradient(90deg, rgba(34, 184, 160, 0.14), transparent);
-  border-color: rgba(34, 184, 160, 0.35);
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(34, 184, 160, 0.30), transparent 70%),
+    linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  border-color: transparent;
+  color: #fff;
+  box-shadow:
+    0 22px 50px -22px rgba(14, 124, 102, 0.55),
+    0 0 0 1px rgba(34, 184, 160, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  position: relative;
+  overflow: hidden;
 }
+.sld-flow-step-final::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 100% 50%, rgba(34, 184, 160, 0.35), transparent 60%);
+  opacity: 0;
+  animation: sldFlowGlow 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sldFlowGlow {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+.sld-flow-step-final .sld-flow-step-n {
+  color: var(--mp-teal-2);
+}
+.sld-flow-step-final .sld-flow-step-h {
+  color: #fff;
+}
+.sld-flow-step-final .sld-flow-step-b {
+  color: rgba(255, 255, 255, 0.75);
+}
+.sld-flow-branch-low .sld-flow-step-final {
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.12), transparent);
+  border-color: rgba(15, 23, 42, 0.18);
+  color: var(--mp-ink);
+  box-shadow: none;
+}
+.sld-flow-branch-low .sld-flow-step-final::after { display: none; }
+.sld-flow-branch-low .sld-flow-step-final .sld-flow-step-n { color: var(--mp-mute); }
+.sld-flow-branch-low .sld-flow-step-final .sld-flow-step-h { color: var(--mp-ink); }
+.sld-flow-branch-low .sld-flow-step-final .sld-flow-step-b { color: var(--mp-ink-2); }
 .sld-flow-branch-low .sld-flow-step { background: rgba(255, 255, 255, 0.78); }
 .sld-flow-step-n {
   font-size: 14px; font-weight: 800;
