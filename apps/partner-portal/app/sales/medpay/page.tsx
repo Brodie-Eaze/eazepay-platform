@@ -665,40 +665,60 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">Aligned with you.</span>{' '}
-            <span className="grad-teal">We only win when you fund.</span>
+            <span className="grad-teal-deep">One platform fee.</span>{' '}
+            <span className="grad-teal">$10,000. Live in 5 days.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
-          <div className="sld-price-grid">
-            <div className="sld-price-card">
-              <div className="sld-price-row">
-                <span className="sld-price-k">Platform fee</span>
-                <span className="sld-price-v">% of funded volume only</span>
+          <div className="sld-price-card sld-price-hero">
+            <div className="sld-price-hero-row">
+              <div>
+                <div className="sld-price-hero-eyebrow">Platform setup</div>
+                <div className="sld-price-hero-amount">$10,000</div>
+                <div className="sld-price-hero-sub">One-time · all-in</div>
               </div>
-              <div className="sld-price-row">
-                <span className="sld-price-k">Monthly fee</span>
-                <span className="sld-price-v">$0</span>
-              </div>
-              <div className="sld-price-row">
-                <span className="sld-price-k">Per-application fee</span>
-                <span className="sld-price-v">$0</span>
-              </div>
-              <div className="sld-price-row">
-                <span className="sld-price-k">Setup fee</span>
-                <span className="sld-price-v">$0</span>
-              </div>
-              <div className="sld-price-row">
-                <span className="sld-price-k">Contract length</span>
-                <span className="sld-price-v">Month to month · cancel anytime</span>
+              <div className="sld-price-hero-includes">
+                <div className="sld-price-hero-includes-eyebrow">What&apos;s included</div>
+                <ul>
+                  <li>Full platform configured for your practice</li>
+                  <li>All 7 agents (PRISM · ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</li>
+                  <li>Multi-lender marketplace activated</li>
+                  <li>Live in up to 5 business days</li>
+                  <li>Staff training · iPad / web setup</li>
+                  <li>Pixel + CAPI integration · Meta · Google · TikTok</li>
+                </ul>
               </div>
             </div>
-            <SampleInvoice />
+            <div className="sld-price-grid">
+              <div>
+                <div className="sld-price-row">
+                  <span className="sld-price-k">Monthly platform fee</span>
+                  <span className="sld-price-v">$0</span>
+                </div>
+                <div className="sld-price-row">
+                  <span className="sld-price-k">Per-application fee</span>
+                  <span className="sld-price-v">$0</span>
+                </div>
+                <div className="sld-price-row">
+                  <span className="sld-price-k">Time to live</span>
+                  <span className="sld-price-v">Up to 5 business days</span>
+                </div>
+                <div className="sld-price-row">
+                  <span className="sld-price-k">Contract</span>
+                  <span className="sld-price-v">Buy once · run forever</span>
+                </div>
+              </div>
+              <SampleInvoice />
+            </div>
           </div>
         </Reveal>
         <Reveal delay={360}>
-          <p className="sld-sub" style={{ marginTop: '24px', textAlign: 'center' }}>
-            No funded patients, no fee. Fully aligned.
+          <p
+            className="sld-sub"
+            style={{ marginTop: '20px', textAlign: 'center', fontSize: '15px' }}
+          >
+            One <strong>$10,000 setup</strong> fee unlocks the full platform. No monthly bill, no
+            per-application charge. Live and running traffic inside <strong>5 days</strong>.
           </p>
         </Reveal>
       </div>
@@ -719,11 +739,19 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">Live by Thursday.</span>{' '}
-            <span className="grad-teal">Five minutes to set up.</span>
+            <span className="grad-teal-deep">Up to 5 business days.</span>{' '}
+            <span className="grad-teal">From signed agreement to live.</span>
           </h2>
         </Reveal>
-        <Reveal delay={240}>
+        <Reveal delay={200}>
+          <p className="sld-sub">
+            Once you sign and the $10,000 platform fee clears, our team configures the account,
+            integrates your pixel, trains your staff, and validates the first end-to-end soft pull.
+            Up to 5 business days. After that you&apos;re running real traffic and financing real
+            patients.
+          </p>
+        </Reveal>
+        <Reveal delay={300}>
           <OnboardingTimeline />
         </Reveal>
         <Reveal delay={360}>
@@ -819,15 +847,18 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-teal-deep">HELIX routes</span>{' '}
-            <span className="grad-teal">the right patient to the right rep.</span>
+            <span className="grad-teal-deep">Route every lead</span>{' '}
+            <span className="grad-teal">by their actual financial profile.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            A qualified patient drops into your team. HELIX evaluates geography, rep capacity,
-            specialty fit, and ticket-size match in real time. The patient lands on the rep most
-            likely to close.
+            HELIX runs the lead through your funnel in stages. First it pulls the financial
+            qualification from ORACLE. Then it routes &mdash; can be one stage, can be three. Credit
+            score, then income, then available credit. High-ticket leads land on a calendar slot
+            pre-approved. Low-ticket leads land on a guide, an e-book, or a starter offer. Your
+            calendar fills with qualified buyers. Your reps stop wasting time on people who
+            can&apos;t pay.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -835,10 +866,10 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={480}>
           <div className="sld-mini-stats">
-            <MiniStat v="<1s" k="Routing latency" />
-            <MiniStat v="Geo + cap" k="Match signals" />
-            <MiniStat v="Live" k="Capacity awareness" />
-            <MiniStat v="No queue" k="Patient handoff" />
+            <MiniStat v="< 10s" k="Financial qualify" />
+            <MiniStat v="Multi-stage" k="Up to 5 routing gates" />
+            <MiniStat v="2-path" k="High / low ticket funnel" />
+            <MiniStat v="Per-lead" k="Customisable routes" />
           </div>
         </Reveal>
       </div>
@@ -1113,6 +1144,13 @@ const SLIDES_RAW: Slide[] = [
     title: 'Full value stack',
     build: () => <ValueStack />,
   },
+
+  /* 32 — TRUSTED BY 1,000+ PRACTICES (enterprise social proof) */
+  {
+    n: '32',
+    title: 'Trusted by 1,000+ practices',
+    build: () => <TrustedBy />,
+  },
 ];
 
 /** Narrative ordering of SLIDES_RAW into the final 30-slide rep-led
@@ -1120,13 +1158,14 @@ const SLIDES_RAW: Slide[] = [
 const NARRATIVE_ORDER = [
   // OPENING — set the stage
   24, // 01 · Cover · brand title
-  25, // 02 · Welcome + agenda (NEW)
+  25, // 02 · Welcome + agenda
   0, //  03 · What is MedPay
-  26, // 04 · Who is it for (NEW)
+  26, // 04 · Who is it for
+  31, // 05 · Trusted by 1,000+ practices (NEW v7)
 
   // ACT 1 — Problem
-  1, //  05 · The cost of doing nothing
-  2, //  06 · Why now
+  1, //  06 · The cost of doing nothing
+  2, //  07 · Why now
 
   // ACT 2 — Solution (high level + agents + 7-stage journey)
   3, //  07 · The 3 pillars
@@ -1900,56 +1939,62 @@ function SampleInvoice(): JSX.Element {
       <div className="sld-invoice-head">
         <div>
           <div className="sld-invoice-from">MedPay · A vertical of EazePay</div>
-          <div className="sld-invoice-meta">NMLS #2456701 · ein 88-1234567</div>
+          <div className="sld-invoice-meta">NMLS #2456701 · EIN 88-1234567</div>
         </div>
         <div className="sld-invoice-no">
-          <div className="sld-invoice-no-k">Invoice</div>
-          <div className="sld-invoice-no-v">INV-2026-04</div>
+          <div className="sld-invoice-no-k">Receipt</div>
+          <div className="sld-invoice-no-v">RCP-2026-001</div>
         </div>
       </div>
-      <div className="sld-invoice-period">Period · April 2026 · Helio Dental Group</div>
+      <div className="sld-invoice-period">Day 0 · Setup · Helio Dental Group</div>
       <table className="sld-invoice-table">
         <thead>
           <tr>
             <th>Description</th>
-            <th>Funded volume</th>
-            <th>Rate</th>
+            <th>Qty</th>
+            <th>Unit</th>
             <th>Amount</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Platform fee · % of funded volume</td>
-            <td>$184,200</td>
-            <td>4.0%</td>
-            <td>$7,368.00</td>
+            <td>MedPay platform · one-time setup</td>
+            <td>1</td>
+            <td>$10,000</td>
+            <td>$10,000.00</td>
           </tr>
           <tr>
-            <td>Monthly platform fee</td>
-            <td>—</td>
+            <td>All 7 agents (PRISM · ORACLE · HELIX · NEXUS · FLUX · ECHO · VEGA)</td>
+            <td>incl.</td>
             <td>—</td>
             <td>$0.00</td>
           </tr>
           <tr>
-            <td>Per-application fee (137 apps)</td>
+            <td>Pixel + CAPI integration · staff training</td>
+            <td>incl.</td>
             <td>—</td>
-            <td>$0</td>
+            <td>$0.00</td>
+          </tr>
+          <tr>
+            <td>Monthly platform fee · forever</td>
+            <td>—</td>
+            <td>—</td>
             <td>$0.00</td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <td colSpan={3}>
-              <strong>Total due</strong>
+              <strong>Total · paid once</strong>
             </td>
             <td>
-              <strong>$7,368.00</strong>
+              <strong>$10,000.00</strong>
             </td>
           </tr>
         </tfoot>
       </table>
       <div className="sld-invoice-foot">
-        Auto-debited 5th of the following month · only when you fund · zero fixed cost
+        One-time platform setup · live in up to 5 business days · no recurring fee
       </div>
     </div>
   );
@@ -1958,21 +2003,25 @@ function SampleInvoice(): JSX.Element {
 /** Onboarding timeline — day 1 → day 7 milestones. Slide 17 supplement. */
 function OnboardingTimeline(): JSX.Element {
   const ms = [
-    { d: 'Day 0', t: 'Sign agreement', b: '5-min business signup · KYB clears in 60s' },
+    {
+      d: 'Day 0',
+      t: 'Agreement signed · $10k paid',
+      b: 'KYB clears in 60s · CSM assigned · kickoff scheduled',
+    },
     {
       d: 'Day 1',
-      t: 'Wire setup',
-      b: 'Bank account verified via micro-deposit · ACH consent signed',
+      t: 'Account configured',
+      b: 'Pixel + CAPI integrated · bank account verified · funnels mapped',
     },
     {
-      d: 'Day 2',
-      t: 'iPad / web flow live',
-      b: 'Apply link active · staff trained · first soft-pull live',
+      d: 'Day 2-3',
+      t: 'Smart-form + routing built',
+      b: 'PRISM form deployed · HELIX routes published · ORACLE wired to bureaus',
     },
     {
-      d: 'Day 3-7',
-      t: 'First funded patient',
-      b: 'Lender disburses to your account · daily reports flowing',
+      d: 'Day 4-5',
+      t: 'Live · first real traffic',
+      b: 'Staff trained · iPad / web flow active · first funded patient in days',
     },
   ];
   return (
@@ -2015,41 +2064,113 @@ function RoadmapStrip(): JSX.Element {
 /** Smart-routing (HELIX) visualization — patient avatar at left, HELIX
  *  agent middle, three reps on the right with capacity badges. */
 function SmartRoutingViz(): JSX.Element {
-  const reps = [
-    { name: 'Dr. Klein', tag: 'Implants · 8 mi', match: true, cap: '2 / 6 booked' },
-    { name: 'Dr. Lin', tag: 'Ortho · 14 mi', match: false, cap: 'Full · today' },
-    { name: 'Dr. Brooks', tag: 'Cosmetic · 11 mi', match: false, cap: '4 / 6 booked' },
-  ];
   return (
-    <div className="sld-sr">
-      <div className="sld-sr-patient">
-        <div className="sld-sr-avatar">JP</div>
-        <div className="sld-sr-meta">
-          <div className="sld-sr-label">Qualified patient</div>
-          <div className="sld-sr-sub">$24,000 · Tier A · implants</div>
+    <div className="sld-flow">
+      {/* Top row — linear stages before the fork */}
+      <div className="sld-flow-row sld-flow-row-pre">
+        <div className="sld-flow-node sld-flow-node-start">
+          <div className="sld-flow-node-eyebrow">Inbound</div>
+          <div className="sld-flow-node-title">New lead</div>
+          <div className="sld-flow-node-sub">From your ads, site, or referral</div>
         </div>
-      </div>
-      <div className="sld-sr-arrow">
-        <div className="sld-sr-agent">
-          <span className="sld-sr-agent-dot" /> HELIX
+        <div className="sld-flow-arrow" aria-hidden>
+          →
         </div>
-        <div className="sld-sr-arrow-line">
-          <span className="sld-sr-arrow-pulse" />
+        <div className="sld-flow-node">
+          <div className="sld-flow-node-eyebrow">PRISM</div>
+          <div className="sld-flow-node-title">Smart form</div>
+          <div className="sld-flow-node-sub">Reshapes on partial answers</div>
         </div>
-        <div className="sld-sr-agent-sub">geo · capacity · ticket fit</div>
-      </div>
-      <div className="sld-sr-reps">
-        {reps.map((r, i) => (
-          <div key={i} className={`sld-sr-rep ${r.match ? 'is-match' : ''}`}>
-            <div className="sld-sr-rep-name">
-              {r.match && <span className="sld-sr-rep-star">★</span>}
-              {r.name}
-            </div>
-            <div className="sld-sr-rep-tag">{r.tag}</div>
-            <div className="sld-sr-rep-cap">{r.cap}</div>
-            {r.match && <div className="sld-sr-rep-match">Best fit · routed</div>}
+        <div className="sld-flow-arrow" aria-hidden>
+          →
+        </div>
+        <div className="sld-flow-node sld-flow-node-oracle">
+          <div className="sld-flow-node-eyebrow">ORACLE</div>
+          <div className="sld-flow-node-title">Financial qualification</div>
+          <div className="sld-flow-node-sub">
+            Credit score · available credit · income · DTI · pre-approval $
           </div>
-        ))}
+        </div>
+      </div>
+
+      {/* HELIX router strip */}
+      <div className="sld-flow-fork">
+        <div className="sld-flow-fork-tag">
+          <span className="sld-flow-fork-dot" /> HELIX router · multi-stage
+        </div>
+      </div>
+
+      {/* Two-branch routing */}
+      <div className="sld-flow-branches">
+        {/* HIGH-TICKET path */}
+        <div className="sld-flow-branch sld-flow-branch-high">
+          <div className="sld-flow-branch-head">
+            <div className="sld-flow-branch-tag">HIGH-TICKET FUNNEL</div>
+            <div className="sld-flow-branch-criteria">
+              ≥ 680 score · ≥ $5k available · DTI &lt; 40%
+            </div>
+          </div>
+          <div className="sld-flow-steps">
+            <div className="sld-flow-step">
+              <div className="sld-flow-step-n">01</div>
+              <div className="sld-flow-step-h">Filter by credit score</div>
+              <div className="sld-flow-step-b">Drop below 680 to low-ticket lane</div>
+            </div>
+            <div className="sld-flow-step-arrow">↓</div>
+            <div className="sld-flow-step">
+              <div className="sld-flow-step-n">02</div>
+              <div className="sld-flow-step-h">Filter by income</div>
+              <div className="sld-flow-step-b">≥ $75k household · or co-signer flagged</div>
+            </div>
+            <div className="sld-flow-step-arrow">↓</div>
+            <div className="sld-flow-step">
+              <div className="sld-flow-step-n">03</div>
+              <div className="sld-flow-step-h">Filter by available credit</div>
+              <div className="sld-flow-step-b">≥ ticket size after lender pre-approval</div>
+            </div>
+            <div className="sld-flow-step-arrow">↓</div>
+            <div className="sld-flow-step sld-flow-step-final">
+              <div className="sld-flow-step-n">→</div>
+              <div className="sld-flow-step-h">Booked on calendar</div>
+              <div className="sld-flow-step-b">Right rep · right slot · pre-approved</div>
+            </div>
+          </div>
+        </div>
+
+        {/* LOW-TICKET path */}
+        <div className="sld-flow-branch sld-flow-branch-low">
+          <div className="sld-flow-branch-head">
+            <div className="sld-flow-branch-tag">LOW-TICKET FUNNEL</div>
+            <div className="sld-flow-branch-criteria">
+              Below score / income threshold · still warm
+            </div>
+          </div>
+          <div className="sld-flow-steps">
+            <div className="sld-flow-step">
+              <div className="sld-flow-step-n">01</div>
+              <div className="sld-flow-step-h">Free guide / e-book</div>
+              <div className="sld-flow-step-b">Capture email · educate · stay top-of-mind</div>
+            </div>
+            <div className="sld-flow-step-arrow">↓</div>
+            <div className="sld-flow-step">
+              <div className="sld-flow-step-n">02</div>
+              <div className="sld-flow-step-h">Low-ticket offer</div>
+              <div className="sld-flow-step-b">$99 consult, $199 evaluation, starter package</div>
+            </div>
+            <div className="sld-flow-step-arrow">↓</div>
+            <div className="sld-flow-step">
+              <div className="sld-flow-step-n">03</div>
+              <div className="sld-flow-step-h">Nurture · re-pull in 90d</div>
+              <div className="sld-flow-step-b">Income changes · credit heals · re-qualify</div>
+            </div>
+            <div className="sld-flow-step-arrow">↓</div>
+            <div className="sld-flow-step sld-flow-step-final">
+              <div className="sld-flow-step-n">→</div>
+              <div className="sld-flow-step-h">Routed back to high-ticket</div>
+              <div className="sld-flow-step-b">Or stays converted on the entry offer</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -2196,21 +2317,19 @@ function WelcomeAgenda(): JSX.Element {
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            Welcome
+            Today&apos;s walkthrough
           </div>
         </Reveal>
         <Reveal delay={120}>
           <h1 className="sld-h1">
-            <span className="grad-teal-deep">Thanks for taking the call.</span>
-            <br />
-            <span className="grad-teal">Here&apos;s what we&apos;ll cover.</span>
+            <span className="grad-teal-deep">Here&apos;s what we&apos;ll cover</span>{' '}
+            <span className="grad-teal">in the next 15 minutes.</span>
           </h1>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            About 15 minutes. Six chapters. By the end you&apos;ll know what MedPay is, whether it
-            fits your practice, what it costs, and the exact path to your first funded patient. Stop
-            me with questions anytime &mdash; this is your call.
+            Six chapters. By the end you&apos;ll know exactly what MedPay is, how it works, who
+            it&apos;s for, what it costs, and the path from today to your first funded patient.
           </p>
         </Reveal>
       </div>
@@ -2328,15 +2447,15 @@ function SevenAgents(): JSX.Element {
     },
     {
       code: 'ORACLE',
-      role: 'Fundability tier',
-      watches: 'Soft-pull financial data',
-      output: 'Tier A/B/C in <10s',
+      role: 'Financial qualification',
+      watches: 'Reporting-bureau pull on every lead',
+      output: 'Credit score · available credit · income · DTI · pre-approval $',
     },
     {
       code: 'HELIX',
-      role: 'Smart routing',
-      watches: 'Patient + rep + capacity',
-      output: 'Best-fit estimator match',
+      role: 'Multi-stage smart routing',
+      watches: 'Financial signals + funnel type',
+      output: 'Routes by credit → income → DTI · low or high-ticket path',
     },
     {
       code: 'NEXUS',
@@ -2664,12 +2783,94 @@ function ValueStack(): JSX.Element {
         <div className="sld-stack-total">
           <div className="sld-stack-total-row">
             <span className="sld-stack-total-k">Equivalent vendor stack</span>
-            <span className="sld-stack-total-v">~$7,700 / month</span>
+            <span className="sld-stack-total-v">~$7,700 / month · ~$92,400 / yr</span>
           </div>
           <div className="sld-stack-total-row accent">
             <span className="sld-stack-total-k">MedPay</span>
-            <span className="sld-stack-total-v">$0 monthly · % of funded volume only</span>
+            <span className="sld-stack-total-v">$10,000 one-time · live in 5 days</span>
           </div>
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Trusted by 1,000+ practices — enterprise social proof slide.
+ *  Goes right after "Who it's for" so the prospect knows MedPay
+ *  isn't a side project before we walk into the problem. */
+function TrustedBy(): JSX.Element {
+  const tile = (label: string) => (
+    <div className="sld-trust-tile">
+      <div className="sld-trust-tile-dot" />
+      <span>{label}</span>
+    </div>
+  );
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          Enterprise trust
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal-deep">Over 1,000 practices</span>{' '}
+          <span className="grad-teal">already run on MedPay.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          We&apos;ve been in market with dental clinics, med spas, derm groups, vet hospitals and
+          elective-vision practices since launch. The platform is hardened, the lender panel is
+          live, and the support team is staffed for scale.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-trust-hero">
+          <div className="sld-trust-hero-row">
+            <div>
+              <div className="sld-trust-hero-v">
+                <AnimatedCounter to={1000} suffix="+" />
+              </div>
+              <div className="sld-trust-hero-k">Practices live</div>
+            </div>
+            <div>
+              <div className="sld-trust-hero-v">
+                $<AnimatedCounter to={240} suffix="M+" />
+              </div>
+              <div className="sld-trust-hero-k">Funded to date</div>
+            </div>
+            <div>
+              <div className="sld-trust-hero-v">
+                <AnimatedCounter to={12400} suffix="+" />
+              </div>
+              <div className="sld-trust-hero-k">Patients financed</div>
+            </div>
+            <div>
+              <div className="sld-trust-hero-v">5</div>
+              <div className="sld-trust-hero-k">Verticals supported</div>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-section-title">Where MedPay is running today</div>
+      </Reveal>
+      <Reveal delay={540}>
+        <div className="sld-trust-tiles">
+          {[
+            'Dental — 540+ practices',
+            'Med spa — 230+ locations',
+            'Derm — 120+ clinics',
+            'Vet — 80+ hospitals',
+            'Vision — 50+ practices',
+            'All 50 US states',
+            'NMLS #2456701',
+            'SOC 2 in progress',
+          ].map((l, i) => (
+            <span key={i}>{tile(l)}</span>
+          ))}
         </div>
       </Reveal>
     </div>
@@ -2698,28 +2899,28 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
-          Sign the agreement today. Run your first soft pull at the chair this week. Stop losing
-          patients to financing friction.
+          One platform fee of <strong>$10,000</strong>. Live in{' '}
+          <strong>up to 5 business days</strong>. 1,000+ practices already running on MedPay.
         </p>
       </Reveal>
       <Reveal delay={360}>
         <div className="sld-finale-ctas">
           <a href="/medpay/checkout" className="sld-finale-primary">
-            <span className="sld-finale-primary-h">Get started</span>
+            <span className="sld-finale-primary-h">Get started · $10k</span>
             <span className="sld-finale-primary-sub">
-              5-min signup · KYB clears in 60s · live in days
+              Sign today · KYB clears in 60s · live in 5 days
             </span>
           </a>
           <a href="/help" className="sld-finale-secondary">
             <span className="sld-finale-secondary-h">Book a walkthrough</span>
-            <span className="sld-finale-secondary-sub">30 min · with a live patient flow demo</span>
+            <span className="sld-finale-secondary-sub">30 min · live patient flow demo</span>
           </a>
         </div>
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · % of funded volume only · no monthly fee · no
-          contract
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $10,000 one-time · no monthly
+          fee
         </div>
       </Reveal>
     </div>
@@ -5047,6 +5248,286 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
+/* ===== Multi-stage routing flow (slide 12 · HELIX) ===== */
+.sld-flow {
+  display: flex; flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+.sld-flow-row {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr 24px 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+.sld-flow-node {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 14px;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.sld-flow-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.30);
+}
+.sld-flow-node-start {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,253,252,0.92));
+}
+.sld-flow-node-oracle {
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+}
+.sld-flow-node-eyebrow {
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 800;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-flow-node-title {
+  margin-top: 4px;
+  font-size: 15px; font-weight: 700;
+  color: var(--mp-ink);
+  letter-spacing: -0.01em;
+}
+.sld-flow-node-sub {
+  margin-top: 6px;
+  font-size: 12px; color: var(--mp-ink-2);
+  line-height: 1.45;
+}
+.sld-flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  color: var(--mp-line-strong);
+  font-weight: 700;
+}
+.sld-flow-fork {
+  display: flex; justify-content: center;
+  padding: 4px 0;
+}
+.sld-flow-fork-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; letter-spacing: 0.16em; font-weight: 800;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 8px 18px;
+  background: rgba(34, 184, 160, 0.14);
+  border: 1px solid rgba(34, 184, 160, 0.35);
+  border-radius: 999px;
+}
+.sld-flow-fork-dot {
+  width: 6px; height: 6px; border-radius: 999px; background: var(--mp-teal-2);
+  animation: sldPulse 1.5s ease-in-out infinite;
+}
+.sld-flow-branches {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.sld-flow-branch {
+  display: flex; flex-direction: column;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+  gap: 14px;
+}
+.sld-flow-branch-high {
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+  box-shadow: 0 18px 40px -22px rgba(14, 124, 102, 0.20);
+}
+.sld-flow-branch-low {
+  background: rgba(15, 23, 42, 0.03);
+  border-style: dashed;
+}
+.sld-flow-branch-head {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--mp-line);
+}
+.sld-flow-branch-tag {
+  font-size: 11px; letter-spacing: 0.20em; font-weight: 800;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+}
+.sld-flow-branch-low .sld-flow-branch-tag { color: var(--mp-mute); }
+.sld-flow-branch-criteria {
+  font-size: 11px; color: var(--mp-mute);
+  font-variant-numeric: tabular-nums;
+}
+.sld-flow-steps {
+  display: flex; flex-direction: column;
+  gap: 6px;
+}
+.sld-flow-step {
+  display: grid; grid-template-columns: 36px 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 10px;
+}
+.sld-flow-step-final {
+  background:
+    linear-gradient(90deg, rgba(34, 184, 160, 0.14), transparent);
+  border-color: rgba(34, 184, 160, 0.35);
+}
+.sld-flow-branch-low .sld-flow-step { background: rgba(255, 255, 255, 0.78); }
+.sld-flow-step-n {
+  font-size: 14px; font-weight: 800;
+  color: var(--mp-teal);
+  letter-spacing: -0.025em;
+  display: flex; align-items: center; justify-content: center;
+}
+.sld-flow-step-h {
+  font-size: 13.5px; font-weight: 700;
+  color: var(--mp-ink);
+}
+.sld-flow-step-b {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--mp-ink-2);
+  line-height: 1.45;
+}
+.sld-flow-step-arrow {
+  text-align: center;
+  font-size: 12px;
+  color: var(--mp-line-strong);
+  font-weight: 700;
+  padding: 0;
+  margin: -2px 0;
+}
+
+/* ===== Trusted by 1,000+ practices ===== */
+.sld-trust-hero {
+  padding: 28px 24px;
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(34, 184, 160, 0.18), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 18px;
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.28);
+}
+.sld-trust-hero-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.sld-trust-hero-row > div {
+  text-align: center;
+  padding: 8px 4px;
+  border-right: 1px dashed var(--mp-line);
+}
+.sld-trust-hero-row > div:last-child { border-right: none; }
+.sld-trust-hero-v {
+  font-size: 44px; font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.sld-trust-hero-k {
+  margin-top: 6px;
+  font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+}
+.sld-trust-tiles {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 6px;
+}
+.sld-trust-tile {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 999px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--mp-ink-2);
+}
+.sld-trust-tile-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--mp-teal-2);
+}
+
+/* ===== Hero pricing card (slide · $10k one-time setup) ===== */
+.sld-price-hero { padding: 0 !important; overflow: hidden; }
+.sld-price-hero-row {
+  display: grid; grid-template-columns: 320px 1fr;
+  gap: 0;
+}
+.sld-price-hero-row > div:first-child {
+  padding: 28px 32px;
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 100%, rgba(34, 184, 160, 0.16), transparent 70%),
+    linear-gradient(180deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
+}
+.sld-price-hero-eyebrow {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal-2);
+  text-transform: uppercase;
+}
+.sld-price-hero-amount {
+  margin-top: 8px;
+  font-size: 64px; font-weight: 800;
+  letter-spacing: -0.035em;
+  background: linear-gradient(135deg, #fff 0%, var(--mp-teal-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.sld-price-hero-sub {
+  margin-top: 4px;
+  font-size: 13px; letter-spacing: 0.10em;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+}
+.sld-price-hero-includes {
+  padding: 28px 32px;
+  background: rgba(255, 255, 255, 0.95);
+}
+.sld-price-hero-includes-eyebrow {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.sld-price-hero-includes ul {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sld-price-hero-includes li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 13.5px;
+  color: var(--mp-ink-2);
+  line-height: 1.5;
+}
+.sld-price-hero-includes li::before {
+  content: '✓';
+  position: absolute;
+  left: 0; top: 0;
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  background: rgba(34, 184, 160, 0.18);
+  color: var(--mp-teal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+}
+.sld-price-hero ~ .sld-price-grid,
+.sld-price-hero .sld-price-grid {
+  grid-template-columns: 1fr 1.05fr;
+  border-top: 1px solid var(--mp-line);
+}
+.sld-price-hero .sld-price-grid > div:first-child {
+  padding: 22px 28px;
+}
+
 /* ===== Cover · brand title (first slide of the deck) ===== */
 .sld-cover {
   align-items: center; text-align: center;
@@ -5568,6 +6049,12 @@ const CSS = `
   .sld-comp-bars { height: 140px; }
   .sld-comp-legend { grid-template-columns: 1fr; }
   .sld-stack-grid { grid-template-columns: 1fr; }
+  .sld-flow-row { grid-template-columns: 1fr; gap: 8px; }
+  .sld-flow-arrow { transform: rotate(90deg); }
+  .sld-flow-branches { grid-template-columns: 1fr; }
+  .sld-trust-hero-row { grid-template-columns: repeat(2, 1fr); }
+  .sld-trust-hero-row > div { border-right: none; border-bottom: 1px dashed var(--mp-line); padding-bottom: 16px; }
+  .sld-price-hero-row { grid-template-columns: 1fr; }
   .sld-sr { grid-template-columns: 1fr; gap: 16px; }
   .sld-sr-arrow { padding: 12px 0; }
   .sld-vert-grid { grid-template-columns: 1fr; }
