@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 /* ============================================================================
-   MedPay · Sales Presentation
-   18-slide deck for a sales rep walking a dental practice owner through MedPay.
-   Same design tokens as the landing page (mp-* CSS, teal palette, glass cards).
-   Scroll-snap navigation, keyboard arrows, slide counter, prev/next controls.
+   MedPay · Sales Presentation v2
+   Upgraded from the v1 static deck:
+   - Animated gradient mesh + floating particles (ambient motion)
+   - 3D-tilted offer card mockup with mouse-parallax and CSS perspective
+   - Animated counters that count up on slide entry (IntersectionObserver)
+   - Animated lender marketplace visualization (chips fire in parallel)
+   - Interactive economics calculator (rep can drag the funnel live)
+   - Scroll-snap slide navigation, keyboard arrows, dots + counter
+   - Per-slide scroll-triggered reveals
    ========================================================================== */
 
 interface Slide {
@@ -21,26 +26,49 @@ const SLIDES: Slide[] = [
     n: '01',
     title: 'Opening',
     build: () => (
-      <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          MedPay · Patient Financing
+      <div className="sld-stack sld-grid-hero">
+        <div className="sld-hero-left">
+          <Reveal>
+            <div className="sld-eyebrow">
+              <span className="sld-eyebrow-dot" />
+              MedPay · Patient Financing
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <h1 className="sld-h1">
+              <span className="grad-teal-deep">Patient financing</span>{' '}
+              <span className="grad-teal">decided</span>
+              <br />
+              <span className="grad-teal-deep">in 10 seconds.</span>{' '}
+              <span className="grad-teal">At the chair.</span>
+            </h1>
+          </Reveal>
+          <Reveal delay={240}>
+            <p className="sld-sub">
+              A soft-pull pre-qualification engine, a multi-lender marketplace, and merchant-direct
+              funding in 48 to 72 hours. One signup, one platform.
+            </p>
+          </Reveal>
+          <Reveal delay={360}>
+            <div className="sld-chips">
+              <span className="sld-chip">FCRA soft pull · 0 impact</span>
+              <span className="sld-chip">Lender marketplace · parallel quoting</span>
+              <span className="sld-chip">Merchant-direct payout</span>
+            </div>
+          </Reveal>
+          <Reveal delay={480}>
+            <div className="sld-hero-stat-row">
+              <HeroStat n={12400} suffix="+" k="Patients funded" />
+              <HeroStat n={240} prefix="$" suffix="M+" k="Funded to date" />
+              <HeroStat n={48} suffix="-72hr" k="Merchant-direct" />
+            </div>
+          </Reveal>
         </div>
-        <h1 className="sld-h1">
-          <span className="grad-teal-deep">Patient financing</span>{' '}
-          <span className="grad-teal">decided</span>
-          <br />
-          <span className="grad-teal-deep">in 10 seconds.</span>{' '}
-          <span className="grad-teal">At the chair.</span>
-        </h1>
-        <p className="sld-sub">
-          A soft-pull pre-qualification engine, a multi-lender marketplace, and merchant-direct
-          funding in 48 to 72 hours. One signup, one platform.
-        </p>
-        <div className="sld-chips">
-          <span className="sld-chip">FCRA soft pull · 0 impact</span>
-          <span className="sld-chip">Lender marketplace · parallel quoting</span>
-          <span className="sld-chip">Merchant-direct payout</span>
+        <div className="sld-hero-right">
+          <ParticleField count={28} />
+          <TiltCard>
+            <OfferCardMock />
+          </TiltCard>
         </div>
       </div>
     ),
@@ -52,24 +80,36 @@ const SLIDES: Slide[] = [
     title: 'The cost of doing nothing',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          The cost of doing nothing
-        </div>
-        <h2 className="sld-h2">
-          Every patient who says <em>&ldquo;let me think about it&rdquo;</em>{' '}
-          <span className="grad-teal-deep">walks out unfunded.</span>
-        </h2>
-        <p className="sld-sub">
-          A 3-chair practice loses an estimated <strong>$1.4M a year</strong> to financing friction.
-          The objection isn&apos;t price. It&apos;s cash flow. Patients don&apos;t carry $12,000.
-        </p>
-        <div className="sld-stat-row">
-          <Stat v="38%" k="Industry same-day close (no financing)" />
-          <Stat v="$1.4M" k="Case acceptance lost / yr (3-chair)" />
-          <Stat v="54%" k="Inbound never pre-qualified" />
-          <Stat v="2–4 wks" k="Consult → deposit" />
-        </div>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            The cost of doing nothing
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            Every patient who says <em>&ldquo;let me think about it&rdquo;</em>{' '}
+            <span className="grad-teal-deep">walks out unfunded.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            A 3-chair practice loses an estimated{' '}
+            <strong>
+              $<AnimatedCounter to={1.4} decimals={1} />M a year
+            </strong>{' '}
+            to financing friction. The objection isn&apos;t price. It&apos;s cash flow. Patients
+            don&apos;t carry $12,000.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-stat-row">
+            <CountStat to={38} suffix="%" k="Industry same-day close (no financing)" />
+            <CountStat to={1.4} decimals={1} prefix="$" suffix="M" k="Case acceptance lost / yr" />
+            <CountStat to={54} suffix="%" k="Inbound never pre-qualified" />
+            <CountStat label="2–4 wks" k="Consult → deposit" />
+          </div>
+        </Reveal>
       </div>
     ),
   },
@@ -80,34 +120,57 @@ const SLIDES: Slide[] = [
     title: 'Why now',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Why now
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal">Financing at the point of sale</span>{' '}
-          <span className="grad-teal-deep">is now the patient expectation.</span>
-        </h2>
-        <p className="sld-sub">
-          Cherry, Sunbit, and GreenSky proved the model. But single-lender programs cap out at one
-          approval algorithm. When their model declines, your patient walks. MedPay solves the
-          ceiling.
-        </p>
-        <ul className="sld-bullets">
-          <li>
-            <span className="sld-bullet-k">Single-lender programs</span>
-            <span>
-              One approval algorithm. One ticket range. One credit tier. Decline = lost patient.
-            </span>
-          </li>
-          <li>
-            <span className="sld-bullet-k">Multi-lender marketplace</span>
-            <span>
-              Every lender in parallel on one soft pull. The patient gets the cheapest offer they
-              qualify for, full stop.
-            </span>
-          </li>
-        </ul>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Why now
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal">Financing at the point of sale</span>{' '}
+            <span className="grad-teal-deep">is now the patient expectation.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            Cherry, Sunbit, and GreenSky proved the model. But single-lender programs cap out at one
+            approval algorithm. When their model declines, your patient walks. MedPay solves the
+            ceiling.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-vs-2col">
+            <div className="sld-vs-side sld-vs-quo">
+              <div className="sld-vs-eyebrow">Single-lender programs</div>
+              <ul>
+                <li>
+                  <span className="sld-vs-icon sld-vs-x">×</span> One approval algorithm
+                </li>
+                <li>
+                  <span className="sld-vs-icon sld-vs-x">×</span> One ticket range
+                </li>
+                <li>
+                  <span className="sld-vs-icon sld-vs-x">×</span> Decline = lost patient
+                </li>
+              </ul>
+            </div>
+            <div className="sld-vs-side sld-vs-med">
+              <div className="sld-vs-eyebrow accent">Multi-lender marketplace</div>
+              <ul>
+                <li>
+                  <span className="sld-vs-icon sld-vs-check">✓</span> Every lender in parallel
+                </li>
+                <li>
+                  <span className="sld-vs-icon sld-vs-check">✓</span> $3k to $50k coverage
+                </li>
+                <li>
+                  <span className="sld-vs-icon sld-vs-check">✓</span> Cheapest offer wins
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Reveal>
       </div>
     ),
   },
@@ -118,57 +181,73 @@ const SLIDES: Slide[] = [
     title: 'What MedPay is',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          The pitch
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Soft-pull pre-qual at the chair.</span>
-          <br />
-          <span className="grad-teal">Lender marketplace.</span>{' '}
-          <span className="grad-teal-deep">Funds in 48 to 72 hours.</span>
-        </h2>
-        <p className="sld-sub">Three things matter to a practice owner. MedPay nails all three.</p>
-        <div className="sld-pillars">
-          <Pillar
-            n="01"
-            head="Speed"
-            body="Patient enters last 4 of SSN + DOB on your iPad. Fundability tier returns in under 10 seconds. Zero credit impact."
-          />
-          <Pillar
-            n="02"
-            head="Coverage"
-            body="Every lender in parallel on one soft pull. Patient sees the cheapest qualifying offer. Decline rate is the floor of the marketplace, not the floor of a single lender."
-          />
-          <Pillar
-            n="03"
-            head="Cash flow"
-            body="Lender disburses to your business account. 48 to 72 hours. No clawback on routine defaults — the lender carries the credit risk, not you."
-          />
-        </div>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            The pitch
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Soft-pull pre-qual at the chair.</span>
+            <br />
+            <span className="grad-teal">Lender marketplace.</span>{' '}
+            <span className="grad-teal-deep">Funds in 48 to 72 hours.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            Three things matter to a practice owner. MedPay nails all three.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-pillars">
+            <Pillar
+              n="01"
+              head="Speed"
+              body="Patient enters last 4 of SSN + DOB on your iPad. Fundability tier returns in under 10 seconds. Zero credit impact."
+            />
+            <Pillar
+              n="02"
+              head="Coverage"
+              body="Every lender in parallel on one soft pull. Patient sees the cheapest qualifying offer. Decline rate is the floor of the marketplace, not the floor of a single lender."
+            />
+            <Pillar
+              n="03"
+              head="Cash flow"
+              body="Lender disburses to your business account. 48 to 72 hours. No clawback on routine defaults — the lender carries the credit risk, not you."
+            />
+          </div>
+        </Reveal>
       </div>
     ),
   },
 
-  /* 05 — HOW IT WORKS · STAGE 1: PRE-QUAL */
+  /* 05 — STAGE 1: PRE-QUAL */
   {
     n: '05',
     title: 'Stage 1 — Pre-qual',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          How it works · 1 of 5
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Soft-pull EZ Check</span>{' '}
-          <span className="grad-teal">on the iPad.</span>
-        </h2>
-        <StageRow
-          metric="< 10s"
-          label="Pre-qual"
-          body="Patient enters last 4 of SSN, date of birth, income, and address. Soft pull returns a fundability tier in under 10 seconds. Zero credit impact. FCRA-compliant. The patient has not yet authorized a hard pull — they can walk away with no consequence."
-        />
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · 1 of 5
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Soft-pull EZ Check</span>{' '}
+            <span className="grad-teal">on the iPad.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <StageRow
+            metric={<AnimatedCounter to={10} prefix="< " suffix="s" />}
+            label="Pre-qual"
+            body="Patient enters last 4 of SSN, date of birth, income, and address. Soft pull returns a fundability tier in under 10 seconds. Zero credit impact. FCRA-compliant. The patient has not yet authorized a hard pull — they can walk away with no consequence."
+          />
+        </Reveal>
       </div>
     ),
   },
@@ -179,19 +258,29 @@ const SLIDES: Slide[] = [
     title: 'Stage 2 — Agentic intake',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          How it works · 2 of 5
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">PRISM</span>{' '}
-          <span className="grad-teal">reshapes the apply flow.</span>
-        </h2>
-        <StageRow
-          metric="−41%"
-          label="Form drop-off"
-          body="Every form session is watched by PRISM. It reorders questions on partial answers, skips qualifying steps for high-intent patients, and adds verification when the signal looks junky. High-intent patients skip straight to the financing decision."
-        />
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · 2 of 5
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">PRISM</span>{' '}
+            <span className="grad-teal">reshapes the apply flow.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <StageRow
+            metric={
+              <span>
+                −<AnimatedCounter to={41} suffix="%" />
+              </span>
+            }
+            label="Form drop-off"
+            body="Every form session is watched by PRISM. It reorders questions on partial answers, skips qualifying steps for high-intent patients, and adds verification when the signal looks junky. High-intent patients skip straight to the financing decision."
+          />
+        </Reveal>
       </div>
     ),
   },
@@ -202,19 +291,27 @@ const SLIDES: Slide[] = [
     title: 'Stage 3 — Marketplace',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          How it works · 3 of 5
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Lender marketplace</span>{' '}
-          <span className="grad-teal">runs in parallel.</span>
-        </h2>
-        <StageRow
-          metric="5s SLA"
-          label="Per round-trip"
-          body="MedPay fires one application across the lender marketplace at the same instant. Every lender quotes in parallel. The marketplace returns ranked offers. The patient sees one screen with the cheapest qualifying offer first."
-        />
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · 3 of 5
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Lender marketplace</span>{' '}
+            <span className="grad-teal">runs in parallel.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            One application fires across every lender simultaneously. Quotes return in seconds,
+            ranked cheapest-first.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <MarketplaceViz />
+        </Reveal>
       </div>
     ),
   },
@@ -225,19 +322,25 @@ const SLIDES: Slide[] = [
     title: 'Stage 4 — Best offer wins',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          How it works · 4 of 5
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Best offer wins.</span>{' '}
-          <span className="grad-teal">Patient signs at the chair.</span>
-        </h2>
-        <StageRow
-          metric="One tap"
-          label="To accept"
-          body="Offers ranked consumer-best (lowest total cost). Patient sees one screen with the recommended offer and two alternates. Tap to accept the approval. E-loan documents are signed right there. The patient is funded."
-        />
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · 4 of 5
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Best offer wins.</span>{' '}
+            <span className="grad-teal">Patient signs at the chair.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <StageRow
+            metric={<span>One tap</span>}
+            label="To accept"
+            body="Offers ranked consumer-best (lowest total cost). Patient sees one screen with the recommended offer and two alternates. Tap to accept the approval. E-loan documents are signed right there. The patient is funded."
+          />
+        </Reveal>
       </div>
     ),
   },
@@ -248,19 +351,31 @@ const SLIDES: Slide[] = [
     title: 'Stage 5 — Merchant-direct',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          How it works · 5 of 5
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Lender disburses</span>{' '}
-          <span className="grad-teal">direct to your business account.</span>
-        </h2>
-        <StageRow
-          metric="48 to 72hr"
-          label="Merchant-direct"
-          body="No intermediary holds the funds. Payouts land within 48 to 72 hours of the loan settling. The lender carries the credit risk. No clawback on routine defaults. Credit risk sits with the lender, not the practice."
-        />
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · 5 of 5
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Lender disburses</span>{' '}
+            <span className="grad-teal">direct to your business account.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <StageRow
+            metric={
+              <span>
+                <AnimatedCounter to={48} />
+                –<AnimatedCounter to={72} delay={300} />
+                hr
+              </span>
+            }
+            label="Merchant-direct"
+            body="No intermediary holds the funds. Payouts land within 48 to 72 hours of the loan settling. The lender carries the credit risk. No clawback on routine defaults. Credit risk sits with the lender, not the practice."
+          />
+        </Reveal>
       </div>
     ),
   },
@@ -271,146 +386,70 @@ const SLIDES: Slide[] = [
     title: 'Without vs With MedPay',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          The change
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal">38% closes</span>{' '}
-          <span className="grad-teal-deep">becomes 70%+ at the chair.</span>
-        </h2>
-        <div className="sld-compare-grid">
-          <div className="sld-compare-card without">
-            <div className="sld-compare-eyebrow">Without MedPay</div>
-            <ul>
-              <li>
-                <span>38%</span>
-                <span>Same-day close (industry avg.)</span>
-              </li>
-              <li>
-                <span>$1.4M</span>
-                <span>Case acceptance lost / yr (3-chair)</span>
-              </li>
-              <li>
-                <span>54%</span>
-                <span>Inbound never pre-qualified</span>
-              </li>
-              <li>
-                <span>2–4 wks</span>
-                <span>Consult → deposit</span>
-              </li>
-            </ul>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            The change
           </div>
-          <div className="sld-compare-card with">
-            <div className="sld-compare-eyebrow accent">With MedPay</div>
-            <ul>
-              <li>
-                <span>70%+</span>
-                <span>Same-day close (financing at chair, illustrative)</span>
-              </li>
-              <li>
-                <span>Same-day</span>
-                <span>Consult → approval → funded</span>
-              </li>
-              <li>
-                <span>Marketplace</span>
-                <span>Soft-pull lender marketplace · parallel quote</span>
-              </li>
-              <li>
-                <span>Direct</span>
-                <span>Lender disburses merchant-direct · 48 to 72hr</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal">
+              <AnimatedCounter to={38} suffix="%" /> closes
+            </span>{' '}
+            <span className="grad-teal-deep">
+              becomes <AnimatedCounter to={70} suffix="%+" delay={400} /> at the chair.
+            </span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <BarRace />
+        </Reveal>
       </div>
     ),
   },
 
-  /* 11 — THE PATIENT EXPERIENCE */
+  /* 11 — PATIENT EXPERIENCE */
   {
     n: '11',
     title: 'What the patient sees',
     build: () => (
-      <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          The patient experience
+      <div className="sld-stack sld-grid-hero">
+        <div className="sld-hero-left">
+          <Reveal>
+            <div className="sld-eyebrow">
+              <span className="sld-eyebrow-dot" />
+              The patient experience
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <h2 className="sld-h2">
+              <span className="grad-teal-deep">One screen.</span>{' '}
+              <span className="grad-teal">Approved. Pick a plan.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={240}>
+            <p className="sld-sub">
+              Three ranked offers, lowest total cost first. Tap to accept. E-sign docs right there.
+              Funded.
+            </p>
+          </Reveal>
         </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">One screen.</span>{' '}
-          <span className="grad-teal">Approved. Pick a plan.</span>
-        </h2>
-        <div className="sld-offer-card">
-          <div className="sld-offer-head">
-            <span className="sld-offer-pill">
-              <span className="sld-offer-pill-dot" /> MedPay · approved
-            </span>
-            <span className="sld-offer-meta">Illustrative example</span>
-          </div>
-          <div className="sld-offer-project">Implant consult · approved</div>
-          <div className="sld-offer-amount">
-            $12,000
-            <span className="sld-offer-amount-sub">approved</span>
-          </div>
-          <div className="sld-offer-row">
-            <div>
-              <div className="sld-offer-row-k">Est. monthly</div>
-              <div className="sld-offer-row-v">$250 / mo · 48 mo</div>
-            </div>
-            <div>
-              <div className="sld-offer-row-k">Term</div>
-              <div className="sld-offer-row-v">48 months</div>
-            </div>
-          </div>
-          <div className="sld-offer-foot">
-            FCRA soft pull · funds in 48 to 72hr · merchant-direct
-          </div>
+        <div className="sld-hero-right">
+          <ParticleField count={20} />
+          <TiltCard>
+            <OfferCardMock />
+          </TiltCard>
         </div>
       </div>
     ),
   },
 
-  /* 12 — YOUR ECONOMICS */
+  /* 12 — ECONOMICS · INTERACTIVE */
   {
     n: '12',
     title: 'Your economics',
-    build: () => (
-      <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Your economics
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal">What MedPay would do</span>{' '}
-          <span className="grad-teal-deep">for a 3-chair practice.</span>
-        </h2>
-        <p className="sld-sub">
-          Funnel assumption: 180 inbound leads / month, 50% qualified, an $8,000 average ticket.
-          Illustrative — the real ROI calculator on the landing page lets a prospect drop in their
-          own numbers.
-        </p>
-        <div className="sld-econ-grid">
-          <div className="sld-econ-card">
-            <div className="sld-econ-eyebrow">Without MedPay (18% close)</div>
-            <div className="sld-econ-num">$1.56M</div>
-            <div className="sld-econ-sub">Recovered revenue / yr</div>
-            <div className="sld-econ-sub-sm">194 funded patients / yr</div>
-          </div>
-          <div className="sld-econ-card with">
-            <div className="sld-econ-eyebrow accent">With MedPay (70% close · 70% funded)</div>
-            <div className="sld-econ-num accent">$4.23M</div>
-            <div className="sld-econ-sub">Recovered revenue / yr</div>
-            <div className="sld-econ-sub-sm">529 funded patients / yr</div>
-          </div>
-        </div>
-        <div className="sld-econ-delta">
-          <span className="sld-econ-delta-tag">Delta</span>
-          <span className="sld-econ-delta-val">+ $2.67M / year</span>
-          <span className="sld-econ-delta-sub">335 additional funded patients · illustrative</span>
-        </div>
-      </div>
-    ),
+    build: () => <EconomicsSlide />,
   },
 
   /* 13 — CASE STUDIES */
@@ -419,37 +458,43 @@ const SLIDES: Slide[] = [
     title: 'Case studies',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Case studies
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal">Practices that turned</span>{' '}
-          <span className="grad-teal-deep">&ldquo;let me think about it&rdquo;</span>{' '}
-          <span className="grad-teal">into approved.</span>
-        </h2>
-        <div className="sld-cases-grid">
-          <CaseCard
-            tag="Implant practice · TX"
-            quote="We were losing one case a week to financing. MedPay killed that. The first month we ran it, our same-day close went from a third to two-thirds."
-            outcomes={[
-              { v: '2.1x', l: 'Same-day close uplift' },
-              { v: '$184k', l: 'Recovered / 90 days' },
-            ]}
-            name="Dr. Helio Park"
-            role="Owner · 3-chair implant practice"
-          />
-          <CaseCard
-            tag="Med spa · CA"
-            quote="The agentic form is the thing. Patients used to bounce on income questions. Now they finish the apply flow and we book the consult on the call."
-            outcomes={[
-              { v: '−41%', l: 'Form drop-off' },
-              { v: '+38%', l: 'Booked consults / lead' },
-            ]}
-            name="Mara Coelho"
-            role="Founder · multi-location med spa"
-          />
-        </div>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Case studies
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal">Practices that turned</span>{' '}
+            <span className="grad-teal-deep">&ldquo;let me think about it&rdquo;</span>{' '}
+            <span className="grad-teal">into approved.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <div className="sld-cases-grid">
+            <CaseCard
+              tag="Implant practice · TX"
+              quote="We were losing one case a week to financing. MedPay killed that. The first month we ran it, our same-day close went from a third to two-thirds."
+              outcomes={[
+                { v: '2.1x', l: 'Same-day close uplift' },
+                { v: '$184k', l: 'Recovered / 90 days' },
+              ]}
+              name="Dr. Helio Park"
+              role="Owner · 3-chair implant practice"
+            />
+            <CaseCard
+              tag="Med spa · CA"
+              quote="The agentic form is the thing. Patients used to bounce on income questions. Now they finish the apply flow and we book the consult on the call."
+              outcomes={[
+                { v: '−41%', l: 'Form drop-off' },
+                { v: '+38%', l: 'Booked consults / lead' },
+              ]}
+              name="Mara Coelho"
+              role="Founder · multi-location med spa"
+            />
+          </div>
+        </Reveal>
       </div>
     ),
   },
@@ -460,50 +505,21 @@ const SLIDES: Slide[] = [
     title: 'How we are different',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          The difference
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Marketplace beats</span>{' '}
-          <span className="grad-teal">single-lender programs.</span>
-        </h2>
-        <table className="sld-vs-table">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Single-lender (Cherry, Sunbit, GreenSky)</th>
-              <th className="accent">MedPay</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Decline = patient walks</td>
-              <td>Yes</td>
-              <td className="accent">No · marketplace routes to next eligible lender</td>
-            </tr>
-            <tr>
-              <td>Ticket range</td>
-              <td>Capped by one lender&apos;s policy</td>
-              <td className="accent">Marketplace coverage · $3k to $50k</td>
-            </tr>
-            <tr>
-              <td>Pre-qual at the chair</td>
-              <td>Soft pull only with that lender</td>
-              <td className="accent">Soft pull qualifies across the marketplace</td>
-            </tr>
-            <tr>
-              <td>Agent layer</td>
-              <td>None</td>
-              <td className="accent">Seven autonomous agents (intake · routing · attribution)</td>
-            </tr>
-            <tr>
-              <td>Pixel attribution</td>
-              <td>Fires on form-fill (junk signal)</td>
-              <td className="accent">ECHO fires on funded job (real signal)</td>
-            </tr>
-          </tbody>
-        </table>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            The difference
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Marketplace beats</span>{' '}
+            <span className="grad-teal">single-lender programs.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <VsTable />
+        </Reveal>
       </div>
     ),
   },
@@ -514,39 +530,47 @@ const SLIDES: Slide[] = [
     title: 'Security + compliance',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Security + compliance
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Bank-grade by default.</span>
-        </h2>
-        <p className="sld-sub">
-          We carry the regulatory weight so your practice doesn&apos;t have to.
-        </p>
-        <div className="sld-trust-grid">
-          <TrustItem
-            head="FCRA"
-            body="Soft-pull pre-qual fully compliant. Patient consent captured + audited."
-          />
-          <TrustItem
-            head="ECOA · Reg B"
-            body="Equal credit, adverse-action notices, fair-lending monitoring on every decision."
-          />
-          <TrustItem
-            head="TILA"
-            body="APR, finance charge, payment schedule disclosed at the offer screen."
-          />
-          <TrustItem head="NMLS" body="Licensed loan originator. State-by-state coverage." />
-          <TrustItem
-            head="SOC 2 · Type II"
-            body="In-progress · annual audit by an independent firm."
-          />
-          <TrustItem
-            head="No clawback"
-            body="The lender carries the credit risk for routine defaults. Not your practice."
-          />
-        </div>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Security + compliance
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Bank-grade by default.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            We carry the regulatory weight so your practice doesn&apos;t have to.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-trust-grid">
+            <TrustItem
+              head="FCRA"
+              body="Soft-pull pre-qual fully compliant. Patient consent captured + audited."
+            />
+            <TrustItem
+              head="ECOA · Reg B"
+              body="Equal credit, adverse-action notices, fair-lending monitoring on every decision."
+            />
+            <TrustItem
+              head="TILA"
+              body="APR, finance charge, payment schedule disclosed at the offer screen."
+            />
+            <TrustItem head="NMLS" body="Licensed loan originator. State-by-state coverage." />
+            <TrustItem
+              head="SOC 2 · Type II"
+              body="In-progress · annual audit by an independent firm."
+            />
+            <TrustItem
+              head="No clawback"
+              body="The lender carries the credit risk for routine defaults. Not your practice."
+            />
+          </div>
+        </Reveal>
       </div>
     ),
   },
@@ -557,99 +581,93 @@ const SLIDES: Slide[] = [
     title: 'Pricing',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Pricing
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Aligned with you.</span>{' '}
-          <span className="grad-teal">We only win when you fund.</span>
-        </h2>
-        <div className="sld-price-card">
-          <div className="sld-price-row">
-            <span className="sld-price-k">Platform fee</span>
-            <span className="sld-price-v">% of funded volume only</span>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Pricing
           </div>
-          <div className="sld-price-row">
-            <span className="sld-price-k">Monthly fee</span>
-            <span className="sld-price-v">$0</span>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Aligned with you.</span>{' '}
+            <span className="grad-teal">We only win when you fund.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <div className="sld-price-card">
+            <div className="sld-price-row">
+              <span className="sld-price-k">Platform fee</span>
+              <span className="sld-price-v">% of funded volume only</span>
+            </div>
+            <div className="sld-price-row">
+              <span className="sld-price-k">Monthly fee</span>
+              <span className="sld-price-v">$0</span>
+            </div>
+            <div className="sld-price-row">
+              <span className="sld-price-k">Per-application fee</span>
+              <span className="sld-price-v">$0</span>
+            </div>
+            <div className="sld-price-row">
+              <span className="sld-price-k">Setup fee</span>
+              <span className="sld-price-v">$0</span>
+            </div>
+            <div className="sld-price-row">
+              <span className="sld-price-k">Contract length</span>
+              <span className="sld-price-v">Month to month · cancel anytime</span>
+            </div>
           </div>
-          <div className="sld-price-row">
-            <span className="sld-price-k">Per-application fee</span>
-            <span className="sld-price-v">$0</span>
-          </div>
-          <div className="sld-price-row">
-            <span className="sld-price-k">Setup fee</span>
-            <span className="sld-price-v">$0</span>
-          </div>
-          <div className="sld-price-row">
-            <span className="sld-price-k">Contract length</span>
-            <span className="sld-price-v">Month to month · cancel anytime</span>
-          </div>
-        </div>
-        <p className="sld-sub" style={{ marginTop: '24px', textAlign: 'center' }}>
-          No funded patients, no fee. Fully aligned.
-        </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <p className="sld-sub" style={{ marginTop: '24px', textAlign: 'center' }}>
+            No funded patients, no fee. Fully aligned.
+          </p>
+        </Reveal>
       </div>
     ),
   },
 
-  /* 17 — WHAT YOU NEED TO ONBOARD */
+  /* 17 — ONBOARDING */
   {
     n: '17',
     title: 'Onboarding',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Onboarding
-        </div>
-        <h2 className="sld-h2">
-          <span className="grad-teal-deep">Live by Thursday.</span>{' '}
-          <span className="grad-teal">Five minutes to set up.</span>
-        </h2>
-        <ol className="sld-steps">
-          <li>
-            <span className="sld-step-n">01</span>
-            <div>
-              <div className="sld-step-h">Practice signup</div>
-              <div className="sld-step-b">
-                Business details (EIN, address, owner info, last 4 SSN). 5 minutes. KYB clears in
-                under 60 seconds.
-              </div>
-            </div>
-          </li>
-          <li>
-            <span className="sld-step-n">02</span>
-            <div>
-              <div className="sld-step-h">iPad / web setup</div>
-              <div className="sld-step-b">
-                Open the apply link on any iPad at the chair, or share it as a URL. No hardware to
-                install. No new POS terminal.
-              </div>
-            </div>
-          </li>
-          <li>
-            <span className="sld-step-n">03</span>
-            <div>
-              <div className="sld-step-h">First live application</div>
-              <div className="sld-step-b">
-                Run your first soft-pull on a real patient within hours of signup. Real approval.
-                Real funds. Real disbursement.
-              </div>
-            </div>
-          </li>
-          <li>
-            <span className="sld-step-n">04</span>
-            <div>
-              <div className="sld-step-h">Reports + reconciliation</div>
-              <div className="sld-step-b">
-                Daily funded summary, monthly invoice for the platform fee, full audit trail per
-                loan.
-              </div>
-            </div>
-          </li>
-        </ol>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Onboarding
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-teal-deep">Live by Thursday.</span>{' '}
+            <span className="grad-teal">Five minutes to set up.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <ol className="sld-steps">
+            <Step
+              n="01"
+              h="Practice signup"
+              b="Business details (EIN, address, owner info, last 4 SSN). 5 minutes. KYB clears in under 60 seconds."
+            />
+            <Step
+              n="02"
+              h="iPad / web setup"
+              b="Open the apply link on any iPad at the chair, or share it as a URL. No hardware to install. No new POS terminal."
+            />
+            <Step
+              n="03"
+              h="First live application"
+              b="Run your first soft-pull on a real patient within hours of signup. Real approval. Real funds. Real disbursement."
+            />
+            <Step
+              n="04"
+              h="Reports + reconciliation"
+              b="Daily funded summary, monthly invoice for the platform fee, full audit trail per loan."
+            />
+          </ol>
+        </Reveal>
       </div>
     ),
   },
@@ -660,35 +678,46 @@ const SLIDES: Slide[] = [
     title: 'Next steps',
     build: () => (
       <div className="sld-stack">
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          Next steps
-        </div>
-        <h2 className="sld-h2 sld-h2-big">
-          <span className="grad-teal-deep">Let&apos;s have you</span>{' '}
-          <span className="grad-teal">signed and live this week.</span>
-        </h2>
-        <p className="sld-sub" style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}>
-          Two paths from here. Pick whichever fits how your practice operates.
-        </p>
-        <div className="sld-cta-grid">
-          <a href="/submit/med-pay" className="sld-cta sld-cta-primary">
-            <div className="sld-cta-eyebrow">Start onboarding now</div>
-            <div className="sld-cta-h">Sign up</div>
-            <div className="sld-cta-b">
-              5-minute business signup. KYB clears in 60 seconds. First live patient application
-              within hours.
-            </div>
-          </a>
-          <a href="/help" className="sld-cta sld-cta-secondary">
-            <div className="sld-cta-eyebrow">Schedule a walkthrough</div>
-            <div className="sld-cta-h">Book 30 min</div>
-            <div className="sld-cta-b">
-              We&apos;ll walk your team through a live patient flow on a test account. No
-              commitment. Bring your hardest objection.
-            </div>
-          </a>
-        </div>
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Next steps
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2 sld-h2-big">
+            <span className="grad-teal-deep">Let&apos;s have you</span>{' '}
+            <span className="grad-teal">signed and live this week.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p
+            className="sld-sub"
+            style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}
+          >
+            Two paths from here. Pick whichever fits how your practice operates.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <div className="sld-cta-grid">
+            <a href="/medpay/checkout" className="sld-cta sld-cta-primary">
+              <div className="sld-cta-eyebrow">Start onboarding now</div>
+              <div className="sld-cta-h">Sign up</div>
+              <div className="sld-cta-b">
+                5-minute business signup. KYB clears in 60 seconds. First live patient application
+                within hours.
+              </div>
+            </a>
+            <a href="/help" className="sld-cta sld-cta-secondary">
+              <div className="sld-cta-eyebrow">Schedule a walkthrough</div>
+              <div className="sld-cta-h">Book 30 min</div>
+              <div className="sld-cta-b">
+                We&apos;ll walk your team through a live patient flow on a test account. No
+                commitment. Bring your hardest objection.
+              </div>
+            </a>
+          </div>
+        </Reveal>
         <p className="sld-disclaimer">
           MedPay is a multi-lender marketplace. Lender names shown are illustrative unless
           explicitly disclosed as partners. All funded patients are subject to lender approval. Loan
@@ -702,16 +731,159 @@ const SLIDES: Slide[] = [
 
 /* ============================ helper components =========================== */
 
-function Stat({ v, k }: { v: string; k: string }) {
+/** Scroll-reveal wrapper — fades + translates upward when the element
+ *  intersects the slide's scroll-snap viewport. Stagger via `delay`. */
+function Reveal({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+}): JSX.Element {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const stackRoot = document.querySelector('.sld-stack-root');
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) setVisible(true);
+        }
+      },
+      { root: stackRoot, threshold: 0.2 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`sld-reveal ${visible ? 'is-visible' : ''}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Number counter that animates 0 → `to` over `duration` when its
+ *  containing slide enters the viewport. */
+function AnimatedCounter({
+  to,
+  prefix = '',
+  suffix = '',
+  decimals = 0,
+  duration = 1400,
+  delay = 0,
+}: {
+  to: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+  duration?: number;
+  delay?: number;
+}): JSX.Element {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const stackRoot = document.querySelector('.sld-stack-root');
+    let cancelled = false;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && !cancelled) {
+            const start = performance.now();
+            const tick = (now: number) => {
+              const elapsed = now - start - delay;
+              if (elapsed < 0) {
+                if (!cancelled) requestAnimationFrame(tick);
+                return;
+              }
+              const t = Math.min(elapsed / duration, 1);
+              const eased = 1 - Math.pow(1 - t, 3);
+              if (!cancelled) {
+                setVal(to * eased);
+                if (t < 1) requestAnimationFrame(tick);
+              }
+            };
+            requestAnimationFrame(tick);
+            obs.disconnect();
+          }
+        }
+      },
+      { root: stackRoot, threshold: 0.4 },
+    );
+    obs.observe(el);
+    return () => {
+      cancelled = true;
+      obs.disconnect();
+    };
+  }, [to, duration, delay]);
+  const formatted = decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString('en-US');
+  return (
+    <span ref={ref} className="sld-count">
+      {prefix}
+      {formatted}
+      {suffix}
+    </span>
+  );
+}
+
+function HeroStat({
+  n,
+  prefix = '',
+  suffix = '',
+  k,
+}: {
+  n: number;
+  prefix?: string;
+  suffix?: string;
+  k: string;
+}): JSX.Element {
+  return (
+    <div className="sld-hero-stat">
+      <div className="sld-hero-stat-v">
+        <AnimatedCounter to={n} prefix={prefix} suffix={suffix} />
+      </div>
+      <div className="sld-hero-stat-k">{k}</div>
+    </div>
+  );
+}
+
+function CountStat({
+  to,
+  label,
+  prefix = '',
+  suffix = '',
+  decimals = 0,
+  k,
+}: {
+  to?: number;
+  label?: string;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+  k: string;
+}): JSX.Element {
   return (
     <div className="sld-stat">
-      <div className="sld-stat-v">{v}</div>
+      <div className="sld-stat-v">
+        {label ? (
+          label
+        ) : (
+          <AnimatedCounter to={to ?? 0} prefix={prefix} suffix={suffix} decimals={decimals} />
+        )}
+      </div>
       <div className="sld-stat-k">{k}</div>
     </div>
   );
 }
 
-function Pillar({ n, head, body }: { n: string; head: string; body: string }) {
+function Pillar({ n, head, body }: { n: string; head: string; body: string }): JSX.Element {
   return (
     <div className="sld-pillar">
       <div className="sld-pillar-n">{n}</div>
@@ -721,7 +893,15 @@ function Pillar({ n, head, body }: { n: string; head: string; body: string }) {
   );
 }
 
-function StageRow({ metric, label, body }: { metric: string; label: string; body: string }) {
+function StageRow({
+  metric,
+  label,
+  body,
+}: {
+  metric: React.ReactNode;
+  label: string;
+  body: string;
+}): JSX.Element {
   return (
     <div className="sld-stage-row">
       <div className="sld-stage-metric">
@@ -745,7 +925,7 @@ function CaseCard({
   outcomes: Array<{ v: string; l: string }>;
   name: string;
   role: string;
-}) {
+}): JSX.Element {
   return (
     <div className="sld-case">
       <div className="sld-case-tag">{tag}</div>
@@ -775,11 +955,382 @@ function CaseCard({
   );
 }
 
-function TrustItem({ head, body }: { head: string; body: string }) {
+function TrustItem({ head, body }: { head: string; body: string }): JSX.Element {
   return (
     <div className="sld-trust-item">
       <div className="sld-trust-head">{head}</div>
       <div className="sld-trust-body">{body}</div>
+    </div>
+  );
+}
+
+function Step({ n, h, b }: { n: string; h: string; b: string }): JSX.Element {
+  return (
+    <li>
+      <span className="sld-step-n">{n}</span>
+      <div>
+        <div className="sld-step-h">{h}</div>
+        <div className="sld-step-b">{b}</div>
+      </div>
+    </li>
+  );
+}
+
+/** 3D-tilted card with mouse-parallax. Uses CSS perspective on the
+ *  parent + transform3d on the child. Mouse position drives the tilt
+ *  via inline CSS custom properties. */
+function TiltCard({ children }: { children: React.ReactNode }): JSX.Element {
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const card = cardRef.current;
+    if (!scene || !card) return;
+    const onMove = (e: MouseEvent) => {
+      const r = scene.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5;
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.setProperty('--tx', `${-y * 12}deg`);
+      card.style.setProperty('--ty', `${x * 16}deg`);
+    };
+    const onLeave = () => {
+      card.style.setProperty('--tx', '6deg');
+      card.style.setProperty('--ty', '-10deg');
+    };
+    scene.addEventListener('mousemove', onMove);
+    scene.addEventListener('mouseleave', onLeave);
+    onLeave();
+    return () => {
+      scene.removeEventListener('mousemove', onMove);
+      scene.removeEventListener('mouseleave', onLeave);
+    };
+  }, []);
+  return (
+    <div className="sld-tilt-scene" ref={sceneRef}>
+      <div className="sld-tilt-card" ref={cardRef}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Mock offer card — visual replica of what a patient sees. */
+function OfferCardMock(): JSX.Element {
+  return (
+    <div className="sld-mock">
+      <div className="sld-mock-head">
+        <span className="sld-mock-pill">
+          <span className="sld-mock-pill-dot" /> MedPay · approved
+        </span>
+        <span className="sld-mock-meta">Illustrative</span>
+      </div>
+      <div className="sld-mock-project">Implant consult · approved</div>
+      <div className="sld-mock-amount">
+        $12,000
+        <span className="sld-mock-amount-sub">approved</span>
+      </div>
+      <div className="sld-mock-rows">
+        <div>
+          <div className="sld-mock-k">Est. monthly</div>
+          <div className="sld-mock-v">$250 / mo · 48 mo</div>
+        </div>
+        <div>
+          <div className="sld-mock-k">Term</div>
+          <div className="sld-mock-v">48 months</div>
+        </div>
+      </div>
+      <div className="sld-mock-bar">
+        <div className="sld-mock-bar-fill" />
+      </div>
+      <div className="sld-mock-stages">
+        <span className="on">Pre-qual</span>
+        <span className="on">Quote</span>
+        <span className="on">Offer</span>
+        <span className="cur">Accept</span>
+        <span>Payout</span>
+      </div>
+      <div className="sld-mock-cta">Accept approval →</div>
+      <div className="sld-mock-foot">FCRA soft pull · funds in 48–72hr · merchant-direct</div>
+    </div>
+  );
+}
+
+/** Floating particle field for the hero. Pure CSS animation, randomized
+ *  start positions + durations. */
+function ParticleField({ count = 24 }: { count?: number }): JSX.Element {
+  const particles = Array.from({ length: count }).map((_, i) => {
+    const seed = i * 9301 + 49297;
+    const left = (seed % 100) + Math.random() * 0.5;
+    const top = ((seed * 2) % 100) + Math.random() * 0.5;
+    const dur = 8 + ((seed % 7) + Math.random() * 4);
+    const delay = (seed % 5) + Math.random();
+    const size = 2 + (seed % 4);
+    return { i, left, top, dur, delay, size };
+  });
+  return (
+    <div className="sld-particles" aria-hidden>
+      {particles.map((p) => (
+        <span
+          key={p.i}
+          className="sld-particle"
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            animationDuration: `${p.dur}s`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Animated lender marketplace — 8 chips fire in parallel from a
+ *  central dot, return with offers, sort by price. Used on slide 7. */
+function MarketplaceViz(): JSX.Element {
+  const LENDERS = ['L01', 'L02', 'L03', 'L04', 'L05', 'L06', 'L07', 'L08'];
+  return (
+    <div className="sld-mp-scene">
+      <div className="sld-mp-core">
+        <span className="sld-mp-core-dot" />
+        <span className="sld-mp-core-label">Apply</span>
+      </div>
+      <div className="sld-mp-orbit">
+        {LENDERS.map((l, i) => {
+          const angle = (i / LENDERS.length) * Math.PI * 2;
+          const x = Math.cos(angle) * 220;
+          const y = Math.sin(angle) * 140;
+          return (
+            <div
+              key={l}
+              className="sld-mp-chip"
+              style={{
+                transform: `translate(${x}px, ${y}px)`,
+                animationDelay: `${i * 0.08}s`,
+              }}
+            >
+              <span className="sld-mp-chip-dot" />
+              <span className="sld-mp-chip-label">{l}</span>
+            </div>
+          );
+        })}
+        <svg className="sld-mp-rays" viewBox="-300 -200 600 400" aria-hidden>
+          {LENDERS.map((l, i) => {
+            const angle = (i / LENDERS.length) * Math.PI * 2;
+            const x = Math.cos(angle) * 220;
+            const y = Math.sin(angle) * 140;
+            return (
+              <line
+                key={l}
+                x1="0"
+                y1="0"
+                x2={x}
+                y2={y}
+                stroke="rgba(34, 184, 160, 0.32)"
+                strokeWidth="1"
+                strokeDasharray="3 4"
+              />
+            );
+          })}
+        </svg>
+      </div>
+      <div className="sld-mp-result">
+        <div className="sld-mp-result-eyebrow">
+          <span className="sld-mp-pulse" /> Best offer wins
+        </div>
+        <div className="sld-mp-result-row">
+          <span className="sld-mp-result-star">★</span>
+          <span>$250 / mo · 48 mo · cheapest</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Animated bar race for slide 10 — Without/With comparison */
+function BarRace(): JSX.Element {
+  return (
+    <div className="sld-bar-race">
+      <div className="sld-bar-row">
+        <div className="sld-bar-label">Without MedPay (38% close)</div>
+        <div className="sld-bar-track">
+          <div className="sld-bar-fill without" style={{ width: '38%' }}>
+            <span>38%</span>
+          </div>
+        </div>
+      </div>
+      <div className="sld-bar-row">
+        <div className="sld-bar-label">With MedPay (70%+ close · illustrative)</div>
+        <div className="sld-bar-track">
+          <div className="sld-bar-fill with" style={{ width: '70%' }}>
+            <span>70%+</span>
+          </div>
+        </div>
+      </div>
+      <div className="sld-bar-delta">
+        <span className="sld-bar-delta-tag">Delta</span>
+        <span className="sld-bar-delta-val">+32 pts same-day close</span>
+        <span className="sld-bar-delta-sub">Financing-at-chair baseline · illustrative</span>
+      </div>
+    </div>
+  );
+}
+
+/** Animated "vs competitors" table — checkmarks pulse in on reveal */
+function VsTable(): JSX.Element {
+  const rows = [
+    {
+      k: 'Decline = patient walks',
+      single: 'Yes',
+      med: 'No · marketplace routes to next eligible lender',
+    },
+    {
+      k: 'Ticket range',
+      single: 'Capped by one lender',
+      med: 'Marketplace coverage · $3k to $50k',
+    },
+    {
+      k: 'Pre-qual at the chair',
+      single: 'Soft pull with that lender',
+      med: 'Soft pull across the marketplace',
+    },
+    { k: 'Agent layer', single: 'None', med: 'Seven autonomous agents' },
+    {
+      k: 'Pixel attribution',
+      single: 'On form-fill (junk signal)',
+      med: 'ECHO fires on funded job (real signal)',
+    },
+  ];
+  return (
+    <table className="sld-vs-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Single-lender (Cherry, Sunbit, GreenSky)</th>
+          <th className="accent">MedPay</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr key={i}>
+            <td>{r.k}</td>
+            <td>
+              <span className="sld-vs-mark x">×</span>
+              {r.single}
+            </td>
+            <td className="accent">
+              <span className="sld-vs-mark check">✓</span>
+              {r.med}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** Interactive economics slide — 3 sliders, math runs live */
+function EconomicsSlide(): JSX.Element {
+  const [leads, setLeads] = useState(180);
+  const [qualPct, setQualPct] = useState(50);
+  const [ticket, setTicket] = useState(8000);
+
+  const fundedWith = Math.round(leads * (qualPct / 100) * 0.7 * 0.7);
+  const fundedWithout = Math.round(leads * (qualPct / 100) * 0.18);
+  const revWith = fundedWith * 12 * ticket;
+  const revWithout = fundedWithout * 12 * ticket;
+  const delta = Math.max(0, revWith - revWithout);
+
+  const fmt = (n: number) => {
+    if (n >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2) + 'M';
+    if (n >= 1_000) return '$' + (n / 1_000).toFixed(0) + 'k';
+    return '$' + n.toLocaleString('en-US');
+  };
+
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          Your economics
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-teal">Drag the funnel.</span>{' '}
+          <span className="grad-teal-deep">Watch the math.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <div className="sld-econ-live">
+          <div className="sld-econ-inputs">
+            <div className="sld-econ-input">
+              <label>
+                Inbound leads / month <strong>{leads}</strong>
+              </label>
+              <input
+                type="range"
+                min={50}
+                max={500}
+                step={10}
+                value={leads}
+                onChange={(e) => setLeads(Number(e.target.value))}
+              />
+            </div>
+            <div className="sld-econ-input">
+              <label>
+                Qualified % <strong>{qualPct}%</strong>
+              </label>
+              <input
+                type="range"
+                min={20}
+                max={80}
+                step={1}
+                value={qualPct}
+                onChange={(e) => setQualPct(Number(e.target.value))}
+              />
+            </div>
+            <div className="sld-econ-input">
+              <label>
+                Avg ticket <strong>${ticket.toLocaleString('en-US')}</strong>
+              </label>
+              <input
+                type="range"
+                min={3000}
+                max={25000}
+                step={500}
+                value={ticket}
+                onChange={(e) => setTicket(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          <div className="sld-econ-outputs">
+            <div className="sld-econ-card">
+              <div className="sld-econ-eyebrow">Without MedPay · 18% close</div>
+              <div className="sld-econ-num">{fmt(revWithout)}</div>
+              <div className="sld-econ-sub">Recovered revenue / yr</div>
+              <div className="sld-econ-sub-sm">
+                {fundedWithout.toLocaleString('en-US')} funded patients / mo
+              </div>
+            </div>
+            <div className="sld-econ-card with">
+              <div className="sld-econ-eyebrow accent">With MedPay · 70% close · 70% funded</div>
+              <div className="sld-econ-num accent">{fmt(revWith)}</div>
+              <div className="sld-econ-sub">Recovered revenue / yr</div>
+              <div className="sld-econ-sub-sm">
+                {fundedWith.toLocaleString('en-US')} funded patients / mo
+              </div>
+            </div>
+          </div>
+          <div className="sld-econ-delta">
+            <span className="sld-econ-delta-tag">Delta</span>
+            <span className="sld-econ-delta-val">+ {fmt(delta)} / year</span>
+            <span className="sld-econ-delta-sub">illustrative · varies by practice</span>
+          </div>
+        </div>
+      </Reveal>
     </div>
   );
 }
@@ -796,13 +1347,6 @@ export default function MedPaySalesDeck(): JSX.Element {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  // Sync state when the user scrolls manually (scroll-snap will park them
-  // on a slide boundary). IntersectionObserver fires when each slide
-  // crosses the 55% threshold of the SCROLLING CONTAINER.
-  // The container here is .sld-stack-root (which has overflow-y:scroll +
-  // scroll-snap), NOT the document viewport — so we pass it explicitly
-  // as the observer root, otherwise intersections never fire on a
-  // page where the body itself doesn't scroll.
   useEffect(() => {
     const stackRoot = document.querySelector('.sld-stack-root');
     if (!stackRoot) return;
@@ -824,7 +1368,6 @@ export default function MedPaySalesDeck(): JSX.Element {
     return () => obs.disconnect();
   }, []);
 
-  // Keyboard nav — Left/Right arrows + Space (next).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
@@ -849,7 +1392,8 @@ export default function MedPaySalesDeck(): JSX.Element {
     <div className="sld-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      {/* Top-right slide counter + brand chip */}
+      <div className="sld-mesh" aria-hidden />
+
       <div className="sld-chrome">
         <div className="sld-brand">MedPay · Sales deck</div>
         <div className="sld-counter">
@@ -859,7 +1403,6 @@ export default function MedPaySalesDeck(): JSX.Element {
         </div>
       </div>
 
-      {/* Bottom prev/next + slide picker */}
       <div className="sld-nav">
         <button
           type="button"
@@ -893,7 +1436,6 @@ export default function MedPaySalesDeck(): JSX.Element {
         </button>
       </div>
 
-      {/* Slide stack — scroll-snap parents each section to viewport */}
       <main className="sld-stack-root">
         {SLIDES.map((s, i) => (
           <section
@@ -926,6 +1468,7 @@ const CSS = `
   --mp-line: rgba(14, 124, 102, 0.12);
   --mp-line-strong: rgba(14, 124, 102, 0.22);
 
+  position: relative;
   background: linear-gradient(180deg, #ECFFFE 0%, #FFFFFF 30%, #F3FBFA 65%, #FFFFFF 100%);
   color: var(--mp-ink);
   font-family: inherit;
@@ -937,7 +1480,24 @@ const CSS = `
 .sld-root a { color: inherit; text-decoration: none; }
 .sld-root button { font-family: inherit; cursor: pointer; }
 
-/* Gradient text utilities — same as the landing */
+/* ===== Animated gradient mesh background — fixed, behind everything ===== */
+.sld-mesh {
+  position: fixed; inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 20%, rgba(34, 184, 160, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 30%, rgba(14, 124, 102, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(34, 184, 160, 0.10) 0%, transparent 55%);
+  animation: sldMeshDrift 24s ease-in-out infinite;
+}
+@keyframes sldMeshDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 20px) scale(1.05); }
+  66% { transform: translate(20px, -10px) scale(0.98); }
+}
+
+/* ===== Gradient text utilities ===== */
 .sld-root .grad-teal {
   background: linear-gradient(120deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -947,8 +1507,10 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
-/* Slide structure */
+/* ===== Slide structure ===== */
 .sld-stack-root {
+  position: relative;
+  z-index: 1;
   scroll-snap-type: y mandatory;
   height: 100vh;
   overflow-y: scroll;
@@ -971,13 +1533,34 @@ const CSS = `
   text-transform: uppercase;
 }
 .sld-stack {
-  max-width: 1100px;
+  max-width: 1180px;
   width: 100%;
   display: flex; flex-direction: column;
   gap: 24px;
 }
+.sld-grid-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 56px;
+  align-items: center;
+  max-width: 1280px;
+}
+.sld-hero-left { display: flex; flex-direction: column; gap: 24px; }
+.sld-hero-right { position: relative; min-height: 480px; }
 
-/* Eyebrow pill */
+/* ===== Reveal ===== */
+.sld-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1),
+              transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.sld-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== Eyebrow pill ===== */
 .sld-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
@@ -992,12 +1575,17 @@ const CSS = `
 .sld-eyebrow-dot {
   width: 6px; height: 6px; border-radius: 999px;
   background: var(--mp-teal-2);
-  box-shadow: 0 0 0 3px rgba(34, 184, 160, 0.20);
+  box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.5);
+  animation: sldPulse 1.6s ease-in-out infinite;
+}
+@keyframes sldPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(34, 184, 160, 0); }
 }
 
-/* Headlines */
+/* ===== Headlines ===== */
 .sld-h1 {
-  font-size: 78px; font-weight: 800;
+  font-size: 80px; font-weight: 800;
   letter-spacing: -0.035em; line-height: 1.02;
   margin: 0;
 }
@@ -1006,9 +1594,7 @@ const CSS = `
   letter-spacing: -0.03em; line-height: 1.08;
   margin: 0;
 }
-.sld-h2-big {
-  font-size: 64px;
-}
+.sld-h2-big { font-size: 64px; }
 .sld-h2 em {
   font-style: italic;
   color: var(--mp-ink-2);
@@ -1019,12 +1605,10 @@ const CSS = `
   max-width: 800px;
   margin: 0;
 }
-.sld-sub strong {
-  color: var(--mp-teal);
-  font-weight: 700;
-}
+.sld-sub strong { color: var(--mp-teal); font-weight: 700; }
+.sld-count { font-variant-numeric: tabular-nums; }
 
-/* Trust chips row */
+/* ===== Trust chips row ===== */
 .sld-chips {
   display: flex; flex-wrap: wrap; gap: 8px;
   margin-top: 12px;
@@ -1039,7 +1623,29 @@ const CSS = `
   border-radius: 999px;
 }
 
-/* Stat row */
+/* ===== Hero stat row ===== */
+.sld-hero-stat-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+  padding: 20px 0;
+  border-top: 1px solid var(--mp-line);
+}
+.sld-hero-stat {}
+.sld-hero-stat-v {
+  font-size: 30px; font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--mp-ink);
+}
+.sld-hero-stat-k {
+  margin-top: 4px;
+  font-size: 11px; letter-spacing: 0.14em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ===== Stat row (slide 02 etc.) ===== */
 .sld-stat-row {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 1px;
@@ -1056,38 +1662,61 @@ const CSS = `
 .sld-stat-v {
   font-size: 36px; font-weight: 800; letter-spacing: -0.025em;
   color: var(--mp-ink);
-  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .sld-stat-k {
   margin-top: 6px;
-  font-size: 12px; color: var(--mp-mute);
-  line-height: 1.4;
+  font-size: 12px; color: var(--mp-mute); line-height: 1.4;
 }
 
-/* Bullets list */
-.sld-bullets {
-  list-style: none; padding: 0; margin: 12px 0 0 0;
-  display: flex; flex-direction: column; gap: 16px;
+/* ===== Vs 2-col ===== */
+.sld-vs-2col {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px;
 }
-.sld-bullets li {
-  display: grid; grid-template-columns: 220px 1fr;
-  gap: 24px; align-items: baseline;
-  padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.7);
+.sld-vs-side {
+  padding: 28px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
   border: 1px solid var(--mp-line);
-  border-radius: 14px;
 }
-.sld-bullet-k {
-  font-size: 13px; letter-spacing: 0.12em; font-weight: 700;
+.sld-vs-med {
+  background:
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.95);
+  border-color: var(--mp-line-strong);
+  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
+}
+.sld-vs-eyebrow {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-mute);
   text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.sld-vs-eyebrow.accent { color: var(--mp-teal); }
+.sld-vs-side ul { list-style: none; padding: 0; margin: 0; }
+.sld-vs-side li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--mp-line);
+  font-size: 15px; color: var(--mp-ink-2);
+}
+.sld-vs-side li:last-child { border-bottom: none; }
+.sld-vs-icon {
+  width: 22px; height: 22px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px;
+}
+.sld-vs-x {
+  background: rgba(200, 75, 75, 0.10);
+  color: rgb(170, 60, 60);
+}
+.sld-vs-check {
+  background: rgba(34, 184, 160, 0.18);
   color: var(--mp-teal);
 }
-.sld-bullets li > span:last-child {
-  font-size: 15px; color: var(--mp-ink-2); line-height: 1.55;
-}
 
-/* Pillars grid (3-up) */
+/* ===== Pillars 3-up ===== */
 .sld-pillars {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 18px;
@@ -1099,6 +1728,11 @@ const CSS = `
   border-radius: 20px;
   padding: 28px;
   box-shadow: 0 18px 50px -28px rgba(14, 124, 102, 0.22);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.sld-pillar:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 26px 60px -28px rgba(14, 124, 102, 0.36);
 }
 .sld-pillar-n {
   font-size: 11px; letter-spacing: 0.20em; font-weight: 700;
@@ -1112,34 +1746,42 @@ const CSS = `
 }
 .sld-pillar-b {
   margin-top: 12px;
-  font-size: 14px; color: var(--mp-ink-2);
-  line-height: 1.55;
+  font-size: 14px; color: var(--mp-ink-2); line-height: 1.55;
 }
 
-/* Stage row — single-line metric + body */
+/* ===== Stage row (slides 05–09) ===== */
 .sld-stage-row {
-  display: grid; grid-template-columns: 280px 1fr;
-  gap: 40px; align-items: center;
+  display: grid; grid-template-columns: 320px 1fr;
+  gap: 48px; align-items: center;
   margin-top: 16px;
-  padding: 36px 40px;
-  background: rgba(255, 255, 255, 0.85);
+  padding: 44px 48px;
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--mp-line-strong);
-  border-radius: 24px;
-  box-shadow: 0 24px 60px -30px rgba(14, 124, 102, 0.22);
+  border-radius: 28px;
+  box-shadow: 0 30px 80px -32px rgba(14, 124, 102, 0.30);
+  position: relative; overflow: hidden;
+}
+.sld-stage-row::before {
+  content: '';
+  position: absolute; top: -40%; right: -10%;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(34, 184, 160, 0.18), transparent 65%);
+  pointer-events: none;
 }
 .sld-stage-metric {
   border-right: 1px solid var(--mp-line);
-  padding-right: 32px;
+  padding-right: 36px;
+  position: relative;
 }
 .sld-stage-metric-v {
-  font-size: 56px; font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 64px; font-weight: 800;
+  letter-spacing: -0.035em;
   background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   line-height: 1;
 }
 .sld-stage-metric-l {
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
   color: var(--mp-mute);
   text-transform: uppercase;
@@ -1147,76 +1789,46 @@ const CSS = `
 .sld-stage-body {
   font-size: 17px; color: var(--mp-ink-2); line-height: 1.6;
   margin: 0;
+  position: relative;
 }
 
-/* Without / With compare cards */
-.sld-compare-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  margin-top: 8px;
+/* ===== Tilt scene + card ===== */
+.sld-tilt-scene {
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+  width: 100%;
+  height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  z-index: 2;
 }
-.sld-compare-card {
-  padding: 28px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid var(--mp-line);
-}
-.sld-compare-card.with {
-  background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.15), transparent 70%),
-    rgba(255, 255, 255, 0.92);
-  border-color: var(--mp-line-strong);
-  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
-}
-.sld-compare-eyebrow {
-  font-size: 11px; letter-spacing: 0.18em; font-weight: 700;
-  color: var(--mp-mute);
-  text-transform: uppercase;
-  margin-bottom: 16px;
-}
-.sld-compare-eyebrow.accent { color: var(--mp-teal); }
-.sld-compare-card ul {
-  list-style: none; padding: 0; margin: 0;
-  display: flex; flex-direction: column;
-}
-.sld-compare-card li {
-  display: grid; grid-template-columns: 130px 1fr;
-  gap: 16px; align-items: baseline;
-  padding: 14px 0;
-  border-bottom: 1px dashed var(--mp-line);
-}
-.sld-compare-card li:last-child { border-bottom: none; }
-.sld-compare-card li > span:first-child {
-  font-size: 20px; font-weight: 700; letter-spacing: -0.018em;
-  color: var(--mp-ink);
-  font-variant-numeric: tabular-nums;
-  word-break: keep-all;
-}
-.sld-compare-card.with li > span:first-child {
-  color: var(--mp-teal);
-}
-.sld-compare-card li > span:last-child {
-  font-size: 13px; color: var(--mp-ink-2); line-height: 1.45;
+.sld-tilt-card {
+  --tx: 6deg;
+  --ty: -10deg;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tx)) rotateY(var(--ty));
+  transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
 }
 
-/* Offer card (Slide 11) */
-.sld-offer-card {
-  margin-top: 16px;
-  max-width: 540px;
-  background: rgba(255, 255, 255, 0.95);
+/* ===== Mock offer card ===== */
+.sld-mock {
+  width: 440px;
+  background: rgba(255, 255, 255, 0.97);
   border: 1px solid var(--mp-line-strong);
-  border-radius: 22px;
-  padding: 28px;
+  border-radius: 24px;
+  padding: 26px;
   box-shadow:
-    0 30px 70px -28px rgba(14, 124, 102, 0.35),
+    0 60px 110px -50px rgba(14, 124, 102, 0.55),
+    0 30px 60px -30px rgba(14, 124, 102, 0.35),
     0 1px 0 rgba(255, 255, 255, 1) inset;
 }
-.sld-offer-head {
+.sld-mock-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding-bottom: 16px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--mp-line);
 }
-.sld-offer-pill {
+.sld-mock-pill {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--mp-teal);
@@ -1225,83 +1837,380 @@ const CSS = `
   background: rgba(34, 184, 160, 0.12);
   border-radius: 999px;
 }
-.sld-offer-pill-dot {
-  width: 6px; height: 6px; border-radius: 999px;
+.sld-mock-pill-dot {
+  width: 5px; height: 5px; border-radius: 999px;
   background: var(--mp-teal-2);
 }
-.sld-offer-meta {
-  font-size: 10px; letter-spacing: 0.18em;
+.sld-mock-meta {
+  font-size: 9px; letter-spacing: 0.18em;
   color: var(--mp-mute);
   text-transform: uppercase;
   padding: 3px 8px;
   background: rgba(15, 23, 42, 0.04);
   border-radius: 6px;
 }
-.sld-offer-project {
+.sld-mock-project {
   margin-top: 14px;
-  font-size: 11px; letter-spacing: 0.22em;
+  font-size: 10.5px; letter-spacing: 0.22em;
   color: var(--mp-mute);
   text-transform: uppercase;
 }
-.sld-offer-amount {
+.sld-mock-amount {
   margin-top: 4px;
-  font-size: 42px; font-weight: 800;
+  font-size: 44px; font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
   display: flex; align-items: baseline; gap: 12px;
 }
-.sld-offer-amount-sub {
-  font-size: 13px; font-weight: 600;
+.sld-mock-amount-sub {
+  font-size: 12px; font-weight: 600;
   color: var(--mp-teal);
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
-.sld-offer-row {
+.sld-mock-rows {
   margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--mp-line);
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-.sld-offer-row-k {
-  font-size: 10px; letter-spacing: 0.18em;
-  color: var(--mp-mute);
-  text-transform: uppercase;
-}
-.sld-offer-row-v {
-  margin-top: 4px;
-  font-size: 16px; font-weight: 600;
-  color: var(--mp-ink);
-}
-.sld-offer-foot {
-  margin-top: 18px;
   padding-top: 14px;
   border-top: 1px solid var(--mp-line);
-  font-size: 11px; letter-spacing: 0.16em;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.sld-mock-k {
+  font-size: 9px; letter-spacing: 0.20em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.sld-mock-v {
+  margin-top: 4px;
+  font-size: 14px; font-weight: 600;
+  color: var(--mp-ink);
+}
+.sld-mock-bar {
+  margin-top: 18px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+.sld-mock-bar-fill {
+  height: 100%;
+  width: 78%;
+  background: linear-gradient(90deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+  border-radius: 999px;
+  animation: sldBarFill 1.8s ease-out;
+}
+@keyframes sldBarFill {
+  from { width: 0%; }
+  to { width: 78%; }
+}
+.sld-mock-stages {
+  margin-top: 10px;
+  display: flex; justify-content: space-between;
+  font-size: 9px; letter-spacing: 0.10em;
+  color: var(--mp-mute);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.sld-mock-stages .on { color: var(--mp-teal); }
+.sld-mock-stages .cur {
+  color: var(--mp-deep);
+  position: relative;
+}
+.sld-mock-stages .cur::after {
+  content: '';
+  position: absolute; bottom: -4px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 999px;
+  background: var(--mp-teal-2);
+}
+.sld-mock-cta {
+  margin-top: 18px;
+  padding: 13px 16px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, var(--mp-teal) 100%);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 13.5px; font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.sld-mock-foot {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--mp-line);
+  font-size: 10px; letter-spacing: 0.14em;
   color: var(--mp-mute);
   text-transform: uppercase;
   text-align: center;
 }
 
-/* Economics grid (Slide 12) */
-.sld-econ-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 18px;
+/* ===== Particles ===== */
+.sld-particles {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.sld-particle {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--mp-teal-2);
+  box-shadow: 0 0 6px rgba(34, 184, 160, 0.5);
+  animation: sldFloat 12s ease-in-out infinite;
+  opacity: 0.4;
+}
+@keyframes sldFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.55; }
+  50% { transform: translateY(-40px) translateX(20px); opacity: 0.4; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(-80px) translateX(-10px); opacity: 0; }
+}
+
+/* ===== Marketplace viz (slide 07) ===== */
+.sld-mp-scene {
+  position: relative;
+  height: 380px;
+  display: flex; align-items: center; justify-content: center;
   margin-top: 8px;
 }
+.sld-mp-orbit {
+  position: relative;
+  width: 0; height: 0;
+}
+.sld-mp-rays {
+  position: absolute;
+  top: -200px; left: -300px;
+  width: 600px; height: 400px;
+  pointer-events: none;
+  opacity: 0;
+  animation: sldFadeIn .8s ease forwards .2s;
+}
+@keyframes sldFadeIn {
+  to { opacity: 1; }
+}
+.sld-mp-core {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  z-index: 3;
+}
+.sld-mp-core-dot {
+  width: 18px; height: 18px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--mp-deep), var(--mp-teal));
+  box-shadow:
+    0 0 0 0 rgba(34, 184, 160, 0.4),
+    0 12px 24px -8px rgba(14, 124, 102, 0.5);
+  animation: sldCoreP 2s ease-in-out infinite;
+}
+@keyframes sldCoreP {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.5), 0 12px 24px -8px rgba(14, 124, 102, 0.5); }
+  50% { box-shadow: 0 0 0 16px rgba(34, 184, 160, 0), 0 12px 24px -8px rgba(14, 124, 102, 0.5); }
+}
+.sld-mp-core-label {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-ink-2);
+  text-transform: uppercase;
+}
+.sld-mp-chip {
+  position: absolute;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700; color: var(--mp-ink);
+  letter-spacing: 0.08em;
+  box-shadow: 0 8px 18px -10px rgba(14, 124, 102, 0.4);
+  opacity: 0;
+  animation: sldChipIn .8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  z-index: 2;
+}
+@keyframes sldChipIn {
+  from { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  to { opacity: 1; transform: var(--tw-translate, none) scale(1); }
+}
+/* Re-apply the inline transform after animation by using compound
+   selectors. Simpler approach: keep the inline transform AND fade via
+   opacity transition. */
+.sld-mp-chip {
+  animation: sldChipFade .5s ease forwards;
+}
+@keyframes sldChipFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sld-mp-chip-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--mp-teal-2);
+  animation: sldChipDot 1.4s ease-in-out infinite;
+}
+@keyframes sldChipDot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.sld-mp-chip-label { color: var(--mp-mute); font-weight: 600; }
+.sld-mp-result {
+  position: absolute;
+  bottom: -10px; left: 50%; transform: translateX(-50%);
+  padding: 14px 22px;
+  background: linear-gradient(135deg, var(--mp-deep) 0%, #0A3B36 100%);
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 22px 50px -22px rgba(6, 44, 41, 0.55);
+  z-index: 4;
+  display: flex; flex-direction: column; gap: 6px;
+  min-width: 320px;
+}
+.sld-mp-result-eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal-2);
+  text-transform: uppercase;
+}
+.sld-mp-pulse {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--mp-teal-2);
+  box-shadow: 0 0 0 0 rgba(34, 184, 160, 0.6);
+  animation: sldPulse 1.4s ease-in-out infinite;
+}
+.sld-mp-result-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 600;
+}
+.sld-mp-result-star {
+  color: var(--mp-teal-2);
+  font-size: 18px;
+}
+
+/* ===== Bar race (slide 10) ===== */
+.sld-bar-race {
+  display: flex; flex-direction: column; gap: 24px;
+  margin-top: 8px;
+}
+.sld-bar-row {
+  display: grid; grid-template-columns: 320px 1fr;
+  gap: 24px; align-items: center;
+}
+.sld-bar-label {
+  font-size: 14px; font-weight: 600;
+  color: var(--mp-ink-2);
+}
+.sld-bar-track {
+  height: 36px;
+  background: rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.sld-bar-fill {
+  height: 100%;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 18px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 14px; font-weight: 800;
+  letter-spacing: -0.01em;
+  animation: sldBarGrow 1.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes sldBarGrow {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); }
+}
+.sld-bar-fill.without {
+  background: linear-gradient(90deg, #475569 0%, #64748B 100%);
+}
+.sld-bar-fill.with {
+  background: linear-gradient(90deg, var(--mp-deep) 0%, var(--mp-teal-2) 100%);
+}
+.sld-bar-delta {
+  padding: 18px 22px;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(34, 184, 160, 0.18) 0%, rgba(34, 184, 160, 0.06) 100%);
+  border: 1px solid rgba(34, 184, 160, 0.35);
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+}
+.sld-bar-delta-tag {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--mp-teal);
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(34, 184, 160, 0.22);
+}
+.sld-bar-delta-val {
+  font-size: 22px; font-weight: 800;
+  color: var(--mp-ink);
+  letter-spacing: -0.02em;
+}
+.sld-bar-delta-sub {
+  font-size: 12px; color: var(--mp-mute);
+  margin-left: auto;
+}
+
+/* ===== Interactive economics (slide 12) ===== */
+.sld-econ-live {
+  display: flex; flex-direction: column; gap: 18px;
+  margin-top: 8px;
+}
+.sld-econ-inputs {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.sld-econ-input {
+  padding: 20px 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--mp-line);
+  border-radius: 16px;
+}
+.sld-econ-input label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; font-weight: 600;
+  color: var(--mp-mute);
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+.sld-econ-input strong {
+  font-size: 22px; font-weight: 800;
+  color: var(--mp-teal);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.sld-econ-input input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px;
+  background: linear-gradient(90deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
+  border-radius: 999px;
+  outline: none; cursor: pointer;
+}
+.sld-econ-input input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px;
+  background: #fff;
+  border: 3px solid var(--mp-teal);
+  border-radius: 999px;
+  box-shadow: 0 6px 16px -4px rgba(14, 124, 102, 0.45);
+  cursor: grab;
+}
+.sld-econ-input input[type="range"]::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+.sld-econ-outputs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
 .sld-econ-card {
-  padding: 28px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.85);
+  padding: 26px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--mp-line);
 }
 .sld-econ-card.with {
   background:
-    radial-gradient(ellipse 70% 100% at 100% 0%, rgba(34, 184, 160, 0.18), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(34, 184, 160, 0.18), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border-color: var(--mp-line-strong);
-  box-shadow: 0 22px 50px -28px rgba(14, 124, 102, 0.30);
 }
 .sld-econ-eyebrow {
   font-size: 11px; letter-spacing: 0.16em; font-weight: 700;
@@ -1310,8 +2219,8 @@ const CSS = `
 }
 .sld-econ-eyebrow.accent { color: var(--mp-teal); }
 .sld-econ-num {
-  margin-top: 14px;
-  font-size: 56px; font-weight: 800;
+  margin-top: 12px;
+  font-size: 48px; font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
@@ -1330,33 +2239,32 @@ const CSS = `
   font-size: 12px; color: var(--mp-mute);
 }
 .sld-econ-delta {
-  margin-top: 16px;
-  padding: 22px 28px;
-  border-radius: 16px;
-  background: linear-gradient(90deg, rgba(34, 184, 160, 0.18) 0%, rgba(34, 184, 160, 0.06) 100%);
+  padding: 18px 22px;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(34, 184, 160, 0.18) 0%, rgba(34, 184, 160, 0.06) 100%);
   border: 1px solid rgba(34, 184, 160, 0.35);
-  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
 }
 .sld-econ-delta-tag {
   font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
-  text-transform: uppercase;
   color: var(--mp-teal);
+  text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 6px;
   background: rgba(34, 184, 160, 0.22);
 }
 .sld-econ-delta-val {
-  font-size: 30px; font-weight: 800;
-  letter-spacing: -0.025em;
+  font-size: 22px; font-weight: 800;
   color: var(--mp-ink);
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 .sld-econ-delta-sub {
-  font-size: 13px; color: var(--mp-ink-2);
+  font-size: 12px; color: var(--mp-mute);
   margin-left: auto;
 }
 
-/* Case studies (Slide 13) */
+/* ===== Case studies ===== */
 .sld-cases-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 18px;
@@ -1368,6 +2276,11 @@ const CSS = `
   border: 1px solid var(--mp-line);
   border-radius: 20px;
   display: flex; flex-direction: column; gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sld-case:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 50px -28px rgba(14, 124, 102, 0.30);
 }
 .sld-case-tag {
   font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
@@ -1411,15 +2324,10 @@ const CSS = `
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700; letter-spacing: 0.05em;
 }
-.sld-case-name {
-  font-size: 13px; font-weight: 600;
-  color: var(--mp-ink);
-}
-.sld-case-role {
-  font-size: 11px; color: var(--mp-mute);
-}
+.sld-case-name { font-size: 13px; font-weight: 600; color: var(--mp-ink); }
+.sld-case-role { font-size: 11px; color: var(--mp-mute); }
 
-/* Vs table (Slide 14) */
+/* ===== Vs table (slide 14) ===== */
 .sld-vs-table {
   width: 100%;
   margin-top: 12px;
@@ -1430,8 +2338,7 @@ const CSS = `
   border-radius: 20px;
   overflow: hidden;
 }
-.sld-vs-table th,
-.sld-vs-table td {
+.sld-vs-table th, .sld-vs-table td {
   text-align: left;
   padding: 16px 22px;
   font-size: 14px;
@@ -1444,13 +2351,9 @@ const CSS = `
   color: var(--mp-mute);
   background: rgba(236, 255, 254, 0.5);
 }
-.sld-vs-table th.accent,
-.sld-vs-table td.accent {
+.sld-vs-table th.accent, .sld-vs-table td.accent {
   color: var(--mp-teal);
   font-weight: 600;
-}
-.sld-vs-table th.accent {
-  color: var(--mp-teal);
 }
 .sld-vs-table tr:last-child td { border-bottom: none; }
 .sld-vs-table tbody td:first-child {
@@ -1458,8 +2361,22 @@ const CSS = `
   font-weight: 600;
   font-size: 13px;
 }
+.sld-vs-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 999px;
+  margin-right: 10px;
+  font-size: 11px; font-weight: 700;
+}
+.sld-vs-mark.x {
+  background: rgba(200, 75, 75, 0.10);
+  color: rgb(170, 60, 60);
+}
+.sld-vs-mark.check {
+  background: rgba(34, 184, 160, 0.18);
+  color: var(--mp-teal);
+}
 
-/* Trust grid (Slide 15) */
+/* ===== Trust grid ===== */
 .sld-trust-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 14px;
@@ -1482,7 +2399,7 @@ const CSS = `
   font-size: 13px; color: var(--mp-ink-2); line-height: 1.55;
 }
 
-/* Pricing card (Slide 16) */
+/* ===== Pricing card ===== */
 .sld-price-card {
   margin-top: 12px;
   max-width: 720px;
@@ -1505,16 +2422,12 @@ const CSS = `
   letter-spacing: 0.14em;
   font-weight: 600;
 }
-.sld-price-v {
-  font-size: 18px; font-weight: 700;
-  color: var(--mp-ink);
-}
+.sld-price-v { font-size: 18px; font-weight: 700; color: var(--mp-ink); }
 
-/* Onboarding steps (Slide 17) */
+/* ===== Onboarding steps ===== */
 .sld-steps {
   list-style: none; padding: 0; margin: 12px 0 0 0;
   display: flex; flex-direction: column;
-  counter-reset: step;
 }
 .sld-steps li {
   display: grid; grid-template-columns: 80px 1fr;
@@ -1540,17 +2453,13 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
   font-variant-numeric: tabular-nums;
 }
-.sld-step-h {
-  font-size: 17px; font-weight: 700;
-  color: var(--mp-ink);
-}
+.sld-step-h { font-size: 17px; font-weight: 700; color: var(--mp-ink); }
 .sld-step-b {
   margin-top: 4px;
-  font-size: 13.5px; color: var(--mp-ink-2);
-  line-height: 1.55;
+  font-size: 13.5px; color: var(--mp-ink-2); line-height: 1.55;
 }
 
-/* CTA grid (Slide 18) */
+/* ===== CTA grid (slide 18) ===== */
 .sld-cta-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -1581,9 +2490,7 @@ const CSS = `
   text-transform: uppercase;
   color: var(--mp-teal-2);
 }
-.sld-cta-secondary .sld-cta-eyebrow {
-  color: var(--mp-teal);
-}
+.sld-cta-secondary .sld-cta-eyebrow { color: var(--mp-teal); }
 .sld-cta-h {
   margin-top: 8px;
   font-size: 28px; font-weight: 800;
@@ -1603,14 +2510,14 @@ const CSS = `
   text-align: center;
 }
 
-/* Chrome — top-right slide counter + brand */
+/* ===== Chrome (top counter + brand) ===== */
 .sld-chrome {
   position: fixed;
   top: 20px; right: 24px;
   z-index: 20;
   display: flex; align-items: center; gap: 14px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   border: 1px solid var(--mp-line);
   border-radius: 999px;
   backdrop-filter: blur(8px);
@@ -1626,17 +2533,16 @@ const CSS = `
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
-.sld-counter-sep { color: var(--mp-mute); }
-.sld-counter-tot { color: var(--mp-mute); }
+.sld-counter-sep, .sld-counter-tot { color: var(--mp-mute); }
 
-/* Bottom prev/next + dots */
+/* ===== Bottom nav (prev/next + dots) ===== */
 .sld-nav {
   position: fixed;
   bottom: 20px; left: 50%; transform: translateX(-50%);
   z-index: 20;
   display: flex; align-items: center; gap: 14px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--mp-line);
   border-radius: 999px;
   backdrop-filter: blur(8px);
@@ -1650,17 +2556,14 @@ const CSS = `
   font-size: 18px;
   color: var(--mp-ink);
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease;
 }
 .sld-nav-btn:hover:not(:disabled) {
   background: var(--mp-teal);
   color: #fff;
   border-color: var(--mp-teal);
 }
-.sld-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
+.sld-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .sld-dots {
   display: flex; align-items: center; gap: 6px;
 }
@@ -1676,30 +2579,34 @@ const CSS = `
   background: var(--mp-teal);
   width: 24px;
 }
-.sld-dot:hover {
-  background: var(--mp-teal-2);
-}
+.sld-dot:hover { background: var(--mp-teal-2); }
 
+/* ===== Responsive ===== */
 @media (max-width: 1024px) {
-  .sld-h1 { font-size: 56px; }
-  .sld-h2 { font-size: 40px; }
-  .sld-h2-big { font-size: 46px; }
+  .sld-h1 { font-size: 52px; }
+  .sld-h2 { font-size: 38px; }
+  .sld-h2-big { font-size: 44px; }
   .sld-stat-row { grid-template-columns: repeat(2, 1fr); }
+  .sld-vs-2col { grid-template-columns: 1fr; }
   .sld-pillars { grid-template-columns: 1fr; }
   .sld-stage-row { grid-template-columns: 1fr; }
   .sld-stage-metric { border-right: none; border-bottom: 1px solid var(--mp-line); padding-right: 0; padding-bottom: 16px; }
-  .sld-compare-grid { grid-template-columns: 1fr; }
-  .sld-econ-grid { grid-template-columns: 1fr; }
+  .sld-grid-hero { grid-template-columns: 1fr; }
+  .sld-mock { width: 100%; max-width: 440px; margin: 0 auto; }
+  .sld-econ-inputs { grid-template-columns: 1fr; }
+  .sld-econ-outputs { grid-template-columns: 1fr; }
   .sld-cases-grid { grid-template-columns: 1fr; }
   .sld-trust-grid { grid-template-columns: repeat(2, 1fr); }
   .sld-cta-grid { grid-template-columns: 1fr; }
+  .sld-bar-row { grid-template-columns: 1fr; }
   .sld-slide { padding: 60px 32px; }
 }
 @media (max-width: 640px) {
-  .sld-h1 { font-size: 42px; }
-  .sld-h2 { font-size: 30px; }
+  .sld-h1 { font-size: 36px; }
+  .sld-h2 { font-size: 26px; }
   .sld-stat-row { grid-template-columns: 1fr; }
   .sld-trust-grid { grid-template-columns: 1fr; }
   .sld-brand { display: none; }
+  .sld-mp-scene { transform: scale(0.7); transform-origin: center; }
 }
 `;
