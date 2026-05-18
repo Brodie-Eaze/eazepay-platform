@@ -324,6 +324,7 @@ const NAKED_ROUTES = [
   '/landing', // per-vertical marketing landing pages — public, no sidebar
   '/invoices/confirm', // recipient confirm/dispute page — public, token-gated
   '/accept', // team-invite accept landing — recipient may have no cookie
+  '/sales', // sales-team pitch decks (full-screen slide presentations)
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {

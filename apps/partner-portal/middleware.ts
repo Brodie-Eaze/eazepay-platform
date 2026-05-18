@@ -37,6 +37,7 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/landing', // public per-vertical marketing landing pages (MedPay / TradePay / CoachPay)
   '/invoices/confirm', // recipient confirm/dispute page — token IS the credential, no session needed
   '/accept', // team-invite accept landing (/accept/<brand>?token=...)
+  '/sales', // sales-team pitch decks (sales reps share links with prospects)
 ];
 
 const isPublic = (pathname: string): boolean => {
