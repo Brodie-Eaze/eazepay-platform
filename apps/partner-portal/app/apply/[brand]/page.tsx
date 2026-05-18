@@ -1181,7 +1181,7 @@ function OffersStep({
         </h2>
         <p className="mt-3 text-[14px] text-gray-600 max-w-xl mx-auto">
           {content.brandName === 'MedPay'
-            ? '52 lenders quoted in parallel. Ranked by lowest total cost. Soft pull only — your credit score is unchanged.'
+            ? 'the lender marketplace quotes in parallel. Ranked by lowest total cost. Soft pull only — your credit score is unchanged.'
             : 'Based on your profile, here are your pre-qualified funding options.'}
         </p>
         <p className="mt-3 text-[11px] uppercase tracking-[0.18em] font-semibold text-gray-500">

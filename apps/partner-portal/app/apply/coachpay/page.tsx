@@ -395,7 +395,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
                 </div>
               </div>
               <div>
-                <div className="cp-apply-strip-v">52</div>
+                <div className="cp-apply-strip-v">Real-time</div>
                 <div className="cp-apply-strip-l">Lenders parallel</div>
               </div>
               <div>
@@ -439,7 +439,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
                   style={{ animationDelay: '0.5s' }}
                 >
                   <span className="cp-chip-k">MARKETPLACE</span>
-                  <span className="cp-chip-v">52 lenders · 5s SLA</span>
+                  <span className="cp-chip-v">Lender marketplace · 5s SLA</span>
                 </div>
                 <div
                   className="cp-chip cp-chip--anchor cp-chip--bl"
@@ -495,7 +495,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
                 <div className="cp-card-livebar">
                   <div className="cp-card-livebar-row">
                     <span className="cp-card-livebar-k">lenders queried</span>
-                    <span className="cp-card-livebar-v">52 parallel</span>
+                    <span className="cp-card-livebar-v">parallel quotes</span>
                   </div>
                   <div className="cp-card-livebar-row">
                     <span className="cp-card-livebar-k">decision time</span>
@@ -551,7 +551,7 @@ function LandingStep({ onApply }: { onApply: () => void }) {
               {
                 n: '02',
                 title: 'We match you',
-                body: '52 coaching-friendly lenders quoted in parallel. Pre-qualified offers ranked by lowest total cost.',
+                body: 'coaching-friendly lenders across the marketplace quote in parallel. Pre-qualified offers ranked by lowest total cost.',
               },
               {
                 n: '03',
@@ -905,7 +905,7 @@ function IntakeStep({
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// ENGINE STEP — animated "querying 52 lenders" loading screen. Violet
+// ENGINE STEP — animated "querying the lender marketplace" loading screen. Violet
 // pulse dot, gradient progress bar fill, staggered tick list. Lifted
 // from the landing's marketplace bar + livebar motion.
 // ─────────────────────────────────────────────────────────────────────
@@ -914,7 +914,7 @@ function EngineStep() {
     'Soft credit pull · FCRA permissible purpose',
     'Affordability check · debt-to-income ratio',
     'Routing decision · brand + tier match',
-    'Quoting 52 lenders in parallel',
+    'Quoting the lender marketplace in parallel',
     'Ranking by lowest total cost',
   ];
   const [activeIdx, setActiveIdx] = useState(0);
@@ -932,7 +932,7 @@ function EngineStep() {
       <h2 className="cp-apply-h2">
         <span className="cp-grad-text">Matching you with</span>
         <br />
-        <span className="cp-grad-text-violet">52 lenders in parallel.</span>
+        <span className="cp-grad-text-violet">the lender marketplace in parallel.</span>
       </h2>
 
       <div className="cp-engine-bar">
@@ -1030,8 +1030,8 @@ function OffersStep({
           <span className="cp-grad-text">You&apos;ve been matched!</span>
         </h2>
         <p className="cp-step-body">
-          52 lenders quoted in parallel. Ranked by lowest total cost. Soft pull only — your credit
-          score is unchanged.
+          the lender marketplace quotes in parallel. Ranked by lowest total cost. Soft pull only —
+          your credit score is unchanged.
         </p>
         <p className="cp-offers-meta">
           Expires in {mm}:{ss} · {tierLabel[tier]} · FICO {tierFico[tier]}
