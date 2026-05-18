@@ -17,13 +17,47 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function CoachPayCheckout(): JSX.Element {
+  const router = useRouter();
   const [agreed, setAgreed] = useState(false);
   const [billingEmail, setBillingEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [paying, setPaying] = useState(false);
+  const [stripeNote, setStripeNote] = useState<string | null>(null);
 
   const canProceed = agreed && billingEmail.length > 3 && businessName.length > 1;
+
+  async function payWithStripe() {
+    if (!canProceed || paying) return;
+    setPaying(true);
+    setStripeNote(null);
+    try {
+      const res = await fetch('/api/billing/stripe/create-setup-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand: 'coachpay', businessName, billingEmail }),
+      });
+      const data = await res.json();
+      if (data?.url) {
+        window.location.href = data.url as string;
+        return;
+      }
+      if (data?.stub && data?.redirect) {
+        setStripeNote(
+          'Stripe checkout placeholder — proceeding to onboarding. Setup fee will be invoiced once Stripe is wired up.',
+        );
+        router.push(data.redirect as string);
+        return;
+      }
+      setStripeNote('Could not start Stripe checkout. Please try again or email ops@eazepay.com.');
+    } catch {
+      setStripeNote('Network error. Please try again.');
+    } finally {
+      setPaying(false);
+    }
+  }
 
   return (
     <div className="mpf-root">
@@ -234,17 +268,35 @@ export default function CoachPayCheckout(): JSX.Element {
                     settled loan amount. I have authority to bind the named business.
                   </span>
                 </label>
-                <Link
-                  href={canProceed ? '/coachpay/onboarding' : '#'}
-                  className={`mpf-btn-primary mpf-btn-lg mpf-co-cta ${canProceed ? '' : 'is-disabled'}`}
-                  aria-disabled={!canProceed}
-                >
-                  Sign &amp; start onboarding
-                  <ArrowIcon />
-                </Link>
+                <div className="mpf-stripe-block">
+                  <div className="mpf-stripe-head">
+                    <div className="mpf-stripe-head-l">
+                      <span className="mpf-stripe-tag">PAY SETUP FEE</span>
+                      <span className="mpf-stripe-amt">$10,000.00</span>
+                    </div>
+                    <div className="mpf-stripe-cards" aria-hidden>
+                      <span className="mpf-stripe-card-pill">VISA</span>
+                      <span className="mpf-stripe-card-pill">MC</span>
+                      <span className="mpf-stripe-card-pill">AMEX</span>
+                      <span className="mpf-stripe-card-pill">ACH</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={payWithStripe}
+                    className={`mpf-btn-primary mpf-btn-lg mpf-co-cta mpf-stripe-btn ${
+                      canProceed && !paying ? '' : 'is-disabled'
+                    }`}
+                    aria-disabled={!canProceed || paying}
+                    disabled={!canProceed || paying}
+                  >
+                    {paying ? 'Opening Stripe…' : 'Pay $10,000 with Stripe'}
+                    <ArrowIcon />
+                  </button>
+                  {stripeNote ? <div className="mpf-stripe-note">{stripeNote}</div> : null}
+                </div>
                 <div className="mpf-co-foot">
-                  Onboarding takes ~10 minutes · KYB clears in 60 seconds · Live in up to 5 business
-                  days
+                  Stripe Checkout · 256-bit TLS · KYB clears in 60s · Live in up to 5 business days
                 </div>
               </form>
             </div>
@@ -670,6 +722,51 @@ const CSS = `
   color: var(--mp-mute);
   text-align: center;
   margin-top: 4px;
+}
+
+/* ============================== STRIPE PAY BLOCK ============================== */
+.mpf-stripe-block {
+  margin-top: 8px;
+  padding: 14px;
+  background:
+    radial-gradient(ellipse 100% 100% at 0% 0%, rgba(139, 92, 246, 0.18), transparent 70%),
+    rgba(20, 16, 40, 0.55);
+  border: 1px solid var(--mp-line-strong);
+  border-radius: 14px;
+}
+.mpf-stripe-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.mpf-stripe-head-l { display: flex; flex-direction: column; gap: 2px; }
+.mpf-stripe-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--mp-teal); text-transform: uppercase;
+}
+.mpf-stripe-amt {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.022em;
+  color: var(--mp-ink);
+  font-variant-numeric: tabular-nums;
+}
+.mpf-stripe-cards { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.mpf-stripe-card-pill {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--mp-mute);
+  padding: 3px 7px;
+  background: rgba(139, 92, 246, 0.10);
+  border: 1px solid var(--mp-line);
+  border-radius: 6px;
+}
+.mpf-stripe-btn { width: 100%; justify-content: center; }
+.mpf-stripe-note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 12px; line-height: 1.45;
+  color: var(--mp-ink-2);
+  background: rgba(139, 92, 246, 0.10);
+  border: 1px dashed var(--mp-line-strong);
+  border-radius: 8px;
 }
 
 /* ============================== BUTTONS ============================== */
