@@ -1041,22 +1041,19 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <div className="sld-cover-mark">
+            {/* CoachPay logo — twin peaks + base, signalling
+                ascent, mastery, and the premium coaching tier
+                (executive, mastermind, course, consulting, health). */}
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect
-                x="2"
-                y="3"
-                width="20"
-                height="18"
-                rx="4"
-                stroke="currentColor"
-                strokeWidth="1.4"
-              />
               <path
-                d="M7 12h10M12 7v10"
+                d="M3 19 L9 7 L13 14 L17 9 L21 19 Z"
                 stroke="currentColor"
                 strokeWidth="1.4"
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
+              <circle cx="9" cy="7" r="1.4" fill="currentColor" />
+              <circle cx="17" cy="9" r="1.2" fill="currentColor" opacity="0.7" />
             </svg>
           </div>
         </Reveal>
