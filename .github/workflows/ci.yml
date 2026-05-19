@@ -55,6 +55,81 @@ jobs:
       - name: Build (affected)
         run: pnpm affected:build --parallel=3
 
+  partner-portal-smoke:
+    # Unconditional gate for the partner-portal app. The `validate` job
+    # above uses `nx affected` which is good for the common case but
+    # depends on Nx correctly detecting that partner-portal changed.
+    # Belt-and-braces: when files under apps/partner-portal/** change
+    # in this PR, we always run lint + typecheck + test + build for
+    # this app, regardless of what Nx's affected analysis decided.
+    # This caught the failure mode where partner-portal had no
+    # project.json and was therefore invisible to `nx affected`.
+    name: Partner-portal (unconditional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # dorny/paths-filter@v3 calls the PR listFiles endpoint to compute
+    # the changed-files diff for the PR. That endpoint needs an
+    # explicit `pull-requests: read` permission on PR runs, otherwise
+    # the action errors with "Resource not accessible by integration".
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect partner-portal changes
+        id: detect
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            partner-portal:
+              - 'apps/partner-portal/**'
+              - 'libs/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+
+      - name: Setup pnpm
+        if: steps.detect.outputs.partner-portal == 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        if: steps.detect.outputs.partner-portal == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.detect.outputs.partner-portal == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint partner-portal
+        if: steps.detect.outputs.partner-portal == 'true'
+        run: pnpm --filter @eazepay/partner-portal lint
+
+      - name: Typecheck partner-portal
+        if: steps.detect.outputs.partner-portal == 'true'
+        run: pnpm --filter @eazepay/partner-portal typecheck
+
+      - name: Test partner-portal
+        if: steps.detect.outputs.partner-portal == 'true'
+        run: pnpm --filter @eazepay/partner-portal test
+
+      - name: Build partner-portal
+        if: steps.detect.outputs.partner-portal == 'true'
+        env:
+          # Build-time env vars: stand-in values so `assertProdEnv` in
+          # `middleware.ts` doesn't refuse to boot during `next build`.
+          # NODE_ENV is `production` here (next build always sets it),
+          # so the validator runs strictly.
+          DEMO_COOKIE_SECRET: 'ci-build-only-secret-do-not-use-in-prod-32chars+'
+          ACCOUNT_COOKIE_SECRET: 'ci-build-only-account-secret-do-not-use-32chars+'
+          NEXT_PUBLIC_APP_ORIGIN: 'https://ci.example.com'
+        run: pnpm --filter @eazepay/partner-portal build
+
   security:
     name: Security scans
     runs-on: ubuntu-latest

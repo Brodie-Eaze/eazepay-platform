@@ -13,9 +13,18 @@
  *
  * Where `hmacHex = HMAC_SHA256(secret, '${userId}.${brand}.${partnerId}.${expiresAtEpochMs}')`.
  *
- * The same `DEMO_COOKIE_SECRET` env is reused for the HMAC key — one
- * secret to rotate, one secret to set in Railway. Production must set
- * a ≥32-char value or `resolveSecret` throws.
+ * ## Secret resolution
+ *
+ * Prefers `ACCOUNT_COOKIE_SECRET`; falls back to `DEMO_COOKIE_SECRET`
+ * for backward compatibility with deployments that pre-date the split.
+ * Splitting the secrets means rotating the account secret signs every
+ * real account out without invalidating live demo sessions, and vice
+ * versa — each cookie class can be rotated on its own schedule.
+ *
+ * Production must set a ≥32-char value or `resolveSecret` throws. The
+ * boot-time validator in `lib/env.ts` catches the missing-secret case
+ * at module-load time so the process fails fast rather than 500-ing
+ * on first request.
  *
  * When apps/api lands with real JWTs from Cognito, this module is
  * replaced by a JWT verifier; the cookie name stays so the partner-
@@ -30,13 +39,16 @@ let cachedKey: Promise<CryptoKey> | null = null;
 let cachedSecret: string | null = null;
 
 function resolveSecret(): string {
-  // Re-use DEMO_COOKIE_SECRET — same threat model, same rotation cadence.
-  const fromEnv = process.env.DEMO_COOKIE_SECRET;
+  // Prefer the dedicated account secret; fall back to the demo secret
+  // for backward-compat with existing deployments. New deploys SHOULD
+  // set both explicitly — see `.env.example`.
+  const fromEnv = process.env.ACCOUNT_COOKIE_SECRET ?? process.env.DEMO_COOKIE_SECRET;
   if (fromEnv && fromEnv.length >= MIN_SECRET_BYTES) return fromEnv;
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'DEMO_COOKIE_SECRET is not set or is shorter than 32 chars. ' +
-        'Account sessions require it. Set a long random string in production.',
+      'ACCOUNT_COOKIE_SECRET (or fallback DEMO_COOKIE_SECRET) is not set or is ' +
+        'shorter than 32 chars. Account sessions require it. Set a long random ' +
+        'string in production — generate with `openssl rand -hex 32`.',
     );
   }
   return DEV_PLACEHOLDER_SECRET;

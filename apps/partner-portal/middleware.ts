@@ -2,6 +2,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { mintCsrfToken, setCsrfCookie, CSRF_CONSTANTS } from './lib/csrf.js';
 import { readSignedDemoPreset } from './lib/demo-cookie.js';
 import { readSignedAccountSession, ACCOUNT_COOKIE } from './lib/account-cookie.js';
+import { assertProdEnv } from './lib/env.js';
+
+// Boot-time env validation. Runs once at module-load (when Next.js
+// evaluates this module on worker start). In production, throws if any
+// REQUIRED secret is missing — Railway's health check fails, the deploy
+// stays unhealthy, and traffic continues hitting the previous revision.
+// In dev, surfaces warnings but keeps the placeholder secrets working.
+// See lib/env.ts for the failure-mode catalog.
+assertProdEnv();
 
 /**
  * Three jobs at the edge, before any route handler or React Server
