@@ -50,7 +50,11 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
-import { saveSubmittedApp, UNATTRIBUTED_PARTNER_ID } from '../../../lib/submitted-applications';
+import {
+  saveSubmittedApp,
+  submitApplicationToApi,
+  UNATTRIBUTED_PARTNER_ID,
+} from '../../../lib/submitted-applications';
 
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
@@ -212,8 +216,24 @@ export default function MedPayApplyPage() {
       tier,
       lender: top?.displayName ?? 'Pending lender match',
     });
+    // Dual-write: also POST to the server-side database. The fetch is
+    // fire-and-forget and degrades cleanly to localStorage-only when
+    // DATABASE_URL is not yet provisioned (503 db_unavailable).
+    submitApplicationToApi({
+      brand: 'medpay',
+      partnerId,
+      refQuery: ref || undefined,
+      consumerFirst: intake.firstName.trim(),
+      consumerLast: intake.lastName.trim(),
+      consumerEmail: intake.email.trim(),
+      consumerPhone: intake.phone.replace(/\D+/g, ''),
+      amountCents: cents(intake.amount),
+      tier,
+      selectedLender: top?.displayName,
+      requestId: applicationId || `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    });
     setPersisted(true);
-  }, [step, persisted, ref, eligibleLenders, intake, tier]);
+  }, [step, persisted, ref, eligibleLenders, intake, tier, applicationId]);
 
   const acceptDisclaimer = async () => {
     if (!consent) {

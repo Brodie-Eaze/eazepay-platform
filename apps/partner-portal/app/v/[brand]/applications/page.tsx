@@ -30,6 +30,7 @@ import {
   toLegacyRow,
   type SubmittedAppBrand,
 } from '../../../../lib/submitted-applications';
+import { fetchApplicationsForPartner } from '../../../../lib/applications-client';
 
 /* ─── Live-tracking shapes — mirror the BFF status route response.
  * Duplicated locally rather than importing from the server-only store
@@ -157,37 +158,56 @@ export default function VerticalApplicationsPage() {
     if (fromCookie) setCurrentPartnerId(fromCookie);
   }, []);
 
-  // Submitted apps for THIS partner only. Hardened reader — passing an
-  // empty partnerId returns [] instead of leaking the full store.
+  // Submitted apps for THIS partner only. Hardened reader chain:
+  //   1. Try the server-side API (/api/v/<brand>/applications) — DB-
+  //      backed, canonical source once Postgres is provisioned.
+  //   2. Fall back to localStorage-backed `readSubmittedAppsForPartner`
+  //      when the API responds 503 db_unavailable or any network error.
+  // Both paths are partner-scoped: the API filters server-side using
+  // the session cookie; localStorage filters via the strict-equality
+  // reader. No cross-partner leakage in either branch.
   const [submittedForPartner, setSubmittedForPartner] = useState<ApplicationRow[]>([]);
+  const [submittedSource, setSubmittedSource] = useState<'api' | 'local'>('local');
   useEffect(() => {
     if (!currentPartnerId || !code) {
       setSubmittedForPartner([]);
       return;
     }
-    const partner = findPartner(currentPartnerId);
-    const legalName = partner?.legalName ?? '';
+    let cancelled = false;
     const brandSubmittedBrand = brand as SubmittedAppBrand;
-    const submitted = readSubmittedAppsForPartner(currentPartnerId)
-      .filter((a) => a.brand === brandSubmittedBrand)
-      .map((a) => toLegacyRow(a, legalName))
-      // Project to the local ApplicationRow shape used by the table.
-      .map(
-        (r): ApplicationRow => ({
-          id: r.id,
-          customer: r.customer,
-          customerEmail: r.customerEmail,
-          partner: r.partner,
-          product: r.product,
-          amountCents: r.amountCents,
-          fico: r.fico,
-          lender: r.lender,
-          status: r.status,
-          date: r.date,
-        }),
+    void (async () => {
+      const { source, rows } = await fetchApplicationsForPartner(
+        brandSubmittedBrand,
+        currentPartnerId,
       );
-    setSubmittedForPartner(submitted);
+      if (cancelled) return;
+      setSubmittedSource(source);
+      setSubmittedForPartner(
+        rows.map(
+          (r): ApplicationRow => ({
+            id: r.id,
+            customer: r.customer,
+            customerEmail: r.customerEmail,
+            partner: r.partner,
+            product: r.product,
+            amountCents: r.amountCents,
+            fico: r.fico,
+            lender: r.lender,
+            status: r.status,
+            date: r.date,
+          }),
+        ),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [currentPartnerId, code, brand]);
+  /* Mute lint: submittedSource is consumed by a follow-up PR that adds
+     a "demo data" banner. Wired now so the data plumbing is testable. */
+  void submittedSource;
+  void readSubmittedAppsForPartner;
+  void toLegacyRow;
 
   // Final row set: this partner's submitted apps (newest first) +
   // their seeded historical apps, filtered to this brand.
