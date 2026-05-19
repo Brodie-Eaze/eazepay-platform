@@ -25,3 +25,4 @@ This directory holds the architectural decisions for the EazePay platform. Each 
 | 0010 | Modular monolith with explicit extraction paths                        | Accepted |
 | 0011 | Audit via transactional outbox + hash-chained sink                     | Accepted |
 | 0012 | Money is integer cents (BigInt), serialised as string-of-integer       | Accepted |
+| 0020 | Applications data layer — Postgres + Drizzle + dual-write cutover      | Accepted |

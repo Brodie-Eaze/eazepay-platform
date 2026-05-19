@@ -164,6 +164,20 @@ export function readSubmittedAppsForPartner(partnerId: string): SubmittedApp[] {
  * Returns the persisted row. No-op when called server-side (the row
  * is still returned so the caller can render it immediately, but
  * nothing is written to storage).
+ *
+ * Dual-write contract during the Postgres cutover
+ * -----------------------------------------------
+ * Today every caller (the four apply pages) invokes this synchronously
+ * and expects an in-memory row back. The new write path also POSTs to
+ * `/api/v/<brand>/applications` in the background — that call is
+ * fire-and-forget from this helper's perspective and is implemented in
+ * `submitApplicationToApi` below. The synchronous return value here
+ * keeps the localStorage substrate working as a fallback (and as the
+ * primary in dev environments without a DATABASE_URL set).
+ *
+ * Once the API path is verified in prod and DATABASE_URL is set
+ * everywhere, the localStorage write becomes redundant and the
+ * fallback can be retired.
  */
 export function saveSubmittedApp(
   input: Omit<SubmittedApp, 'id' | 'submittedAt' | 'status'> &
@@ -194,6 +208,53 @@ export function saveSubmittedApp(
        didn't persist. Swallow + continue. */
   }
   return row;
+}
+
+/**
+ * Submit an application to the server-side database via the new write
+ * API. Fire-and-forget — callers do NOT await this; the localStorage
+ * write happens in parallel and a network failure here is invisible to
+ * the apply flow. A 503 (db_unavailable) is logged but not surfaced.
+ *
+ * The shape mirrors what `/api/v/<brand>/applications` POST expects.
+ * `requestId` is the apply-form session/application id and gives us
+ * idempotency — a retried POST returns the original row instead of a
+ * duplicate.
+ */
+export function submitApplicationToApi(input: {
+  brand: SubmittedAppBrand;
+  partnerId: string;
+  refQuery?: string;
+  consumerFirst: string;
+  consumerLast: string;
+  consumerEmail: string;
+  consumerPhone: string;
+  amountCents: number;
+  tier?: CreditTier;
+  selectedLender?: string;
+  requestId: string;
+}): void {
+  if (typeof window === 'undefined') return;
+  // Fire-and-forget: the localStorage write happened above (or is about
+  // to via saveSubmittedApp) and the apply flow doesn't gate on the API
+  // round-trip. `void` documents that we intentionally aren't awaiting
+  // and keeps the linter quiet without project-specific disables.
+  void fetch(`/api/v/${input.brand}/applications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+    .then(async (res) => {
+      if (res.ok) return;
+      // 503 (db_unavailable) is expected during cutover — log at info.
+      // Other errors are warned so we notice schema mismatches.
+      const body = await res.text().catch(() => '');
+      const log = res.status === 503 ? console.info : console.warn;
+      log(`[applications.submitApi] ${res.status}`, body.slice(0, 200));
+    })
+    .catch((err) => {
+      console.warn('[applications.submitApi] network', err);
+    });
 }
 
 /**

@@ -34,7 +34,11 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
-import { saveSubmittedApp, UNATTRIBUTED_PARTNER_ID } from '../../../lib/submitted-applications';
+import {
+  saveSubmittedApp,
+  submitApplicationToApi,
+  UNATTRIBUTED_PARTNER_ID,
+} from '../../../lib/submitted-applications';
 
 /**
  * Consumer apply landing for `/apply/<brand>?ref=<partnerId>`.
@@ -181,8 +185,21 @@ export default function ApplyLandingPage() {
       tier,
       lender: top?.displayName ?? 'Pending lender match',
     });
+    submitApplicationToApi({
+      brand: b,
+      partnerId,
+      refQuery: ref || undefined,
+      consumerFirst: intake.firstName.trim(),
+      consumerLast: intake.lastName.trim(),
+      consumerEmail: intake.email.trim(),
+      consumerPhone: intake.phone.replace(/\D+/g, ''),
+      amountCents: cents(intake.amount),
+      tier,
+      selectedLender: top?.displayName,
+      requestId: applicationId || `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    });
     setPersisted(true);
-  }, [step, persisted, ref, eligibleLenders, intake, tier, b]);
+  }, [step, persisted, ref, eligibleLenders, intake, tier, b, applicationId]);
 
   // Hardening item 1: consent capture. Before the consumer leaves the
   // disclaimer step, capture the soft-pull authorization receipt:

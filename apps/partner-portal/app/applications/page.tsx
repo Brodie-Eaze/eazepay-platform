@@ -11,7 +11,8 @@ import {
   SearchIcon,
 } from '@eazepay/ui/web';
 import { partners as MASTER_PARTNERS, applicationsForPartner } from '../../lib/master-data';
-import { readSubmittedApps, type SubmittedApp } from '../../lib/submitted-applications';
+import { type SubmittedApp } from '../../lib/submitted-applications';
+import { fetchAdminSubmittedApps } from '../../lib/applications-client';
 
 /**
  * Finance Applications — direct port of Lovable's `/admin/applications`.
@@ -71,13 +72,31 @@ export default function FinanceApplicationsPage() {
 
   /**
    * Roll the consumer-submitted-app store into the per-partner counts
-   * the admin sees. Read once on mount; admin role implies "see every
+   * the admin sees. We prefer the server-side `/api/admin/applications`
+   * endpoint (Postgres-backed, canonical) and fall back to the
+   * localStorage substrate when the API is unavailable — `source` is
+   * surfaced so a future "demo data" banner can flip on during the
+   * cutover window. Read once on mount; admin role implies "see every
    * partner's submitted count" so we don't scope by partnerId here.
    */
   const [submittedAll, setSubmittedAll] = useState<SubmittedApp[]>([]);
+  const [submittedSource, setSubmittedSource] = useState<'api' | 'local'>('local');
   useEffect(() => {
-    setSubmittedAll(readSubmittedApps());
+    let cancelled = false;
+    void (async () => {
+      const { source, rows } = await fetchAdminSubmittedApps();
+      if (cancelled) return;
+      setSubmittedAll(rows);
+      setSubmittedSource(source);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+  // Reserved for an upcoming "Live data" / "Demo data" badge in the
+  // header — kept in state so the source is reactive when the API
+  // becomes available mid-session (e.g. DATABASE_URL provisioned).
+  void submittedSource;
 
   const liveRows: PartnerAppsRow[] = useMemo(() => {
     if (submittedAll.length === 0) return SEED;
