@@ -160,18 +160,18 @@ export default function CoachPayCheckout(): JSX.Element {
               />
               {/* 02 · Lender marketplace */}
               <Include
-                head="Lender panel + card-stack underwriting"
-                body="We submit you to the LendingPoint · Upgrade · Best Egg · Marcus · Lightstream panel plus the 800+ card and BNPL aggregator. Once each lender approves you, they all quote in parallel."
+                head="Lender marketplace"
+                body="We submit you to the EazePay lender marketplace for underwriting. Once each lender approves you, they all quote in parallel."
               />
               {/* 03 · Smart forms & financial qualification */}
               <Include
-                head="HighSale CRM + Pixie pixel"
-                body="Every discovery-call soft-pull lands in HighSale as a contact. Pixie streams funnel + funded events to Meta + Google + TikTok for server-side attribution."
+                head="Smart form + smart routing + HighSale CRM"
+                body="Configure the smart-form fields, set up the smart routing rules (including the card-stack ceiling for $20k+ enrolments), and connect your HighSale CRM so every soft-pull lands as a contact."
               />
               {/* 04 · Payment processing */}
               <Include
-                head="MiCamp merchant-direct settlement"
-                body="Onboarded to MiCamp Solutions · funded enrolments settle straight to your bank in 48-72 hours · no aggregator middle layer"
+                head="MiCamp payment processing"
+                body="Onboarded to MiCamp Solutions — better-than-industry rates on the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded enrolments still settle merchant-direct from each lender."
               />
             </div>
           </div>
