@@ -81,11 +81,11 @@ const STEPS: Step[] = [
     n: '04',
     agent: 'FLUX',
     title: 'Payment processing',
-    body: 'FLUX onboards your trade business to MiCamp Solutions — a payment processor with better-than-industry rates for the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded jobs still settle merchant-direct from each lender, separately. Confirm your routing details, sign the MiCamp processing agreement, and verify the first $10 test settlement.',
+    body: 'FLUX onboards your trade business to MiCamp Solutions — a payment processor with better-than-industry rates for the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded jobs still settle merchant-direct from each lender, separately. Confirm your routing details and sign the MiCamp processing agreement.',
     items: [
       'MiCamp merchant account application',
       'Settlement bank routing + voided check',
-      'First $10 test settlement',
+      'MiCamp processing agreement signed',
     ],
     time: '≈ 2–3 business days',
     configLabel: 'Configure FLUX',
@@ -232,8 +232,7 @@ export default function TradePayOnboarding(): JSX.Element {
                 <h3 className="tp-onb-launch-h">Book your launch call</h3>
                 <p className="tp-onb-launch-b">
                   30 minutes with the TradePay launch team. We walk the first doorstep soft-pull on
-                  your real traffic, validate the lender panel, and queue the live-fire test
-                  settlement.
+                  your real traffic and validate the lender panel together.
                 </p>
               </div>
               <Link href="/help" className="btn-primary btn-lg">
