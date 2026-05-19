@@ -2,11 +2,14 @@
  * CoachPay · Onboarding (/coachpay/onboarding)
  *
  * AureanAI-style onboarding page, tinted for CoachPay's purple
- * palette. 5 stepped agent modules adapted for the high-ticket
- * coaching sales motion: discovery call → soft-pull → lender +
- * card-stack → routing → merchant-direct payout.
+ * palette. 4 stepped agent modules adapted for the high-ticket
+ * coaching sales motion: discovery-call intake → lender + card-
+ * stack → soft-pull / tier ladder → merchant-direct payout.
  *
- * See /medpay/onboarding/page.tsx for the structural twin.
+ * See /medpay/onboarding/page.tsx for the structural twin. The 4
+ * modules (CORE / NEXUS / ORACLE / FLUX) map 1:1 across MedPay /
+ * TradePay / CoachPay so any partner moving across verticals sees
+ * the same shape.
  */
 'use client';
 
@@ -31,61 +34,58 @@ const STEPS: Step[] = [
     n: '01',
     agent: 'CORE',
     title: 'Account setup',
-    body: 'Confirm your coaching business EIN, connect your closer-team Slack, accept the master service agreement, and book your first KYB upload.',
-    items: ['Business + EIN verification', 'Slack channel invite', 'MSA + pricing acceptance'],
-    time: '≈ 3 min',
+    body: 'Provision your branded CoachPay partner portal, invite your closer team, and upload the KYB documents that anchor every lender file we submit on your behalf.',
+    items: [
+      'Branded partner portal provisioned',
+      'Closer team invites · admin + rep roles',
+      'Brand kit + KYB document upload',
+    ],
+    time: '≈ 5 min',
     configLabel: 'Continue setup',
     configHref: '/welcome',
   },
   {
-    id: 'helix',
+    id: 'nexus',
     n: '02',
-    agent: 'HELIX',
-    title: 'Discovery-call smart-form',
-    body: 'Configure the HELIX intake form your closers send mid-call. Pick the four fields, drop the embed on your enrolment page, and route the prospect by program tier.',
+    agent: 'NEXUS',
+    title: 'Lender marketplace',
+    body: "We submit your coaching business to the CoachPay lender panel (LendingPoint / Upgrade / Best Egg / Marcus / Lightstream) plus the 800+ credit-card and BNPL aggregator for underwriting. Each lender has to approve you for traffic before they appear in the waterfall — once they're live, NEXUS surfaces the cheapest monthly to the prospect.",
     items: [
-      'Discovery-call form fields',
-      'Embed snippet for enrolment page',
-      'Lead routing by tier',
+      'Lender panel underwriting · personal-loan tier',
+      'Card + BNPL aggregator · 800+ issuers',
+      'Carrier appetite + ticket caps · $5k – $50k',
     ],
-    time: '≈ 8 min',
-    configLabel: 'Configure HELIX',
-    configHref: '/admin?surface=brand-portal&brand=coach-pay&panel=ConsumerApplyConfigPanel',
+    time: '≈ 2–3 business days',
+    configLabel: 'Configure NEXUS',
+    configHref: '/admin?surface=brand-portal&brand=coach-pay&panel=LenderPanelMatrix',
   },
   {
     id: 'oracle',
     n: '03',
     agent: 'ORACLE',
-    title: 'Prospect qualification',
-    body: 'Wire ORACLE up to the bureaus + the 800+ card aggregator. Set thresholds for the program ticket you sell, including the card-stack ceiling for $20k+ enrolments.',
-    items: ['Bureau credentials', 'Pre-approval thresholds · $5k – $50k', 'Card-stack ceiling'],
-    time: '≈ 10 min',
+    title: 'Smart forms & financial qualification',
+    body: 'Connect your HighSale CRM so every discovery-call soft-pull lands as a contact, drop the Pixie tracking pixel on your enrolment page for funnel attribution, and pick the smart-form fields + credit thresholds that drive qualification — including the card-stack ceiling for $20k+ enrolments.',
+    items: [
+      'HighSale CRM connection (API + webhook)',
+      'Pixie pixel install + funnel events',
+      'Discovery-call form fields + card-stack ceiling',
+    ],
+    time: '≈ 15 min',
     configLabel: 'Configure ORACLE',
     configHref: '/admin?surface=brand-portal&brand=coach-pay&panel=AgentsPanel',
   },
   {
-    id: 'nexus',
-    n: '04',
-    agent: 'NEXUS',
-    title: 'Lender marketplace + card-stack',
-    body: 'Activate the LendingPoint / Upgrade / Best Egg / Marcus / Lightstream panel plus the 800+ credit-card and BNPL aggregator. NEXUS surfaces the cheapest monthly to the prospect.',
-    items: [
-      'Carrier panel · personal-loan tier',
-      '800+ card + BNPL aggregator',
-      'Best-offer presentation',
-    ],
-    time: '≈ 12 min',
-    configLabel: 'Configure NEXUS',
-    configHref: '/admin?surface=brand-portal&brand=coach-pay&panel=LenderPanelMatrix',
-  },
-  {
     id: 'flux',
-    n: '05',
+    n: '04',
     agent: 'FLUX',
-    title: 'Routing + merchant-direct',
-    body: 'FLUX wires the lender approval signal to the merchant-direct disbursement leg. Confirm your bank routing, set payout cadence, and verify the first $10 test settlement.',
-    items: ['Bank routing + voided check', 'Payout cadence', 'Merchant-direct test settlement'],
-    time: '≈ 15 min',
+    title: 'Payment processing',
+    body: 'FLUX onboards your coaching business to MiCamp Solutions — the merchant-direct processor that settles funded enrolments straight to your bank in 48–72 hours. Confirm your routing details, sign the MiCamp processing agreement, and verify the first $10 test settlement.',
+    items: [
+      'MiCamp merchant account application',
+      'Settlement bank routing + voided check',
+      'First $10 test settlement',
+    ],
+    time: '≈ 2–3 business days',
     configLabel: 'Configure FLUX',
     configHref: '/admin?surface=brand-portal&brand=coach-pay&panel=PayoutDestinationsPanel',
   },
@@ -151,7 +151,7 @@ export default function CoachPayOnboarding(): JSX.Element {
               <span className="grad-text">Onboarding</span>
             </h1>
             <p className="cp-onb-hero-sub">
-              Five short modules. Saves automatically. Come back any time. Your launch engineer is
+              Four short modules. Saves automatically. Come back any time. Your launch engineer is
               in your Slack channel.
             </p>
           </div>
