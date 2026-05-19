@@ -79,11 +79,11 @@ const STEPS: Step[] = [
     n: '04',
     agent: 'FLUX',
     title: 'Payment processing',
-    body: 'FLUX onboards your coaching business to MiCamp Solutions — a payment processor with better-than-industry rates for the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded enrolments still settle merchant-direct from each lender, separately. Confirm your routing details, sign the MiCamp processing agreement, and verify the first $10 test settlement.',
+    body: 'FLUX onboards your coaching business to MiCamp Solutions — a payment processor with better-than-industry rates for the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded enrolments still settle merchant-direct from each lender, separately. Confirm your routing details and sign the MiCamp processing agreement.',
     items: [
       'MiCamp merchant account application',
       'Settlement bank routing + voided check',
-      'First $10 test settlement',
+      'MiCamp processing agreement signed',
     ],
     time: '≈ 2–3 business days',
     configLabel: 'Configure FLUX',
@@ -230,8 +230,8 @@ export default function CoachPayOnboarding(): JSX.Element {
                 <h3 className="cp-onb-launch-h">Book your launch call</h3>
                 <p className="cp-onb-launch-b">
                   30 minutes with the CoachPay launch team. We walk the first discovery-call
-                  soft-pull on your real traffic, validate the lender + card-stack panel, and queue
-                  the live-fire test settlement.
+                  soft-pull on your real traffic and validate the lender + card-stack panel
+                  together.
                 </p>
               </div>
               <Link href="/help" className="btn-primary btn-lg">
