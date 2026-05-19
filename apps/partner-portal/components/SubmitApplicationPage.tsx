@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   PageBody,
   Card,
@@ -42,9 +42,20 @@ export function SubmitApplicationPage({ config }: { config: SubmitApplicationCon
   const [copied, setCopied] = useState(false);
   const [smsSent, setSmsSent] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState<string | null>(null);
+  const [origin, setOrigin] = useState('');
+
+  // If the caller passed a relative path (e.g. `/apply/medpay?ref=p_42`)
+  // we prepend the current deployment origin so clipboard / QR / Open
+  // all produce a fully-qualified URL the partner can paste anywhere.
+  useEffect(() => {
+    if (typeof window !== 'undefined') setOrigin(window.location.origin);
+  }, []);
+  const effectiveLinkUrl = config.linkUrl.startsWith('http')
+    ? config.linkUrl
+    : `${origin}${config.linkUrl}`;
 
   const copy = () => {
-    navigator.clipboard.writeText(config.linkUrl).catch(() => {});
+    navigator.clipboard.writeText(effectiveLinkUrl).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -68,7 +79,7 @@ export function SubmitApplicationPage({ config }: { config: SubmitApplicationCon
   // QR code rendered via a free CORS-friendly QR generator. No client
   // library needed; the URL is deterministic so it cache-keys cleanly.
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=12&data=${encodeURIComponent(
-    config.linkUrl,
+    effectiveLinkUrl,
   )}`;
 
   return (
@@ -149,7 +160,7 @@ export function SubmitApplicationPage({ config }: { config: SubmitApplicationCon
                 <div className="flex flex-col md:flex-row gap-2.5">
                   <input
                     readOnly
-                    value={config.linkUrl}
+                    value={effectiveLinkUrl}
                     className="flex-1 h-11 rounded-lg border border-border bg-bg-elevated px-3.5 text-[13px] font-mono text-fg-muted outline-none shadow-[0_1px_2px_rgb(15_23_42_/_0.04)]"
                   />
                   <Button size="md" variant={copied ? 'secondary' : 'primary'} onClick={copy}>
@@ -185,7 +196,7 @@ export function SubmitApplicationPage({ config }: { config: SubmitApplicationCon
                     Download QR
                   </a>
                   <a
-                    href={config.linkUrl}
+                    href={effectiveLinkUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="h-10 px-4 rounded-lg border border-border text-fg font-semibold text-[13px] inline-flex items-center gap-2 hover:bg-bg-muted"

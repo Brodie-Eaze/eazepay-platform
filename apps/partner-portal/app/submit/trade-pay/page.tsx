@@ -9,7 +9,7 @@ export default function SubmitTradePay() {
         description:
           'Trade & contractor financing for home improvement, HVAC, plumbing, and skilled trade services.',
         applyHref: '/apply/tradepay',
-        linkUrl: 'https://eazetradepay.lovable.app/',
+        linkUrl: '/apply/tradepay',
       }}
     />
   );

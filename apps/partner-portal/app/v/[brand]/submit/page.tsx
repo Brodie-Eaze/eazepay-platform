@@ -11,10 +11,15 @@ import { partnerOrg } from '../../../../lib/mock-data';
  * so every click maps back to the partner in the master Command
  * Centre for attribution + tracking.
  *
- * URLs (matching Lovable):
- *   EAZE Pay   → https://eazepay.lovable.app/?ref=<partner>
- *   Med Pay    → https://eazemedpay.lovable.app/?ref=<partner>
- *   Trade Pay  → https://eazetradepay.lovable.app/?ref=<partner>
+ * Apply URLs are served IN-PLATFORM from `/apply/<slug>?ref=<partner>`.
+ * Each portal gets its own consumer apply form embedded in this
+ * codebase — no external Lovable redirect, no third-party domain.
+ *   EazePay   → /apply/coachpay?ref=<partner>
+ *   MedPay    → /apply/medpay?ref=<partner>
+ *   TradePay  → /apply/tradepay?ref=<partner>
+ * The `SubmitApplicationPage` component fully-qualifies these paths
+ * with `window.location.origin` at render time so the copyable link
+ * and QR code carry the actual production domain.
  *
  * Lender filtering: once a client opens the link and runs through
  * Highsale's soft-pull on the apply landing, the lender pool shown to
@@ -26,7 +31,6 @@ interface BrandSubmitConfig {
   eyebrow: string;
   title: string;
   description: string;
-  applyBase: string;
 }
 
 const CONFIG: Record<BrandCode, BrandSubmitConfig | null> = {
@@ -35,21 +39,18 @@ const CONFIG: Record<BrandCode, BrandSubmitConfig | null> = {
     title: 'Submit EAZE Pay Application',
     description:
       'Coaching & consulting financing for clients seeking professional development and business coaching services.',
-    applyBase: 'https://eazepay.lovable.app/',
   },
   medpay: {
     eyebrow: 'MED PAY',
     title: 'Submit Med Pay Application',
     description:
       'Medical financing for patients seeking healthcare procedures, treatments, and wellness services.',
-    applyBase: 'https://eazemedpay.lovable.app/',
   },
   tradepay: {
     eyebrow: 'TRADE PAY',
     title: 'Submit Trade Pay Application',
     description:
       'Trade & contractor financing for home improvement, HVAC, plumbing, and skilled trade services.',
-    applyBase: 'https://eazetradepay.lovable.app/',
   },
   direct: null,
 };
@@ -61,12 +62,12 @@ export default function BrandSubmitPage() {
   const cfg = CONFIG[brand!];
   if (!cfg) notFound();
 
-  // Partner-unique copy-link. Carries `?ref=<partnerId>` so every
-  // signed client click is attributable to this partner in the master
-  // Command Centre. The "Start Application" button opens the same
-  // flow inside our portal (local /apply/<brand> route) so admins can
-  // walk the apply experience without leaving the dashboard.
-  const partnerLink = `${cfg!.applyBase}?ref=${encodeURIComponent(partnerOrg.id)}`;
+  // Partner-unique apply link. Points at the in-platform consumer
+  // apply route under `/apply/<slug>?ref=<partnerId>` so every signed
+  // client click maps back to the partner in the master Command
+  // Centre. Both the "Start Application" button and the copy/QR/share
+  // surfaces use the same in-platform path — the `SubmitApplicationPage`
+  // component prepends window.location.origin for the copy/QR variants.
   const localApply = `/apply/${BRANDS[brand!].slug}?ref=${encodeURIComponent(partnerOrg.id)}`;
 
   return (
@@ -76,7 +77,7 @@ export default function BrandSubmitPage() {
         title: cfg!.title,
         description: cfg!.description,
         applyHref: localApply,
-        linkUrl: partnerLink,
+        linkUrl: localApply,
       }}
     />
   );
