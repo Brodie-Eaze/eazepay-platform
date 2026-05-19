@@ -151,40 +151,29 @@ export default function MedPayCheckout(): JSX.Element {
           <div className="mpf-container">
             <h2 className="mpf-h2">What activates today</h2>
             <p className="mpf-section-sub">
-              The full MedPay stack lights up on signing. No phased rollout, no premium-tier gating.
+              Four cards, one per onboarding module — the full MedPay stack lights up on signing. No
+              phased rollout, no premium-tier gating.
             </p>
             <div className="mpf-includes-grid">
+              {/* 01 · Account setup */}
               <Include
-                head="Pre-qualification agents"
-                body="ORACLE soft-pull bureau check on every lead · credit · income · DTI · pre-approval $"
+                head="Branded MedPay partner portal"
+                body="Full team access · admin + closer roles · per-rep performance · live data on the deals you've sent"
               />
-              <Include
-                head="EazePay partner portal"
-                body="Full team access · per-rep performance · live data · 7-year audit log"
-              />
-              <Include
-                head="Application submission + tracking"
-                body="Pipeline, decisions, payouts, lender reconciliation · webhook + API access"
-              />
+              {/* 02 · Lender marketplace */}
               <Include
                 head="Lender marketplace"
-                body="Parallel quoting across the carrier panel · cheapest monthly payment wins"
+                body="We submit you to the EazePay lender marketplace for underwriting. Once each lender approves you, they all quote in parallel."
               />
+              {/* 03 · Smart forms & financial qualification */}
               <Include
-                head="Smart routing + Smartphone continuity"
-                body="HELIX form reshape, ticket-fit routing, secure-link handoff to mobile"
+                head="Smart form + smart routing + HighSale CRM"
+                body="Configure the smart-form fields, set up the smart routing rules, and connect your HighSale CRM so every soft-pull lands as a contact."
               />
+              {/* 04 · Payment processing */}
               <Include
-                head="ECHO pixel + CAPI"
-                body="Server-side conversion stream to Meta + Google + TikTok on the funded event"
-              />
-              <Include
-                head="VEGA compliance"
-                body="FCRA + ECOA + TILA trail on every decision · adverse-action notices automated"
-              />
-              <Include
-                head="Payment processing"
-                body="Optional, included if you want it · merchant-direct settlement in 48-72 hours"
+                head="MiCamp payment processing"
+                body="Onboarded to MiCamp Solutions — better-than-industry rates on the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded loans still settle merchant-direct from each lender."
               />
             </div>
           </div>

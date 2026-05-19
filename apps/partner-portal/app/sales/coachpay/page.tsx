@@ -189,8 +189,8 @@ const SLIDES_RAW: Slide[] = [
                   parallel · $5k–$50k
                 </li>
                 <li>
-                  <span className="sld-vs-icon sld-vs-check">✓</span> 800+ card + BNPL options
-                  routed by available credit
+                  <span className="sld-vs-icon sld-vs-check">✓</span> Smart routing across lenders
+                  by program tier
                 </li>
                 <li>
                   <span className="sld-vs-icon sld-vs-check">✓</span> Lender carries credit risk ·
@@ -246,7 +246,7 @@ const SLIDES_RAW: Slide[] = [
               n="02"
               head="Marketplace + card stack"
               metric="$5k – $50k"
-              body="Personal-loan marketplace (LendingPoint, Upgrade, Best Egg, Marcus, Lightstream) plus a card-stacking layer routing 800+ cards by available credit, statement timing, and 0% promo windows. A $35k mastermind can fund across one loan plus two cards."
+              body="Personal-loan marketplace quoted in parallel, plus a card-stacking layer for high-ticket programs where one loan won't cover the full ticket. A $35k mastermind can fund across one loan plus the card-stack."
               tags={['Marketplace', 'Card stack', '800+ paths']}
             />
             <Pillar
@@ -342,10 +342,9 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            One application fires across LendingPoint, Upgrade, Best Egg, Marcus by Goldman,
-            Lightstream, and Prosper at the same instant — plus the card-stacking layer routes the
-            prospect through 800+ credit-card and BNPL options. Offers return ranked by cheapest
-            monthly payment.
+            One application fires across every personal-loan lender on our marketplace at the same
+            instant — plus the card-stacking layer for high-ticket programs where one loan
+            won&apos;t cover the full ticket. Offers return ranked by cheapest monthly payment.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -1721,7 +1720,7 @@ function VsTable(): JSX.Element {
     {
       k: 'Card-stacking layer',
       single: 'None',
-      med: '800+ cards + BNPL routed by available credit',
+      med: 'Card-stacking layer for high-ticket programs',
     },
     {
       k: 'Same-call qualification',
@@ -1920,7 +1919,7 @@ function Storyboard(): JSX.Element {
     {
       n: '02',
       t: 'Soft pull',
-      b: 'Soft pull across LendingPoint, Upgrade, Best Egg, Marcus, Lightstream — plus card-stacking. FCRA-compliant.',
+      b: 'Soft pull across every personal-loan lender on the marketplace — plus card-stacking for high-ticket programs. FCRA-compliant.',
       meta: '< 10 sec',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
@@ -2609,7 +2608,7 @@ function SixAgents(): JSX.Element {
     {
       code: 'NEXUS',
       role: 'Marketplace + card-stack router',
-      watches: 'LendingPoint · Upgrade · Best Egg · Marcus · Lightstream · Prosper + 800+ cards',
+      watches: 'Personal-loan marketplace + card-stack panel for high-ticket programs',
       output: 'Ranked parallel quotes · card-stacking ceiling for $35k+ tickets',
       version: 'v6.1',
       glyph: (

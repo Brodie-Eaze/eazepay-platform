@@ -149,41 +149,29 @@ export default function TradePayCheckout(): JSX.Element {
           <div className="mpf-container">
             <h2 className="mpf-h2">What activates today</h2>
             <p className="mpf-section-sub">
-              The full TradePay stack lights up on signing. No phased rollout, no premium-tier
-              gating.
+              Four cards, one per onboarding module — the full TradePay stack lights up on signing.
+              No phased rollout, no premium-tier gating.
             </p>
             <div className="mpf-includes-grid">
+              {/* 01 · Account setup */}
               <Include
-                head="Pre-qualification agents"
-                body="ORACLE soft-pull bureau check on every homeowner · credit · DTI · available credit · pre-approval $"
+                head="Branded TradePay partner portal"
+                body="Full crew access · admin + estimator roles · per-rep performance · live data on the jobs you've sent"
               />
+              {/* 02 · Lender marketplace */}
               <Include
-                head="EazePay partner portal"
-                body="Full crew access · per-estimator performance · live data · 7-year audit log"
+                head="Lender marketplace"
+                body="We submit you to the EazePay lender marketplace for underwriting. Once each lender approves you, they all quote in parallel."
               />
+              {/* 03 · Smart forms & financial qualification */}
               <Include
-                head="Application submission + tracking"
-                body="Pipeline, decisions, payouts, lender reconciliation · webhook + API access"
+                head="Smart form + smart routing + HighSale CRM"
+                body="Configure the smart-form fields, set up the smart routing rules, and connect your HighSale CRM so every doorstep soft-pull lands as a contact."
               />
+              {/* 04 · Payment processing */}
               <Include
-                head="Trades-lender marketplace"
-                body="GreenSky · Sunlight · Service Finance · Synchrony · EnerBank · Mosaic in parallel · cheapest monthly wins"
-              />
-              <Include
-                head="Smart routing + Smartphone continuity"
-                body="HELIX form reshape, ticket-fit routing, secure-link handoff to mobile"
-              />
-              <Include
-                head="ECHO pixel + CAPI"
-                body="Server-side conversion stream to Meta + Google + TikTok on the funded event"
-              />
-              <Include
-                head="VEGA compliance"
-                body="FCRA + ECOA + TILA trail on every decision · adverse-action notices automated"
-              />
-              <Include
-                head="Payment processing"
-                body="Optional, included if you want it · merchant-direct settlement in 48-72 hours"
+                head="MiCamp payment processing"
+                body="Onboarded to MiCamp Solutions — better-than-industry rates on the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded jobs still settle merchant-direct from each lender."
               />
             </div>
           </div>
