@@ -149,8 +149,8 @@ export default function TradePayCheckout(): JSX.Element {
           <div className="mpf-container">
             <h2 className="mpf-h2">What activates today</h2>
             <p className="mpf-section-sub">
-              Every item below maps to one of the four onboarding modules — full TradePay stack
-              lights up on signing, no phased rollout or premium-tier gating.
+              Four cards, one per onboarding module — the full TradePay stack lights up on signing.
+              No phased rollout, no premium-tier gating.
             </p>
             <div className="mpf-includes-grid">
               {/* 01 · Account setup */}
@@ -158,36 +158,20 @@ export default function TradePayCheckout(): JSX.Element {
                 head="Branded TradePay partner portal"
                 body="Full crew access · admin + estimator roles · per-rep performance · live data on the jobs you've sent"
               />
-              <Include
-                head="KYB document vault"
-                body="EIN + entity docs uploaded once and reused on every lender file we submit · 7-year audit retention"
-              />
               {/* 02 · Lender marketplace */}
               <Include
                 head="Lender panel underwriting"
                 body="We submit you to the GreenSky · Sunlight · Service Finance · Synchrony · EnerBank · Mosaic panel. Once each lender approves you, they all quote in parallel."
-              />
-              <Include
-                head="Smart routing + smartphone handoff"
-                body="Ticket-fit routing by job size + geo · cheapest monthly wins · secure-link handoff to the homeowner's phone"
               />
               {/* 03 · Smart forms & financial qualification */}
               <Include
                 head="HighSale CRM + Pixie pixel"
                 body="Every doorstep soft-pull lands in HighSale as a contact. Pixie streams funnel + funded events to Meta + Google + TikTok for server-side attribution."
               />
-              <Include
-                head="HELIX smart-form + ORACLE bureau pull"
-                body="Doorstep soft-pull returns a fundability tier in under 10 seconds · FCRA + ECOA + TILA on every decision · zero credit impact"
-              />
               {/* 04 · Payment processing */}
               <Include
                 head="MiCamp merchant-direct settlement"
                 body="Onboarded to MiCamp Solutions · funded jobs settle straight to your bank in 48-72 hours · no aggregator middle layer"
-              />
-              <Include
-                head="Compliance + audit chain"
-                body="EazePay (NMLS #2456701) carries originator licensing · adverse-action notices automated · audit log retained 7 years"
               />
             </div>
           </div>
