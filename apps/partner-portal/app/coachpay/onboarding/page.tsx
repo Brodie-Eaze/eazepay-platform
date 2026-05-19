@@ -42,7 +42,7 @@ const STEPS: Step[] = [
     ],
     time: '≈ 5 min',
     configLabel: 'Continue setup',
-    configHref: '/welcome',
+    configHref: '/coachpay/signup',
   },
   {
     id: 'nexus',

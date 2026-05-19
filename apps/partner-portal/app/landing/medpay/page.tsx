@@ -670,7 +670,7 @@ export default function MedPayLandingPage(): JSX.Element {
             <a href="/apply/medpay" className="btn-ghost-teal">
               See the patient flow
             </a>
-            <a href="/welcome" className="btn-primary-teal">
+            <a href="/medpay/start" className="btn-primary-teal">
               Start MedPay signup
             </a>
           </div>
@@ -707,7 +707,7 @@ export default function MedPayLandingPage(): JSX.Element {
               </p>
 
               <div className="mp-hero-ctas">
-                <a href="/welcome" className="btn-primary-teal lg">
+                <a href="/medpay/start" className="btn-primary-teal lg">
                   Approve more patients
                   <Icon.Arrow />
                 </a>
@@ -1676,7 +1676,7 @@ export default function MedPayLandingPage(): JSX.Element {
                   </div>
                 </div>
 
-                <a href="/welcome" className="btn-primary-teal mp-roi-cta">
+                <a href="/medpay/start" className="btn-primary-teal mp-roi-cta">
                   Lock in this number
                   <Icon.Arrow />
                 </a>
@@ -1775,7 +1775,7 @@ export default function MedPayLandingPage(): JSX.Element {
                 Financing is the lead. Everything else is built so it works at the chair. Here are
                 the questions clinic owners ask before they sign. Answered straight.
               </p>
-              <a href="/welcome" className="btn-primary-teal" style={{ marginTop: '28px' }}>
+              <a href="/medpay/start" className="btn-primary-teal" style={{ marginTop: '28px' }}>
                 Start your signup
                 <Icon.Arrow />
               </a>
@@ -1826,7 +1826,7 @@ export default function MedPayLandingPage(): JSX.Element {
               settling.
             </p>
             <div className="mp-final-ctas">
-              <a href="/welcome" className="btn-primary-teal xl">
+              <a href="/medpay/start" className="btn-primary-teal xl">
                 Start MedPay signup
                 <Icon.Arrow />
               </a>
