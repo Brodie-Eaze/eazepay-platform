@@ -1030,22 +1030,35 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <div className="sld-cover-mark">
+            {/* TradePay logo — pitched roof + chimney, signalling
+                home-improvement / trades verticals (roofing, HVAC,
+                solar, remodel, exterior). */}
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect
-                x="2"
-                y="3"
-                width="20"
-                height="18"
-                rx="4"
-                stroke="currentColor"
-                strokeWidth="1.4"
-              />
               <path
-                d="M7 12h10M12 7v10"
+                d="M3 12 L12 4 L21 12"
                 stroke="currentColor"
                 strokeWidth="1.4"
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
+              <path
+                d="M5 11 V20 H19 V11"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <rect
+                x="10"
+                y="14"
+                width="4"
+                height="6"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path d="M16 6 V8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           </div>
         </Reveal>
