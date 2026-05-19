@@ -44,7 +44,7 @@ const STEPS: Step[] = [
     ],
     time: '≈ 5 min',
     configLabel: 'Continue setup',
-    configHref: '/welcome',
+    configHref: '/tradepay/signup',
   },
   {
     id: 'nexus',
