@@ -229,14 +229,14 @@ const SLIDES_RAW: Slide[] = [
               n="01"
               head="Doorstep speed"
               metric="< 10s"
-              body="Estimator runs the soft pull on the iPad in the driveway. Homeowner sees a real fundability tier before the estimator unpacks the laser measure. Zero credit impact, full FCRA compliance."
+              body="Estimator runs the soft-pull at the door. Homeowner sees a real fundability tier before the estimator unpacks the laser measure. Zero credit impact, full FCRA compliance."
               tags={['Soft pull', 'FCRA', '0 hard-pull']}
             />
             <Pillar
               n="02"
               head="Lender coverage"
               metric="$3k – $100k"
-              body="One soft pull queries every trades lender in parallel — GreenSky, Sunlight, Service Finance, Synchrony, EnerBank, Mosaic. Homeowner sees the cheapest monthly payment. Decline rate is the floor of the marketplace, not a single carrier."
+              body="One soft pull queries every trades lender on our marketplace in parallel. Homeowner sees the cheapest monthly payment. Decline rate is the floor of the marketplace, not a single carrier."
               tags={['Parallel quoting', 'Cheapest mo. wins', 'Prime → subprime']}
             />
             <Pillar
@@ -273,9 +273,9 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
-              Estimator hands the homeowner the iPad in the driveway. Four fields, ten seconds — a
-              real fundability tier comes back before the homeowner hands the screen back. No hard
-              pull, so they can still walk away with zero credit consequence.
+              Estimator runs the four-field soft-pull at the door. Ten seconds — a real fundability
+              tier comes back before the estimator unpacks the laser measure. No hard pull, so the
+              homeowner can still walk away with zero credit consequence.
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -332,9 +332,8 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            One application fires across GreenSky, Sunlight, Service Finance, Synchrony Home Design,
-            EnerBank, and Mosaic at the same instant. Quotes return ranked by cheapest monthly
-            payment to the homeowner.
+            One application fires across every trades lender on our marketplace at the same instant.
+            Quotes return ranked by cheapest monthly payment to the homeowner.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -1900,7 +1899,7 @@ function Storyboard(): JSX.Element {
     {
       n: '01',
       t: 'Enter info',
-      b: 'Estimator hands the iPad in the driveway. SSN-4, DOB, income, address. Done in a minute.',
+      b: 'Estimator runs the soft-pull at the door. SSN-4, DOB, income, address. Done in a minute.',
       meta: 'In the driveway',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
@@ -1923,7 +1922,7 @@ function Storyboard(): JSX.Element {
     {
       n: '02',
       t: 'Soft pull',
-      b: 'Soft pull across GreenSky, Sunlight, Service Finance, Synchrony, EnerBank, Mosaic. FCRA-compliant.',
+      b: 'Soft pull across every trades lender on the marketplace. FCRA-compliant.',
       meta: '< 10 sec',
       glyph: (
         <svg viewBox="0 0 32 32" aria-hidden>
