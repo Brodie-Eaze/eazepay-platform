@@ -15,9 +15,12 @@
  *
  * All paths POST to the same `/api/onboarding/submit` route.
  */
-'use client';
-
 import OnboardingWizard from './wizard';
+
+export const metadata = {
+  title: 'EazePay · Partner sign-up',
+  description: 'Activate your EazePay partner portal.',
+};
 
 export default function WelcomePage(): JSX.Element {
   return <OnboardingWizard />;

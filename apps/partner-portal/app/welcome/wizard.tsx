@@ -15,104 +15,31 @@
  *   3. (future) operator queue — same component, brand prop wired by
  *                                the admin tool.
  *
- * Brand-specific surface
- * ----------------------
- * The wizard body (form fields, validation, step components) is
- * identical across brands — only the chrome changes:
- *   • Header logo + brand name (Med/Pay, Trade/Pay, Coach/Pay)
- *   • Active-step pill background + Continue button background
- *   • Submit button copy ("Submit MedPay application" vs "Submit
- *     application")
- *   • Step 1 (Industry) is hidden entirely when brand is set
+ * What this file does NOT own
+ * ---------------------------
+ *   • Brand colors / wordmarks — see `lib/brand-theme.ts`
+ *   • Validation rules        — see `lib/onboarding-validation.ts`
  *
- * Why a prop, not a route param
- * -----------------------------
- * Each branded page mounts this component with a static prop. Reading
- * the URL would force this into a use-client + window dance; passing
- * a literal compiles cleanly and avoids hydration mismatches.
+ * Pulling those out kept this file focused on what it actually is:
+ * the wizard's React glue (state machine, step rendering, layout).
  */
 
-import { useState, type ComponentType, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState, type ComponentType, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRightIcon, CheckIcon, BoltIcon } from '@eazepay/ui/web';
-import { type Industry, type OnboardingState, type StepKey, EMPTY_STATE } from './state';
+import { type OnboardingState, type StepKey, EMPTY_STATE } from './state';
+import { BRAND_THEME, type BrandSlug, type BrandTheme } from '../../lib/brand-theme';
+import { validateStep, type StepErrors } from '../../lib/onboarding-validation';
 import StepIndustry from './step-industry';
 import StepBusinessInfo from './step-business-info';
 import StepBusinessDetails from './step-business-details';
 import StepFinancialProfile from './step-financial-profile';
 import StepReview from './step-review';
 
-/* ─── Brand config ─────────────────────────────────────────────────── */
+/* ─── Step config ─────────────────────────────────────────────────── */
 
-export type BrandSlug = 'medpay' | 'tradepay' | 'coachpay';
-
-interface BrandTheme {
-  /** Visible name in the header + headings ("MedPay") */
-  name: string;
-  /** Two-line wordmark, "Med" / "Pay" — same look as /<brand>/checkout */
-  markPrimary: string;
-  markSecondary: string;
-  /** Industry value that maps to this brand. The api/onboarding/submit
-   *  route maps the inverse direction (medical → medpay). */
-  industry: Industry;
-  /** Tailwind class fragments. We use arbitrary-value hex so the wizard
-   *  stays Tailwind-driven without needing a tailwind.config.ts change. */
-  accentBg: string;
-  accentBgHover: string;
-  iconBg: string;
-  iconText: string;
-  surfaceTint: string;
-}
-
-const BRAND_THEME: Record<BrandSlug, BrandTheme> = {
-  medpay: {
-    name: 'MedPay',
-    markPrimary: 'Med',
-    markSecondary: 'Pay',
-    industry: 'medical',
-    accentBg: 'bg-[#0E7C66]',
-    accentBgHover: 'hover:bg-[#22B8A0]',
-    iconBg: 'bg-[#0E7C66]',
-    iconText: 'text-white',
-    surfaceTint: 'bg-[#f3faf7]',
-  },
-  tradepay: {
-    name: 'TradePay',
-    markPrimary: 'Trade',
-    markSecondary: 'Pay',
-    industry: 'trades',
-    accentBg: 'bg-[#D4581A]',
-    accentBgHover: 'hover:bg-[#F47B3F]',
-    iconBg: 'bg-[#D4581A]',
-    iconText: 'text-white',
-    surfaceTint: 'bg-[#fdf5ef]',
-  },
-  coachpay: {
-    name: 'CoachPay',
-    markPrimary: 'Coach',
-    markSecondary: 'Pay',
-    industry: 'coaching',
-    accentBg: 'bg-[#7C3AED]',
-    accentBgHover: 'hover:bg-[#A78BFA]',
-    iconBg: 'bg-[#7C3AED]',
-    iconText: 'text-white',
-    surfaceTint: 'bg-[#f6f3ff]',
-  },
-};
-
-/* Generic EAZE chrome — the fallback theme for the unbranded /welcome
- * path. Kept distinct from BRAND_THEME so the typesystem can't conflate
- * "no brand" with "wrong brand." */
-const GENERIC_THEME = {
-  accentBg: 'bg-[#0d1530]',
-  accentBgHover: 'hover:bg-[#1a2a52]',
-  surfaceTint: 'bg-bg',
-} as const;
-
-/* ─── Step config ──────────────────────────────────────────────────── */
-
-const GENERIC_STEPS: StepKey[] = [
+const GENERIC_STEPS: readonly StepKey[] = [
   'industry',
   'business_info',
   'business_details',
@@ -121,7 +48,7 @@ const GENERIC_STEPS: StepKey[] = [
 ];
 
 /** Branded flows skip Industry — the funnel already determined it. */
-const BRANDED_STEPS: StepKey[] = [
+const BRANDED_STEPS: readonly StepKey[] = [
   'business_info',
   'business_details',
   'financial_profile',
@@ -144,7 +71,23 @@ const STEP_SUBTITLE: Record<StepKey, string> = {
   review: 'One last look before we send this to underwriting.',
 };
 
-/** Per-brand title for the Business Info step. */
+interface StepProps {
+  state: OnboardingState;
+  setState: Dispatch<SetStateAction<OnboardingState>>;
+  errors: StepErrors;
+}
+
+const STEP_COMPONENT: Record<StepKey, ComponentType<StepProps>> = {
+  industry: StepIndustry,
+  business_info: StepBusinessInfo,
+  business_details: StepBusinessDetails,
+  financial_profile: StepFinancialProfile,
+  review: StepReview,
+};
+
+/** Per-brand title for the Business Info step. The first step in a
+ *  branded flow is `business_info` (industry is skipped), so the
+ *  brand-aware "Welcome to {Brand}" copy lands there. */
 function titleFor(stepKey: StepKey, brandName: string | null): string {
   if (stepKey === 'industry') return 'Welcome to EAZE';
   if (stepKey === 'business_info') {
@@ -156,21 +99,32 @@ function titleFor(stepKey: StepKey, brandName: string | null): string {
   return '';
 }
 
-interface StepProps {
-  state: OnboardingState;
-  setState: Dispatch<SetStateAction<OnboardingState>>;
-  errors: Record<string, string>;
+/* ─── Generic (unbranded) chrome ──────────────────────────────────── */
+
+const GENERIC_CHROME = {
+  accentBg: 'bg-[#0d1530]',
+  accentBgHover: 'hover:bg-[#1a2a52]',
+  surfaceTint: 'bg-bg',
+} as const;
+
+/** Resolve the Tailwind class strings for a theme (or the generic
+ *  EAZE chrome if no theme is set). Class strings come from the theme
+ *  itself — they're static literals in `lib/brand-theme.ts`, so
+ *  Tailwind's content scan picks them up at build time. */
+function chromeFor(theme: BrandTheme | null): {
+  accentBg: string;
+  accentBgHover: string;
+  surfaceTint: string;
+} {
+  if (!theme) return GENERIC_CHROME;
+  return {
+    accentBg: theme.accentBgClass,
+    accentBgHover: theme.accentBgHoverClass,
+    surfaceTint: theme.surfaceTintClass,
+  };
 }
 
-const STEP_COMPONENT: Record<StepKey, ComponentType<StepProps>> = {
-  industry: StepIndustry,
-  business_info: StepBusinessInfo,
-  business_details: StepBusinessDetails,
-  financial_profile: StepFinancialProfile,
-  review: StepReview,
-};
-
-/* ─── The wizard ───────────────────────────────────────────────────── */
+/* ─── The wizard ──────────────────────────────────────────────────── */
 
 interface OnboardingWizardProps {
   /** When set: pre-fill industry, hide Step 1, swap chrome to the brand
@@ -181,70 +135,28 @@ interface OnboardingWizardProps {
 export default function OnboardingWizard({ brand }: OnboardingWizardProps): JSX.Element {
   const router = useRouter();
   const theme = brand ? BRAND_THEME[brand] : null;
-  const stepOrder = brand ? BRANDED_STEPS : GENERIC_STEPS;
+  const stepOrder = useMemo(() => (brand ? BRANDED_STEPS : GENERIC_STEPS), [brand]);
   const brandName = theme?.name ?? null;
-
-  const initialState: OnboardingState = theme
-    ? { ...EMPTY_STATE, industry: theme.industry }
-    : EMPTY_STATE;
+  const chrome = chromeFor(theme);
 
   const [stepIdx, setStepIdx] = useState(0);
-  const [state, setState] = useState<OnboardingState>(initialState);
+  const [state, setState] = useState<OnboardingState>(() =>
+    theme ? { ...EMPTY_STATE, industry: theme.industry } : EMPTY_STATE,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<StepErrors>({});
 
   const stepKey: StepKey = stepOrder[stepIdx]!;
 
-  /**
-   * Per-step validation. Same logic across branded and generic flows —
-   * the branded paths just don't have an `industry` step to validate
-   * (industry is locked from the prop and can't be empty).
-   */
-  const validate = (): boolean => {
-    const e: Record<string, string> = {};
-    if (stepKey === 'industry') {
-      if (!state.industry) e['industry'] = 'Pick the option that matches your business.';
-    }
-    if (stepKey === 'business_info') {
-      if (!state.legalName.trim()) e['legalName'] = 'Required';
-      if (!state.ein.match(/^\d{2}-?\d{7}$/)) e['ein'] = 'EIN format: XX-XXXXXXX';
-      if (!state.phone.match(/^\+?1?\d{10}$/)) e['phone'] = '10-digit US phone';
-      if (!state.addressLine1.trim()) e['addressLine1'] = 'Required';
-      if (!state.city.trim()) e['city'] = 'Required';
-      if (!state.state.trim()) e['state'] = 'Required';
-      if (!state.zip.match(/^\d{5}(-\d{4})?$/)) e['zip'] = 'ZIP format: 90210 or 90210-1234';
-    }
-    if (stepKey === 'business_details') {
-      const total = state.owners.reduce((s, o) => s + Number(o.ownershipPercentage || 0), 0);
-      if (total !== 100) e['ownership_total'] = `Ownership must sum to 100% (currently ${total}%).`;
-      state.owners.forEach((o, i) => {
-        if (!o.firstName.trim()) e[`owner_${i}_firstName`] = 'Required';
-        if (!o.lastName.trim()) e[`owner_${i}_lastName`] = 'Required';
-        if (!o.title.trim()) e[`owner_${i}_title`] = 'Required';
-        if (!o.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e[`owner_${i}_email`] = 'Invalid email';
-      });
-      if (!state.yearsInBusiness || Number(state.yearsInBusiness) < 0)
-        e['yearsInBusiness'] = 'Required';
-    }
-    if (stepKey === 'financial_profile') {
-      if (!state.bankName.trim()) e['bankName'] = 'Required';
-      if (!state.routingNumber.match(/^\d{9}$/)) e['routingNumber'] = '9 digits';
-      if (!state.accountNumber.match(/^\d{4,17}$/)) e['accountNumber'] = '4–17 digits';
-      if (!state.avgMonthlyVolume) e['avgMonthlyVolume'] = 'Required';
-      if (!state.avgTicket) e['avgTicket'] = 'Required';
-    }
-    if (stepKey === 'review') {
-      if (!state.acceptedTerms) e['terms'] = 'You must accept the terms.';
-      if (!state.acceptedPrivacy) e['privacy'] = 'You must accept the privacy notice.';
-      if (!state.signedAgreement) e['agreement'] = 'You must sign the merchant agreement.';
-    }
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  const validateCurrent = (): boolean => {
+    const next = validateStep(state, stepKey);
+    setErrors(next);
+    return Object.keys(next).length === 0;
   };
 
   const next = () => {
-    if (validate()) {
+    if (validateCurrent()) {
       setStepIdx((i) => Math.min(stepOrder.length - 1, i + 1));
       if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -256,7 +168,7 @@ export default function OnboardingWizard({ brand }: OnboardingWizardProps): JSX.
   };
 
   const submit = async () => {
-    if (!validate()) return;
+    if (!validateCurrent()) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -274,153 +186,216 @@ export default function OnboardingWizard({ brand }: OnboardingWizardProps): JSX.
       }
       router.push('/welcome/submitted');
     } catch {
+      // BFF transient — route to the "received" state so the wizard
+      // doesn't dead-end mid-submit. The route handler is the source
+      // of truth for whether the partner was actually created.
       router.push('/welcome/submitted');
     }
   };
 
-  const currentStepNo = stepIdx + 1;
-  const totalSteps = stepOrder.length;
-  const accentBg = theme?.accentBg ?? GENERIC_THEME.accentBg;
-  const accentBgHover = theme?.accentBgHover ?? GENERIC_THEME.accentBgHover;
-  const surfaceTint = theme?.surfaceTint ?? GENERIC_THEME.surfaceTint;
+  const Step = STEP_COMPONENT[stepKey];
   const submitLabel = theme ? `Submit ${theme.name} application` : 'Submit application';
 
-  const Step = STEP_COMPONENT[stepKey];
-
   return (
-    <main className={`min-h-screen ${surfaceTint}`}>
-      {/* Header bar — brand-aware. Same shape as the EAZE generic
-          header so the wizard layout doesn't reflow. */}
-      <header className="border-b border-border bg-bg-elevated">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 h-[64px] flex items-center justify-between">
-          {theme ? (
-            <Link href={`/${brand}/start`} className="flex items-center gap-2.5">
-              <div
-                className={`h-8 w-8 rounded-lg ${theme.iconBg} flex items-center justify-center`}
-              >
-                <BoltIcon size={14} className={theme.iconText} />
-              </div>
-              <div className="leading-tight">
-                <div className="text-[14px] font-bold tracking-tight text-fg">
-                  {theme.markPrimary}
-                  <span className="text-fg-muted font-medium">/{theme.markSecondary}</span>
-                </div>
-                <div className="text-[9px] uppercase tracking-[0.22em] font-semibold text-fg-muted -mt-0.5">
-                  Partner sign-up
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <Link href="/sign-in" className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-[#0d1530] flex items-center justify-center">
-                <BoltIcon size={14} className="text-white" />
-              </div>
-              <div className="leading-tight">
-                <div className="text-[14px] font-bold tracking-tight text-fg">EAZE</div>
-                <div className="text-[9px] uppercase tracking-[0.22em] font-semibold text-fg-muted -mt-0.5">
-                  Partner Portal
-                </div>
-              </div>
-            </Link>
-          )}
-          <Link href="/sign-in" className="text-[13px] text-fg-muted hover:text-fg">
-            Sign in
-          </Link>
-        </div>
-      </header>
+    <main className={`min-h-screen ${chrome.surfaceTint}`}>
+      <WizardHeader theme={theme} brand={brand} />
 
-      {/* Wizard body */}
       <div className="max-w-3xl mx-auto px-6 lg:px-10 py-10">
-        {/* Step breadcrumbs */}
-        <ol className="flex items-center gap-2 text-[12px] mb-8 flex-wrap">
-          {stepOrder.map((k, i) => {
-            const done = i < stepIdx;
-            const active = i === stepIdx;
-            return (
-              <li key={k} className="flex items-center gap-2">
-                <span
-                  className={
-                    'flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-semibold ' +
-                    (active
-                      ? `${accentBg} text-white`
-                      : done
-                        ? 'bg-bg-inverse text-white border border-bg-inverse'
-                        : 'bg-bg-muted text-fg-muted border border-border')
-                  }
-                >
-                  {done ? <CheckIcon size={11} /> : i + 1}
-                </span>
-                <span
-                  className={
-                    (active
-                      ? 'text-fg font-semibold'
-                      : done
-                        ? 'text-fg-secondary'
-                        : 'text-fg-muted') + ' whitespace-nowrap'
-                  }
-                >
-                  {STEP_LABEL[k]}
-                </span>
-                {i < stepOrder.length - 1 && <span className="text-fg-muted">→</span>}
-              </li>
-            );
-          })}
-        </ol>
+        <Breadcrumb stepOrder={stepOrder} stepIdx={stepIdx} accentBg={chrome.accentBg} />
 
-        {/* Eyebrow */}
         <p className="text-[11px] uppercase tracking-[0.18em] font-semibold text-fg-muted mb-2">
-          Step {currentStepNo} of {totalSteps}
+          Step {stepIdx + 1} of {stepOrder.length}
         </p>
 
-        {/* Heading + subtitle */}
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-fg">
           {titleFor(stepKey, brandName)}
         </h1>
         <p className="mt-2 text-[15px] text-fg-secondary">{STEP_SUBTITLE[stepKey]}</p>
 
-        {/* Step body */}
         <div className="mt-8">
           <Step state={state} setState={setState} errors={errors} />
         </div>
 
         {submitError && (
-          <div className="mt-6 rounded-md border border-border-strong bg-bg-muted px-3 py-2 text-[13px] text-fg font-semibold">
+          <div
+            role="alert"
+            className="mt-6 rounded-md border border-border-strong bg-bg-muted px-3 py-2 text-[13px] text-fg font-semibold"
+          >
             {submitError}
           </div>
         )}
 
-        {/* Footer actions */}
-        <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
-          <button
-            type="button"
-            onClick={back}
-            disabled={stepIdx === 0 || submitting}
-            className="h-10 px-4 rounded-md text-[13px] font-medium text-fg-secondary hover:text-fg disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Back
-          </button>
-          {stepKey === 'review' ? (
-            <button
-              type="button"
-              onClick={submit}
-              disabled={submitting}
-              className={`h-11 px-6 rounded-lg ${accentBg} ${accentBgHover} text-white font-semibold text-[14px] flex items-center gap-2 disabled:opacity-50`}
-            >
-              {submitting ? 'Submitting…' : submitLabel}
-              {!submitting && <ArrowRightIcon size={14} />}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={next}
-              className={`h-11 px-6 rounded-lg ${accentBg} ${accentBgHover} text-white font-semibold text-[14px] flex items-center gap-2`}
-            >
-              Continue
-              <ArrowRightIcon size={14} />
-            </button>
-          )}
-        </div>
+        <WizardFooter
+          isReviewStep={stepKey === 'review'}
+          canGoBack={stepIdx > 0}
+          submitting={submitting}
+          submitLabel={submitLabel}
+          accentBg={chrome.accentBg}
+          accentBgHover={chrome.accentBgHover}
+          onBack={back}
+          onNext={next}
+          onSubmit={submit}
+        />
       </div>
     </main>
+  );
+}
+
+/* ─── Sub-components ──────────────────────────────────────────────── */
+
+/** Branded header (brand wordmark + Sign-in link) or generic EAZE
+ *  header. Kept as its own component so the wizard body reads cleanly. */
+function WizardHeader({
+  theme,
+  brand,
+}: {
+  theme: BrandTheme | null;
+  brand: BrandSlug | undefined;
+}): JSX.Element {
+  return (
+    <header className="border-b border-border bg-bg-elevated">
+      <div className="max-w-5xl mx-auto px-6 lg:px-10 h-[64px] flex items-center justify-between">
+        {theme && brand ? (
+          <Link href={`/${brand}/start`} className="flex items-center gap-2.5">
+            <div
+              className={`h-8 w-8 rounded-lg ${theme.accentBgClass} flex items-center justify-center`}
+            >
+              <BoltIcon size={14} className="text-white" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-[14px] font-bold tracking-tight text-fg">
+                {theme.markPrimary}
+                <span className="text-fg-muted font-medium">/{theme.markSecondary}</span>
+              </div>
+              <div className="text-[9px] uppercase tracking-[0.22em] font-semibold text-fg-muted -mt-0.5">
+                Partner sign-up
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <Link href="/sign-in" className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-[#0d1530] flex items-center justify-center">
+              <BoltIcon size={14} className="text-white" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-[14px] font-bold tracking-tight text-fg">EAZE</div>
+              <div className="text-[9px] uppercase tracking-[0.22em] font-semibold text-fg-muted -mt-0.5">
+                Partner Portal
+              </div>
+            </div>
+          </Link>
+        )}
+        <Link href="/sign-in" className="text-[13px] text-fg-muted hover:text-fg">
+          Sign in
+        </Link>
+      </div>
+    </header>
+  );
+}
+
+/** Step-progress pills. Active step uses the brand accent; completed
+ *  steps use the dark inverse fill; pending steps are muted. */
+function Breadcrumb({
+  stepOrder,
+  stepIdx,
+  accentBg,
+}: {
+  stepOrder: readonly StepKey[];
+  stepIdx: number;
+  accentBg: string;
+}): JSX.Element {
+  return (
+    <ol className="flex items-center gap-2 text-[12px] mb-8 flex-wrap" aria-label="Sign-up steps">
+      {stepOrder.map((k, i) => {
+        const done = i < stepIdx;
+        const active = i === stepIdx;
+        return (
+          <li key={k} className="flex items-center gap-2">
+            <span
+              aria-current={active ? 'step' : undefined}
+              className={
+                'flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-semibold ' +
+                (active
+                  ? `${accentBg} text-white`
+                  : done
+                    ? 'bg-bg-inverse text-white border border-bg-inverse'
+                    : 'bg-bg-muted text-fg-muted border border-border')
+              }
+            >
+              {done ? <CheckIcon size={11} /> : i + 1}
+            </span>
+            <span
+              className={
+                (active ? 'text-fg font-semibold' : done ? 'text-fg-secondary' : 'text-fg-muted') +
+                ' whitespace-nowrap'
+              }
+            >
+              {STEP_LABEL[k]}
+            </span>
+            {i < stepOrder.length - 1 && (
+              <span className="text-fg-muted" aria-hidden>
+                →
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Back + Continue / Submit footer. Submit only on the review step. */
+function WizardFooter({
+  isReviewStep,
+  canGoBack,
+  submitting,
+  submitLabel,
+  accentBg,
+  accentBgHover,
+  onBack,
+  onNext,
+  onSubmit,
+}: {
+  isReviewStep: boolean;
+  canGoBack: boolean;
+  submitting: boolean;
+  submitLabel: string;
+  accentBg: string;
+  accentBgHover: string;
+  onBack: () => void;
+  onNext: () => void;
+  onSubmit: () => void;
+}): JSX.Element {
+  return (
+    <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={!canGoBack || submitting}
+        className="h-10 px-4 rounded-md text-[13px] font-medium text-fg-secondary hover:text-fg disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        ← Back
+      </button>
+      {isReviewStep ? (
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={submitting}
+          className={`h-11 px-6 rounded-lg ${accentBg} ${accentBgHover} text-white font-semibold text-[14px] flex items-center gap-2 disabled:opacity-50`}
+        >
+          {submitting ? 'Submitting…' : submitLabel}
+          {!submitting && <ArrowRightIcon size={14} />}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onNext}
+          className={`h-11 px-6 rounded-lg ${accentBg} ${accentBgHover} text-white font-semibold text-[14px] flex items-center gap-2`}
+        >
+          Continue
+          <ArrowRightIcon size={14} />
+        </button>
+      )}
+    </div>
   );
 }
