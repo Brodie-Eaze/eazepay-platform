@@ -34,6 +34,7 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
+import { saveSubmittedApp, UNATTRIBUTED_PARTNER_ID } from '../../../lib/submitted-applications';
 
 /**
  * Consumer apply landing for `/apply/<brand>?ref=<partnerId>`.
@@ -158,6 +159,30 @@ export default function ApplyLandingPage() {
     () => filterLenders({ brand: b, partnerId: ref, tier, amountCents: cents(intake.amount) }),
     [b, ref, tier, intake.amount],
   );
+
+  // Persist the application the moment the engine completes (step → offers).
+  // Attribution rule:
+  //   • explicit ?ref=<partnerId> wins — application is stamped to that
+  //     partner and appears in their /v/<brand>/applications view only.
+  //   • no ref → stamp UNATTRIBUTED_PARTNER_ID. The row stays in the
+  //     master view for triage but never surfaces in any partner-scoped
+  //     portal (cross-tenant safe).
+  const [persisted, setPersisted] = useState(false);
+  useEffect(() => {
+    if (step !== 'offers' || persisted) return;
+    const partnerId = ref || UNATTRIBUTED_PARTNER_ID;
+    const top = eligibleLenders[0];
+    saveSubmittedApp({
+      partnerId,
+      brand: b,
+      customer: `${intake.firstName.trim()} ${intake.lastName.trim()}`.trim(),
+      customerEmail: intake.email.trim(),
+      amountCents: cents(intake.amount),
+      tier,
+      lender: top?.displayName ?? 'Pending lender match',
+    });
+    setPersisted(true);
+  }, [step, persisted, ref, eligibleLenders, intake, tier, b]);
 
   // Hardening item 1: consent capture. Before the consumer leaves the
   // disclaimer step, capture the soft-pull authorization receipt:

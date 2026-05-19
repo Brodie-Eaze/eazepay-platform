@@ -50,7 +50,7 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
-import { saveSubmittedApp, DEMO_PARTNER_BY_BRAND } from '../../../lib/submitted-applications';
+import { saveSubmittedApp, UNATTRIBUTED_PARTNER_ID } from '../../../lib/submitted-applications';
 
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
@@ -195,12 +195,13 @@ export default function MedPayApplyPage() {
   );
 
   // Persist the application the moment the engine completes (step → offers).
-  // Attribution: explicit ?ref=<partnerId> wins; otherwise fall back to the
-  // MedPay demo partner binding (p_helio) so an unattributed test still
-  // shows up in MedPay's portal, not in TradePay/CoachPay.
+  // Attribution: explicit ?ref=<partnerId> wins. With no ref we stamp the
+  // UNATTRIBUTED_PARTNER_ID sentinel so the row stays out of every
+  // partner-scoped portal — no silent attribution to the demo partner.
+  // Master ops can re-attribute later via the admin tools.
   useEffect(() => {
     if (step !== 'offers' || persisted) return;
-    const partnerId = ref || DEMO_PARTNER_BY_BRAND.medpay;
+    const partnerId = ref || UNATTRIBUTED_PARTNER_ID;
     const top = eligibleLenders[0];
     saveSubmittedApp({
       partnerId,

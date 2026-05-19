@@ -50,7 +50,7 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
-import { saveSubmittedApp, DEMO_PARTNER_BY_BRAND } from '../../../lib/submitted-applications';
+import { saveSubmittedApp, UNATTRIBUTED_PARTNER_ID } from '../../../lib/submitted-applications';
 
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
@@ -183,13 +183,13 @@ export default function TradePayApplyPage() {
   );
 
   // Save app to the per-partner store on engine → offers. Attribution:
-  // explicit ?ref=<partnerId> wins; otherwise fall back to the TradePay
-  // demo partner (p_orion) so an unattributed test still shows up only
-  // in TradePay's portal.
+  // explicit ?ref=<partnerId> wins. With no ref we stamp
+  // UNATTRIBUTED_PARTNER_ID so the row stays out of every partner-scoped
+  // portal. Master ops can re-attribute via admin tools.
   const [persisted, setPersisted] = useState(false);
   useEffect(() => {
     if (step !== 'offers' || persisted) return;
-    const partnerId = ref || DEMO_PARTNER_BY_BRAND.tradepay;
+    const partnerId = ref || UNATTRIBUTED_PARTNER_ID;
     const top = eligibleLenders[0];
     saveSubmittedApp({
       partnerId,

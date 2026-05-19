@@ -50,7 +50,7 @@ import {
   sessionStillBound,
 } from '../../../lib/consumer-consent';
 import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
-import { saveSubmittedApp, DEMO_PARTNER_BY_BRAND } from '../../../lib/submitted-applications';
+import { saveSubmittedApp, UNATTRIBUTED_PARTNER_ID } from '../../../lib/submitted-applications';
 
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
@@ -190,9 +190,12 @@ export default function CoachPayApplyPage() {
   );
 
   // Save app to the per-partner store once we land on the offers step.
+  // Attribution: explicit ?ref=<partnerId> wins. With no ref we stamp
+  // UNATTRIBUTED_PARTNER_ID so the row stays out of every partner-scoped
+  // portal. Master ops can re-attribute via admin tools.
   useEffect(() => {
     if (step !== 'offers' || persisted) return;
-    const partnerId = ref || DEMO_PARTNER_BY_BRAND.coachpay;
+    const partnerId = ref || UNATTRIBUTED_PARTNER_ID;
     const top = eligibleLenders[0];
     saveSubmittedApp({
       partnerId,

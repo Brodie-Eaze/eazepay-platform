@@ -544,11 +544,15 @@ export function findPartner(idOrSlug: string): PartnerSummary | undefined {
 export function applicationsForPartner(partnerId: string): ApplicationRow[] {
   const partner = findPartner(partnerId);
   if (!partner) return [];
-  // The master fixture uses the partner's legal name in the row.partner
-  // string; match on the first significant word so the demo seed
-  // returns hits without making us re-key the fixture.
-  const firstWord = partner.legalName.split(' ')[0]!.toLowerCase();
-  return applications.filter((a) => a.partner.toLowerCase().includes(firstWord));
+  /* SEC-104: match exactly on the partner's legal name. Previously we
+   * did a first-word substring `includes()` match which could collide
+   * for partners whose legal-name first word is a common word
+   * ("National X", "United X", "Pacific X"): two distinct partners
+   * with the same opening word would share an application pool. Switch
+   * to exact-string equality (case-insensitive) so the matcher is
+   * unambiguous and never bleeds rows across partners. */
+  const legal = partner.legalName.toLowerCase();
+  return applications.filter((a) => a.partner.toLowerCase() === legal);
 }
 
 /** Standard payout schedule string used across payout pages. */
