@@ -2,13 +2,16 @@
  * TradePay · Onboarding (/tradepay/onboarding)
  *
  * AureanAI-style onboarding page, tinted for TradePay's orange
- * palette. 5 stepped agent modules adapted for the trades sales
- * motion: doorstep estimator → soft-pull → lender panel →
- * routing → merchant-direct payout.
+ * palette. 4 stepped agent modules adapted for the trades sales
+ * motion: estimator intake → lender panel → soft-pull / tier
+ * ladder → merchant-direct payout.
  *
  * See /medpay/onboarding/page.tsx for the structural twin. Both
  * share the same .glass / .step / .progress-fill primitives — only
- * the accent colors, agent module list, and copy differ.
+ * the accent colors and per-vertical copy differ. The 4 modules
+ * (CORE / NEXUS / ORACLE / FLUX) map 1:1 across MedPay / TradePay /
+ * CoachPay so any partner moving across verticals sees the same
+ * shape.
  */
 'use client';
 
@@ -33,57 +36,58 @@ const STEPS: Step[] = [
     n: '01',
     agent: 'CORE',
     title: 'Account setup',
-    body: 'Confirm your trade business EIN, connect your estimator-team Slack, accept the master service agreement, and book your first KYB upload.',
-    items: ['Business + EIN verification', 'Slack channel invite', 'MSA + pricing acceptance'],
-    time: '≈ 3 min',
+    body: 'Provision your branded TradePay partner portal, invite your estimator team, and upload the KYB documents that anchor every lender file we submit on your behalf.',
+    items: [
+      'Branded partner portal provisioned',
+      'Estimator team invites · admin + closer roles',
+      'Brand kit + KYB document upload',
+    ],
+    time: '≈ 5 min',
     configLabel: 'Continue setup',
     configHref: '/welcome',
   },
   {
-    id: 'helix',
+    id: 'nexus',
     n: '02',
-    agent: 'HELIX',
-    title: 'Doorstep smart-form',
-    body: 'Configure the HELIX intake form your estimators use in the driveway. Pick the four fields, drop the embed on your site, and route the lead by job size + zip.',
-    items: ['Doorstep soft-pull fields', 'Estimator iPad embed', 'Lead routing by job + geo'],
-    time: '≈ 8 min',
-    configLabel: 'Configure HELIX',
-    configHref: '/admin?surface=brand-portal&brand=trade-pay&panel=ConsumerApplyConfigPanel',
+    agent: 'NEXUS',
+    title: 'Lender marketplace',
+    body: "We submit your trade business to the TradePay lender panel (GreenSky / Sunlight / Service Finance / Synchrony / EnerBank / Mosaic) for underwriting. Each lender has to approve you for traffic before they appear in the waterfall — once they're live, NEXUS quotes them in parallel and surfaces the cheapest monthly to the homeowner.",
+    items: [
+      'Lender panel underwriting · 6 trades lenders',
+      'Carrier appetite + ticket caps · $3k – $100k',
+      'Best-offer presentation rules',
+    ],
+    time: '≈ 2–3 business days',
+    configLabel: 'Configure NEXUS',
+    configHref: '/admin?surface=brand-portal&brand=trade-pay&panel=LenderPanelMatrix',
   },
   {
     id: 'oracle',
     n: '03',
     agent: 'ORACLE',
-    title: 'Homeowner qualification',
-    body: 'Wire ORACLE up to the bureaus, set your pre-approval thresholds for the trade-ticket range you sell, and decide what message the homeowner sees on a decline.',
-    items: ['Bureau credentials', 'Pre-approval thresholds · $3k – $100k', 'Decline messaging'],
-    time: '≈ 10 min',
+    title: 'Smart forms & financial qualification',
+    body: 'Connect your HighSale CRM so every doorstep soft-pull lands as a contact, drop the Pixie tracking pixel on your site for funnel attribution, and pick the smart-form fields + credit thresholds that drive qualification.',
+    items: [
+      'HighSale CRM connection (API + webhook)',
+      'Pixie pixel install + funnel events',
+      'Doorstep soft-pull fields + tier thresholds',
+    ],
+    time: '≈ 15 min',
     configLabel: 'Configure ORACLE',
     configHref: '/admin?surface=brand-portal&brand=trade-pay&panel=AgentsPanel',
   },
   {
-    id: 'nexus',
-    n: '04',
-    agent: 'NEXUS',
-    title: 'Trades lender marketplace',
-    body: 'Activate the GreenSky / Sunlight / Service Finance / Synchrony / EnerBank / Mosaic panel. NEXUS quotes in parallel and surfaces the cheapest monthly to the homeowner.',
-    items: [
-      'Carrier panel · 6 trades lenders',
-      'Carrier waterfall + appetite caps',
-      'Best-offer presentation',
-    ],
-    time: '≈ 12 min',
-    configLabel: 'Configure NEXUS',
-    configHref: '/admin?surface=brand-portal&brand=trade-pay&panel=LenderPanelMatrix',
-  },
-  {
     id: 'flux',
-    n: '05',
+    n: '04',
     agent: 'FLUX',
-    title: 'Routing + merchant-direct',
-    body: 'FLUX wires the lender approval signal to the merchant-direct disbursement leg. Confirm your bank routing, set payout cadence, and verify the first $10 test settlement.',
-    items: ['Bank routing + voided check', 'Payout cadence', 'Merchant-direct test settlement'],
-    time: '≈ 15 min',
+    title: 'Payment processing',
+    body: 'FLUX onboards your trade business to MiCamp Solutions — the merchant-direct processor that settles funded jobs straight to your bank in 48–72 hours. Confirm your routing details, sign the MiCamp processing agreement, and verify the first $10 test settlement.',
+    items: [
+      'MiCamp merchant account application',
+      'Settlement bank routing + voided check',
+      'First $10 test settlement',
+    ],
+    time: '≈ 2–3 business days',
     configLabel: 'Configure FLUX',
     configHref: '/admin?surface=brand-portal&brand=trade-pay&panel=PayoutDestinationsPanel',
   },
@@ -149,7 +153,7 @@ export default function TradePayOnboarding(): JSX.Element {
               <span className="grad-text">Onboarding</span>
             </h1>
             <p className="tp-onb-hero-sub">
-              Five short modules. Saves automatically. Come back any time. Your launch engineer is
+              Four short modules. Saves automatically. Come back any time. Your launch engineer is
               in your Slack channel.
             </p>
           </div>

@@ -3,16 +3,23 @@
  *
  * Direct port of the AUREAN/AI onboarding page styling
  * (https://aurean-ai-landing-production.up.railway.app/onboarding)
- * but tinted for MedPay's teal palette and with the MedPay agent
- * stack (ORACLE / HELIX / NEXUS / FLUX / ECHO) as the five setup
+ * but tinted for MedPay's teal palette and with the consolidated
+ * agent stack (CORE / NEXUS / ORACLE / FLUX) as the four setup
  * modules instead of Aurean's (PRISM / VEGA / NEXUS / FLUX).
+ *
+ * The four modules map 1:1 across MedPay / TradePay / CoachPay so
+ * any partner moving across verticals sees the same shape:
+ *   01 CORE   — Account setup
+ *   02 NEXUS  — Intake & lender marketplace
+ *   03 ORACLE — Smart forms & financial qualification
+ *   04 FLUX   — Payment processing
  *
  * Visual DNA preserved from Aurean:
  *   • Dark base (#0a0a14) with radial ambient glow + dot grid
  *   • Glass-morphism cards (backdrop-filter blur + translucent fill)
  *   • Gradient-to-ash text headings
  *   • Numbered step circles with brand-tinted glow on the active step
- *   • Slim progress bar at the top ("N of 5 complete")
+ *   • Slim progress bar at the top ("N of 4 complete")
  *   • Per-step: agent badge, title, body, items list, time chip,
  *     "Continue setup" link + "Mark complete" action
  *   • Final "Book launch call" CTA card
@@ -47,57 +54,58 @@ const STEPS: Step[] = [
     n: '01',
     agent: 'CORE',
     title: 'Account setup',
-    body: 'Confirm the practice EIN, connect your team Slack, accept the master service agreement, and book your first KYB document upload.',
-    items: ['Practice + EIN verification', 'Slack channel invite', 'MSA + pricing acceptance'],
-    time: '≈ 3 min',
+    body: 'Provision your branded MedPay partner portal, invite your practice team, and upload the KYB documents that anchor every lender file we submit on your behalf.',
+    items: [
+      'Branded partner portal provisioned',
+      'Practice team invites · admin + closer roles',
+      'Brand kit + KYB document upload',
+    ],
+    time: '≈ 5 min',
     configLabel: 'Continue setup',
     configHref: '/welcome',
   },
   {
-    id: 'helix',
+    id: 'nexus',
     n: '02',
-    agent: 'HELIX',
-    title: 'Smart forms + intake',
-    body: 'Configure the HELIX smart-form for the patient soft-pull. Pick the four fields you want first, drop the embed snippet on your site, and route the lead by ticket size.',
-    items: ['Soft-pull form fields', 'iPad-ready embed snippet', 'Lead routing rules'],
-    time: '≈ 8 min',
-    configLabel: 'Configure HELIX',
-    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=ConsumerApplyConfigPanel',
+    agent: 'NEXUS',
+    title: 'Lender marketplace',
+    body: "We submit your practice to the MedPay lender panel (dental / med spa / derm / vet / vision) for underwriting. Each lender has to approve you for traffic before they appear in the waterfall — once they're live, NEXUS quotes them in parallel and surfaces the cheapest monthly to the patient.",
+    items: [
+      'Lender panel underwriting · per-vertical',
+      'Carrier appetite + ticket caps',
+      'Best-offer presentation rules',
+    ],
+    time: '≈ 2–3 business days',
+    configLabel: 'Configure NEXUS',
+    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=LenderPanelMatrix',
   },
   {
     id: 'oracle',
     n: '03',
     agent: 'ORACLE',
-    title: 'Financial qualification',
-    body: 'Wire ORACLE up to the credit bureaus, set the practice-side pre-approval thresholds, and define the tier ladder MedPay should surface on the soft-pull return.',
-    items: ['Bureau credentials', 'Pre-approval thresholds', 'Tier ladder + decline messaging'],
-    time: '≈ 10 min',
+    title: 'Smart forms & financial qualification',
+    body: 'Connect your HighSale CRM so every soft-pull lead lands as a contact, drop the Pixie tracking pixel on your site for funnel attribution, and pick the smart-form fields + credit thresholds that drive qualification.',
+    items: [
+      'HighSale CRM connection (API + webhook)',
+      'Pixie pixel install + funnel events',
+      'Soft-pull form fields + tier thresholds',
+    ],
+    time: '≈ 15 min',
     configLabel: 'Configure ORACLE',
     configHref: '/admin?surface=brand-portal&brand=med-pay&panel=AgentsPanel',
   },
   {
-    id: 'nexus',
-    n: '04',
-    agent: 'NEXUS',
-    title: 'Lender marketplace',
-    body: 'Activate the lender panel for your verticals (dental / med spa / derm / vet / vision). NEXUS quotes them in parallel and surfaces the cheapest monthly payment.',
-    items: [
-      'Lender panel · per-vertical',
-      'Carrier waterfall + appetite caps',
-      'Best-offer presentation rules',
-    ],
-    time: '≈ 12 min',
-    configLabel: 'Configure NEXUS',
-    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=LenderPanelMatrix',
-  },
-  {
     id: 'flux',
-    n: '05',
+    n: '04',
     agent: 'FLUX',
-    title: 'Lender routing + payouts',
-    body: 'FLUX wires the lender approval signal to the merchant-direct disbursement leg. Confirm your bank routing, set the payout cadence, and verify the first $10 test settlement.',
-    items: ['Bank routing + voided check', 'Payout cadence', 'Merchant-direct test settlement'],
-    time: '≈ 15 min',
+    title: 'Payment processing',
+    body: 'FLUX onboards your practice to MiCamp Solutions — the merchant-direct processor that settles funded loans straight to your bank in 48–72 hours. Confirm your routing details, sign the MiCamp processing agreement, and verify the first $10 test settlement.',
+    items: [
+      'MiCamp merchant account application',
+      'Settlement bank routing + voided check',
+      'First $10 test settlement',
+    ],
+    time: '≈ 2–3 business days',
     configLabel: 'Configure FLUX',
     configHref: '/admin?surface=brand-portal&brand=med-pay&panel=PayoutDestinationsPanel',
   },
@@ -166,7 +174,7 @@ export default function MedPayOnboarding(): JSX.Element {
               <span className="grad-text">Onboarding</span>
             </h1>
             <p className="mp-onb-hero-sub">
-              Five short modules. Saves automatically. Come back any time. Your launch engineer is
+              Four short modules. Saves automatically. Come back any time. Your launch engineer is
               in your Slack channel.
             </p>
           </div>
