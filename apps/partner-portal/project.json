@@ -1,0 +1,39 @@
+{
+  "name": "partner-portal",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/partner-portal",
+  "projectType": "application",
+  "tags": ["scope:partner-portal", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @eazepay/partner-portal build"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @eazepay/partner-portal typecheck"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @eazepay/partner-portal test"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @eazepay/partner-portal lint"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm --filter @eazepay/partner-portal dev"
+      }
+    }
+  }
+}
