@@ -9,7 +9,7 @@ export default function SubmitCoachPay() {
         description:
           'Coaching & consulting financing for clients seeking professional development and business coaching services.',
         applyHref: '/apply/coachpay',
-        linkUrl: 'https://eazepay.lovable.app/',
+        linkUrl: '/apply/coachpay',
       }}
     />
   );

@@ -54,13 +54,19 @@ import { ConsumerIdleGuard } from '../../../components/ConsumerIdleGuard';
 type Step = 'landing' | 'disclaimer' | 'intake' | 'engine' | 'offers';
 
 /**
- * Public consumer apply form — mirrors eazepay.lovable.app exactly:
- * the soft-pull intake collects only the 5 fields below, then routes
- * to the orchestration engine which runs the actual bureau pull +
- * affordability + lender waterfall. Richer data (address, employment,
- * income, debts) is collected on the lender's own funnel after the
- * applicant clicks "Apply Now" on a chosen offer, NOT here. That's
- * how Lovable does it and matches the pre-qual / hard-pull split.
+ * Public consumer apply form — in-platform 1:1 port of the original
+ * Lovable apply flow. Soft-pull intake collects only the 5 fields
+ * below, then routes to the orchestration engine which runs the
+ * actual bureau pull + affordability + lender waterfall. Richer data
+ * (address, employment, income, debts) is collected on the lender's
+ * own funnel after the applicant clicks "Apply Now" on a chosen
+ * offer, NOT here. This matches the pre-qual / hard-pull split.
+ *
+ * Lives entirely in this codebase — no external redirect. Each brand
+ * (medpay/tradepay/coachpay) renders at `/apply/<slug>` and uses its
+ * own dedicated route (see `app/apply/<slug>/page.tsx`) for visual
+ * parity with that vertical's landing page; this dynamic [brand]
+ * route is the fallback for any future or direct brand slug.
  */
 interface Intake {
   firstName: string;
@@ -719,8 +725,8 @@ function DisclaimerStep({
   theme: ReturnType<typeof brandTheme>;
   consentBusy: boolean;
 }) {
-  // 1:1 with eazepay.lovable.app/disclaimer:
-  //   centred "Before We Begin" title + sub
+  // FCRA soft-pull disclaimer pattern — centred "Before We Begin"
+  // title + sub, three pulse bullets, two-button stack.
   //   single white card with file icon + 3 paragraphs + 4 acknowledgements
   //   trust row above checkbox
   //   Back · Continue buttons OUTSIDE the card (Continue disabled until consent)

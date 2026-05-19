@@ -9,7 +9,7 @@ export default function SubmitMedPay() {
         description:
           'Medical financing for patients seeking healthcare procedures, treatments, and wellness services.',
         applyHref: '/apply/medpay',
-        linkUrl: 'https://eazemedpay.lovable.app/',
+        linkUrl: '/apply/medpay',
       }}
     />
   );

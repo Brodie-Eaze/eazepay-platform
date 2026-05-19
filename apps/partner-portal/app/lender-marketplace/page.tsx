@@ -147,7 +147,7 @@ export default function LendersPage() {
           <p className="text-[13px] text-fg-secondary">
             <span className="font-semibold">How these toggles work:</span> When a client opens a
             partner&apos;s apply link (eg.{' '}
-            <span className="font-mono">eazemedpay.lovable.app/?ref=&lt;partner&gt;</span>), we run
+            <span className="font-mono">/apply/medpay?ref=&lt;partner&gt;</span>), we run
             HighSale&apos;s soft-pull then show only lenders whose{' '}
             <span className="font-semibold">global enable</span> is on AND who match the
             applicant&apos;s brand + credit tier — minus any per-partner overrides flipped at{' '}
