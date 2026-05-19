@@ -42,7 +42,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { getDb, hasDb } from '../../../../../lib/db';
-import { applications, partners } from '../../../../../lib/db/schema';
+import { applicationEvents, applications, partners } from '../../../../../lib/db/schema';
 import { getSessionContext, allowedPartnerIdsForBrand } from '../../../../../lib/session';
 import { UNATTRIBUTED_PARTNER_ID } from '../../../../../lib/submitted-applications';
 
@@ -135,26 +135,59 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
     }
   }
 
-  /* Insert with ON CONFLICT (request_id) DO NOTHING for idempotency.
-   * If the constraint fires, RETURNING is empty and we re-fetch the
-   * original row by request_id so a retry returns the same id. */
-  const inserted = await db
-    .insert(applications)
-    .values({
-      brand,
-      partnerId: resolvedPartnerId,
-      refQuery: body.refQuery ?? body.partnerId ?? null,
-      consumerFirst: body.consumerFirst.trim(),
-      consumerLast: body.consumerLast.trim(),
-      consumerEmail: body.consumerEmail.trim().toLowerCase(),
-      consumerPhone: body.consumerPhone.replace(/\D+/g, ''),
-      amountCents: body.amountCents,
-      tier: body.tier ?? null,
-      selectedLender: body.selectedLender ?? null,
-      requestId: body.requestId,
-    })
-    .onConflictDoNothing({ target: applications.requestId })
-    .returning();
+  /* Insert application + audit-event row in a single transaction (per
+   * ADR-0011 transactional outbox). The application row is the
+   * canonical state; the application_events row is the audit-chain
+   * entry. Both must succeed or both must roll back — otherwise a
+   * regulator subpoena of the chain shows applications without a
+   * 'created' event, which fails the chain's integrity guarantee.
+   *
+   * Idempotency: ON CONFLICT (request_id) DO NOTHING. If the constraint
+   * fires the application insert returns empty + we re-fetch the
+   * original outside the transaction. The event is NOT re-written on
+   * a duplicate post — the original 'created' event still anchors the
+   * chain. */
+  const inserted = await db.transaction(async (tx) => {
+    const appRows = await tx
+      .insert(applications)
+      .values({
+        brand,
+        partnerId: resolvedPartnerId,
+        refQuery: body.refQuery ?? body.partnerId ?? null,
+        consumerFirst: body.consumerFirst.trim(),
+        consumerLast: body.consumerLast.trim(),
+        consumerEmail: body.consumerEmail.trim().toLowerCase(),
+        consumerPhone: body.consumerPhone.replace(/\D+/g, ''),
+        amountCents: body.amountCents,
+        tier: body.tier ?? null,
+        selectedLender: body.selectedLender ?? null,
+        requestId: body.requestId,
+      })
+      .onConflictDoNothing({ target: applications.requestId })
+      .returning();
+
+    // On a fresh insert (not duplicate), anchor the audit chain with a
+    // 'created' event. The payload captures the originating context so
+    // a regulator can reconstruct who/what initiated the application
+    // without joining back to the applications table.
+    if (appRows[0]) {
+      await tx.insert(applicationEvents).values({
+        applicationId: appRows[0].id,
+        type: 'created',
+        toStatus: 'submitted',
+        actor: 'consumer',
+        payload: JSON.stringify({
+          brand,
+          partnerId: resolvedPartnerId,
+          amountCents: body.amountCents,
+          tier: body.tier ?? null,
+          requestId: body.requestId,
+        }),
+      });
+    }
+
+    return appRows;
+  });
 
   let row = inserted[0];
   if (!row) {

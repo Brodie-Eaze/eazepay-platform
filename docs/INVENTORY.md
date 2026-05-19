@@ -38,20 +38,27 @@ No page can answer "is this the real number?" When billing goes live, the invoic
 
 **Fix:** pick one substrate. Gate `master-data` fixtures behind `NODE_ENV !== 'production' && DEMO_MODE_ENABLED === 'true'`. Delete localStorage writers. Add a `<DataSourceBadge>` component every page renders so the operator can see "DB | fixture | synth" at a glance. **2-3 days.**
 
-### T2 — Audit chain is a 14-row fixture
+### T2 — Audit chain (PARTIAL — Phase 1A landed)
 
-ADR-0011 mandates a transactional outbox. Reality:
+ADR-0011 mandates a transactional outbox. Status:
 
 - Model defined in `apps/api/prisma/schema.prisma:1329` (`AuditOutbox`) ✓
 - Drain service real at `services/audit/src/audit-drain.service.ts` ✓
 - Only sink is `local-fs-audit-sink.adapter.ts` (writes to disk)
 - `partner-portal` does not import from `services/audit` at all
 - `/audit` page reads `auditLog` from `master-data.ts` — 14 hardcoded rows
-- `application_events` table exists in PR #80 schema but **no route inserts into it**
+- `application_events` table exists in PR #80 schema **and is now written to** ✓
+- POST `/api/v/<brand>/applications` writes a `created` event in the same Drizzle transaction as the application insert ✓ (Phase 1A)
+- `GET /api/admin/applications/[id]/events` returns the chain per application ✓ (Phase 1A)
 
-A regulator subpoena for state transitions on application X returns the same 14 rows for any X.
+What's still missing (Phase 1B+):
 
-**Fix:** insert `application_events` rows inside the same Drizzle transaction as the `applications` insert. Add `prevHash` + `rowHash` columns. Build `/audit` off `application_events`. Until cold sink exists, point at an S3 bucket with Object Lock + 7yr retention. **3-5 days.**
+- `/audit` master page still reads fixture rows — needs to swap to a new `/api/admin/audit-events` listing endpoint that queries the table across all applications
+- No `prevHash` + `rowHash` columns yet — chain integrity isn't tamper-evident
+- No cold sink (S3 with Object Lock + 7yr retention) — events live only in the operational DB
+- Other write paths (status update, lender quote, offer accept, lender fund) don't emit events yet — only application creation does
+
+**Next:** add the missing write-path events, then hash-chain integrity, then the cold sink. **Remaining: 2-3 days for events on all write paths, 1-2 days for hash chain, 1-2 days for S3 sink wiring.**
 
 ### T3 — Decision engine doesn't exist
 
