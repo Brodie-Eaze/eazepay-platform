@@ -151,40 +151,45 @@ export default function MedPayCheckout(): JSX.Element {
           <div className="mpf-container">
             <h2 className="mpf-h2">What activates today</h2>
             <p className="mpf-section-sub">
-              The full MedPay stack lights up on signing. No phased rollout, no premium-tier gating.
+              Every item below maps to one of the four onboarding modules — full MedPay stack lights
+              up on signing, no phased rollout or premium-tier gating.
             </p>
             <div className="mpf-includes-grid">
+              {/* 01 · Account setup */}
               <Include
-                head="Pre-qualification agents"
-                body="ORACLE soft-pull bureau check on every lead · credit · income · DTI · pre-approval $"
+                head="Branded MedPay partner portal"
+                body="Full team access · admin + closer roles · per-rep performance · live data on the deals you've sent"
               />
               <Include
-                head="EazePay partner portal"
-                body="Full team access · per-rep performance · live data · 7-year audit log"
+                head="KYB document vault"
+                body="EIN + entity docs uploaded once and reused on every lender file we submit · 7-year audit retention"
+              />
+              {/* 02 · Lender marketplace */}
+              <Include
+                head="Lender panel underwriting"
+                body="We submit you to the dental / med spa / derm / vet / vision lender panel. Once each lender approves you, they all quote in parallel."
               />
               <Include
-                head="Application submission + tracking"
-                body="Pipeline, decisions, payouts, lender reconciliation · webhook + API access"
+                head="Smart routing + smartphone handoff"
+                body="Ticket-fit routing across the carrier panel · cheapest monthly wins · secure-link handoff to the patient's phone"
+              />
+              {/* 03 · Smart forms & financial qualification */}
+              <Include
+                head="HighSale CRM + Pixie pixel"
+                body="Every soft-pull lead lands in HighSale as a contact. Pixie streams funnel + funded events to Meta + Google + TikTok for server-side attribution."
               />
               <Include
-                head="Lender marketplace"
-                body="Parallel quoting across the carrier panel · cheapest monthly payment wins"
+                head="HELIX smart-form + ORACLE bureau pull"
+                body="Soft-pull returns a fundability tier in under 10 seconds · FCRA + ECOA + TILA on every decision · zero credit impact"
+              />
+              {/* 04 · Payment processing */}
+              <Include
+                head="MiCamp merchant-direct settlement"
+                body="Onboarded to MiCamp Solutions · funded loans settle straight to your bank in 48-72 hours · no aggregator middle layer"
               />
               <Include
-                head="Smart routing + Smartphone continuity"
-                body="HELIX form reshape, ticket-fit routing, secure-link handoff to mobile"
-              />
-              <Include
-                head="ECHO pixel + CAPI"
-                body="Server-side conversion stream to Meta + Google + TikTok on the funded event"
-              />
-              <Include
-                head="VEGA compliance"
-                body="FCRA + ECOA + TILA trail on every decision · adverse-action notices automated"
-              />
-              <Include
-                head="Payment processing"
-                body="Optional, included if you want it · merchant-direct settlement in 48-72 hours"
+                head="Compliance + audit chain"
+                body="EazePay (NMLS #2456701) carries originator licensing · adverse-action notices automated · audit log retained 7 years"
               />
             </div>
           </div>

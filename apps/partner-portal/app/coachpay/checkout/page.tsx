@@ -149,41 +149,45 @@ export default function CoachPayCheckout(): JSX.Element {
           <div className="mpf-container">
             <h2 className="mpf-h2">What activates today</h2>
             <p className="mpf-section-sub">
-              The full CoachPay stack lights up on signing. No phased rollout, no premium-tier
-              gating.
+              Every item below maps to one of the four onboarding modules — full CoachPay stack
+              lights up on signing, no phased rollout or premium-tier gating.
             </p>
             <div className="mpf-includes-grid">
+              {/* 01 · Account setup */}
               <Include
-                head="Pre-qualification agents"
-                body="ORACLE soft-pull bureau check on every prospect · credit · DTI · available credit · card-stack ceiling"
+                head="Branded CoachPay partner portal"
+                body="Full team access · admin + closer roles · per-rep performance · live enrolment data on the prospects you've sent"
               />
               <Include
-                head="EazePay partner portal"
-                body="Full team access · per-closer performance · live enrolment data · 7-year audit log"
+                head="KYB document vault"
+                body="EIN + entity docs uploaded once and reused on every lender file we submit · 7-year audit retention"
+              />
+              {/* 02 · Lender marketplace */}
+              <Include
+                head="Lender panel + card-stack underwriting"
+                body="We submit you to the LendingPoint · Upgrade · Best Egg · Marcus · Lightstream panel plus the 800+ card and BNPL aggregator. Once each lender approves you, they all quote in parallel."
               />
               <Include
-                head="Application submission + tracking"
-                body="Pipeline, decisions, payouts, lender reconciliation · webhook + API access"
+                head="Smart routing + smartphone handoff"
+                body="Ticket-fit routing by program tier · card-stack ceiling for $20k+ enrolments · secure-link handoff to the prospect's phone"
+              />
+              {/* 03 · Smart forms & financial qualification */}
+              <Include
+                head="HighSale CRM + Pixie pixel"
+                body="Every discovery-call soft-pull lands in HighSale as a contact. Pixie streams funnel + funded events to Meta + Google + TikTok for server-side attribution."
               />
               <Include
-                head="Marketplace + card-stacking"
-                body="LendingPoint · Upgrade · Best Egg · Marcus · Lightstream + 800+ cards routed by available credit"
+                head="HELIX smart-form + ORACLE bureau pull"
+                body="Discovery-call soft-pull returns a fundability tier in under 10 seconds · FCRA + ECOA + TILA on every decision · zero credit impact"
+              />
+              {/* 04 · Payment processing */}
+              <Include
+                head="MiCamp merchant-direct settlement"
+                body="Onboarded to MiCamp Solutions · funded enrolments settle straight to your bank in 48-72 hours · no aggregator middle layer"
               />
               <Include
-                head="Smart routing + Smartphone continuity"
-                body="HELIX form reshape, ticket-fit routing, secure-link handoff to mobile"
-              />
-              <Include
-                head="ECHO pixel + CAPI"
-                body="Server-side conversion stream to Meta + Google + TikTok on the funded event"
-              />
-              <Include
-                head="VEGA compliance"
-                body="FCRA + ECOA + TILA trail on every decision · adverse-action notices automated"
-              />
-              <Include
-                head="Payment processing"
-                body="Optional, included if you want it · merchant-direct settlement in 48-72 hours"
+                head="Compliance + audit chain"
+                body="EazePay (NMLS #2456701) carries originator licensing · adverse-action notices automated · audit log retained 7 years"
               />
             </div>
           </div>
