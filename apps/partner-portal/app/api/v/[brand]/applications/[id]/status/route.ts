@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { applications, type ApplicationRow } from '../../../../../../../lib/master-data';
 import { findInviteByApplicationId } from '../../../../../../../lib/consumer-invites-store';
 import { marketplaceLenders } from '../../../../../../../lib/marketplace-data';
+import { requireSession } from '../../../../../../../lib/session';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 
@@ -231,9 +232,17 @@ function progressPctFor(stage: LiveStatus): number {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ brand: string; id: string }> },
 ) {
+  /* Session gate: the live-status endpoint exposes the consumer's
+   * first name + masked last initial. Even though the payload is PII-
+   * minimised, leaking it to unauthenticated callers who can guess an
+   * application id is unacceptable. Require a partner-portal session
+   * before returning anything. */
+  const fail = await requireSession(req);
+  if (fail) return fail;
+
   const { brand, id } = await params;
   const brandParsed = BrandEnum.safeParse(brand);
   if (!brandParsed.success) {

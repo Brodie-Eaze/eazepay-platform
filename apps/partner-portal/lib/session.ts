@@ -149,7 +149,28 @@ export function allowedPartnerIdsForBrand(
   brand: Exclude<BrandCode, 'direct'>,
 ): string[] {
   if (session.mode === 'none') return [];
-  if (session.mode === 'real') return partnersForBrand(brand).map((p) => p.id);
+  if (session.mode === 'real') {
+    /* SEC-101: until the BFF `/v1/me` returns `{ merchantId, brand }`
+     * claims, we have no trustworthy way to scope a real bearer-token
+     * session to one partner. Previously this branch returned the full
+     * partner list for the brand, which is a cross-tenant leak the
+     * moment a second real partner signs in. FAIL CLOSED instead — every
+     * brand-scoped read resolves to "no partners visible" until the BFF
+     * is wired and `session.mode === 'real'` carries `merchantId`.
+     * Operators who need to demo the platform should use the signed
+     * demo cookie presets (HMAC-verified via `readSignedDemoPreset`).
+     */
+    // eslint-disable-next-line no-console
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        event: 'session.real_locked_closed',
+        msg: 'Real session present but BFF /v1/me does not yet return brand+merchantId claims; refusing to expand visibility.',
+        brand,
+      }),
+    );
+    return [];
+  }
   if (session.mode === 'account') {
     // Account sessions are strictly single-partner. Cross-brand
     // requests return empty — no leakage from a teammate's Helio

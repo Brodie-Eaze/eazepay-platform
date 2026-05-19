@@ -25,6 +25,13 @@
  * store. The store itself is keyed per application with the partner
  * attribution stamped at write time and never mutated.
  *
+ * Unattributed applications (consumers who hit /apply/<brand> with no
+ * `?ref=<partnerId>` query) are stamped with the UNATTRIBUTED_PARTNER_ID
+ * sentinel rather than silently rolling onto the first partner in the
+ * brand. The sentinel never matches a real partnerId, so unattributed
+ * rows stay invisible to every partner portal and surface only in the
+ * master admin view for triage.
+ *
  * IMPORTANT: this is mock-grade. In production a real BFF endpoint
  * (`/api/applications?partnerId=…`) must enforce isolation on the
  * server, checking the session cookie's bound merchantId before
@@ -38,6 +45,21 @@
 import type { CreditTier } from './marketplace-data';
 
 const STORAGE_KEY = 'eazepay_submitted_apps_v1';
+
+/**
+ * Sentinel partner-id used when an application reaches `/apply/<brand>`
+ * with no `?ref=<partnerId>` attached. These rows are:
+ *   • visible to master / admin operators for triage
+ *   • NEVER returned by `readSubmittedAppsForPartner(partnerId)` — no
+ *     real partnerId can match the sentinel, so the rows are
+ *     guaranteed to stay out of every partner-scoped portal view.
+ *
+ * In production this is where an unattributed walk-in or a stale
+ * marketing link would surface. Master ops should reattribute these
+ * to a real partner via the admin tools (not yet wired) before they
+ * are counted toward billing / settlement.
+ */
+export const UNATTRIBUTED_PARTNER_ID = '__unattributed__';
 
 export type SubmittedAppBrand = 'medpay' | 'tradepay' | 'coachpay';
 export type SubmittedAppStatus = 'submitted' | 'in_review' | 'approved' | 'funded' | 'declined';
