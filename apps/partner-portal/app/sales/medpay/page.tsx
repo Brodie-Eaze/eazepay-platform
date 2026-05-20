@@ -2399,7 +2399,7 @@ function WelcomeAgenda(): JSX.Element {
         <Reveal delay={120}>
           <h1 className="sld-h1">
             <span className="grad-teal-deep">Here&apos;s what we&apos;ll cover</span>{' '}
-            <span className="grad-teal">in the next 15 minutes.</span>
+            <span className="grad-teal">in the next 45 minutes.</span>
           </h1>
         </Reveal>
         <Reveal delay={240}>
