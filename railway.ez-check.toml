@@ -1,0 +1,32 @@
+# Railway service configuration for the standalone EZ Check app.
+#
+# Separate Railway service from the partner-portal. Only runs the
+# four ez-check routes:
+#
+#   /             marketing landing
+#   /sales        sales presentation deck
+#   /checkout     pricing + agreement + start-onboarding form
+#   /onboarding   3-module post-checkout setup screen
+#
+# Wire-up steps (one-time):
+#   1. railway link --service ez-check    (or create a new service in
+#                                          the Railway dashboard and
+#                                          point it at this repo)
+#   2. In the service settings, set the config file to
+#      `railway.ez-check.toml`.
+#   3. Deploy. Railway sets $PORT; the Next.js standalone server
+#      binds 0.0.0.0:$PORT.
+#   4. Add the desired custom domain (e.g. ezcheck.eazepay.com or
+#      a separate apex like ezcheck.com) on the service's Networking
+#      tab; point the DNS CNAME at the Railway-provided target.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.ez-check"
+
+[deploy]
+startCommand = "node apps/ez-check/server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+healthcheckPath = "/"
+healthcheckTimeout = 30
