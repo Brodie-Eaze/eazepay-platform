@@ -50,7 +50,12 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
-  '/ez-check', // EZ Check pre-qualification product (Checkout/Onboarding/integration-doc)
+  // EZ Check standalone product funnel surfaces. The /ez-check root
+  // integration-doc page stays inside the shell + auth-gated like its
+  // sibling integration intros (/dialerpay, /eaze-ai, etc.); only the
+  // public marketing/onboarding entry points are allowlisted here.
+  '/ez-check/checkout',
+  '/ez-check/onboarding',
 ];
 
 const isPublic = (pathname: string): boolean => {
