@@ -3426,7 +3426,7 @@ const CSS = `
 }
 .sld-tier-a .sld-tier-letter { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
 .sld-tier-b .sld-tier-letter { background: linear-gradient(135deg, #93C5FD, #60A5FA); }
-.sld-tier-c .sld-tier-letter { background: linear-gradient(135deg, #FBBF24, #F59E0B); }
+.sld-tier-c .sld-tier-letter { background: linear-gradient(135deg, #A78BFA, #8B5CF6); }
 .sld-tier-d .sld-tier-letter { background: linear-gradient(135deg, #64748B, #475569); }
 .sld-tier-name {
   font-size: 12px; font-weight: 700;
@@ -3525,8 +3525,8 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   fill: #fff;
 }
 .sld-tree-buyer {
-  fill: #FBBF24;
-  filter: drop-shadow(0 0 6px #FBBF24);
+  fill: #A78BFA;
+  filter: drop-shadow(0 0 6px #A78BFA);
 }
 .sld-tree-legend {
   position: relative; z-index: 2;
@@ -3539,7 +3539,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   display: inline-flex; align-items: center; gap: 8px;
 }
 .sld-tree-legend-dot { width: 9px; height: 9px; border-radius: 999px; }
-.sld-tree-legend-dot-buyer { background: #FBBF24; box-shadow: 0 0 6px #FBBF24; }
+.sld-tree-legend-dot-buyer { background: #A78BFA; box-shadow: 0 0 6px #A78BFA; }
 .sld-tree-legend-dot-edge { background: var(--ezk-blue); box-shadow: 0 0 6px rgba(59, 130, 246, 0.5); }
 
 /* ROUTING PATTERN CARDS — 2x2 grid */
@@ -3662,7 +3662,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
 }
 .sld-persona-a .sld-persona-avatar { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
 .sld-persona-b .sld-persona-avatar { background: linear-gradient(135deg, #93C5FD, #60A5FA); }
-.sld-persona-c .sld-persona-avatar { background: linear-gradient(135deg, #FBBF24, #F59E0B); }
+.sld-persona-c .sld-persona-avatar { background: linear-gradient(135deg, #A78BFA, #8B5CF6); }
 .sld-persona-name {
   font-size: 14px; font-weight: 700;
   color: var(--ezk-ink);
@@ -3683,9 +3683,9 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   text-transform: uppercase;
 }
 .sld-persona-c .sld-persona-tier-pill {
-  color: #B45309;
-  background: rgba(251, 191, 36, 0.14);
-  border-color: rgba(251, 191, 36, 0.35);
+  color: #6D28D9;
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.35);
 }
 .sld-persona-stats {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
@@ -3732,8 +3732,8 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(59, 130, 246, 0.25);
 }
 .sld-persona-path li.is-terminal .sld-persona-path-dot {
-  background: #FBBF24;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(251, 191, 36, 0.35);
+  background: #A78BFA;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(167, 139, 250, 0.35);
 }
 .sld-persona-path-h {
   display: block;
@@ -3755,7 +3755,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   display: flex; flex-direction: column; gap: 2px;
 }
 .sld-persona-c .sld-persona-outcome {
-  background: linear-gradient(135deg, #92400E 0%, #B45309 100%);
+  background: linear-gradient(135deg, #5B21B6 0%, #6D28D9 100%);
 }
 .sld-persona-outcome-tag {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;

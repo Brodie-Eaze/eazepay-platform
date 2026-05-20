@@ -26,6 +26,15 @@ export type EzCheckPalette = {
   accentLight: string;
   /** Deep accent — used in dark gradients + headlines. */
   accentDeep: string;
+  /** Secondary accent — purple. Used for the "alt category" (Tier C
+   *  buyers, masterclass / nurture terminals, the animated buyer-dot
+   *  in the routing tree). Locked to violet so the brand stays in the
+   *  light-blue / navy-blue / purple / white / grey palette only. */
+  purple: string;
+  /** Lighter purple — hover, gradient lighter stop. */
+  purpleLight: string;
+  /** Deeper purple — dark gradients, text on light. */
+  purpleDeep: string;
   /** Surface tint applied to light backgrounds. */
   surfaceTint: string;
   /** Ink — primary text on light. */
@@ -40,14 +49,23 @@ export type EzCheckPalette = {
   lineStrong: string;
 };
 
+/**
+ * Brand palette — light-blue / navy-blue / purple / white / grey only.
+ * Anything outside these five families is off-brand for EZ Check and
+ * should not appear on any surface (landing, sales deck, checkout,
+ * onboarding).
+ */
 export const EZ_CHECK_PALETTE: EzCheckPalette = {
-  accent: '#3B82F6',
-  accentLight: '#60A5FA',
-  accentDeep: '#1E3A8A',
-  surfaceTint: '#F0F9FF',
-  ink: '#0F172A',
-  ink2: '#1E293B',
-  mute: '#64748B',
+  accent: '#3B82F6', // light blue — primary
+  accentLight: '#60A5FA', // light blue — lighter
+  accentDeep: '#1E3A8A', // navy blue — deep
+  purple: '#8B5CF6', // violet-500
+  purpleLight: '#A78BFA', // violet-400
+  purpleDeep: '#5B21B6', // violet-800
+  surfaceTint: '#F0F9FF', // near-white wash
+  ink: '#0F172A', // slate-900 (acts as near-black)
+  ink2: '#1E293B', // slate-800
+  mute: '#64748B', // slate-500 (grey)
   line: 'rgba(59, 130, 246, 0.12)',
   lineStrong: 'rgba(59, 130, 246, 0.22)',
 };
