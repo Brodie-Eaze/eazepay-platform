@@ -211,14 +211,27 @@ const ROUTING_PATTERNS: Array<{
  * and follow three different paths. Used to make the multi-hop story
  * concrete in a single visual.
  */
+/**
+ * Persona walkthroughs — three buyers, three paths.
+ *
+ * Each persona now carries the full pre-qual payload (credit / available /
+ * DTI / annual income / consumer-direct funding + BMPO + pre-approved /
+ * merchant-direct funding + BMPO + pre-approved / decline reason) so the
+ * cards mirror what the operator actually sees in their admin console.
+ */
 const PERSONAS: Array<{
   name: string;
   initials: string;
   tier: 'A' | 'B' | 'C';
   source: string;
-  score: string;
-  income: string;
-  budget: string;
+  /** Top-line buyer signals — surfaced as a 4-up at the top of the card. */
+  signals: { creditScore: string; availableCredit: string; dti: string; income: string };
+  /** Consumer-direct funding rail. */
+  consumer: { preApproved: boolean; estimate: string; bmpo: string };
+  /** Merchant-direct funding rail. */
+  merchant: { preApproved: boolean; estimate: string; bmpo: string };
+  /** Decline reason — em-dash when no decline. */
+  decline: string;
   path: Array<{ h: string; b: string }>;
   outcomeTag: string;
   outcome: string;
@@ -228,14 +241,15 @@ const PERSONAS: Array<{
     initials: 'JM',
     tier: 'A',
     source: 'Meta · creative #042',
-    score: '724',
-    income: '$98k',
-    budget: '$15k',
+    signals: { creditScore: '724', availableCredit: '$12.4k', dti: '22%', income: '$98k' },
+    consumer: { preApproved: true, estimate: '$14,200', bmpo: '$295/mo · 60 mo' },
+    merchant: { preApproved: true, estimate: '$18,500', bmpo: '$342/mo · 60 mo' },
+    decline: '—',
     path: [
       { h: 'Form submit', b: 'Answered 4 of 6 fast-path questions in 41s' },
-      { h: 'Budget gate', b: '$15k ≥ $10k threshold → continue' },
-      { h: 'ORACLE pull', b: 'Soft-pull 724 · income $98k · DTI 22%' },
-      { h: 'Tier composite', b: 'Tier A · top decile' },
+      { h: 'Budget gate', b: '$15k stated → continue' },
+      { h: 'ORACLE pull', b: '3 signals returned in 2.8s' },
+      { h: 'Tier composite', b: 'Tier A · top decile · both rails pre-approved' },
       { h: 'Routed to calendar', b: 'Sarah · senior closer · Thu 2:00 PM' },
     ],
     outcomeTag: 'CALENDAR',
@@ -246,35 +260,37 @@ const PERSONAS: Array<{
     initials: 'AS',
     tier: 'B',
     source: 'Google · "best coaching for ..."',
-    score: '688',
-    income: '$72k',
-    budget: '$8k',
+    signals: { creditScore: '688', availableCredit: '$7.2k', dti: '31%', income: '$72k' },
+    consumer: { preApproved: true, estimate: '$8,400', bmpo: '$198/mo · 60 mo' },
+    merchant: { preApproved: true, estimate: '$11,200', bmpo: '$238/mo · 60 mo' },
+    decline: '—',
     path: [
-      { h: 'Form submit', b: 'Answered full 6-field path; reviews-flow variant' },
-      { h: 'Budget gate', b: '$8k < $10k threshold → masterclass route' },
-      { h: 'Intent check', b: '2nd-visit flag + downloaded comparison guide' },
-      { h: 'Routed to masterclass', b: 'Invite to live workshop · 30-day re-pull scheduled' },
+      { h: 'Form submit', b: 'Answered full 6-field path · reviews-flow variant' },
+      { h: 'Budget gate', b: '$8k below high-ticket threshold → masterclass route' },
+      { h: 'ORACLE pull', b: 'Both rails pre-approved · stated budget under threshold' },
+      { h: 'Routed to masterclass', b: 'Live workshop · 30-day re-pull scheduled' },
     ],
     outcomeTag: 'MASTERCLASS',
-    outcome: 'Live workshop seat · auto re-pull in 30 days for tier upgrade check',
+    outcome: 'Live workshop seat · 30-day re-pull to upgrade tier',
   },
   {
     name: 'Casey R.',
     initials: 'CR',
     tier: 'C',
     source: 'Affiliate · partner #018',
-    score: '598',
-    income: '$44k',
-    budget: '$3k',
+    signals: { creditScore: '598', availableCredit: '$1.2k', dti: '51%', income: '$44k' },
+    consumer: { preApproved: false, estimate: '$0', bmpo: '—' },
+    merchant: { preApproved: true, estimate: '$3,500', bmpo: '$98/mo · 48 mo' },
+    decline: 'Consumer-direct lenders require DTI < 45%',
     path: [
-      { h: 'Form submit', b: 'Bailed at field 3, recovered via resume-link email 6h later' },
+      { h: 'Form submit', b: 'Bailed at field 3 · recovered via resume-link email 6h later' },
       { h: 'Budget gate', b: '$3k below threshold → low-ticket flow' },
-      { h: 'ORACLE pull', b: 'Soft-pull 598 · income $44k · DTI 51%' },
-      { h: 'Tier composite', b: 'Tier C · not fundability-clean today' },
-      { h: 'Routed to nurture', b: 'Free guide sequence + 90-day re-pull queued' },
+      { h: 'ORACLE pull', b: 'Consumer-direct declined · merchant-direct still available' },
+      { h: 'Tier composite', b: 'Tier C · partial fundability via merchant-direct only' },
+      { h: 'Routed to nurture', b: 'Free guide + 90-day re-pull · low-ticket merchant offer' },
     ],
     outcomeTag: 'NURTURE',
-    outcome: 'Closer never touched the lead · re-evaluated in 90 days for tier change',
+    outcome: 'Closer never touched the lead · merchant-direct keeps the option open',
   },
 ];
 
@@ -956,18 +972,82 @@ export default function EzCheckLanding(): JSX.Element {
                       </div>
                       <div className="ezl-persona-tier-pill">Tier {p.tier}</div>
                     </div>
-                    <div className="ezl-persona-stats">
-                      <div className="ezl-persona-stat">
-                        <span className="ezl-persona-stat-k">Score</span>
-                        <span className="ezl-persona-stat-v">{p.score}</span>
+                    <div className="ezl-persona-signals">
+                      <div className="ezl-persona-signal">
+                        <span className="ezl-persona-signal-k">Credit</span>
+                        <span className="ezl-persona-signal-v">{p.signals.creditScore}</span>
                       </div>
-                      <div className="ezl-persona-stat">
-                        <span className="ezl-persona-stat-k">Income</span>
-                        <span className="ezl-persona-stat-v">{p.income}</span>
+                      <div className="ezl-persona-signal">
+                        <span className="ezl-persona-signal-k">Available</span>
+                        <span className="ezl-persona-signal-v">{p.signals.availableCredit}</span>
                       </div>
-                      <div className="ezl-persona-stat">
-                        <span className="ezl-persona-stat-k">Budget</span>
-                        <span className="ezl-persona-stat-v">{p.budget}</span>
+                      <div className="ezl-persona-signal">
+                        <span className="ezl-persona-signal-k">DTI</span>
+                        <span className="ezl-persona-signal-v">{p.signals.dti}</span>
+                      </div>
+                      <div className="ezl-persona-signal">
+                        <span className="ezl-persona-signal-k">Income</span>
+                        <span className="ezl-persona-signal-v">{p.signals.income}</span>
+                      </div>
+                    </div>
+                    <div className="ezl-persona-funding">
+                      <div className="ezl-persona-funding-row">
+                        <div className="ezl-persona-funding-l">
+                          <span
+                            className={`ezl-persona-funding-check ${
+                              p.consumer.preApproved ? 'is-approved' : 'is-declined'
+                            }`}
+                            aria-hidden
+                          >
+                            {p.consumer.preApproved ? '✓' : '×'}
+                          </span>
+                          <span className="ezl-persona-funding-label">Consumer-direct</span>
+                        </div>
+                        <div className="ezl-persona-funding-r">
+                          <span className="ezl-persona-funding-amt">{p.consumer.estimate}</span>
+                          <span
+                            className={`ezl-persona-funding-flag ${
+                              p.consumer.preApproved ? 'is-approved' : 'is-declined'
+                            }`}
+                          >
+                            {p.consumer.preApproved ? 'Pre-approved' : 'Declined'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ezl-persona-bmpo">
+                        <span className="ezl-persona-bmpo-k">BMPO</span>
+                        <span className="ezl-persona-bmpo-v">{p.consumer.bmpo}</span>
+                      </div>
+                      <div className="ezl-persona-funding-row">
+                        <div className="ezl-persona-funding-l">
+                          <span
+                            className={`ezl-persona-funding-check ${
+                              p.merchant.preApproved ? 'is-approved' : 'is-declined'
+                            }`}
+                            aria-hidden
+                          >
+                            {p.merchant.preApproved ? '✓' : '×'}
+                          </span>
+                          <span className="ezl-persona-funding-label">Merchant-direct</span>
+                        </div>
+                        <div className="ezl-persona-funding-r">
+                          <span className="ezl-persona-funding-amt">{p.merchant.estimate}</span>
+                          <span
+                            className={`ezl-persona-funding-flag ${
+                              p.merchant.preApproved ? 'is-approved' : 'is-declined'
+                            }`}
+                          >
+                            {p.merchant.preApproved ? 'Pre-approved' : 'Declined'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ezl-persona-bmpo">
+                        <span className="ezl-persona-bmpo-k">BMPO</span>
+                        <span className="ezl-persona-bmpo-v">{p.merchant.bmpo}</span>
+                      </div>
+                      <div className="ezl-persona-decline">
+                        <span className="ezl-persona-decline-k">Decline reason</span>
+                        <span className="ezl-persona-decline-v">{p.decline}</span>
                       </div>
                     </div>
                     <ol className="ezl-persona-path">
@@ -1225,52 +1305,105 @@ function ParticleField({ count = 22 }: { count?: number }): JSX.Element {
   );
 }
 
-/** 3D-tilted mock card showing "a qualified buyer just landed on the
- *  closer's calendar" — the visual money-shot for the hero. */
+/**
+ * 3D-tilted result card — the visual money-shot for the hero.
+ *
+ * Shows the FULL pre-qual payload that lands in the operator's admin
+ * console the second a buyer hits submit:
+ *
+ *   • Credit score · available credit · DTI · annual income
+ *   • Consumer-direct funding estimate + pre-approved flag + BMPO
+ *   • Merchant-direct funding estimate + pre-approved flag + BMPO
+ *   • Decline reason (if any — Tier-A buyers have none)
+ *   • Calendar routing destination
+ *
+ * BMPO = Best Monthly Payment Offer — the lowest monthly the buyer
+ * could lock under each funding rail. Shown directly under the
+ * corresponding funding line, above the decline-reason row.
+ */
 function CalendarLandedMock(): JSX.Element {
   return (
-    <div className="ezl-mock">
-      <div className="ezl-mock-head">
-        <span className="ezl-mock-pill">
-          <span className="ezl-mock-pill-dot" /> Qualified · routed
+    <div className="ezl-result">
+      <div className="ezl-result-head">
+        <span className="ezl-result-pill">
+          <span className="ezl-result-pill-dot" />
+          Pre-qual result · 2.8s
         </span>
-        <span className="ezl-mock-meta">Illustrative</span>
+        <span className="ezl-result-meta">Illustrative</span>
       </div>
-      <div className="ezl-mock-project">Inbound buyer · pre-qualified</div>
-      <div className="ezl-mock-name">
-        Jordan M.
-        <span className="ezl-mock-name-sub">Tier A · budget verified</span>
-      </div>
-      <div className="ezl-mock-rows">
+
+      <div className="ezl-result-buyer">
         <div>
-          <div className="ezl-mock-k">Score</div>
-          <div className="ezl-mock-v">724 · soft pull</div>
+          <div className="ezl-result-buyer-tag">INBOUND BUYER · PRE-QUALIFIED</div>
+          <div className="ezl-result-buyer-name">Jordan M.</div>
         </div>
-        <div>
-          <div className="ezl-mock-k">Income</div>
-          <div className="ezl-mock-v">$98k verified</div>
-        </div>
-        <div>
-          <div className="ezl-mock-k">Calendar</div>
-          <div className="ezl-mock-v">Sarah · Thu 2:00 PM</div>
-        </div>
-        <div>
-          <div className="ezl-mock-k">Source</div>
-          <div className="ezl-mock-v">meta_advantage</div>
+        <div className="ezl-result-tier-badge">
+          <span className="ezl-result-tier-letter">A</span>
+          <span className="ezl-result-tier-name">Tier · verified</span>
         </div>
       </div>
-      <div className="ezl-mock-bar">
-        <div className="ezl-mock-bar-fill" />
+
+      <div className="ezl-result-signals">
+        <div className="ezl-result-signal">
+          <span className="ezl-result-signal-k">Credit score</span>
+          <span className="ezl-result-signal-v">724</span>
+        </div>
+        <div className="ezl-result-signal">
+          <span className="ezl-result-signal-k">Available credit</span>
+          <span className="ezl-result-signal-v">$12.4k</span>
+        </div>
+        <div className="ezl-result-signal">
+          <span className="ezl-result-signal-k">DTI</span>
+          <span className="ezl-result-signal-v">22%</span>
+        </div>
+        <div className="ezl-result-signal">
+          <span className="ezl-result-signal-k">Annual income</span>
+          <span className="ezl-result-signal-v">$98k</span>
+        </div>
       </div>
-      <div className="ezl-mock-stages">
-        <span className="on">Form</span>
-        <span className="on">Soft pull</span>
-        <span className="on">Score</span>
-        <span className="cur">Calendar</span>
-        <span>Closer</span>
+
+      <div className="ezl-result-funding-head">FUNDING ESTIMATES</div>
+
+      <div className="ezl-result-funding-row">
+        <div className="ezl-result-funding-row-l">
+          <span className="ezl-result-funding-check is-approved" aria-hidden>
+            ✓
+          </span>
+          <span className="ezl-result-funding-label">Consumer-direct</span>
+        </div>
+        <div className="ezl-result-funding-row-r">
+          <span className="ezl-result-funding-amt">$14,200</span>
+          <span className="ezl-result-funding-flag is-approved">Pre-approved</span>
+        </div>
       </div>
-      <div className="ezl-mock-cta">Routed to calendar →</div>
-      <div className="ezl-mock-foot">FCRA soft pull · 0 impact · audit log retained 7 yrs</div>
+      <div className="ezl-result-bmpo">
+        <span className="ezl-result-bmpo-k">BMPO</span>
+        <span className="ezl-result-bmpo-v">$295/mo · 60 mo</span>
+      </div>
+
+      <div className="ezl-result-funding-row">
+        <div className="ezl-result-funding-row-l">
+          <span className="ezl-result-funding-check is-approved" aria-hidden>
+            ✓
+          </span>
+          <span className="ezl-result-funding-label">Merchant-direct</span>
+        </div>
+        <div className="ezl-result-funding-row-r">
+          <span className="ezl-result-funding-amt">$18,500</span>
+          <span className="ezl-result-funding-flag is-approved">Pre-approved</span>
+        </div>
+      </div>
+      <div className="ezl-result-bmpo">
+        <span className="ezl-result-bmpo-k">BMPO</span>
+        <span className="ezl-result-bmpo-v">$342/mo · 60 mo</span>
+      </div>
+
+      <div className="ezl-result-decline">
+        <span className="ezl-result-decline-k">Decline reason</span>
+        <span className="ezl-result-decline-v">—</span>
+      </div>
+
+      <div className="ezl-result-footer">Routed → Sarah · Thu 2:00 PM</div>
     </div>
   );
 }
@@ -3034,6 +3167,132 @@ const CSS = `
   color: var(--ezk-ink);
   font-variant-numeric: tabular-nums;
 }
+
+/* PERSONA SIGNALS GRID — 4-up financial signals row */
+.ezl-persona-signals {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 14px 0 12px;
+  background: var(--ezk-line);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ezk-line);
+}
+.ezl-persona-signal {
+  background: rgba(255, 255, 255, 0.96);
+  padding: 10px 4px;
+  display: flex; flex-direction: column; gap: 3px; align-items: center;
+  text-align: center;
+}
+.ezl-persona-signal-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-persona-signal-v {
+  font-size: 14px; font-weight: 800;
+  letter-spacing: -0.014em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* PERSONA FUNDING ROWS (consumer + merchant) + BMPO + decline */
+.ezl-persona-funding {
+  padding: 12px 14px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid var(--ezk-line);
+  border-radius: 10px;
+  margin-bottom: 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.ezl-persona-funding-row {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ezl-persona-funding-l {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.ezl-persona-funding-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  font-size: 10px; font-weight: 700;
+}
+.ezl-persona-funding-check.is-approved {
+  background: rgba(96, 165, 250, 0.22);
+  color: var(--ezk-blue);
+}
+.ezl-persona-funding-check.is-declined {
+  background: rgba(167, 139, 250, 0.22);
+  color: #6D28D9;
+}
+.ezl-persona-funding-label {
+  font-size: 12.5px; font-weight: 600;
+  color: var(--ezk-ink);
+}
+.ezl-persona-funding-r { display: inline-flex; align-items: center; gap: 8px; }
+.ezl-persona-funding-amt {
+  font-size: 13.5px; font-weight: 700;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ezl-persona-funding-flag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.12em; font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+.ezl-persona-funding-flag.is-approved {
+  background: rgba(96, 165, 250, 0.16);
+  color: var(--ezk-blue);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.ezl-persona-funding-flag.is-declined {
+  background: rgba(167, 139, 250, 0.16);
+  color: #6D28D9;
+  border: 1px solid rgba(167, 139, 250, 0.34);
+}
+.ezl-persona-bmpo {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-left: 24px;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.06);
+  border-left: 2px solid rgba(96, 165, 250, 0.45);
+  border-radius: 0 5px 5px 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px;
+}
+.ezl-persona-bmpo-k {
+  color: var(--ezk-mute);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ezl-persona-bmpo-v {
+  color: var(--ezk-blue);
+  font-weight: 700;
+}
+.ezl-persona-decline {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--ezk-line);
+  gap: 10px;
+}
+.ezl-persona-decline-k {
+  flex-shrink: 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-persona-decline-v {
+  font-size: 11.5px; line-height: 1.4;
+  color: var(--ezk-ink-2);
+  font-weight: 600;
+  text-align: right;
+}
 .ezl-persona-path {
   list-style: none; padding: 0; margin: 0 0 14px;
   display: flex; flex-direction: column;
@@ -3102,6 +3361,261 @@ const CSS = `
   .ezl-routing-callouts { grid-template-columns: 1fr; }
   .ezl-patterns-grid { grid-template-columns: 1fr; }
   .ezl-personas-grid { grid-template-columns: 1fr; }
+}
+
+/* ========================== PRE-QUAL RESULT MOCK ========================== */
+/* The hero "3D" card on the landing page. Replaces the older, sparser
+ * Calendar-landed mock with the full pre-qual payload that lands in
+ * the admin console the second a buyer hits submit:
+ *   credit score · available credit · DTI · annual income ·
+ *   consumer-direct funding + BMPO + pre-approved flag ·
+ *   merchant-direct funding + BMPO + pre-approved flag ·
+ *   decline reason · calendar route.
+ */
+.ezl-result {
+  position: relative;
+  width: 480px;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
+    rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 26px;
+  padding: 24px;
+  box-shadow:
+    0 60px 110px -50px rgba(59, 130, 246, 0.55),
+    0 30px 60px -30px rgba(59, 130, 246, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  overflow: hidden;
+}
+.ezl-result::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.55), transparent);
+}
+
+/* HEAD */
+.ezl-result-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ezk-line);
+}
+.ezl-result-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+  padding: 5px 11px;
+  background: rgba(96, 165, 250, 0.14);
+  border-radius: 999px;
+}
+.ezl-result-pill-dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: var(--ezk-blue-2);
+  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.55);
+  animation: ezlPulse 1.6s ease-in-out infinite;
+}
+.ezl-result-meta {
+  font-size: 9px; letter-spacing: 0.18em;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 6px;
+}
+
+/* BUYER ROW */
+.ezl-result-buyer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 16px;
+}
+.ezl-result-buyer-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-result-buyer-name {
+  margin-top: 4px;
+  font-size: 28px; font-weight: 800;
+  letter-spacing: -0.026em;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ezl-result-tier-badge {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  border-radius: 14px;
+  color: #fff;
+  box-shadow: 0 8px 24px -8px rgba(59, 130, 246, 0.55);
+}
+.ezl-result-tier-badge.is-tier-c {
+  background: linear-gradient(135deg, var(--ezk-purple-deep, #5B21B6) 0%, var(--ezk-purple, #8B5CF6) 100%);
+  box-shadow: 0 8px 24px -8px rgba(139, 92, 246, 0.55);
+}
+.ezl-result-tier-letter {
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.ezl-result-tier-name {
+  margin-top: 2px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* SIGNALS GRID — 4 columns */
+.ezl-result-signals {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: 16px;
+  background: var(--ezk-line);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--ezk-line);
+}
+.ezl-result-signal {
+  background: rgba(255, 255, 255, 0.96);
+  padding: 12px 8px;
+  display: flex; flex-direction: column; gap: 4px;
+  align-items: center;
+  text-align: center;
+}
+.ezl-result-signal-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-result-signal-v {
+  font-size: 18px; font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* FUNDING ESTIMATES */
+.ezl-result-funding-head {
+  margin-top: 18px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-result-funding-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px;
+}
+.ezl-result-funding-row-l {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.ezl-result-funding-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+}
+.ezl-result-funding-check.is-approved {
+  background: rgba(96, 165, 250, 0.20);
+  color: var(--ezk-blue);
+}
+.ezl-result-funding-check.is-declined {
+  background: rgba(167, 139, 250, 0.22);
+  color: #6D28D9;
+}
+.ezl-result-funding-label {
+  font-size: 14px; font-weight: 600;
+  color: var(--ezk-ink);
+}
+.ezl-result-funding-row-r {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.ezl-result-funding-amt {
+  font-size: 16px; font-weight: 700;
+  letter-spacing: -0.018em;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ezl-result-funding-flag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.14em; font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+.ezl-result-funding-flag.is-approved {
+  background: rgba(96, 165, 250, 0.16);
+  color: var(--ezk-blue);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.ezl-result-funding-flag.is-declined {
+  background: rgba(167, 139, 250, 0.16);
+  color: #6D28D9;
+  border: 1px solid rgba(167, 139, 250, 0.34);
+}
+
+.ezl-result-bmpo {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-left: 28px;
+  margin-top: 4px;
+  padding: 6px 12px;
+  background: rgba(59, 130, 246, 0.04);
+  border-left: 2px solid rgba(96, 165, 250, 0.45);
+  border-radius: 0 6px 6px 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px;
+}
+.ezl-result-bmpo-k {
+  color: var(--ezk-mute);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ezl-result-bmpo-v {
+  color: var(--ezk-blue);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.ezl-result-bmpo.is-empty .ezl-result-bmpo-v { color: var(--ezk-mute); font-weight: 400; }
+
+/* DECLINE REASON */
+.ezl-result-decline {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ezk-line);
+  gap: 14px;
+}
+.ezl-result-decline-k {
+  flex-shrink: 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-result-decline-v {
+  font-size: 12.5px;
+  color: var(--ezk-ink-2);
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* FOOTER */
+.ezl-result-footer {
+  margin-top: 16px;
+  padding: 13px 16px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 28px -12px rgba(59, 130, 246, 0.55);
 }
 
 /* ========================== DARK-SECTION CARD VARIANTS ==================== */
@@ -3219,6 +3733,52 @@ const CSS = `
 }
 .ezl-section-dark .ezl-persona-stat-k { color: rgba(238, 242, 248, 0.55); }
 .ezl-section-dark .ezl-persona-stat-v { color: #fff; }
+.ezl-section-dark .ezl-persona-signals {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.20);
+}
+.ezl-section-dark .ezl-persona-signal {
+  background: rgba(15, 23, 42, 0.55);
+}
+.ezl-section-dark .ezl-persona-signal-k { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-persona-signal-v {
+  background: linear-gradient(135deg, #fff 0%, var(--ezk-blue-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.ezl-section-dark .ezl-persona-funding {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.20);
+}
+.ezl-section-dark .ezl-persona-funding-label { color: #fff; }
+.ezl-section-dark .ezl-persona-funding-amt { color: #fff; }
+.ezl-section-dark .ezl-persona-funding-check.is-approved {
+  background: rgba(96, 165, 250, 0.28);
+}
+.ezl-section-dark .ezl-persona-funding-check.is-declined {
+  background: rgba(167, 139, 250, 0.28);
+  color: #C7D2FE;
+}
+.ezl-section-dark .ezl-persona-funding-flag.is-approved {
+  background: rgba(96, 165, 250, 0.22);
+  border-color: rgba(96, 165, 250, 0.40);
+  color: var(--ezk-blue-2);
+}
+.ezl-section-dark .ezl-persona-funding-flag.is-declined {
+  background: rgba(167, 139, 250, 0.22);
+  border-color: rgba(167, 139, 250, 0.40);
+  color: #C7D2FE;
+}
+.ezl-section-dark .ezl-persona-bmpo {
+  background: rgba(96, 165, 250, 0.10);
+  border-left-color: rgba(96, 165, 250, 0.55);
+}
+.ezl-section-dark .ezl-persona-bmpo-k { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-persona-bmpo-v { color: var(--ezk-blue-2); }
+.ezl-section-dark .ezl-persona-decline {
+  border-top: 1px dashed rgba(96, 165, 250, 0.20);
+}
+.ezl-section-dark .ezl-persona-decline-k { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-persona-decline-v { color: rgba(238, 242, 248, 0.85); }
 .ezl-section-dark .ezl-persona-path li {
   border-left-color: rgba(96, 165, 250, 0.35);
 }

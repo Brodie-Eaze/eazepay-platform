@@ -926,43 +926,101 @@ function TiltCard({ children }: { children: React.ReactNode }): JSX.Element {
   );
 }
 
-/** Mock — qualified buyer landed on closer calendar. The hero card. */
+/**
+ * Pre-qual result mock — sales-deck variant of the landing hero card.
+ *
+ * Same rich data payload (credit · DTI · income · consumer-direct +
+ * merchant-direct funding estimates with BMPO · decline reason · route)
+ * but rendered as a presentation-style results panel rather than the
+ * landing's app-screen look — different chrome on purpose so the
+ * landing page and the deck don't feel like duplicate surfaces.
+ *
+ * BMPO = Best Monthly Payment Offer, sat directly under each funding
+ * line + above the decline-reason row.
+ */
 function CalendarLandedMock(): JSX.Element {
   return (
-    <div className="sld-mock">
-      <div className="sld-mock-head">
-        <span className="sld-mock-pill">
-          <span className="sld-mock-pill-dot" /> Qualified · routed
+    <div className="sld-result">
+      <div className="sld-result-head">
+        <span className="sld-result-pill">
+          <span className="sld-result-pill-dot" />
+          Pre-qual result · 2.8s
         </span>
-        <span className="sld-mock-meta">Illustrative</span>
+        <span className="sld-result-meta">Illustrative</span>
       </div>
-      <div className="sld-mock-project">Inbound buyer · pre-qualified</div>
-      <div className="sld-mock-amount">
-        Jordan M.
-        <span className="sld-mock-amount-sub">Tier A · verified</span>
-      </div>
-      <div className="sld-mock-rows">
+
+      <div className="sld-result-buyer">
         <div>
-          <div className="sld-mock-k">Score</div>
-          <div className="sld-mock-v">724 · soft pull</div>
+          <div className="sld-result-buyer-tag">INBOUND BUYER · PRE-QUALIFIED</div>
+          <div className="sld-result-buyer-name">Jordan M.</div>
         </div>
-        <div>
-          <div className="sld-mock-k">Income</div>
-          <div className="sld-mock-v">$98k verified</div>
+        <div className="sld-result-tier-badge">
+          <span className="sld-result-tier-letter">A</span>
+          <span className="sld-result-tier-name">Tier · verified</span>
         </div>
       </div>
-      <div className="sld-mock-bar">
-        <div className="sld-mock-bar-fill" />
+
+      <div className="sld-result-signals">
+        <div className="sld-result-signal">
+          <span className="sld-result-signal-k">Credit score</span>
+          <span className="sld-result-signal-v">724</span>
+        </div>
+        <div className="sld-result-signal">
+          <span className="sld-result-signal-k">Available credit</span>
+          <span className="sld-result-signal-v">$12.4k</span>
+        </div>
+        <div className="sld-result-signal">
+          <span className="sld-result-signal-k">DTI</span>
+          <span className="sld-result-signal-v">22%</span>
+        </div>
+        <div className="sld-result-signal">
+          <span className="sld-result-signal-k">Annual income</span>
+          <span className="sld-result-signal-v">$98k</span>
+        </div>
       </div>
-      <div className="sld-mock-stages">
-        <span className="on">Form</span>
-        <span className="on">Soft pull</span>
-        <span className="on">Score</span>
-        <span className="cur">Calendar</span>
-        <span>Closer</span>
+
+      <div className="sld-result-funding-head">FUNDING ESTIMATES</div>
+
+      <div className="sld-result-funding-row">
+        <div className="sld-result-funding-row-l">
+          <span className="sld-result-funding-check is-approved" aria-hidden>
+            ✓
+          </span>
+          <span className="sld-result-funding-label">Consumer-direct</span>
+        </div>
+        <div className="sld-result-funding-row-r">
+          <span className="sld-result-funding-amt">$14,200</span>
+          <span className="sld-result-funding-flag is-approved">Pre-approved</span>
+        </div>
       </div>
-      <div className="sld-mock-cta">Booked · Sarah · Thu 2:00 PM →</div>
-      <div className="sld-mock-foot">FCRA soft pull · 0 impact · 7-yr audit log</div>
+      <div className="sld-result-bmpo">
+        <span className="sld-result-bmpo-k">BMPO</span>
+        <span className="sld-result-bmpo-v">$295/mo · 60 mo</span>
+      </div>
+
+      <div className="sld-result-funding-row">
+        <div className="sld-result-funding-row-l">
+          <span className="sld-result-funding-check is-approved" aria-hidden>
+            ✓
+          </span>
+          <span className="sld-result-funding-label">Merchant-direct</span>
+        </div>
+        <div className="sld-result-funding-row-r">
+          <span className="sld-result-funding-amt">$18,500</span>
+          <span className="sld-result-funding-flag is-approved">Pre-approved</span>
+        </div>
+      </div>
+      <div className="sld-result-bmpo">
+        <span className="sld-result-bmpo-k">BMPO</span>
+        <span className="sld-result-bmpo-v">$342/mo · 60 mo</span>
+      </div>
+
+      <div className="sld-result-decline">
+        <span className="sld-result-decline-k">Decline reason</span>
+        <span className="sld-result-decline-v">—</span>
+      </div>
+
+      <div className="sld-result-footer">Routed → Sarah · Thu 2:00 PM</div>
     </div>
   );
 }
@@ -1690,14 +1748,18 @@ function RoutingPatternsGrid(): JSX.Element {
 
 /** Persona walkthroughs — 3 buyer journeys side-by-side. */
 function PersonasStrip(): JSX.Element {
+  // Same rich pre-qual payload the landing-page persona cards carry —
+  // credit / available / DTI / income / consumer + merchant direct
+  // funding (with BMPO + pre-approved flags) / decline reason.
   const PERSONAS: Array<{
     name: string;
     initials: string;
     tier: 'A' | 'B' | 'C';
     source: string;
-    score: string;
-    income: string;
-    budget: string;
+    signals: { creditScore: string; availableCredit: string; dti: string; income: string };
+    consumer: { preApproved: boolean; estimate: string; bmpo: string };
+    merchant: { preApproved: boolean; estimate: string; bmpo: string };
+    decline: string;
     path: Array<{ h: string; b: string }>;
     outcomeTag: string;
     outcome: string;
@@ -1707,13 +1769,14 @@ function PersonasStrip(): JSX.Element {
       initials: 'JM',
       tier: 'A',
       source: 'Meta · creative #042',
-      score: '724',
-      income: '$98k',
-      budget: '$15k',
+      signals: { creditScore: '724', availableCredit: '$12.4k', dti: '22%', income: '$98k' },
+      consumer: { preApproved: true, estimate: '$14,200', bmpo: '$295/mo · 60 mo' },
+      merchant: { preApproved: true, estimate: '$18,500', bmpo: '$342/mo · 60 mo' },
+      decline: '—',
       path: [
-        { h: 'Form submit', b: 'Answered 4 of 6 fast-path questions in 41s' },
-        { h: 'Budget gate', b: '$15k ≥ $10k → continue' },
-        { h: 'ORACLE pull', b: '724 · income $98k · DTI 22%' },
+        { h: 'Form submit', b: '4 of 6 fast-path questions in 41s' },
+        { h: 'Budget gate', b: '$15k stated → continue' },
+        { h: 'ORACLE pull', b: '3 signals back in 2.8s · both rails pre-approved' },
         { h: 'Tier composite', b: 'Tier A · top decile' },
         { h: 'Routed', b: 'Senior closer · Thu 2:00 PM' },
       ],
@@ -1725,13 +1788,14 @@ function PersonasStrip(): JSX.Element {
       initials: 'AS',
       tier: 'B',
       source: 'Google · best-coaching search',
-      score: '688',
-      income: '$72k',
-      budget: '$8k',
+      signals: { creditScore: '688', availableCredit: '$7.2k', dti: '31%', income: '$72k' },
+      consumer: { preApproved: true, estimate: '$8,400', bmpo: '$198/mo · 60 mo' },
+      merchant: { preApproved: true, estimate: '$11,200', bmpo: '$238/mo · 60 mo' },
+      decline: '—',
       path: [
         { h: 'Form submit', b: 'Reviews-flow variant · 6 fields' },
-        { h: 'Budget gate', b: '$8k < $10k → masterclass route' },
-        { h: 'Intent check', b: '2nd-visit + downloaded comparison' },
+        { h: 'Budget gate', b: '$8k < high-ticket → masterclass route' },
+        { h: 'ORACLE pull', b: 'Both rails approved · stated budget under threshold' },
         { h: 'Routed', b: 'Live workshop · 30-day re-pull' },
       ],
       outcomeTag: 'MASTERCLASS',
@@ -1742,18 +1806,19 @@ function PersonasStrip(): JSX.Element {
       initials: 'CR',
       tier: 'C',
       source: 'Affiliate · partner #018',
-      score: '598',
-      income: '$44k',
-      budget: '$3k',
+      signals: { creditScore: '598', availableCredit: '$1.2k', dti: '51%', income: '$44k' },
+      consumer: { preApproved: false, estimate: '$0', bmpo: '—' },
+      merchant: { preApproved: true, estimate: '$3,500', bmpo: '$98/mo · 48 mo' },
+      decline: 'Consumer-direct lenders require DTI < 45%',
       path: [
-        { h: 'Form submit', b: 'Bailed at field 3 · recovered 6h later via resume link' },
+        { h: 'Form submit', b: 'Bailed at field 3 · recovered 6h later' },
         { h: 'Budget gate', b: '$3k < threshold → low-ticket flow' },
-        { h: 'ORACLE pull', b: '598 · income $44k · DTI 51%' },
-        { h: 'Tier composite', b: 'Tier C · not fundable today' },
-        { h: 'Routed', b: 'Free-guide sequence · 90-day re-pull' },
+        { h: 'ORACLE pull', b: 'Consumer-direct declined · merchant-direct still open' },
+        { h: 'Tier composite', b: 'Tier C · partial via merchant-direct' },
+        { h: 'Routed', b: 'Free-guide + 90-day re-pull · merchant offer kept' },
       ],
       outcomeTag: 'NURTURE',
-      outcome: 'Never touched closer · re-evaluated in 90 days',
+      outcome: 'Never touched closer · merchant-direct kept the option open',
     },
   ];
   return (
@@ -1768,18 +1833,82 @@ function PersonasStrip(): JSX.Element {
             </div>
             <div className="sld-persona-tier-pill">Tier {p.tier}</div>
           </div>
-          <div className="sld-persona-stats">
-            <div className="sld-persona-stat">
-              <span className="sld-persona-stat-k">Score</span>
-              <span className="sld-persona-stat-v">{p.score}</span>
+          <div className="sld-persona-signals">
+            <div className="sld-persona-signal">
+              <span className="sld-persona-signal-k">Credit</span>
+              <span className="sld-persona-signal-v">{p.signals.creditScore}</span>
             </div>
-            <div className="sld-persona-stat">
-              <span className="sld-persona-stat-k">Income</span>
-              <span className="sld-persona-stat-v">{p.income}</span>
+            <div className="sld-persona-signal">
+              <span className="sld-persona-signal-k">Available</span>
+              <span className="sld-persona-signal-v">{p.signals.availableCredit}</span>
             </div>
-            <div className="sld-persona-stat">
-              <span className="sld-persona-stat-k">Budget</span>
-              <span className="sld-persona-stat-v">{p.budget}</span>
+            <div className="sld-persona-signal">
+              <span className="sld-persona-signal-k">DTI</span>
+              <span className="sld-persona-signal-v">{p.signals.dti}</span>
+            </div>
+            <div className="sld-persona-signal">
+              <span className="sld-persona-signal-k">Income</span>
+              <span className="sld-persona-signal-v">{p.signals.income}</span>
+            </div>
+          </div>
+          <div className="sld-persona-funding">
+            <div className="sld-persona-funding-row">
+              <div className="sld-persona-funding-l">
+                <span
+                  className={`sld-persona-funding-check ${
+                    p.consumer.preApproved ? 'is-approved' : 'is-declined'
+                  }`}
+                  aria-hidden
+                >
+                  {p.consumer.preApproved ? '✓' : '×'}
+                </span>
+                <span className="sld-persona-funding-label">Consumer-direct</span>
+              </div>
+              <div className="sld-persona-funding-r">
+                <span className="sld-persona-funding-amt">{p.consumer.estimate}</span>
+                <span
+                  className={`sld-persona-funding-flag ${
+                    p.consumer.preApproved ? 'is-approved' : 'is-declined'
+                  }`}
+                >
+                  {p.consumer.preApproved ? 'Pre-approved' : 'Declined'}
+                </span>
+              </div>
+            </div>
+            <div className="sld-persona-bmpo">
+              <span className="sld-persona-bmpo-k">BMPO</span>
+              <span className="sld-persona-bmpo-v">{p.consumer.bmpo}</span>
+            </div>
+            <div className="sld-persona-funding-row">
+              <div className="sld-persona-funding-l">
+                <span
+                  className={`sld-persona-funding-check ${
+                    p.merchant.preApproved ? 'is-approved' : 'is-declined'
+                  }`}
+                  aria-hidden
+                >
+                  {p.merchant.preApproved ? '✓' : '×'}
+                </span>
+                <span className="sld-persona-funding-label">Merchant-direct</span>
+              </div>
+              <div className="sld-persona-funding-r">
+                <span className="sld-persona-funding-amt">{p.merchant.estimate}</span>
+                <span
+                  className={`sld-persona-funding-flag ${
+                    p.merchant.preApproved ? 'is-approved' : 'is-declined'
+                  }`}
+                >
+                  {p.merchant.preApproved ? 'Pre-approved' : 'Declined'}
+                </span>
+              </div>
+            </div>
+            <div className="sld-persona-bmpo">
+              <span className="sld-persona-bmpo-k">BMPO</span>
+              <span className="sld-persona-bmpo-v">{p.merchant.bmpo}</span>
+            </div>
+            <div className="sld-persona-decline">
+              <span className="sld-persona-decline-k">Decline reason</span>
+              <span className="sld-persona-decline-v">{p.decline}</span>
             </div>
           </div>
           <ol className="sld-persona-path">
@@ -2395,6 +2524,251 @@ const CSS = `
   transform: rotateX(var(--tx)) rotateY(var(--ty));
   transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
+}
+
+/* ============================ PRE-QUAL RESULT · DECK =====================
+ * Sales-deck variant of the hero result card. Same data payload as the
+ * landing-page version but rendered as a "results console" — darker
+ * border, console-monospace numerals, and a navy gradient header bar
+ * so it reads as a presentation panel rather than an app screen.
+ */
+.sld-result {
+  position: relative;
+  width: 460px;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
+    rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow:
+    0 60px 110px -50px rgba(59, 130, 246, 0.55),
+    0 30px 60px -30px rgba(59, 130, 246, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  overflow: hidden;
+}
+.sld-result::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ezk-blue-deep), var(--ezk-blue-2), var(--ezk-blue-deep));
+}
+
+/* HEAD */
+.sld-result-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ezk-line);
+}
+.sld-result-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+  padding: 4px 10px;
+  background: rgba(96, 165, 250, 0.14);
+  border-radius: 999px;
+}
+.sld-result-pill-dot {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: var(--ezk-blue-2);
+  animation: sldPulse 1.6s ease-in-out infinite;
+}
+.sld-result-meta {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.18em;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 6px;
+}
+
+/* BUYER */
+.sld-result-buyer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 14px;
+}
+.sld-result-buyer-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-result-buyer-name {
+  margin-top: 4px;
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.026em;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-result-tier-badge {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: 7px 12px;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 8px 20px -8px rgba(59, 130, 246, 0.55);
+}
+.sld-result-tier-letter {
+  font-size: 20px; font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.sld-result-tier-name {
+  margin-top: 2px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8px; letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* SIGNALS GRID — 4 cells, single row */
+.sld-result-signals {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: 14px;
+  background: var(--ezk-line);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ezk-line);
+}
+.sld-result-signal {
+  background: rgba(255, 255, 255, 0.97);
+  padding: 11px 6px;
+  display: flex; flex-direction: column; gap: 4px;
+  align-items: center;
+  text-align: center;
+}
+.sld-result-signal-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8px; letter-spacing: 0.10em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-result-signal-v {
+  font-size: 16px; font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* FUNDING */
+.sld-result-funding-head {
+  margin-top: 16px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-result-funding-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px;
+}
+.sld-result-funding-row-l {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.sld-result-funding-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  font-size: 10.5px; font-weight: 700;
+}
+.sld-result-funding-check.is-approved {
+  background: rgba(96, 165, 250, 0.20);
+  color: var(--ezk-blue);
+}
+.sld-result-funding-check.is-declined {
+  background: rgba(167, 139, 250, 0.22);
+  color: #6D28D9;
+}
+.sld-result-funding-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--ezk-ink);
+}
+.sld-result-funding-row-r {
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.sld-result-funding-amt {
+  font-size: 15px; font-weight: 700;
+  letter-spacing: -0.016em;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-result-funding-flag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.14em; font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+.sld-result-funding-flag.is-approved {
+  background: rgba(96, 165, 250, 0.16);
+  color: var(--ezk-blue);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.sld-result-funding-flag.is-declined {
+  background: rgba(167, 139, 250, 0.16);
+  color: #6D28D9;
+  border: 1px solid rgba(167, 139, 250, 0.34);
+}
+.sld-result-bmpo {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-left: 26px;
+  margin-top: 3px;
+  padding: 5px 10px;
+  background: rgba(59, 130, 246, 0.04);
+  border-left: 2px solid rgba(96, 165, 250, 0.45);
+  border-radius: 0 5px 5px 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px;
+}
+.sld-result-bmpo-k {
+  color: var(--ezk-mute);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.sld-result-bmpo-v {
+  color: var(--ezk-blue);
+  font-weight: 700;
+}
+
+/* DECLINE */
+.sld-result-decline {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--ezk-line);
+  gap: 14px;
+}
+.sld-result-decline-k {
+  flex-shrink: 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-result-decline-v {
+  font-size: 12px;
+  color: var(--ezk-ink-2);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* FOOTER */
+.sld-result-footer {
+  margin-top: 14px;
+  padding: 12px 14px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 12.5px; font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 28px -12px rgba(59, 130, 246, 0.55);
 }
 
 /* Mock offer card */
@@ -3718,6 +4092,131 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   color: var(--ezk-ink);
   font-variant-numeric: tabular-nums;
 }
+
+/* PERSONA SIGNALS GRID — 4-up financial signals */
+.sld-persona-signals {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 12px 0 10px;
+  background: var(--ezk-line);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--ezk-line);
+}
+.sld-persona-signal {
+  background: rgba(255, 255, 255, 0.97);
+  padding: 8px 4px;
+  display: flex; flex-direction: column; gap: 2px; align-items: center;
+  text-align: center;
+}
+.sld-persona-signal-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 7.5px; letter-spacing: 0.10em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-persona-signal-v {
+  font-size: 13px; font-weight: 800;
+  letter-spacing: -0.014em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* PERSONA FUNDING — consumer + merchant rails + BMPO + decline */
+.sld-persona-funding {
+  padding: 10px 12px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid var(--ezk-line);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.sld-persona-funding-row {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sld-persona-funding-l { display: inline-flex; align-items: center; gap: 7px; }
+.sld-persona-funding-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px;
+  border-radius: 999px;
+  font-size: 9.5px; font-weight: 700;
+}
+.sld-persona-funding-check.is-approved {
+  background: rgba(96, 165, 250, 0.22);
+  color: var(--ezk-blue);
+}
+.sld-persona-funding-check.is-declined {
+  background: rgba(167, 139, 250, 0.22);
+  color: #6D28D9;
+}
+.sld-persona-funding-label {
+  font-size: 12px; font-weight: 600;
+  color: var(--ezk-ink);
+}
+.sld-persona-funding-r { display: inline-flex; align-items: center; gap: 7px; }
+.sld-persona-funding-amt {
+  font-size: 12.5px; font-weight: 700;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-persona-funding-flag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8px; letter-spacing: 0.12em; font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.sld-persona-funding-flag.is-approved {
+  background: rgba(96, 165, 250, 0.16);
+  color: var(--ezk-blue);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+}
+.sld-persona-funding-flag.is-declined {
+  background: rgba(167, 139, 250, 0.16);
+  color: #6D28D9;
+  border: 1px solid rgba(167, 139, 250, 0.34);
+}
+.sld-persona-bmpo {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-left: 22px;
+  padding: 3px 8px;
+  background: rgba(59, 130, 246, 0.06);
+  border-left: 2px solid rgba(96, 165, 250, 0.45);
+  border-radius: 0 4px 4px 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px;
+}
+.sld-persona-bmpo-k {
+  color: var(--ezk-mute);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.sld-persona-bmpo-v {
+  color: var(--ezk-blue);
+  font-weight: 700;
+}
+.sld-persona-decline {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-top: 3px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--ezk-line);
+  gap: 10px;
+}
+.sld-persona-decline-k {
+  flex-shrink: 0;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-persona-decline-v {
+  font-size: 10.5px; line-height: 1.4;
+  color: var(--ezk-ink-2);
+  font-weight: 600;
+  text-align: right;
+}
+
 .sld-persona-path {
   list-style: none; padding: 0; margin: 0 0 12px;
   display: flex; flex-direction: column;
@@ -3921,6 +4420,52 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
 }
 .sld-slide-dark .sld-persona-stat-k { color: rgba(238, 242, 248, 0.55); }
 .sld-slide-dark .sld-persona-stat-v { color: #fff; }
+.sld-slide-dark .sld-persona-signals {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.20);
+}
+.sld-slide-dark .sld-persona-signal {
+  background: rgba(15, 23, 42, 0.55);
+}
+.sld-slide-dark .sld-persona-signal-k { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-persona-signal-v {
+  background: linear-gradient(135deg, #fff 0%, var(--ezk-blue-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-slide-dark .sld-persona-funding {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.20);
+}
+.sld-slide-dark .sld-persona-funding-label { color: #fff; }
+.sld-slide-dark .sld-persona-funding-amt { color: #fff; }
+.sld-slide-dark .sld-persona-funding-check.is-approved {
+  background: rgba(96, 165, 250, 0.28);
+}
+.sld-slide-dark .sld-persona-funding-check.is-declined {
+  background: rgba(167, 139, 250, 0.28);
+  color: #C7D2FE;
+}
+.sld-slide-dark .sld-persona-funding-flag.is-approved {
+  background: rgba(96, 165, 250, 0.22);
+  border-color: rgba(96, 165, 250, 0.40);
+  color: var(--ezk-blue-2);
+}
+.sld-slide-dark .sld-persona-funding-flag.is-declined {
+  background: rgba(167, 139, 250, 0.22);
+  border-color: rgba(167, 139, 250, 0.40);
+  color: #C7D2FE;
+}
+.sld-slide-dark .sld-persona-bmpo {
+  background: rgba(96, 165, 250, 0.10);
+  border-left-color: rgba(96, 165, 250, 0.55);
+}
+.sld-slide-dark .sld-persona-bmpo-k { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-persona-bmpo-v { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-persona-decline {
+  border-top: 1px dashed rgba(96, 165, 250, 0.20);
+}
+.sld-slide-dark .sld-persona-decline-k { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-persona-decline-v { color: rgba(238, 242, 248, 0.85); }
 .sld-slide-dark .sld-persona-path li {
   border-left-color: rgba(96, 165, 250, 0.35);
 }
