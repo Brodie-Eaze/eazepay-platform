@@ -669,7 +669,7 @@ export default function EzCheckLanding(): JSX.Element {
         </section>
 
         {/* THREE FINANCIAL SIGNALS DEEP DIVE */}
-        <section id="signals" className="ezl-section">
+        <section id="signals" className="ezl-section ezl-section-dark">
           <div className="ezl-container">
             <Reveal>
               <div className="ezl-section-eyebrow">
@@ -818,7 +818,7 @@ export default function EzCheckLanding(): JSX.Element {
         </section>
 
         {/* ROUTING PATTERNS — composability examples */}
-        <section id="patterns" className="ezl-section">
+        <section id="patterns" className="ezl-section ezl-section-dark">
           <div className="ezl-container">
             <Reveal>
               <div className="ezl-section-eyebrow">
@@ -837,6 +837,31 @@ export default function EzCheckLanding(): JSX.Element {
                 Each card below is a real routing pattern wired live by an EZ Check customer. Hops
                 can be added, removed, or reordered from the admin panel — no engineering work.
               </p>
+            </Reveal>
+            <Reveal delay={300}>
+              <div className="ezl-section-callouts">
+                <div className="ezl-section-callout">
+                  <div className="ezl-section-callout-h">Composable, not configured</div>
+                  <div className="ezl-section-callout-b">
+                    Hops chain like LEGO bricks. Drag a new gate onto the canvas — no engineering
+                    work, no deploy, no downtime.
+                  </div>
+                </div>
+                <div className="ezl-section-callout">
+                  <div className="ezl-section-callout-h">Live in production from day one</div>
+                  <div className="ezl-section-callout-b">
+                    Patterns ship as templates — adopt one off the shelf, then customize each hop
+                    against your own funded-outcome data.
+                  </div>
+                </div>
+                <div className="ezl-section-callout">
+                  <div className="ezl-section-callout-h">A/B testable per branch</div>
+                  <div className="ezl-section-callout-b">
+                    Every hop is its own test surface. Swap thresholds, swap terminals, watch the
+                    funded-deal lift land in the dashboard the next hour.
+                  </div>
+                </div>
+              </div>
             </Reveal>
             <Reveal delay={360}>
               <div className="ezl-patterns-grid">
@@ -870,7 +895,7 @@ export default function EzCheckLanding(): JSX.Element {
         </section>
 
         {/* PERSONA WALKTHROUGHS */}
-        <section id="personas" className="ezl-section">
+        <section id="personas" className="ezl-section ezl-section-dark">
           <div className="ezl-container">
             <Reveal>
               <div className="ezl-section-eyebrow">
@@ -890,6 +915,31 @@ export default function EzCheckLanding(): JSX.Element {
                 intent is different, your closer&apos;s time is finite. Here&apos;s what EZ Check
                 does with each one.
               </p>
+            </Reveal>
+            <Reveal delay={300}>
+              <div className="ezl-section-callouts">
+                <div className="ezl-section-callout">
+                  <div className="ezl-section-callout-h">Closer time → only Tier A/B</div>
+                  <div className="ezl-section-callout-b">
+                    Your senior closer is paid to close, not to filter. Junk traffic never lands on
+                    their calendar — the routes do the gating upstream.
+                  </div>
+                </div>
+                <div className="ezl-section-callout">
+                  <div className="ezl-section-callout-h">Tier C/D stays warm</div>
+                  <div className="ezl-section-callout-b">
+                    Marginal buyers flow into masterclass / nurture / re-pull queues. Each path has
+                    its own 30 / 60 / 90-day fundability re-check baked in.
+                  </div>
+                </div>
+                <div className="ezl-section-callout">
+                  <div className="ezl-section-callout-h">Audit log per buyer</div>
+                  <div className="ezl-section-callout-b">
+                    Every hop the buyer crossed, every threshold met or missed — hashed, signed,
+                    timestamped, retained for 7 years. Exportable from the admin console.
+                  </div>
+                </div>
+              </div>
             </Reveal>
             <Reveal delay={360}>
               <div className="ezl-personas-grid">
@@ -3052,5 +3102,179 @@ const CSS = `
   .ezl-routing-callouts { grid-template-columns: 1fr; }
   .ezl-patterns-grid { grid-template-columns: 1fr; }
   .ezl-personas-grid { grid-template-columns: 1fr; }
+}
+
+/* ========================== DARK-SECTION CARD VARIANTS ==================== */
+/* When signal / pattern / persona cards live inside ezl-section-dark, swap
+ * their white surfaces for glassy navy. Keeps the routing-tree quality
+ * standard across the entire deep-dive narrative. */
+
+/* SIGNAL CARDS · DARK */
+.ezl-section-dark .ezl-signal {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.16), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 60px -32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.ezl-section-dark .ezl-signal:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow:
+    0 36px 80px -32px rgba(96, 165, 250, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.ezl-section-dark .ezl-signal-h { color: #fff; }
+.ezl-section-dark .ezl-signal-b { color: rgba(238, 242, 248, 0.74); }
+.ezl-section-dark .ezl-signal-list li { color: rgba(238, 242, 248, 0.78); }
+.ezl-section-dark .ezl-signal-tag {
+  background: rgba(96, 165, 250, 0.14);
+  color: var(--ezk-blue-2);
+  border: 1px solid rgba(96, 165, 250, 0.28);
+}
+.ezl-section-dark .ezl-signal-foot {
+  border-top: 1px dashed rgba(96, 165, 250, 0.20);
+}
+.ezl-section-dark .ezl-signal-foot-k { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-signal-foot-v { color: var(--ezk-blue-2); }
+.ezl-section-dark .ezl-signal-metric {
+  background: linear-gradient(135deg, #fff 0%, var(--ezk-blue-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* COMPOSITE TIER PANEL · DARK section — already on a navy gradient, but
+ * tighten the embedded glass + border so it sits inside a dark section
+ * without a doubled-up background. */
+.ezl-section-dark .ezl-signals-composite {
+  border: 1px solid rgba(96, 165, 250, 0.34);
+  box-shadow:
+    0 36px 80px -32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* PATTERN CARDS · DARK */
+.ezl-section-dark .ezl-pattern {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 60px -32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.ezl-section-dark .ezl-pattern:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow:
+    0 36px 80px -32px rgba(96, 165, 250, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.ezl-section-dark .ezl-pattern-h { color: #fff; }
+.ezl-section-dark .ezl-pattern-b { color: rgba(238, 242, 248, 0.74); }
+.ezl-section-dark .ezl-pattern-tag {
+  color: var(--ezk-blue-2);
+}
+.ezl-section-dark .ezl-pattern-hops {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+}
+.ezl-section-dark .ezl-pattern-hop-h { color: #fff; }
+.ezl-section-dark .ezl-pattern-hop-b { color: rgba(238, 242, 248, 0.62); }
+.ezl-section-dark .ezl-pattern-hop-n {
+  background: rgba(96, 165, 250, 0.18);
+  color: var(--ezk-blue-2);
+}
+.ezl-section-dark .ezl-pattern-outcome {
+  border: 1px solid rgba(96, 165, 250, 0.40);
+  box-shadow: 0 18px 40px -16px rgba(59, 130, 246, 0.55);
+}
+
+/* PERSONA CARDS · DARK */
+.ezl-section-dark .ezl-persona {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 60px -32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.ezl-section-dark .ezl-persona:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow:
+    0 36px 80px -32px rgba(96, 165, 250, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.ezl-section-dark .ezl-persona-head {
+  border-bottom: 1px solid rgba(96, 165, 250, 0.18);
+}
+.ezl-section-dark .ezl-persona-name { color: #fff; }
+.ezl-section-dark .ezl-persona-source { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-persona-stats {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.16);
+}
+.ezl-section-dark .ezl-persona-stat-k { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-persona-stat-v { color: #fff; }
+.ezl-section-dark .ezl-persona-path li {
+  border-left-color: rgba(96, 165, 250, 0.35);
+}
+.ezl-section-dark .ezl-persona-path-h { color: #fff; }
+.ezl-section-dark .ezl-persona-path-b { color: rgba(238, 242, 248, 0.55); }
+.ezl-section-dark .ezl-persona-path-dot {
+  box-shadow: 0 0 0 3px #0F172A, 0 0 0 4px rgba(96, 165, 250, 0.45);
+}
+.ezl-section-dark .ezl-persona-path li.is-terminal .ezl-persona-path-dot {
+  box-shadow: 0 0 0 3px #0F172A, 0 0 0 4px rgba(167, 139, 250, 0.55);
+}
+.ezl-section-dark .ezl-persona-tier-pill {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.28);
+}
+.ezl-section-dark .ezl-persona-c .ezl-persona-tier-pill {
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.34);
+  color: var(--ezk-blue-2);
+}
+.ezl-section-dark .ezl-persona-outcome {
+  border: 1px solid rgba(96, 165, 250, 0.34);
+  box-shadow: 0 18px 40px -16px rgba(59, 130, 246, 0.55);
+}
+.ezl-section-dark .ezl-persona-c .ezl-persona-outcome {
+  border-color: rgba(167, 139, 250, 0.40);
+  box-shadow: 0 18px 40px -16px rgba(139, 92, 246, 0.55);
+}
+
+/* SECTION-BOTTOM CALLOUTS — reusable strip matching the routing-section
+ * pattern. Used at the bottom of patterns + personas sections so each
+ * dark deep-dive surface closes with a 3-card synthesis. */
+.ezl-section-callouts {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 32px;
+}
+.ezl-section-callout {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+.ezl-section-callout-h {
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.012em;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.ezl-section-callout-b {
+  font-size: 13px; line-height: 1.55;
+  color: rgba(238, 242, 248, 0.74);
+}
+
+@media (max-width: 980px) {
+  .ezl-section-callouts { grid-template-columns: 1fr; }
 }
 `;

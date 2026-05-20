@@ -16,6 +16,11 @@ interface Slide {
   n: string;
   title: string;
   build: () => JSX.Element;
+  /** When true, the slide chrome flips to the dark-navy backdrop used by
+   *  the landing-page deep-dive sections (Smart Form / Signals / Routing
+   *  / Patterns / Personas). The slide content cards then use their
+   *  dark-glass variants for consistency. */
+  dark?: boolean;
 }
 
 const SLIDES_RAW: Slide[] = [
@@ -390,6 +395,7 @@ const SLIDES_RAW: Slide[] = [
   {
     n: '09',
     title: 'Three financial signals',
+    dark: true,
     build: () => (
       <div className="sld-stack">
         <Reveal>
@@ -497,6 +503,7 @@ const SLIDES_RAW: Slide[] = [
   {
     n: '12',
     title: 'Real routing patterns',
+    dark: true,
     build: () => (
       <div className="sld-stack">
         <Reveal>
@@ -528,6 +535,7 @@ const SLIDES_RAW: Slide[] = [
   {
     n: '13',
     title: 'Persona walkthroughs',
+    dark: true,
     build: () => (
       <div className="sld-stack">
         <Reveal>
@@ -1900,7 +1908,7 @@ export default function EzCheckSalesDeck(): JSX.Element {
             key={i}
             id={`slide-${i}`}
             data-idx={i}
-            className="sld-slide"
+            className={`sld-slide ${s.dark ? 'sld-slide-dark' : ''}`}
             aria-label={`Slide ${i + 1}: ${s.title}`}
           >
             <div className="sld-slide-n">{s.n}</div>
@@ -3773,5 +3781,172 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   .sld-patterns-grid { grid-template-columns: 1fr; }
   .sld-personas-grid { grid-template-columns: 1fr; }
   .sld-form-deep { width: 100%; max-width: 420px; }
+}
+
+/* ========================== DARK SLIDE TREATMENT ========================= */
+/* When a deep-dive slide is flagged "dark: true", the whole slide chrome
+ * flips to the navy backdrop the landing-page deep-dive sections use.
+ * Card surfaces inside also swap to dark-glass variants so the slide
+ * reads as a continuation of the landing-page quality bar. */
+
+.sld-slide-dark {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(96, 165, 250, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 90%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
+    linear-gradient(180deg, #0F172A 0%, #0A0F1F 100%);
+  color: #EEF2F8;
+}
+.sld-slide-dark .sld-eyebrow {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.34);
+  color: var(--ezk-blue-2);
+}
+.sld-slide-dark .sld-h2 { color: #fff; }
+.sld-slide-dark .sld-h2 em { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .grad-blue {
+  background: linear-gradient(120deg, var(--ezk-blue-2) 0%, #93C5FD 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-slide-dark .grad-blue-deep {
+  background: linear-gradient(120deg, #C7D2FE 0%, #fff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-slide-dark .sld-sub { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .sld-sub strong { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-slide-n { color: rgba(238, 242, 248, 0.45); }
+
+/* SIGNAL CARDS · DARK */
+.sld-slide-dark .sld-signal {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.16), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 50px -28px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.sld-slide-dark .sld-signal:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow:
+    0 36px 70px -28px rgba(96, 165, 250, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.sld-slide-dark .sld-signal-h { color: #fff; }
+.sld-slide-dark .sld-signal-b { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .sld-signal-list li { color: rgba(238, 242, 248, 0.78); }
+.sld-slide-dark .sld-signal-tag {
+  background: rgba(96, 165, 250, 0.14);
+  color: var(--ezk-blue-2);
+  border-color: rgba(96, 165, 250, 0.28);
+}
+.sld-slide-dark .sld-signal-foot {
+  border-top-color: rgba(96, 165, 250, 0.20);
+}
+.sld-slide-dark .sld-signal-foot-k { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-signal-foot-v { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-signal-metric {
+  background: linear-gradient(135deg, #fff 0%, var(--ezk-blue-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* TIER STACK PANEL · DARK slide */
+.sld-slide-dark .sld-tier-stack-wrap {
+  border: 1px solid rgba(96, 165, 250, 0.34);
+  box-shadow:
+    0 36px 70px -28px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* PATTERN CARDS · DARK slide */
+.sld-slide-dark .sld-pattern {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 50px -28px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.sld-slide-dark .sld-pattern:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow:
+    0 36px 70px -28px rgba(96, 165, 250, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.sld-slide-dark .sld-pattern-h { color: #fff; }
+.sld-slide-dark .sld-pattern-b { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .sld-pattern-tag { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-pattern-hops {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+}
+.sld-slide-dark .sld-pattern-hop-h { color: #fff; }
+.sld-slide-dark .sld-pattern-hop-b { color: rgba(238, 242, 248, 0.62); }
+.sld-slide-dark .sld-pattern-hop-n {
+  background: rgba(96, 165, 250, 0.18);
+  color: var(--ezk-blue-2);
+}
+.sld-slide-dark .sld-pattern-outcome {
+  border: 1px solid rgba(96, 165, 250, 0.40);
+  box-shadow: 0 18px 40px -16px rgba(59, 130, 246, 0.55);
+}
+
+/* PERSONA CARDS · DARK slide */
+.sld-slide-dark .sld-persona {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 50px -28px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.sld-slide-dark .sld-persona:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow:
+    0 36px 70px -28px rgba(96, 165, 250, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.sld-slide-dark .sld-persona-head {
+  border-bottom: 1px solid rgba(96, 165, 250, 0.18);
+}
+.sld-slide-dark .sld-persona-name { color: #fff; }
+.sld-slide-dark .sld-persona-source { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-persona-stats {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.16);
+}
+.sld-slide-dark .sld-persona-stat-k { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-persona-stat-v { color: #fff; }
+.sld-slide-dark .sld-persona-path li {
+  border-left-color: rgba(96, 165, 250, 0.35);
+}
+.sld-slide-dark .sld-persona-path-h { color: #fff; }
+.sld-slide-dark .sld-persona-path-b { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-persona-path-dot {
+  box-shadow: 0 0 0 3px #0F172A, 0 0 0 4px rgba(96, 165, 250, 0.45);
+}
+.sld-slide-dark .sld-persona-path li.is-terminal .sld-persona-path-dot {
+  box-shadow: 0 0 0 3px #0F172A, 0 0 0 4px rgba(167, 139, 250, 0.55);
+}
+.sld-slide-dark .sld-persona-tier-pill {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.28);
+}
+.sld-slide-dark .sld-persona-c .sld-persona-tier-pill {
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.34);
+  color: var(--ezk-blue-2);
+}
+.sld-slide-dark .sld-persona-outcome {
+  border: 1px solid rgba(96, 165, 250, 0.34);
+  box-shadow: 0 18px 40px -16px rgba(59, 130, 246, 0.55);
+}
+.sld-slide-dark .sld-persona-c .sld-persona-outcome {
+  border-color: rgba(167, 139, 250, 0.40);
+  box-shadow: 0 18px 40px -16px rgba(139, 92, 246, 0.55);
 }
 `;
