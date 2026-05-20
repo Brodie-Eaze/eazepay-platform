@@ -50,6 +50,7 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
+  '/ez-check', // EZ Check pre-qualification product (Checkout/Onboarding/integration-doc)
 ];
 
 const isPublic = (pathname: string): boolean => {

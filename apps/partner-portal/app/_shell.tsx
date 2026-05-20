@@ -328,6 +328,11 @@ const NAKED_ROUTES = [
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
+  // EZ Check standalone product surfaces — checkout + onboarding render
+  // their own full-page chrome. The /ez-check root is the integration
+  // doc and stays inside the shell.
+  '/ez-check/checkout',
+  '/ez-check/onboarding',
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {
