@@ -73,6 +73,211 @@ const PILLARS = [
   },
 ];
 
+/**
+ * Three financial signals ORACLE pulls in parallel. The numbers in
+ * `metric` are illustrative until the data-provider contracts close;
+ * the structure + compliance copy is real and matches the FCRA/GLBA
+ * disclosure boilerplate live on the partner-portal MedPay deck.
+ */
+const SIGNALS: Array<{
+  code: string;
+  head: string;
+  metric: string;
+  body: string;
+  points: string[];
+  compliance: string;
+}> = [
+  {
+    code: '01 · CREDIT',
+    head: 'Soft-pull credit score',
+    metric: '< 1.2s',
+    body: 'A soft inquiry against the bureau returns a current credit score plus available-credit and revolving-utilization context. No hard pull, no impact on the buyer’s score, no permission slip beyond the form-submit consent line.',
+    points: [
+      'Score · available credit · utilization · open lines',
+      'Buyer-consented soft inquiry, never a hard pull',
+      'Bureau-direct API; no scraping, no aggregators',
+      'Tradeline detail available on premium-tier pulls',
+    ],
+    compliance: 'FCRA · ECOA / Reg B · audit log 7 yrs',
+  },
+  {
+    code: '02 · INCOME',
+    head: 'Income capacity + DTI',
+    metric: '< 0.8s',
+    body: 'Verified income via the data-provider network we route to (payroll APIs, bank-statement parsers, or stated income with verification scoring). DTI is computed live against the credit-side debt obligations so you see capacity, not just earnings.',
+    points: [
+      'Verified gross + net income',
+      'Debt-to-income ratio calculated against credit pull',
+      'Self-employed path: bank-statement parser fallback',
+      'Stated-income verification score when no API match',
+    ],
+    compliance: 'GLBA · buyer-consent flow · PII tokenized',
+  },
+  {
+    code: '03 · FUNDABILITY',
+    head: 'Composite fundability tier',
+    metric: 'A / B / C / D',
+    body: 'ORACLE composites the credit + income + tradeline signals into a single tier letter calibrated on your own funded-deal outcomes. Retrained nightly, drift-alerted, fully explainable — every routing decision shows the exact thresholds it crossed.',
+    points: [
+      'Calibrated on your funded outcomes, not a lookalike',
+      'Nightly retrain on every disposition logged',
+      'Drift detection fires before revenue moves',
+      'Per-decision explanation in the admin audit panel',
+    ],
+    compliance: 'Model AUC 0.91 · last retrain logged in audit panel',
+  },
+];
+
+/**
+ * Multi-hop routing patterns — four real funnel shapes EZ Check
+ * customers run today. Each is a different chain of routing predicates;
+ * the point of the section is that routing is composable, not "lead →
+ * high/low ticket".
+ */
+const ROUTING_PATTERNS: Array<{
+  id: string;
+  tag: string;
+  head: string;
+  body: string;
+  hops: Array<{ h: string; b: string }>;
+  outcome: string;
+}> = [
+  {
+    id: 'budget-gated',
+    tag: 'BUDGET-GATED · 4 HOPS',
+    head: 'Coaching · $10k+ programs',
+    body: 'High-ticket coaching funnel. Budget question runs first because Meta delivers buyers who will lie about budget once they hear the price, so HELIX gates on stated budget before spending a soft pull.',
+    hops: [
+      { h: 'Lead capture', b: 'Email + phone + traffic-source UTM' },
+      { h: 'Budget gate', b: '≥ $10k → continue · < $10k → masterclass invite' },
+      { h: 'Pre-qual pull', b: 'ORACLE: credit + income + fundability tier' },
+      { h: 'Tier gate', b: 'Tier A/B → calendar · Tier C → nurture' },
+    ],
+    outcome: 'Tier-A/B buyers booked on the senior closer’s calendar within 60 seconds.',
+  },
+  {
+    id: 'intent-cascade',
+    tag: 'INTENT CASCADE · 5 HOPS',
+    head: 'B2B SaaS demo funnel',
+    body: 'Inbound demo requests. The closer’s most valuable time is on companies that can actually buy, so the cascade keeps narrowing the field at every hop instead of dumping everything onto the calendar.',
+    hops: [
+      { h: 'Lead capture', b: 'Work email + company name + role' },
+      { h: 'Company-size gate', b: '≥ 50 employees → continue · SMB → self-serve trial' },
+      { h: 'Role gate', b: 'VP / Director → continue · IC → case-study library' },
+      { h: 'Intent score', b: 'Pricing page + docs + 2nd visit → demo · cold → webinar' },
+      { h: 'Calendar match', b: 'Routed to the AE owning their territory · round-robin fallback' },
+    ],
+    outcome: 'Enterprise AE calendar fills only with companies that fit ICP + budget.',
+  },
+  {
+    id: 'time-aware',
+    tag: 'TIME-AWARE · 3 HOPS',
+    head: 'Local services · roofing + solar',
+    body: 'Home-services lead is gold during business hours, gold-but-cold after hours. HELIX flips the routing destination on time-of-day so a Friday-night lead doesn’t land on a Monday-morning calendar and ghost.',
+    hops: [
+      { h: 'Lead capture', b: 'Address + project type + photo upload' },
+      {
+        h: 'Working-hours gate',
+        b: '9am–7pm local → live call · after-hours → SMS confirm + AM callback',
+      },
+      {
+        h: 'Service-area gate',
+        b: 'In-zone → estimator dispatch · out-of-zone → partner referral',
+      },
+    ],
+    outcome: 'Live calls answered in &lt; 90s during business hours; zero ghosted overnight leads.',
+  },
+  {
+    id: 'source-attribution',
+    tag: 'SOURCE-ATTRIBUTED · 4 HOPS',
+    head: 'Med-spa cosmetic consults',
+    body: 'Different traffic sources need different funnels. Meta wants speed-of-quote, Google search wants authority + case studies, affiliate wants their own attribution. HELIX branches on UTM before any other gate.',
+    hops: [
+      { h: 'Lead capture', b: 'Procedure + photo + ad-creative ID via UTM' },
+      {
+        h: 'Source gate',
+        b: 'Meta → instant-quote flow · Google → reviews flow · affiliate → partner-branded flow',
+      },
+      { h: 'Pre-qual pull', b: 'ORACLE: credit + income (for financing add-on)' },
+      { h: 'Closer match', b: 'Routed to the rep who closes that procedure best' },
+    ],
+    outcome:
+      'Per-source close-rate visible in real-time; spend reallocates to the winning creative weekly.',
+  },
+];
+
+/**
+ * Persona walkthroughs — three buyers hit the funnel in the same hour
+ * and follow three different paths. Used to make the multi-hop story
+ * concrete in a single visual.
+ */
+const PERSONAS: Array<{
+  name: string;
+  initials: string;
+  tier: 'A' | 'B' | 'C';
+  source: string;
+  score: string;
+  income: string;
+  budget: string;
+  path: Array<{ h: string; b: string }>;
+  outcomeTag: string;
+  outcome: string;
+}> = [
+  {
+    name: 'Jordan M.',
+    initials: 'JM',
+    tier: 'A',
+    source: 'Meta · creative #042',
+    score: '724',
+    income: '$98k',
+    budget: '$15k',
+    path: [
+      { h: 'Form submit', b: 'Answered 4 of 6 fast-path questions in 41s' },
+      { h: 'Budget gate', b: '$15k ≥ $10k threshold → continue' },
+      { h: 'ORACLE pull', b: 'Soft-pull 724 · income $98k · DTI 22%' },
+      { h: 'Tier composite', b: 'Tier A · top decile' },
+      { h: 'Routed to calendar', b: 'Sarah · senior closer · Thu 2:00 PM' },
+    ],
+    outcomeTag: 'CALENDAR',
+    outcome: 'Booked on senior closer · 41 sec form → 60 sec route',
+  },
+  {
+    name: 'Alex S.',
+    initials: 'AS',
+    tier: 'B',
+    source: 'Google · "best coaching for ..."',
+    score: '688',
+    income: '$72k',
+    budget: '$8k',
+    path: [
+      { h: 'Form submit', b: 'Answered full 6-field path; reviews-flow variant' },
+      { h: 'Budget gate', b: '$8k < $10k threshold → masterclass route' },
+      { h: 'Intent check', b: '2nd-visit flag + downloaded comparison guide' },
+      { h: 'Routed to masterclass', b: 'Invite to live workshop · 30-day re-pull scheduled' },
+    ],
+    outcomeTag: 'MASTERCLASS',
+    outcome: 'Live workshop seat · auto re-pull in 30 days for tier upgrade check',
+  },
+  {
+    name: 'Casey R.',
+    initials: 'CR',
+    tier: 'C',
+    source: 'Affiliate · partner #018',
+    score: '598',
+    income: '$44k',
+    budget: '$3k',
+    path: [
+      { h: 'Form submit', b: 'Bailed at field 3, recovered via resume-link email 6h later' },
+      { h: 'Budget gate', b: '$3k below threshold → low-ticket flow' },
+      { h: 'ORACLE pull', b: 'Soft-pull 598 · income $44k · DTI 51%' },
+      { h: 'Tier composite', b: 'Tier C · not fundability-clean today' },
+      { h: 'Routed to nurture', b: 'Free guide sequence + 90-day re-pull queued' },
+    ],
+    outcomeTag: 'NURTURE',
+    outcome: 'Closer never touched the lead · re-evaluated in 90 days for tier change',
+  },
+];
+
 const FAQ: Array<{ q: string; a: string }> = [
   {
     q: 'Is this a CRM?',
@@ -383,6 +588,358 @@ export default function EzCheckLanding(): JSX.Element {
           </div>
         </section>
 
+        {/* SMART FORM DEEP DIVE */}
+        <section id="smart-form" className="ezl-section ezl-section-dark">
+          <div className="ezl-container">
+            <div className="ezl-deep-grid">
+              <div className="ezl-deep-left">
+                <Reveal>
+                  <div className="ezl-section-eyebrow">
+                    <span className="ezl-eyebrow-dot" />
+                    01 · HELIX · Smart form
+                  </div>
+                </Reveal>
+                <Reveal delay={120}>
+                  <h2 className="ezl-h2">
+                    <span className="ezl-grad-blue-deep">A form that</span>{' '}
+                    <span className="ezl-grad-blue">reshapes itself.</span>
+                  </h2>
+                </Reveal>
+                <Reveal delay={240}>
+                  <p className="ezl-section-sub">
+                    The smart form is a JavaScript widget that drops into any funnel. As the buyer
+                    answers, HELIX watches every keystroke and rewrites the form on the fly.
+                    High-intent traffic gets a four-field fast path. Junky signal gets a
+                    verification gauntlet. Field order, validation, and conditional logic are
+                    A/B-tested continuously against your funded-deal outcomes — the form gets
+                    sharper every week without you touching it.
+                  </p>
+                </Reveal>
+                <Reveal delay={360}>
+                  <ul className="ezl-deep-bullets">
+                    <li>
+                      <span className="ezl-deep-bullet-tag">CONDITIONAL FIELDS</span>
+                      <span className="ezl-deep-bullet-h">Show only what matters</span>
+                      <span className="ezl-deep-bullet-b">
+                        If the buyer says they&apos;re self-employed, the income field swaps from
+                        W-2 to bank-statement upload. If they pick a budget under $5k, the
+                        high-ticket qualifying questions never appear.
+                      </span>
+                    </li>
+                    <li>
+                      <span className="ezl-deep-bullet-tag">SOURCE-AWARE</span>
+                      <span className="ezl-deep-bullet-h">Reorders by traffic source</span>
+                      <span className="ezl-deep-bullet-b">
+                        Meta clicks see the budget question first (highest signal). Google search
+                        clicks see the procedure / product question first. Affiliate links see the
+                        attribution question first. All learned, not hand-tuned.
+                      </span>
+                    </li>
+                    <li>
+                      <span className="ezl-deep-bullet-tag">ABANDONMENT RECOVERY</span>
+                      <span className="ezl-deep-bullet-h">
+                        Saves partial answers · 90-day re-pull
+                      </span>
+                      <span className="ezl-deep-bullet-b">
+                        If a buyer bails halfway, HELIX persists what they typed and emails them a
+                        one- click resume link. The form remembers and skips fields they&apos;ve
+                        already answered. Recoveries close at 2.3× the rate of cold inbound.
+                      </span>
+                    </li>
+                    <li>
+                      <span className="ezl-deep-bullet-tag">MOBILE-FIRST</span>
+                      <span className="ezl-deep-bullet-h">One question per screen</span>
+                      <span className="ezl-deep-bullet-b">
+                        On phones, HELIX renders one question at a time with auto-advance and
+                        inertial keyboards. The buyer hits the apply CTA in their ad before
+                        realizing they finished a 12-question qualifier.
+                      </span>
+                    </li>
+                  </ul>
+                </Reveal>
+              </div>
+              <div className="ezl-deep-right">
+                <ParticleField count={16} />
+                <TiltCard>
+                  <MorphingFormMock />
+                </TiltCard>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* THREE FINANCIAL SIGNALS DEEP DIVE */}
+        <section id="signals" className="ezl-section">
+          <div className="ezl-container">
+            <Reveal>
+              <div className="ezl-section-eyebrow">
+                <span className="ezl-eyebrow-dot" />
+                02 · ORACLE · Pre-qualification agents
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <h2 className="ezl-h2">
+                <span className="ezl-grad-blue-deep">Three financial signals</span>{' '}
+                <span className="ezl-grad-blue">on every buyer.</span>{' '}
+                <span className="ezl-grad-blue-deep">Composite tier in under 3 seconds.</span>
+              </h2>
+            </Reveal>
+            <Reveal delay={240}>
+              <p className="ezl-section-sub">
+                ORACLE is the agent that decides if the buyer is worth your closer&apos;s time. On
+                form submit, it fires three FCRA / GLBA-compliant pulls in parallel and returns a
+                composite fundability tier. No part of this requires the buyer&apos;s manual upload
+                — a name, email, and date-of-birth is enough.
+              </p>
+            </Reveal>
+            <Reveal delay={360}>
+              <div className="ezl-signals-grid">
+                {SIGNALS.map((s) => (
+                  <article key={s.code} className="ezl-signal">
+                    <div className="ezl-signal-glow" aria-hidden />
+                    <div className="ezl-signal-tag">{s.code}</div>
+                    <div className="ezl-signal-h">{s.head}</div>
+                    <div className="ezl-signal-metric">{s.metric}</div>
+                    <p className="ezl-signal-b">{s.body}</p>
+                    <ul className="ezl-signal-list">
+                      {s.points.map((pt) => (
+                        <li key={pt}>
+                          <span className="ezl-signal-check" aria-hidden>
+                            ✓
+                          </span>
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="ezl-signal-foot">
+                      <span className="ezl-signal-foot-k">Compliance</span>
+                      <span className="ezl-signal-foot-v">{s.compliance}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </Reveal>
+            <Reveal delay={480}>
+              <div className="ezl-signals-composite">
+                <div className="ezl-signals-composite-l">
+                  <div className="ezl-signals-composite-tag">COMPOSITE OUTPUT</div>
+                  <div className="ezl-signals-composite-h">Fundability tier · A / B / C / D</div>
+                  <p className="ezl-signals-composite-b">
+                    The three signals feed a calibrated model retrained nightly on your funded-deal
+                    outcomes — not a generic lookalike. Drift detection fires before it affects
+                    revenue. Audit log of every pull is signed, hashed, and retained for 7 years.
+                  </p>
+                </div>
+                <div className="ezl-signals-composite-r">
+                  <div className="ezl-tier-stack">
+                    <div className="ezl-tier-row ezl-tier-a">
+                      <span className="ezl-tier-letter">A</span>
+                      <span className="ezl-tier-name">Top decile</span>
+                      <span className="ezl-tier-rule">Route → calendar · best closer</span>
+                    </div>
+                    <div className="ezl-tier-row ezl-tier-b">
+                      <span className="ezl-tier-letter">B</span>
+                      <span className="ezl-tier-name">Qualified</span>
+                      <span className="ezl-tier-rule">Route → calendar · standard closer pool</span>
+                    </div>
+                    <div className="ezl-tier-row ezl-tier-c">
+                      <span className="ezl-tier-letter">C</span>
+                      <span className="ezl-tier-name">Marginal</span>
+                      <span className="ezl-tier-rule">
+                        Route → masterclass · re-pull in 30 days
+                      </span>
+                    </div>
+                    <div className="ezl-tier-row ezl-tier-d">
+                      <span className="ezl-tier-letter">D</span>
+                      <span className="ezl-tier-name">Not fundable</span>
+                      <span className="ezl-tier-rule">Route → nurture · low-ticket offer</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* MULTI-HOP ROUTING TREE */}
+        <section id="routing" className="ezl-section ezl-section-dark">
+          <div className="ezl-container">
+            <Reveal>
+              <div className="ezl-section-eyebrow">
+                <span className="ezl-eyebrow-dot" />
+                03 · HELIX · Smart routing
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <h2 className="ezl-h2">
+                <span className="ezl-grad-blue-deep">Routing is a pipeline,</span>{' '}
+                <span className="ezl-grad-blue">not a single fork.</span>
+              </h2>
+            </Reveal>
+            <Reveal delay={240}>
+              <p className="ezl-section-sub">
+                Every closer-of-a-funnel teaches you the routing is never "high vs. low ticket."
+                It&apos;s budget AND intent AND fundability AND time-of-day AND source. EZ Check
+                chains as many routing decisions as you need to put each buyer on the exact next
+                step that converts them. Add a route, change a threshold, A/B-test a branch — all
+                live, no redeploy.
+              </p>
+            </Reveal>
+            <Reveal delay={360}>
+              <MultiHopRoutingTree />
+            </Reveal>
+            <Reveal delay={480}>
+              <div className="ezl-routing-callouts">
+                <div className="ezl-routing-callout">
+                  <div className="ezl-routing-callout-h">No depth limit</div>
+                  <div className="ezl-routing-callout-b">
+                    Route once or route eight times — whatever the buyer&apos;s next-best-action
+                    requires. Each hop is its own A/B test surface.
+                  </div>
+                </div>
+                <div className="ezl-routing-callout">
+                  <div className="ezl-routing-callout-h">Any signal as a gate</div>
+                  <div className="ezl-routing-callout-b">
+                    Budget, fundability tier, traffic source, UTM, time of day, day of week, geo,
+                    device, return-visitor flag — all available as routing predicates.
+                  </div>
+                </div>
+                <div className="ezl-routing-callout">
+                  <div className="ezl-routing-callout-h">Terminal destinations are pluggable</div>
+                  <div className="ezl-routing-callout-b">
+                    Calendar bookings, masterclass sign-ups, webinar registrations, low-ticket
+                    checkouts, lead-magnet downloads, nurture sequences — anywhere your closers
+                    actually convert.
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ROUTING PATTERNS — composability examples */}
+        <section id="patterns" className="ezl-section">
+          <div className="ezl-container">
+            <Reveal>
+              <div className="ezl-section-eyebrow">
+                <span className="ezl-eyebrow-dot" />
+                Real-world routing patterns
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <h2 className="ezl-h2">
+                <span className="ezl-grad-blue-deep">Four funnels we&apos;ve seen win.</span>{' '}
+                <span className="ezl-grad-blue">Compose your own.</span>
+              </h2>
+            </Reveal>
+            <Reveal delay={240}>
+              <p className="ezl-section-sub">
+                Each card below is a real routing pattern wired live by an EZ Check customer. Hops
+                can be added, removed, or reordered from the admin panel — no engineering work.
+              </p>
+            </Reveal>
+            <Reveal delay={360}>
+              <div className="ezl-patterns-grid">
+                {ROUTING_PATTERNS.map((p) => (
+                  <article key={p.id} className="ezl-pattern">
+                    <div className="ezl-pattern-tag">{p.tag}</div>
+                    <h3 className="ezl-pattern-h">{p.head}</h3>
+                    <p className="ezl-pattern-b">{p.body}</p>
+                    <ol className="ezl-pattern-hops">
+                      {p.hops.map((h, i) => (
+                        <li key={i}>
+                          <span className="ezl-pattern-hop-n">
+                            {String(i + 1).padStart(2, '0')}
+                          </span>
+                          <span className="ezl-pattern-hop-text">
+                            <span className="ezl-pattern-hop-h">{h.h}</span>
+                            <span className="ezl-pattern-hop-b">{h.b}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="ezl-pattern-outcome">
+                      <span className="ezl-pattern-outcome-tag">TERMINAL</span>
+                      <span className="ezl-pattern-outcome-v">{p.outcome}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* PERSONA WALKTHROUGHS */}
+        <section id="personas" className="ezl-section">
+          <div className="ezl-container">
+            <Reveal>
+              <div className="ezl-section-eyebrow">
+                <span className="ezl-eyebrow-dot" />
+                Three buyers · three paths
+              </div>
+            </Reveal>
+            <Reveal delay={120}>
+              <h2 className="ezl-h2">
+                <span className="ezl-grad-blue-deep">Same form.</span>{' '}
+                <span className="ezl-grad-blue">Three different outcomes.</span>
+              </h2>
+            </Reveal>
+            <Reveal delay={240}>
+              <p className="ezl-section-sub">
+                Three buyers hit your funnel in the same hour. Their fundability is different, their
+                intent is different, your closer&apos;s time is finite. Here&apos;s what EZ Check
+                does with each one.
+              </p>
+            </Reveal>
+            <Reveal delay={360}>
+              <div className="ezl-personas-grid">
+                {PERSONAS.map((p) => (
+                  <article
+                    key={p.name}
+                    className={`ezl-persona ezl-persona-${p.tier.toLowerCase()}`}
+                  >
+                    <div className="ezl-persona-head">
+                      <div className="ezl-persona-avatar">{p.initials}</div>
+                      <div>
+                        <div className="ezl-persona-name">{p.name}</div>
+                        <div className="ezl-persona-source">{p.source}</div>
+                      </div>
+                      <div className="ezl-persona-tier-pill">Tier {p.tier}</div>
+                    </div>
+                    <div className="ezl-persona-stats">
+                      <div className="ezl-persona-stat">
+                        <span className="ezl-persona-stat-k">Score</span>
+                        <span className="ezl-persona-stat-v">{p.score}</span>
+                      </div>
+                      <div className="ezl-persona-stat">
+                        <span className="ezl-persona-stat-k">Income</span>
+                        <span className="ezl-persona-stat-v">{p.income}</span>
+                      </div>
+                      <div className="ezl-persona-stat">
+                        <span className="ezl-persona-stat-k">Budget</span>
+                        <span className="ezl-persona-stat-v">{p.budget}</span>
+                      </div>
+                    </div>
+                    <ol className="ezl-persona-path">
+                      {p.path.map((step, i) => (
+                        <li key={i} className={i === p.path.length - 1 ? 'is-terminal' : ''}>
+                          <span className="ezl-persona-path-dot" />
+                          <span className="ezl-persona-path-h">{step.h}</span>
+                          <span className="ezl-persona-path-b">{step.b}</span>
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="ezl-persona-outcome">
+                      <span className="ezl-persona-outcome-tag">{p.outcomeTag}</span>
+                      <span className="ezl-persona-outcome-v">{p.outcome}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
         {/* PRICING TEASER */}
         <section id="pricing" className="ezl-section">
           <div className="ezl-container">
@@ -664,6 +1221,274 @@ function CalendarLandedMock(): JSX.Element {
       </div>
       <div className="ezl-mock-cta">Routed to calendar →</div>
       <div className="ezl-mock-foot">FCRA soft pull · 0 impact · audit log retained 7 yrs</div>
+    </div>
+  );
+}
+
+/**
+ * 3D-tilted "morphing" form mockup — used in the smart-form deep-dive
+ * section. A buyer's answers populate top-down with typing animation,
+ * and a conditional follow-up field appears mid-stream to show the form
+ * reshaping based on what was answered above. Pure CSS animation.
+ */
+function MorphingFormMock(): JSX.Element {
+  // Five base fields + one conditional that fades in after the 3rd
+  // answer is "typed." Order + delay timings tuned so the conditional
+  // looks like a HELIX-driven branch, not just the next sequential row.
+  const FIELDS: Array<{ k: string; v: string; conditional?: boolean }> = [
+    { k: 'Email', v: 'jordan@example.com' },
+    { k: 'Phone', v: '(415) 555-0192' },
+    { k: 'Annual income', v: '$96,000' },
+    { k: 'Self-employed?', v: 'Yes', conditional: true },
+    { k: 'Bank-statement upload', v: '3 of 3 attached', conditional: true },
+    { k: 'Budget range', v: '$10k – $25k' },
+  ];
+  return (
+    <div className="ezl-form-mock">
+      <div className="ezl-form-bezel">
+        <div className="ezl-form-screen">
+          <div className="ezl-form-header">
+            <span className="ezl-form-brand">EZ Check · qualification</span>
+            <span className="ezl-form-meta">FCRA · 0 impact</span>
+          </div>
+          <div className="ezl-form-title">Quick pre-qual</div>
+          <div className="ezl-form-sub">
+            Answers as you go · HELIX reshapes the form in real time
+          </div>
+          <div className="ezl-form-fields">
+            {FIELDS.map((f, i) => (
+              <div
+                key={i}
+                className={`ezl-form-field ${f.conditional ? 'is-conditional' : ''}`}
+                style={{ animationDelay: `${i * 0.55}s` }}
+              >
+                <div className="ezl-form-field-k">
+                  {f.k}
+                  {f.conditional ? (
+                    <span className="ezl-form-field-flag" aria-hidden>
+                      HELIX · added
+                    </span>
+                  ) : null}
+                </div>
+                <div className="ezl-form-field-v">{f.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="ezl-form-submit">Submit · run pre-qualification</div>
+          <div className="ezl-form-foot">
+            <span className="ezl-form-foot-dot" />
+            HELIX added 2 fields based on "self-employed" answer
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Multi-hop routing tree — 3D-tilted SVG visualization of a 4-level
+ * routing pipeline. Lead at top, three sequential routing decisions
+ * each with branch points, terminal destinations across the bottom.
+ * A traced "buyer dot" animates along one path on every reveal to
+ * show how a real lead flows through the pipeline.
+ */
+function MultiHopRoutingTree(): JSX.Element {
+  return (
+    <div className="ezl-tree-scene">
+      <div className="ezl-tree-plate" aria-hidden />
+      <svg
+        viewBox="0 0 1000 560"
+        preserveAspectRatio="xMidYMid meet"
+        className="ezl-tree-svg"
+        aria-label="Multi-hop routing tree visualization"
+      >
+        {/* edges — drawn before nodes so nodes paint on top */}
+        <g className="ezl-tree-edges">
+          <path d="M500,50 L500,130" />
+          <path d="M500,170 L320,250" />
+          <path d="M500,170 L680,250" />
+          <path d="M320,290 L200,370" />
+          <path d="M320,290 L440,370" />
+          <path d="M680,290 L560,370" />
+          <path d="M680,290 L800,370" />
+          <path d="M200,410 L130,490" />
+          <path d="M440,410 L370,490" />
+          <path d="M560,410 L490,490" />
+          <path d="M560,410 L630,490" />
+          <path d="M800,410 L750,490" />
+          <path d="M800,410 L880,490" />
+        </g>
+
+        {/* traced buyer-dot path — Jordan M. journey · animated */}
+        <path
+          id="ezl-tree-trace"
+          d="M500,50 L500,170 L500,170 L680,250 L680,290 L800,370 L800,410 L750,490"
+          fill="none"
+          stroke="transparent"
+        />
+        <circle r="7" className="ezl-tree-buyer">
+          <animateMotion dur="6.5s" repeatCount="indefinite" rotate="auto">
+            <mpath href="#ezl-tree-trace" />
+          </animateMotion>
+        </circle>
+
+        {/* level 0 — lead capture */}
+        <g transform="translate(440, 12)">
+          <rect className="ezl-tree-node ezl-tree-node-root" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            LEAD CAPTURE
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Form submit
+          </text>
+        </g>
+
+        {/* level 1 — budget gate */}
+        <g transform="translate(440, 132)">
+          <rect className="ezl-tree-node ezl-tree-node-gate" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 1 · BUDGET
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            ≥ $10k?
+          </text>
+        </g>
+
+        {/* level 2 — fundability tier (high path) + nurture (low path) */}
+        <g transform="translate(260, 252)">
+          <rect className="ezl-tree-node ezl-tree-node-gate" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 2 · TIER
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            A / B / C / D?
+          </text>
+        </g>
+        <g transform="translate(620, 252)">
+          <rect className="ezl-tree-node ezl-tree-node-gate" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 2 · INTENT
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Hot · warm · cold
+          </text>
+        </g>
+
+        {/* level 3 — time-of-day + source gates */}
+        <g transform="translate(140, 372)">
+          <rect className="ezl-tree-node ezl-tree-node-gate" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 3 · CALENDAR
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Senior · standard
+          </text>
+        </g>
+        <g transform="translate(380, 372)">
+          <rect className="ezl-tree-node ezl-tree-node-gate" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 3 · OFFER
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Masterclass · ebook
+          </text>
+        </g>
+        <g transform="translate(500, 372)">
+          <rect className="ezl-tree-node ezl-tree-node-gate" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 3 · WEBINAR
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Live · recorded
+          </text>
+        </g>
+        <g transform="translate(740, 372)">
+          <rect
+            className="ezl-tree-node ezl-tree-node-gate ezl-tree-node-traced"
+            width="120"
+            height="38"
+            rx="10"
+          />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            HOP 3 · CALENDAR
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Senior · standard
+          </text>
+        </g>
+
+        {/* level 4 — terminals */}
+        <g transform="translate(70, 492)">
+          <rect className="ezl-tree-node ezl-tree-node-term" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            TERMINAL
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Calendar · senior
+          </text>
+        </g>
+        <g transform="translate(310, 492)">
+          <rect className="ezl-tree-node ezl-tree-node-term" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            TERMINAL
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Masterclass
+          </text>
+        </g>
+        <g transform="translate(430, 492)">
+          <rect className="ezl-tree-node ezl-tree-node-term" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            TERMINAL
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Webinar live
+          </text>
+        </g>
+        <g transform="translate(570, 492)">
+          <rect className="ezl-tree-node ezl-tree-node-term" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            TERMINAL
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Webinar replay
+          </text>
+        </g>
+        <g transform="translate(690, 492)">
+          <rect
+            className="ezl-tree-node ezl-tree-node-term ezl-tree-node-traced"
+            width="120"
+            height="38"
+            rx="10"
+          />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            TERMINAL
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Calendar · senior
+          </text>
+        </g>
+        <g transform="translate(820, 492)">
+          <rect className="ezl-tree-node ezl-tree-node-term" width="120" height="38" rx="10" />
+          <text className="ezl-tree-node-tag" x="60" y="16">
+            TERMINAL
+          </text>
+          <text className="ezl-tree-node-h" x="60" y="32">
+            Calendar · standard
+          </text>
+        </g>
+      </svg>
+
+      <div className="ezl-tree-legend">
+        <div>
+          <span className="ezl-tree-legend-dot ezl-tree-legend-dot-buyer" />
+          Animated dot = Jordan M.&apos;s actual path through the pipeline
+        </div>
+        <div>
+          <span className="ezl-tree-legend-dot ezl-tree-legend-dot-edge" />
+          Solid edges = current routing rules · dashed = your A/B test surface
+        </div>
+      </div>
     </div>
   );
 }
@@ -1507,5 +2332,725 @@ const CSS = `
   .ezl-nav-links { display: none; }
   .ezl-footer-inner { flex-direction: column; align-items: flex-start; }
   .ezl-footer-meta { text-align: left; }
+}
+
+/* ========================== DEEP-DIVE SECTIONS ============================ */
+
+/* Alternating section bg — dark navy panel for HELIX deep-dives */
+.ezl-section-dark {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(96, 165, 250, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 90%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
+    linear-gradient(180deg, #0F172A 0%, #0A0F1F 100%);
+  margin-top: 64px;
+  margin-bottom: 32px;
+  color: #EEF2F8;
+  border-top: 1px solid rgba(96, 165, 250, 0.18);
+  border-bottom: 1px solid rgba(96, 165, 250, 0.18);
+}
+.ezl-section-dark .ezl-h2 { color: #fff; }
+.ezl-section-dark .ezl-grad-blue {
+  background: linear-gradient(120deg, var(--ezk-blue-2) 0%, #93C5FD 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.ezl-section-dark .ezl-grad-blue-deep {
+  background: linear-gradient(120deg, #C7D2FE 0%, #fff 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.ezl-section-dark .ezl-section-sub { color: rgba(238, 242, 248, 0.74); }
+.ezl-section-dark .ezl-section-eyebrow {
+  background: rgba(96, 165, 250, 0.14);
+  border-color: rgba(96, 165, 250, 0.34);
+  color: var(--ezk-blue-2);
+}
+
+/* DEEP GRID — 2-col layout for smart-form deep-dive */
+.ezl-deep-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+.ezl-deep-left { display: flex; flex-direction: column; gap: 18px; }
+.ezl-deep-right { position: relative; min-height: 480px; display: flex; align-items: center; justify-content: center; }
+
+.ezl-deep-bullets {
+  list-style: none; padding: 0; margin: 8px 0 0;
+  display: flex; flex-direction: column;
+  gap: 14px;
+}
+.ezl-deep-bullets li {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: transform .25s ease, border-color .25s ease, background .25s ease;
+}
+.ezl-deep-bullets li:hover {
+  transform: translateX(4px);
+  background: rgba(96, 165, 250, 0.08);
+  border-color: rgba(96, 165, 250, 0.38);
+}
+.ezl-deep-bullet-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue-2);
+  text-transform: uppercase;
+}
+.ezl-deep-bullet-h {
+  font-size: 16px; font-weight: 600;
+  letter-spacing: -0.014em;
+  color: #fff;
+}
+.ezl-deep-bullet-b {
+  margin-top: 4px;
+  font-size: 13.5px; line-height: 1.55;
+  color: rgba(238, 242, 248, 0.74);
+}
+
+/* MORPHING FORM MOCK — 3D-tilted form with conditional fields */
+.ezl-form-mock {
+  position: relative; z-index: 2;
+  width: 420px;
+}
+.ezl-form-bezel {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  padding: 14px;
+  border-radius: 22px;
+  box-shadow:
+    0 60px 110px -50px rgba(59, 130, 246, 0.55),
+    0 30px 60px -30px rgba(59, 130, 246, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.ezl-form-screen {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+}
+.ezl-form-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ezk-line);
+}
+.ezl-form-brand {
+  font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+}
+.ezl-form-meta {
+  font-size: 9px; letter-spacing: 0.16em;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 6px;
+}
+.ezl-form-title {
+  margin-top: 16px;
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ezk-ink);
+}
+.ezl-form-sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--ezk-mute);
+}
+.ezl-form-fields {
+  margin-top: 16px;
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+.ezl-form-field {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  padding: 11px 14px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid var(--ezk-line);
+  border-radius: 10px;
+  opacity: 0;
+  animation: ezlFieldIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.ezl-form-field.is-conditional {
+  background: rgba(96, 165, 250, 0.10);
+  border-color: rgba(96, 165, 250, 0.34);
+  box-shadow: 0 4px 14px -6px rgba(59, 130, 246, 0.30);
+}
+@keyframes ezlFieldIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ezl-form-field-k {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-form-field-flag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8.5px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--ezk-blue);
+  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.10);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.ezl-form-field-v {
+  font-size: 13.5px; font-weight: 600;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ezl-form-submit {
+  margin-top: 18px;
+  padding: 13px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13.5px; font-weight: 700;
+}
+.ezl-form-foot {
+  margin-top: 12px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.04em;
+  color: var(--ezk-mute);
+}
+.ezl-form-foot-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ezk-blue);
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  animation: ezlPulse 1.6s ease-in-out infinite;
+}
+
+/* SIGNALS GRID — 3 financial-signal cards */
+.ezl-signals-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+  perspective: 1400px;
+}
+.ezl-signal {
+  position: relative;
+  padding: 26px 24px 24px;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 20px;
+  box-shadow: 0 22px 60px -32px rgba(59, 130, 246, 0.28);
+  transition: transform .35s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow .35s cubic-bezier(0.22, 0.61, 0.36, 1);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  gap: 6px;
+}
+.ezl-signal-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 110%, rgba(96, 165, 250, 0.20), transparent 60%);
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
+}
+.ezl-signal:hover {
+  transform: translateY(-4px) rotateX(2deg);
+  box-shadow: 0 36px 80px -32px rgba(59, 130, 246, 0.40);
+}
+.ezl-signal:hover .ezl-signal-glow { opacity: 1; }
+.ezl-signal > * { position: relative; z-index: 1; }
+.ezl-signal-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  width: fit-content;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-blue);
+  background: rgba(96, 165, 250, 0.10);
+  border: 1px solid rgba(59, 130, 246, 0.20);
+  border-radius: 6px;
+}
+.ezl-signal-h {
+  margin-top: 8px;
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--ezk-ink);
+}
+.ezl-signal-metric {
+  margin-top: 6px;
+  font-size: 32px; font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.ezl-signal-b {
+  margin: 6px 0 0;
+  font-size: 13px; line-height: 1.55;
+  color: var(--ezk-ink-2);
+}
+.ezl-signal-list {
+  list-style: none; padding: 0; margin: 14px 0 0;
+  display: flex; flex-direction: column;
+  gap: 6px;
+}
+.ezl-signal-list li {
+  display: grid; grid-template-columns: 18px 1fr;
+  gap: 10px; align-items: start;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--ezk-ink-2);
+}
+.ezl-signal-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.18);
+  color: var(--ezk-blue);
+  font-size: 10px; font-weight: 700;
+  margin-top: 1px;
+}
+.ezl-signal-foot {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--ezk-line);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ezl-signal-foot-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-signal-foot-v {
+  font-size: 11.5px;
+  color: var(--ezk-blue);
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+
+/* COMPOSITE TIER STACK */
+.ezl-signals-composite {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(96, 165, 250, 0.16), transparent 65%),
+    linear-gradient(135deg, var(--ezk-blue-deep) 0%, #1E40AF 100%);
+  border-radius: 24px;
+  color: #fff;
+  box-shadow:
+    0 30px 70px -30px rgba(59, 130, 246, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.ezl-signals-composite-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue-2);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.ezl-signals-composite-h {
+  margin: 0 0 12px;
+  font-size: 24px; font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #fff;
+}
+.ezl-signals-composite-b {
+  margin: 0;
+  font-size: 14px; line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 460px;
+}
+.ezl-tier-stack {
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+.ezl-tier-row {
+  display: grid; grid-template-columns: 40px 110px 1fr;
+  gap: 14px; align-items: center;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+.ezl-tier-letter {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  font-size: 18px; font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.ezl-tier-a .ezl-tier-letter { background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%); }
+.ezl-tier-b .ezl-tier-letter { background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%); }
+.ezl-tier-c .ezl-tier-letter { background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%); }
+.ezl-tier-d .ezl-tier-letter { background: linear-gradient(135deg, #64748B 0%, #475569 100%); }
+.ezl-tier-name {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+.ezl-tier-rule {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+/* MULTI-HOP ROUTING TREE */
+.ezl-tree-scene {
+  position: relative;
+  margin-top: 8px;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.50);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  border-radius: 22px;
+  overflow: hidden;
+}
+.ezl-tree-plate {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 60% at 50% 0%, rgba(96, 165, 250, 0.22), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(59, 130, 246, 0.18), transparent 55%);
+  pointer-events: none;
+}
+.ezl-tree-svg {
+  position: relative; z-index: 1;
+  width: 100%;
+  height: auto;
+  display: block;
+  transform: perspective(1800px) rotateX(6deg);
+  transform-origin: 50% 50%;
+}
+.ezl-tree-edges path {
+  fill: none;
+  stroke: rgba(96, 165, 250, 0.45);
+  stroke-width: 1.8;
+  stroke-dasharray: 5 5;
+  animation: ezlEdgeDash 8s linear infinite;
+}
+@keyframes ezlEdgeDash {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -100; }
+}
+.ezl-tree-node {
+  fill: rgba(15, 23, 42, 0.92);
+  stroke: rgba(96, 165, 250, 0.40);
+  stroke-width: 1.4;
+}
+.ezl-tree-node-root {
+  fill: url(#) #1E3A8A;
+  fill: #1E3A8A;
+  stroke: rgba(96, 165, 250, 0.65);
+}
+.ezl-tree-node-gate {
+  fill: rgba(30, 41, 59, 0.96);
+  stroke: rgba(96, 165, 250, 0.50);
+}
+.ezl-tree-node-term {
+  fill: rgba(15, 23, 42, 0.92);
+  stroke: rgba(96, 165, 250, 0.34);
+}
+.ezl-tree-node-traced {
+  stroke: rgba(96, 165, 250, 1);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 12px rgba(96, 165, 250, 0.6));
+}
+.ezl-tree-node-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  fill: rgba(96, 165, 250, 0.95);
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+.ezl-tree-node-h {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  fill: #fff;
+  text-anchor: middle;
+}
+.ezl-tree-buyer {
+  fill: #FBBF24;
+  filter: drop-shadow(0 0 6px #FBBF24);
+}
+
+.ezl-tree-legend {
+  position: relative; z-index: 2;
+  margin-top: 16px;
+  display: flex; flex-wrap: wrap; gap: 24px;
+  font-size: 12px;
+  color: rgba(238, 242, 248, 0.78);
+}
+.ezl-tree-legend > div {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.ezl-tree-legend-dot {
+  width: 10px; height: 10px; border-radius: 999px;
+}
+.ezl-tree-legend-dot-buyer { background: #FBBF24; box-shadow: 0 0 8px #FBBF24; }
+.ezl-tree-legend-dot-edge { background: var(--ezk-blue-2); box-shadow: 0 0 8px rgba(96, 165, 250, 0.6); }
+
+.ezl-routing-callouts {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 24px;
+}
+.ezl-routing-callout {
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 14px;
+}
+.ezl-routing-callout-h {
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.012em;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.ezl-routing-callout-b {
+  font-size: 13px; line-height: 1.55;
+  color: rgba(238, 242, 248, 0.74);
+}
+
+/* ROUTING PATTERN CARDS */
+.ezl-patterns-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.ezl-pattern {
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
+    rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 20px;
+  box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.22);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.ezl-pattern:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 32px 70px -28px rgba(59, 130, 246, 0.35);
+}
+.ezl-pattern-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+}
+.ezl-pattern-h {
+  margin: 6px 0 6px;
+  font-size: 20px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--ezk-ink);
+}
+.ezl-pattern-b {
+  margin: 0 0 14px;
+  font-size: 13.5px; line-height: 1.55;
+  color: var(--ezk-ink-2);
+}
+.ezl-pattern-hops {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid var(--ezk-line);
+  border-radius: 12px;
+}
+.ezl-pattern-hops li {
+  display: grid; grid-template-columns: 30px 1fr;
+  gap: 10px; align-items: start;
+}
+.ezl-pattern-hop-n {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--ezk-blue);
+  background: rgba(59, 130, 246, 0.10);
+  border-radius: 5px;
+  padding: 3px 0;
+  text-align: center;
+}
+.ezl-pattern-hop-text { display: flex; flex-direction: column; gap: 2px; }
+.ezl-pattern-hop-h {
+  font-size: 13px; font-weight: 600;
+  color: var(--ezk-ink);
+}
+.ezl-pattern-hop-b {
+  font-size: 12px; line-height: 1.4;
+  color: var(--ezk-mute);
+}
+.ezl-pattern-outcome {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  border-radius: 12px;
+  color: #fff;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ezl-pattern-outcome-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue-2);
+  text-transform: uppercase;
+}
+.ezl-pattern-outcome-v {
+  font-size: 13.5px; font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* PERSONA JOURNEYS */
+.ezl-personas-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.ezl-persona {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 20px;
+  box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.22);
+  display: flex; flex-direction: column;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.ezl-persona:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 32px 70px -28px rgba(59, 130, 246, 0.35);
+}
+.ezl-persona-head {
+  display: grid; grid-template-columns: 44px 1fr auto;
+  gap: 12px; align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ezk-line);
+}
+.ezl-persona-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--ezk-blue) 0%, var(--ezk-blue-2) 100%);
+  color: #fff;
+  font-size: 16px; font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.ezl-persona-a .ezl-persona-avatar { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); }
+.ezl-persona-b .ezl-persona-avatar { background: linear-gradient(135deg, #93C5FD 0%, #60A5FA 100%); }
+.ezl-persona-c .ezl-persona-avatar { background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%); }
+.ezl-persona-name {
+  font-size: 15px; font-weight: 700;
+  letter-spacing: -0.014em;
+  color: var(--ezk-ink);
+}
+.ezl-persona-source {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px;
+  color: var(--ezk-mute);
+}
+.ezl-persona-tier-pill {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-blue);
+  background: rgba(59, 130, 246, 0.10);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.ezl-persona-c .ezl-persona-tier-pill {
+  color: #B45309;
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+.ezl-persona-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  background: rgba(59, 130, 246, 0.04);
+  border-radius: 10px;
+}
+.ezl-persona-stat { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.ezl-persona-stat-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.ezl-persona-stat-v {
+  font-size: 16px; font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ezl-persona-path {
+  list-style: none; padding: 0; margin: 0 0 14px;
+  display: flex; flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+.ezl-persona-path li {
+  position: relative;
+  padding: 10px 0 10px 24px;
+  border-left: 2px dashed rgba(96, 165, 250, 0.40);
+  margin-left: 5px;
+}
+.ezl-persona-path li:last-child {
+  border-left-color: transparent;
+}
+.ezl-persona-path-dot {
+  position: absolute;
+  left: -6px; top: 12px;
+  width: 10px; height: 10px;
+  border-radius: 999px;
+  background: var(--ezk-blue);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(59, 130, 246, 0.25);
+}
+.ezl-persona-path li.is-terminal .ezl-persona-path-dot {
+  background: #FBBF24;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(251, 191, 36, 0.35);
+}
+.ezl-persona-path-h {
+  display: block;
+  font-size: 13px; font-weight: 600;
+  color: var(--ezk-ink);
+  margin-bottom: 2px;
+}
+.ezl-persona-path-b {
+  display: block;
+  font-size: 11.5px; line-height: 1.5;
+  color: var(--ezk-mute);
+}
+.ezl-persona-outcome {
+  margin-top: auto;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  border-radius: 10px;
+  color: #fff;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ezl-persona-c .ezl-persona-outcome {
+  background: linear-gradient(135deg, #92400E 0%, #B45309 100%);
+}
+.ezl-persona-outcome-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+}
+.ezl-persona-outcome-v {
+  font-size: 12.5px; line-height: 1.45;
+}
+
+@media (max-width: 980px) {
+  .ezl-deep-grid { grid-template-columns: 1fr; gap: 32px; }
+  .ezl-deep-right { min-height: 360px; }
+  .ezl-form-mock { width: 100%; max-width: 420px; }
+  .ezl-signals-grid { grid-template-columns: 1fr; }
+  .ezl-signals-composite { grid-template-columns: 1fr; }
+  .ezl-routing-callouts { grid-template-columns: 1fr; }
+  .ezl-patterns-grid { grid-template-columns: 1fr; }
+  .ezl-personas-grid { grid-template-columns: 1fr; }
 }
 `;

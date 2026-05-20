@@ -282,9 +282,82 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 07 — STAGE 2 · PRE-QUAL AGENTS */
+  /* 07 — SMART FORM · DEEP DIVE (morphing form, conditional logic) */
   {
     n: '07',
+    title: 'Smart form · deep dive',
+    build: () => (
+      <div className="sld-stack sld-grid-hero">
+        <div className="sld-hero-left">
+          <Reveal>
+            <div className="sld-eyebrow">
+              <span className="sld-eyebrow-dot" />
+              Deep dive · HELIX · Smart form
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <h2 className="sld-h2">
+              <span className="grad-blue-deep">Four ways</span>{' '}
+              <span className="grad-blue">the form reshapes itself.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={240}>
+            <p className="sld-sub">
+              HELIX rewrites field order, validation, and conditional branches on every keystroke.
+              The form learns from your funded-deal outcomes — not a generic lookalike. No engineer
+              touches it after launch.
+            </p>
+          </Reveal>
+          <Reveal delay={360}>
+            <ul className="sld-deep-bullets">
+              <li>
+                <span className="sld-deep-bullet-tag">CONDITIONAL FIELDS</span>
+                <span className="sld-deep-bullet-h">Show only what matters</span>
+                <span className="sld-deep-bullet-b">
+                  Self-employed → swap W-2 question for bank-statement upload. Budget &lt; $5k →
+                  high-ticket qualifying drops entirely.
+                </span>
+              </li>
+              <li>
+                <span className="sld-deep-bullet-tag">SOURCE-AWARE ORDER</span>
+                <span className="sld-deep-bullet-h">Reorders by traffic source</span>
+                <span className="sld-deep-bullet-b">
+                  Meta clicks see budget first. Google search clicks see procedure first. Affiliate
+                  clicks see attribution first. All learned from your closes.
+                </span>
+              </li>
+              <li>
+                <span className="sld-deep-bullet-tag">ABANDONMENT RECOVERY</span>
+                <span className="sld-deep-bullet-h">Saves partial answers · 90-day re-pull</span>
+                <span className="sld-deep-bullet-b">
+                  Bailed at field 3? HELIX emails a one-click resume link. Recoveries close at 2.3×
+                  cold-inbound rate.
+                </span>
+              </li>
+              <li>
+                <span className="sld-deep-bullet-tag">MOBILE-FIRST</span>
+                <span className="sld-deep-bullet-h">One question per screen</span>
+                <span className="sld-deep-bullet-b">
+                  Auto-advance, inertial keyboards. Buyer finishes a 12-question qualifier before
+                  realizing they did.
+                </span>
+              </li>
+            </ul>
+          </Reveal>
+        </div>
+        <div className="sld-hero-right">
+          <ParticleField count={14} />
+          <TiltCard>
+            <MorphingFormDeepMock />
+          </TiltCard>
+        </div>
+      </div>
+    ),
+  },
+
+  /* 08 — STAGE 2 · PRE-QUAL AGENTS */
+  {
+    n: '08',
     title: 'Stage 2 — Pre-qual agents',
     build: () => (
       <div className="sld-stack">
@@ -313,9 +386,45 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 08 — STAGE 3 · SMART ROUTING */
+  /* 09 — FINANCIAL SIGNALS · DEEP DIVE (the 3 signals ORACLE pulls) */
   {
-    n: '08',
+    n: '09',
+    title: 'Three financial signals',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Deep dive · ORACLE · Pre-qualification agents
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">Three signals.</span>{' '}
+            <span className="grad-blue">Composite tier.</span>{' '}
+            <span className="grad-blue-deep">Under 3 seconds.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            ORACLE pulls three FCRA / GLBA-compliant data sources in parallel on every form submit
+            and composites them into a single tier letter. Name + email + DOB is enough — no manual
+            upload needed.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <FinancialSignalsGrid />
+        </Reveal>
+        <Reveal delay={480}>
+          <FundabilityTierStack />
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 10 — STAGE 3 · SMART ROUTING */
+  {
+    n: '10',
     title: 'Stage 3 — Smart routing',
     build: () => (
       <div className="sld-stack">
@@ -353,9 +462,102 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 09 — WITHOUT / WITH */
+  /* 11 — MULTI-HOP ROUTING TREE (3D visualization) */
   {
-    n: '09',
+    n: '11',
+    title: 'Multi-hop routing pipeline',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Deep dive · HELIX · Routing pipeline
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">Routing is a pipeline,</span>{' '}
+            <span className="grad-blue">not a single fork.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            Chain as many routing decisions as you need. Budget · fundability · time-of-day · source
+            · intent — all available as predicates. Each hop is its own A/B test surface.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <MultiHopRoutingTreeDeck />
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 12 — ROUTING PATTERNS (4 example funnels) */
+  {
+    n: '12',
+    title: 'Real routing patterns',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Routing patterns we&apos;ve seen win
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">Four real funnels.</span>{' '}
+            <span className="grad-blue">Compose your own.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            Each card is a live routing pattern from an EZ Check customer. Hops can be added,
+            removed, or reordered from the admin panel — no engineer required.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <RoutingPatternsGrid />
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 13 — PERSONA WALKTHROUGHS (3 buyer journeys) */
+  {
+    n: '13',
+    title: 'Persona walkthroughs',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            Three buyers · three paths
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">Same form.</span>{' '}
+            <span className="grad-blue">Three outcomes.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            Three buyers hit your funnel in the same hour. Different fundability, different intent,
+            finite closer time. Here&apos;s what EZ Check does with each.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <PersonasStrip />
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 14 — WITHOUT / WITH */
+  {
+    n: '14',
     title: 'Without vs With EZ Check',
     build: () => (
       <div className="sld-stack">
@@ -1126,6 +1328,468 @@ function ArrowIcon() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+/* =========================== DEEP-DIVE CONTENT ============================ */
+
+/** Smart-form deep-dive · 3D-tilted morphing form with conditional fields
+ *  that flag themselves as "HELIX · added" mid-stream. */
+function MorphingFormDeepMock(): JSX.Element {
+  const FIELDS: Array<{ k: string; v: string; conditional?: boolean }> = [
+    { k: 'Email', v: 'jordan@example.com' },
+    { k: 'Phone', v: '(415) 555-0192' },
+    { k: 'Annual income', v: '$96,000' },
+    { k: 'Self-employed?', v: 'Yes', conditional: true },
+    { k: 'Bank-statement upload', v: '3 of 3 attached', conditional: true },
+    { k: 'Budget range', v: '$10k – $25k' },
+  ];
+  return (
+    <div className="sld-form-deep">
+      <div className="sld-form-deep-bezel">
+        <div className="sld-form-deep-screen">
+          <div className="sld-form-deep-header">
+            <span className="sld-form-deep-brand">EZ Check · qualification</span>
+            <span className="sld-form-deep-meta">FCRA · 0 impact</span>
+          </div>
+          <div className="sld-form-deep-title">Quick pre-qual</div>
+          <div className="sld-form-deep-sub">HELIX reshapes the form in real time</div>
+          <div className="sld-form-deep-fields">
+            {FIELDS.map((f, i) => (
+              <div
+                key={i}
+                className={`sld-form-deep-field ${f.conditional ? 'is-conditional' : ''}`}
+                style={{ animationDelay: `${i * 0.55}s` }}
+              >
+                <div className="sld-form-deep-field-k">
+                  {f.k}
+                  {f.conditional ? (
+                    <span className="sld-form-deep-field-flag">HELIX · added</span>
+                  ) : null}
+                </div>
+                <div className="sld-form-deep-field-v">{f.v}</div>
+              </div>
+            ))}
+          </div>
+          <div className="sld-form-deep-submit">Submit · run pre-qualification</div>
+          <div className="sld-form-deep-foot">
+            <span className="sld-form-deep-foot-dot" />
+            HELIX added 2 fields based on "self-employed" answer
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Three financial signals grid (CREDIT / INCOME / FUNDABILITY). */
+function FinancialSignalsGrid(): JSX.Element {
+  const SIGNALS = [
+    {
+      code: '01 · CREDIT',
+      head: 'Soft-pull credit score',
+      metric: '< 1.2s',
+      body: 'Bureau-direct soft inquiry returns score + available credit + utilization. Zero impact, buyer-consented at form submit.',
+      points: [
+        'Score · available credit · utilization',
+        'No hard pull · no permission slip',
+        'Bureau-direct API, no aggregators',
+      ],
+      compliance: 'FCRA · ECOA / Reg B',
+    },
+    {
+      code: '02 · INCOME',
+      head: 'Income capacity + DTI',
+      metric: '< 0.8s',
+      body: 'Verified income via payroll APIs or bank-statement parser. DTI calculated live against the credit-side debt.',
+      points: [
+        'Gross + net income · verified',
+        'DTI vs. credit obligations',
+        'Self-employed fallback: bank-statement parser',
+      ],
+      compliance: 'GLBA · PII tokenized',
+    },
+    {
+      code: '03 · FUNDABILITY',
+      head: 'Composite tier',
+      metric: 'A / B / C / D',
+      body: 'Calibrated on your funded outcomes. Retrained nightly. Every decision shows the exact thresholds it crossed.',
+      points: [
+        'Trained on your funded deals',
+        'Nightly retrain · drift-alerted',
+        'Per-decision explanation in audit panel',
+      ],
+      compliance: 'Model AUC 0.91 · explainable',
+    },
+  ];
+  return (
+    <div className="sld-signals-grid">
+      {SIGNALS.map((s) => (
+        <article key={s.code} className="sld-signal">
+          <div className="sld-signal-tag">{s.code}</div>
+          <h3 className="sld-signal-h">{s.head}</h3>
+          <div className="sld-signal-metric">{s.metric}</div>
+          <p className="sld-signal-b">{s.body}</p>
+          <ul className="sld-signal-list">
+            {s.points.map((pt) => (
+              <li key={pt}>
+                <span className="sld-signal-check" aria-hidden>
+                  ✓
+                </span>
+                {pt}
+              </li>
+            ))}
+          </ul>
+          <div className="sld-signal-foot">
+            <span className="sld-signal-foot-k">Compliance</span>
+            <span className="sld-signal-foot-v">{s.compliance}</span>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+/** Fundability tier stack — A / B / C / D rows with routing rules. */
+function FundabilityTierStack(): JSX.Element {
+  const TIERS: Array<{ letter: 'A' | 'B' | 'C' | 'D'; name: string; rule: string }> = [
+    { letter: 'A', name: 'Top decile', rule: 'Route → calendar · best closer' },
+    { letter: 'B', name: 'Qualified', rule: 'Route → calendar · standard pool' },
+    { letter: 'C', name: 'Marginal', rule: 'Route → masterclass · 30-day re-pull' },
+    { letter: 'D', name: 'Not fundable', rule: 'Route → nurture · low-ticket offer' },
+  ];
+  return (
+    <div className="sld-tier-stack-wrap">
+      <div className="sld-tier-stack-l">
+        <div className="sld-tier-stack-tag">COMPOSITE OUTPUT</div>
+        <div className="sld-tier-stack-h">Fundability tier · A / B / C / D</div>
+        <p className="sld-tier-stack-b">
+          The three signals feed a calibrated model retrained nightly on your funded-deal outcomes —
+          not a generic lookalike. Every routing decision shows the exact thresholds the buyer
+          crossed.
+        </p>
+      </div>
+      <div className="sld-tier-stack-r">
+        {TIERS.map((t) => (
+          <div key={t.letter} className={`sld-tier-row sld-tier-${t.letter.toLowerCase()}`}>
+            <span className="sld-tier-letter">{t.letter}</span>
+            <span className="sld-tier-name">{t.name}</span>
+            <span className="sld-tier-rule">{t.rule}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Multi-hop routing tree (sales-deck variant) — same shape as the
+ *  landing-page tree but scaled to fit a single slide viewport. */
+function MultiHopRoutingTreeDeck(): JSX.Element {
+  return (
+    <div className="sld-tree-scene">
+      <div className="sld-tree-plate" aria-hidden />
+      <svg
+        viewBox="0 0 1000 560"
+        preserveAspectRatio="xMidYMid meet"
+        className="sld-tree-svg"
+        aria-label="Multi-hop routing tree"
+      >
+        <g className="sld-tree-edges">
+          <path d="M500,50 L500,130" />
+          <path d="M500,170 L320,250" />
+          <path d="M500,170 L680,250" />
+          <path d="M320,290 L200,370" />
+          <path d="M320,290 L440,370" />
+          <path d="M680,290 L560,370" />
+          <path d="M680,290 L800,370" />
+          <path d="M200,410 L130,490" />
+          <path d="M440,410 L370,490" />
+          <path d="M560,410 L490,490" />
+          <path d="M560,410 L630,490" />
+          <path d="M800,410 L750,490" />
+          <path d="M800,410 L880,490" />
+        </g>
+        <path
+          id="sld-tree-trace"
+          d="M500,50 L500,170 L680,250 L680,290 L800,370 L800,410 L750,490"
+          fill="none"
+          stroke="transparent"
+        />
+        <circle r="7" className="sld-tree-buyer">
+          <animateMotion dur="6.5s" repeatCount="indefinite" rotate="auto">
+            <mpath href="#sld-tree-trace" />
+          </animateMotion>
+        </circle>
+        {[
+          { x: 440, y: 12, tag: 'LEAD CAPTURE', h: 'Form submit', cls: 'sld-tree-node-root' },
+          { x: 440, y: 132, tag: 'HOP 1 · BUDGET', h: '≥ $10k?', cls: 'sld-tree-node-gate' },
+          { x: 260, y: 252, tag: 'HOP 2 · TIER', h: 'A / B / C / D?', cls: 'sld-tree-node-gate' },
+          {
+            x: 620,
+            y: 252,
+            tag: 'HOP 2 · INTENT',
+            h: 'Hot · warm · cold',
+            cls: 'sld-tree-node-gate',
+          },
+          {
+            x: 140,
+            y: 372,
+            tag: 'HOP 3 · CALENDAR',
+            h: 'Senior · standard',
+            cls: 'sld-tree-node-gate',
+          },
+          {
+            x: 380,
+            y: 372,
+            tag: 'HOP 3 · OFFER',
+            h: 'Masterclass · ebook',
+            cls: 'sld-tree-node-gate',
+          },
+          {
+            x: 500,
+            y: 372,
+            tag: 'HOP 3 · WEBINAR',
+            h: 'Live · recorded',
+            cls: 'sld-tree-node-gate',
+          },
+          {
+            x: 740,
+            y: 372,
+            tag: 'HOP 3 · CALENDAR',
+            h: 'Senior · standard',
+            cls: 'sld-tree-node-gate sld-tree-node-traced',
+          },
+          { x: 70, y: 492, tag: 'TERMINAL', h: 'Calendar · senior', cls: 'sld-tree-node-term' },
+          { x: 310, y: 492, tag: 'TERMINAL', h: 'Masterclass', cls: 'sld-tree-node-term' },
+          { x: 430, y: 492, tag: 'TERMINAL', h: 'Webinar live', cls: 'sld-tree-node-term' },
+          { x: 570, y: 492, tag: 'TERMINAL', h: 'Webinar replay', cls: 'sld-tree-node-term' },
+          {
+            x: 690,
+            y: 492,
+            tag: 'TERMINAL',
+            h: 'Calendar · senior',
+            cls: 'sld-tree-node-term sld-tree-node-traced',
+          },
+          { x: 820, y: 492, tag: 'TERMINAL', h: 'Calendar · standard', cls: 'sld-tree-node-term' },
+        ].map((n, i) => (
+          <g key={i} transform={`translate(${n.x}, ${n.y})`}>
+            <rect className={`sld-tree-node ${n.cls}`} width="120" height="38" rx="10" />
+            <text className="sld-tree-node-tag" x="60" y="16">
+              {n.tag}
+            </text>
+            <text className="sld-tree-node-h" x="60" y="32">
+              {n.h}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="sld-tree-legend">
+        <div>
+          <span className="sld-tree-legend-dot sld-tree-legend-dot-buyer" />
+          Animated dot = a Tier-A buyer flowing through the pipeline
+        </div>
+        <div>
+          <span className="sld-tree-legend-dot sld-tree-legend-dot-edge" />
+          Dashed edges = your A/B-test surfaces · solid = live rules
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Routing pattern cards (4 real funnels). */
+function RoutingPatternsGrid(): JSX.Element {
+  const PATTERNS = [
+    {
+      tag: 'BUDGET-GATED · 4 HOPS',
+      head: 'Coaching · $10k+ programs',
+      body: 'Meta delivers buyers who lie about budget once they hear the price. Gate on stated budget before spending a soft pull.',
+      hops: [
+        { h: 'Lead capture', b: 'Email + phone + UTM' },
+        { h: 'Budget gate', b: '≥ $10k → continue · < $10k → masterclass' },
+        { h: 'Pre-qual pull', b: 'ORACLE · 3 signals' },
+        { h: 'Tier gate', b: 'A/B → calendar · C → nurture' },
+      ],
+      outcome: 'Tier-A/B booked on senior closer in 60 seconds.',
+    },
+    {
+      tag: 'INTENT CASCADE · 5 HOPS',
+      head: 'B2B SaaS demo funnel',
+      body: 'Keep narrowing the field at every hop instead of dumping everything onto the AE calendar.',
+      hops: [
+        { h: 'Lead capture', b: 'Work email + role + company' },
+        { h: 'Company-size gate', b: '≥ 50 emp → continue · SMB → trial' },
+        { h: 'Role gate', b: 'VP/Director → continue · IC → case studies' },
+        { h: 'Intent score', b: 'Pricing + docs + return → demo · cold → webinar' },
+        { h: 'AE match', b: 'Routed to territory owner · round-robin fallback' },
+      ],
+      outcome: 'Enterprise AE calendar fills only with ICP-fit buyers.',
+    },
+    {
+      tag: 'TIME-AWARE · 3 HOPS',
+      head: 'Local services · roofing + solar',
+      body: 'Flip the routing destination on time-of-day — Friday-night leads do not land on Monday-morning calendars.',
+      hops: [
+        { h: 'Lead capture', b: 'Address + project + photo' },
+        { h: 'Working-hours gate', b: '9–7 → live call · after-hours → AM callback' },
+        { h: 'Service-area gate', b: 'In-zone → estimator · out-of-zone → partner referral' },
+      ],
+      outcome: 'Live calls in &lt; 90s during business hours. Zero overnight ghosts.',
+    },
+    {
+      tag: 'SOURCE-ATTRIBUTED · 4 HOPS',
+      head: 'Med-spa cosmetic consults',
+      body: 'Meta wants speed-of-quote. Google search wants authority. Affiliate wants their own attribution. Branch on UTM first.',
+      hops: [
+        { h: 'Lead capture', b: 'Procedure + photo + ad-creative ID' },
+        {
+          h: 'Source gate',
+          b: 'Meta → instant-quote · Google → reviews · affiliate → partner-branded',
+        },
+        { h: 'Pre-qual pull', b: 'ORACLE: credit + income' },
+        { h: 'Closer match', b: 'Rep who closes that procedure best' },
+      ],
+      outcome: 'Per-source close-rate visible live · spend reallocates weekly.',
+    },
+  ];
+  return (
+    <div className="sld-patterns-grid">
+      {PATTERNS.map((p, idx) => (
+        <article key={idx} className="sld-pattern">
+          <div className="sld-pattern-tag">{p.tag}</div>
+          <h3 className="sld-pattern-h">{p.head}</h3>
+          <p className="sld-pattern-b">{p.body}</p>
+          <ol className="sld-pattern-hops">
+            {p.hops.map((h, i) => (
+              <li key={i}>
+                <span className="sld-pattern-hop-n">{String(i + 1).padStart(2, '0')}</span>
+                <span>
+                  <span className="sld-pattern-hop-h">{h.h}</span>
+                  <span className="sld-pattern-hop-b">{h.b}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div className="sld-pattern-outcome">
+            <span className="sld-pattern-outcome-tag">TERMINAL</span>
+            <span className="sld-pattern-outcome-v">{p.outcome}</span>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+/** Persona walkthroughs — 3 buyer journeys side-by-side. */
+function PersonasStrip(): JSX.Element {
+  const PERSONAS: Array<{
+    name: string;
+    initials: string;
+    tier: 'A' | 'B' | 'C';
+    source: string;
+    score: string;
+    income: string;
+    budget: string;
+    path: Array<{ h: string; b: string }>;
+    outcomeTag: string;
+    outcome: string;
+  }> = [
+    {
+      name: 'Jordan M.',
+      initials: 'JM',
+      tier: 'A',
+      source: 'Meta · creative #042',
+      score: '724',
+      income: '$98k',
+      budget: '$15k',
+      path: [
+        { h: 'Form submit', b: 'Answered 4 of 6 fast-path questions in 41s' },
+        { h: 'Budget gate', b: '$15k ≥ $10k → continue' },
+        { h: 'ORACLE pull', b: '724 · income $98k · DTI 22%' },
+        { h: 'Tier composite', b: 'Tier A · top decile' },
+        { h: 'Routed', b: 'Senior closer · Thu 2:00 PM' },
+      ],
+      outcomeTag: 'CALENDAR',
+      outcome: 'Booked senior closer · 41s form → 60s route',
+    },
+    {
+      name: 'Alex S.',
+      initials: 'AS',
+      tier: 'B',
+      source: 'Google · best-coaching search',
+      score: '688',
+      income: '$72k',
+      budget: '$8k',
+      path: [
+        { h: 'Form submit', b: 'Reviews-flow variant · 6 fields' },
+        { h: 'Budget gate', b: '$8k < $10k → masterclass route' },
+        { h: 'Intent check', b: '2nd-visit + downloaded comparison' },
+        { h: 'Routed', b: 'Live workshop · 30-day re-pull' },
+      ],
+      outcomeTag: 'MASTERCLASS',
+      outcome: 'Live workshop · auto re-pull in 30 days',
+    },
+    {
+      name: 'Casey R.',
+      initials: 'CR',
+      tier: 'C',
+      source: 'Affiliate · partner #018',
+      score: '598',
+      income: '$44k',
+      budget: '$3k',
+      path: [
+        { h: 'Form submit', b: 'Bailed at field 3 · recovered 6h later via resume link' },
+        { h: 'Budget gate', b: '$3k < threshold → low-ticket flow' },
+        { h: 'ORACLE pull', b: '598 · income $44k · DTI 51%' },
+        { h: 'Tier composite', b: 'Tier C · not fundable today' },
+        { h: 'Routed', b: 'Free-guide sequence · 90-day re-pull' },
+      ],
+      outcomeTag: 'NURTURE',
+      outcome: 'Never touched closer · re-evaluated in 90 days',
+    },
+  ];
+  return (
+    <div className="sld-personas-grid">
+      {PERSONAS.map((p) => (
+        <article key={p.name} className={`sld-persona sld-persona-${p.tier.toLowerCase()}`}>
+          <div className="sld-persona-head">
+            <div className="sld-persona-avatar">{p.initials}</div>
+            <div>
+              <div className="sld-persona-name">{p.name}</div>
+              <div className="sld-persona-source">{p.source}</div>
+            </div>
+            <div className="sld-persona-tier-pill">Tier {p.tier}</div>
+          </div>
+          <div className="sld-persona-stats">
+            <div className="sld-persona-stat">
+              <span className="sld-persona-stat-k">Score</span>
+              <span className="sld-persona-stat-v">{p.score}</span>
+            </div>
+            <div className="sld-persona-stat">
+              <span className="sld-persona-stat-k">Income</span>
+              <span className="sld-persona-stat-v">{p.income}</span>
+            </div>
+            <div className="sld-persona-stat">
+              <span className="sld-persona-stat-k">Budget</span>
+              <span className="sld-persona-stat-v">{p.budget}</span>
+            </div>
+          </div>
+          <ol className="sld-persona-path">
+            {p.path.map((step, i) => (
+              <li key={i} className={i === p.path.length - 1 ? 'is-terminal' : ''}>
+                <span className="sld-persona-path-dot" />
+                <span className="sld-persona-path-h">{step.h}</span>
+                <span className="sld-persona-path-b">{step.b}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="sld-persona-outcome">
+            <span className="sld-persona-outcome-tag">{p.outcomeTag}</span>
+            <span className="sld-persona-outcome-v">{p.outcome}</span>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -2469,5 +3133,645 @@ const CSS = `
   .sld-routing-arrow { transform: rotate(90deg); }
   .sld-bar-row { grid-template-columns: 1fr; gap: 8px; }
   .sld-breakdown-row { grid-template-columns: 1fr 1fr 60px; }
+}
+
+/* ========================== DEEP-DIVE SLIDES =============================== */
+
+/* SMART FORM DEEP DIVE — bullets + tilted morphing form */
+.sld-deep-bullets {
+  list-style: none; padding: 0; margin: 8px 0 0;
+  display: flex; flex-direction: column;
+  gap: 10px;
+}
+.sld-deep-bullets li {
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--ezk-line);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  box-shadow: 0 18px 40px -22px rgba(59, 130, 246, 0.22);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sld-deep-bullets li:hover {
+  transform: translateX(4px);
+  box-shadow: 0 28px 56px -22px rgba(59, 130, 246, 0.35);
+}
+.sld-deep-bullet-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+}
+.sld-deep-bullet-h {
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--ezk-ink);
+}
+.sld-deep-bullet-b {
+  margin-top: 2px;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--ezk-ink-2);
+}
+
+/* MORPHING FORM — sales-deck variant */
+.sld-form-deep {
+  position: relative; z-index: 2;
+  width: 420px;
+}
+.sld-form-deep-bezel {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  padding: 14px;
+  border-radius: 22px;
+  box-shadow:
+    0 60px 110px -50px rgba(59, 130, 246, 0.55),
+    0 30px 60px -30px rgba(59, 130, 246, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-form-deep-screen {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+}
+.sld-form-deep-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ezk-line);
+}
+.sld-form-deep-brand {
+  font-size: 10.5px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+}
+.sld-form-deep-meta {
+  font-size: 9px; letter-spacing: 0.16em;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 6px;
+}
+.sld-form-deep-title {
+  margin-top: 14px;
+  font-size: 20px; font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ezk-ink);
+}
+.sld-form-deep-sub {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ezk-mute);
+}
+.sld-form-deep-fields {
+  margin-top: 14px;
+  display: flex; flex-direction: column;
+  gap: 7px;
+}
+.sld-form-deep-field {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid var(--ezk-line);
+  border-radius: 10px;
+  opacity: 0;
+  animation: sldFieldIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.sld-form-deep-field.is-conditional {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.40);
+  box-shadow: 0 6px 16px -8px rgba(59, 130, 246, 0.30);
+}
+.sld-form-deep-field-k {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 9.5px; letter-spacing: 0.16em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-form-deep-field-flag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 8px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--ezk-blue);
+  padding: 2px 6px;
+  background: rgba(59, 130, 246, 0.10);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.sld-form-deep-field-v {
+  font-size: 13px; font-weight: 600;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-form-deep-submit {
+  margin-top: 14px;
+  padding: 11px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 700;
+}
+.sld-form-deep-foot {
+  margin-top: 10px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.04em;
+  color: var(--ezk-mute);
+}
+.sld-form-deep-foot-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ezk-blue);
+  animation: sldPulse 1.6s ease-in-out infinite;
+}
+
+/* FINANCIAL SIGNALS GRID */
+.sld-signals-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 4px;
+  perspective: 1400px;
+}
+.sld-signal {
+  position: relative;
+  padding: 22px;
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
+    rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 18px;
+  box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.28);
+  transition: transform .35s ease, box-shadow .35s ease;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.sld-signal:hover {
+  transform: translateY(-4px) rotateX(2deg);
+  box-shadow: 0 36px 70px -28px rgba(59, 130, 246, 0.40);
+}
+.sld-signal-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--ezk-blue);
+  background: rgba(96, 165, 250, 0.10);
+  border: 1px solid rgba(59, 130, 246, 0.20);
+  border-radius: 6px;
+  padding: 3px 8px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+.sld-signal-h {
+  margin: 8px 0 0;
+  font-size: 18px; font-weight: 600;
+  letter-spacing: -0.018em;
+  color: var(--ezk-ink);
+}
+.sld-signal-metric {
+  margin-top: 4px;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-signal-b {
+  margin: 6px 0 0;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--ezk-ink-2);
+}
+.sld-signal-list {
+  list-style: none; padding: 0; margin: 12px 0 0;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.sld-signal-list li {
+  display: grid; grid-template-columns: 16px 1fr;
+  gap: 8px; align-items: start;
+  font-size: 12px; line-height: 1.45;
+  color: var(--ezk-ink-2);
+}
+.sld-signal-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.18);
+  color: var(--ezk-blue);
+  font-size: 9px; font-weight: 700;
+  margin-top: 2px;
+}
+.sld-signal-foot {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--ezk-line);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sld-signal-foot-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-signal-foot-v {
+  font-size: 11px;
+  color: var(--ezk-blue);
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+}
+
+/* FUNDABILITY TIER STACK */
+.sld-tier-stack-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: center;
+  margin-top: 4px;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(96, 165, 250, 0.16), transparent 65%),
+    linear-gradient(135deg, var(--ezk-blue-deep) 0%, #1E40AF 100%);
+  border-radius: 22px;
+  color: #fff;
+  box-shadow:
+    0 28px 60px -28px rgba(59, 130, 246, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+.sld-tier-stack-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue-2);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.sld-tier-stack-h {
+  margin: 0 0 8px;
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #fff;
+}
+.sld-tier-stack-b {
+  margin: 0;
+  font-size: 13.5px; line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+.sld-tier-stack-r { display: flex; flex-direction: column; gap: 6px; }
+.sld-tier-row {
+  display: grid; grid-template-columns: 32px 96px 1fr;
+  gap: 12px; align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+.sld-tier-letter {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  font-size: 14px; font-weight: 800;
+  color: #fff;
+}
+.sld-tier-a .sld-tier-letter { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+.sld-tier-b .sld-tier-letter { background: linear-gradient(135deg, #93C5FD, #60A5FA); }
+.sld-tier-c .sld-tier-letter { background: linear-gradient(135deg, #FBBF24, #F59E0B); }
+.sld-tier-d .sld-tier-letter { background: linear-gradient(135deg, #64748B, #475569); }
+.sld-tier-name {
+  font-size: 12px; font-weight: 700;
+  color: #fff;
+}
+.sld-tier-rule {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+/* MULTI-HOP ROUTING TREE — sales-deck variant */
+.sld-tree-scene {
+  position: relative;
+  margin-top: 8px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.sld-tree-plate {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 60% at 50% 0%, rgba(96, 165, 250, 0.22), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(59, 130, 246, 0.16), transparent 55%);
+  pointer-events: none;
+}
+.sld-tree-svg {
+  position: relative; z-index: 1;
+  width: 100%;
+  height: auto;
+  max-height: 480px;
+  display: block;
+  transform: perspective(1800px) rotateX(6deg);
+  transform-origin: 50% 50%;
+}
+.sld-tree-edges path {
+  fill: none;
+  stroke: rgba(59, 130, 246, 0.55);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+  animation: sldEdgeDash 8s linear infinite;
+}
+@keyframes sldEdgeDash {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -100; }
+}
+.sld-tree-node {
+  fill: rgba(255, 255, 255, 0.97);
+  stroke: rgba(59, 130, 246, 0.40);
+  stroke-width: 1.4;
+}
+.sld-tree-node-root {
+  fill: #1E3A8A;
+  stroke: rgba(96, 165, 250, 0.65);
+}
+.sld-tree-node-gate {
+  fill: rgba(255, 255, 255, 0.98);
+  stroke: rgba(59, 130, 246, 0.45);
+}
+.sld-tree-node-term {
+  fill: rgba(255, 255, 255, 0.98);
+  stroke: rgba(59, 130, 246, 0.34);
+}
+.sld-tree-node-traced {
+  stroke: rgba(96, 165, 250, 1);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.55));
+}
+.sld-tree-node-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 7px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  fill: var(--ezk-blue);
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+.sld-tree-node-root + .sld-tree-node-tag,
+.sld-tree-node-root ~ .sld-tree-node-tag {
+  fill: rgba(255, 255, 255, 0.95);
+}
+g .sld-tree-node-root ~ text.sld-tree-node-tag,
+g .sld-tree-node-root + text.sld-tree-node-tag {
+  fill: rgba(96, 165, 250, 0.95);
+}
+.sld-tree-node-h {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  fill: var(--ezk-ink);
+  text-anchor: middle;
+}
+.sld-tree-svg g:first-of-type ~ g .sld-tree-node-root + text {
+  fill: #fff;
+}
+.sld-tree-buyer {
+  fill: #FBBF24;
+  filter: drop-shadow(0 0 6px #FBBF24);
+}
+.sld-tree-legend {
+  position: relative; z-index: 2;
+  margin-top: 12px;
+  display: flex; flex-wrap: wrap; gap: 18px;
+  font-size: 11.5px;
+  color: var(--ezk-ink-2);
+}
+.sld-tree-legend > div {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.sld-tree-legend-dot { width: 9px; height: 9px; border-radius: 999px; }
+.sld-tree-legend-dot-buyer { background: #FBBF24; box-shadow: 0 0 6px #FBBF24; }
+.sld-tree-legend-dot-edge { background: var(--ezk-blue); box-shadow: 0 0 6px rgba(59, 130, 246, 0.5); }
+
+/* ROUTING PATTERN CARDS — 2x2 grid */
+.sld-patterns-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 4px;
+}
+.sld-pattern {
+  padding: 20px;
+  background:
+    radial-gradient(ellipse 70% 60% at 0% 0%, rgba(96, 165, 250, 0.08), transparent 65%),
+    rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 16px;
+  box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.22);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sld-pattern:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 32px 70px -28px rgba(59, 130, 246, 0.35);
+}
+.sld-pattern-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue);
+  text-transform: uppercase;
+}
+.sld-pattern-h {
+  margin: 6px 0 6px;
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.016em;
+  color: var(--ezk-ink);
+}
+.sld-pattern-b {
+  margin: 0 0 12px;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--ezk-ink-2);
+}
+.sld-pattern-hops {
+  list-style: none; padding: 10px; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+  background: rgba(59, 130, 246, 0.04);
+  border: 1px solid var(--ezk-line);
+  border-radius: 10px;
+}
+.sld-pattern-hops li {
+  display: grid; grid-template-columns: 26px 1fr;
+  gap: 8px; align-items: start;
+}
+.sld-pattern-hop-n {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; font-weight: 700;
+  color: var(--ezk-blue);
+  background: rgba(59, 130, 246, 0.10);
+  border-radius: 4px;
+  padding: 3px 0;
+  text-align: center;
+}
+.sld-pattern-hop-h {
+  display: block;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--ezk-ink);
+}
+.sld-pattern-hop-b {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px; line-height: 1.4;
+  color: var(--ezk-mute);
+}
+.sld-pattern-outcome {
+  margin-top: 12px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  border-radius: 10px;
+  color: #fff;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sld-pattern-outcome-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px; letter-spacing: 0.22em; font-weight: 700;
+  color: var(--ezk-blue-2);
+  text-transform: uppercase;
+}
+.sld-pattern-outcome-v {
+  font-size: 12.5px; font-weight: 600;
+}
+
+/* PERSONA WALKTHROUGHS — 3 cards side-by-side */
+.sld-personas-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 4px;
+}
+.sld-persona {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--ezk-line-strong);
+  border-radius: 16px;
+  box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.22);
+  display: flex; flex-direction: column;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.sld-persona:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 32px 70px -28px rgba(59, 130, 246, 0.35);
+}
+.sld-persona-head {
+  display: grid; grid-template-columns: 40px 1fr auto;
+  gap: 10px; align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ezk-line);
+}
+.sld-persona-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px; font-weight: 800;
+}
+.sld-persona-a .sld-persona-avatar { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
+.sld-persona-b .sld-persona-avatar { background: linear-gradient(135deg, #93C5FD, #60A5FA); }
+.sld-persona-c .sld-persona-avatar { background: linear-gradient(135deg, #FBBF24, #F59E0B); }
+.sld-persona-name {
+  font-size: 14px; font-weight: 700;
+  color: var(--ezk-ink);
+}
+.sld-persona-source {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px;
+  color: var(--ezk-mute);
+}
+.sld-persona-tier-pill {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+  color: var(--ezk-blue);
+  background: rgba(59, 130, 246, 0.10);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.sld-persona-c .sld-persona-tier-pill {
+  color: #B45309;
+  background: rgba(251, 191, 36, 0.14);
+  border-color: rgba(251, 191, 36, 0.35);
+}
+.sld-persona-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin: 14px 0;
+  padding: 10px;
+  background: rgba(59, 130, 246, 0.04);
+  border-radius: 8px;
+}
+.sld-persona-stat {
+  display: flex; flex-direction: column; gap: 2px; align-items: center;
+}
+.sld-persona-stat-k {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--ezk-mute);
+  text-transform: uppercase;
+}
+.sld-persona-stat-v {
+  font-size: 14px; font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--ezk-ink);
+  font-variant-numeric: tabular-nums;
+}
+.sld-persona-path {
+  list-style: none; padding: 0; margin: 0 0 12px;
+  display: flex; flex-direction: column;
+}
+.sld-persona-path li {
+  position: relative;
+  padding: 8px 0 8px 22px;
+  border-left: 2px dashed rgba(96, 165, 250, 0.40);
+  margin-left: 5px;
+}
+.sld-persona-path li:last-child {
+  border-left-color: transparent;
+}
+.sld-persona-path-dot {
+  position: absolute;
+  left: -6px; top: 11px;
+  width: 9px; height: 9px;
+  border-radius: 999px;
+  background: var(--ezk-blue);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(59, 130, 246, 0.25);
+}
+.sld-persona-path li.is-terminal .sld-persona-path-dot {
+  background: #FBBF24;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px rgba(251, 191, 36, 0.35);
+}
+.sld-persona-path-h {
+  display: block;
+  font-size: 12px; font-weight: 600;
+  color: var(--ezk-ink);
+  margin-bottom: 1px;
+}
+.sld-persona-path-b {
+  display: block;
+  font-size: 10.5px; line-height: 1.4;
+  color: var(--ezk-mute);
+}
+.sld-persona-outcome {
+  margin-top: auto;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, var(--ezk-blue-deep) 0%, var(--ezk-blue) 100%);
+  border-radius: 9px;
+  color: #fff;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sld-persona-c .sld-persona-outcome {
+  background: linear-gradient(135deg, #92400E 0%, #B45309 100%);
+}
+.sld-persona-outcome-tag {
+  font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
+  font-size: 9px; letter-spacing: 0.20em; font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+}
+.sld-persona-outcome-v {
+  font-size: 11.5px; line-height: 1.4;
+}
+
+@media (max-width: 980px) {
+  .sld-signals-grid { grid-template-columns: 1fr; }
+  .sld-tier-stack-wrap { grid-template-columns: 1fr; }
+  .sld-patterns-grid { grid-template-columns: 1fr; }
+  .sld-personas-grid { grid-template-columns: 1fr; }
+  .sld-form-deep { width: 100%; max-width: 420px; }
 }
 `;
