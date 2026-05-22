@@ -14,21 +14,26 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = resolve(__dirname, '..', 'public', 'ads', 'medpay', 'video');
 const RAW_DIR = resolve(__dirname, '.video-raw');
 
+// `ms` is the recording window per variant. Hooks/punch-line variants run 16s;
+// the flow-explainer variants (V11-V13) need longer windows to capture their
+// CTA + compliance disclosure beats.
 const VARIANTS = [
-  { n: '1', name: 'walks-out' },
-  { n: '2', name: 'think-about-it' },
-  { n: '3', name: '10-seconds-funded' },
-  { n: '4', name: 'competitor-closed-her' },
-  { n: '5', name: '73-percent-lost' },
-  { n: '6', name: 'tuesday-split' },
-  { n: '7', name: 'live-feed' },
-  { n: '8', name: 'wish-id-known' },
-  { n: '9', name: '4-questions' },
-  { n: '10', name: 'while-you-slept' },
+  { n: '1', name: 'walks-out', ms: 16_000 },
+  { n: '2', name: 'think-about-it', ms: 16_000 },
+  { n: '3', name: '10-seconds-funded', ms: 16_000 },
+  { n: '4', name: 'competitor-closed-her', ms: 16_000 },
+  { n: '5', name: '73-percent-lost', ms: 16_000 },
+  { n: '6', name: 'tuesday-split', ms: 16_000 },
+  { n: '7', name: 'live-feed', ms: 16_000 },
+  { n: '8', name: 'wish-id-known', ms: 16_000 },
+  { n: '9', name: '4-questions', ms: 16_000 },
+  { n: '10', name: 'while-you-slept', ms: 16_000 },
+  { n: '11', name: 'how-medpay-works', ms: 20_000 },
+  { n: '12', name: 'meet-the-agents', ms: 17_500 },
+  { n: '13', name: 'pre-call-plus-finance', ms: 16_500 },
 ];
 
 const BASE = process.env.AD_BASE_URL || 'http://localhost:3105';
-const RECORD_MS = 16_000;
 
 function transcode(webmPath, mp4Path) {
   return new Promise((res, rej) => {
@@ -67,7 +72,7 @@ async function main() {
     });
     const page = await ctx.newPage();
     await page.goto(`${BASE}/ads/medpay/video/${v.n}`, { waitUntil: 'load' });
-    await page.waitForTimeout(RECORD_MS);
+    await page.waitForTimeout(v.ms);
     const videoPath = await page.video().path();
     await page.close();
     await ctx.close();
