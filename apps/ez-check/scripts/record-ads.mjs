@@ -18,6 +18,13 @@ const VARIANTS = [
   { n: '1', name: 'walks-out' },
   { n: '2', name: 'think-about-it' },
   { n: '3', name: '10-seconds-funded' },
+  { n: '4', name: 'competitor-closed-her' },
+  { n: '5', name: '73-percent-lost' },
+  { n: '6', name: 'tuesday-split' },
+  { n: '7', name: 'live-feed' },
+  { n: '8', name: 'wish-id-known' },
+  { n: '9', name: '4-questions' },
+  { n: '10', name: 'while-you-slept' },
 ];
 
 const BASE = process.env.AD_BASE_URL || 'http://localhost:3105';
