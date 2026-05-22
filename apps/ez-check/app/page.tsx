@@ -2713,6 +2713,7 @@ const CSS = `
   gap: 16px;
   margin-bottom: 28px;
   perspective: 1400px;
+  align-items: stretch;
 }
 .ezl-signal {
   position: relative;
@@ -3002,7 +3003,9 @@ const CSS = `
 /* ROUTING PATTERN CARDS */
 .ezl-patterns-grid {
   display: grid; grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
   gap: 16px;
+  align-items: stretch;
 }
 .ezl-pattern {
   padding: 24px;
@@ -3013,6 +3016,7 @@ const CSS = `
   border-radius: 20px;
   box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.22);
   transition: transform .25s ease, box-shadow .25s ease;
+  display: flex; flex-direction: column;
 }
 .ezl-pattern:hover {
   transform: translateY(-3px);
@@ -3036,13 +3040,13 @@ const CSS = `
   color: var(--ezk-ink-2);
 }
 .ezl-pattern-hops {
-  list-style: none; padding: 0; margin: 0;
+  list-style: none; padding: 12px; margin: 0;
   display: flex; flex-direction: column;
   gap: 8px;
-  padding: 12px;
   background: rgba(59, 130, 246, 0.04);
   border: 1px solid var(--ezk-line);
   border-radius: 12px;
+  flex: 1;
 }
 .ezl-pattern-hops li {
   display: grid; grid-template-columns: 30px 1fr;
@@ -3089,6 +3093,7 @@ const CSS = `
 .ezl-personas-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  align-items: stretch;
 }
 .ezl-persona {
   padding: 24px;
@@ -3298,6 +3303,7 @@ const CSS = `
   display: flex; flex-direction: column;
   gap: 0;
   position: relative;
+  flex: 1;
 }
 .ezl-persona-path li {
   position: relative;
@@ -3374,7 +3380,8 @@ const CSS = `
  */
 .ezl-result {
   position: relative;
-  width: 480px;
+  width: 100%;
+  max-width: 480px;
   background:
     radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
     rgba(255, 255, 255, 0.98);
@@ -3547,6 +3554,15 @@ const CSS = `
   padding: 3px 7px;
   border-radius: 5px;
   text-transform: uppercase;
+  min-width: 84px;
+  text-align: center;
+}
+.ezl-result-funding-row-r {
+  min-width: 0;
+}
+.ezl-result-funding-amt {
+  min-width: 64px;
+  text-align: right;
 }
 .ezl-result-funding-flag.is-approved {
   background: rgba(96, 165, 250, 0.16);

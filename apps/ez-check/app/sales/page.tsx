@@ -2534,7 +2534,8 @@ const CSS = `
  */
 .sld-result {
   position: relative;
-  width: 460px;
+  width: 100%;
+  max-width: 460px;
   background:
     radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
     rgba(255, 255, 255, 0.98);
@@ -2697,6 +2698,8 @@ const CSS = `
   letter-spacing: -0.016em;
   color: var(--ezk-ink);
   font-variant-numeric: tabular-nums;
+  min-width: 60px;
+  text-align: right;
 }
 .sld-result-funding-flag {
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
@@ -2704,6 +2707,8 @@ const CSS = `
   padding: 3px 6px;
   border-radius: 5px;
   text-transform: uppercase;
+  min-width: 80px;
+  text-align: center;
 }
 .sld-result-funding-flag.is-approved {
   background: rgba(96, 165, 250, 0.16);
@@ -3671,6 +3676,7 @@ const CSS = `
   gap: 14px;
   margin-top: 4px;
   perspective: 1400px;
+  align-items: stretch;
 }
 .sld-signal {
   position: relative;
@@ -3927,8 +3933,10 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
 /* ROUTING PATTERN CARDS — 2x2 grid */
 .sld-patterns-grid {
   display: grid; grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
   gap: 14px;
   margin-top: 4px;
+  align-items: stretch;
 }
 .sld-pattern {
   padding: 20px;
@@ -3939,6 +3947,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   border-radius: 16px;
   box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.22);
   transition: transform .25s ease, box-shadow .25s ease;
+  display: flex; flex-direction: column;
 }
 .sld-pattern:hover {
   transform: translateY(-3px);
@@ -3966,6 +3975,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   display: flex; flex-direction: column; gap: 6px;
   background: rgba(59, 130, 246, 0.04);
   border: 1px solid var(--ezk-line);
+  flex: 1;
   border-radius: 10px;
 }
 .sld-pattern-hops li {
@@ -4015,6 +4025,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
   display: grid; grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-top: 4px;
+  align-items: stretch;
 }
 .sld-persona {
   padding: 20px;
@@ -4220,6 +4231,7 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
 .sld-persona-path {
   list-style: none; padding: 0; margin: 0 0 12px;
   display: flex; flex-direction: column;
+  flex: 1;
 }
 .sld-persona-path li {
   position: relative;
