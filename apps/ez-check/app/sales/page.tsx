@@ -966,16 +966,16 @@ function CalendarLandedMock(): JSX.Element {
           <span className="sld-result-signal-v">724</span>
         </div>
         <div className="sld-result-signal">
-          <span className="sld-result-signal-k">Available credit</span>
+          <span className="sld-result-signal-k">Available</span>
           <span className="sld-result-signal-v">$12.4k</span>
+        </div>
+        <div className="sld-result-signal">
+          <span className="sld-result-signal-k">Income</span>
+          <span className="sld-result-signal-v">$98k</span>
         </div>
         <div className="sld-result-signal">
           <span className="sld-result-signal-k">DTI</span>
           <span className="sld-result-signal-v">22%</span>
-        </div>
-        <div className="sld-result-signal">
-          <span className="sld-result-signal-k">Annual income</span>
-          <span className="sld-result-signal-v">$98k</span>
         </div>
       </div>
 
@@ -993,10 +993,6 @@ function CalendarLandedMock(): JSX.Element {
           <span className="sld-result-funding-flag is-approved">Pre-approved</span>
         </div>
       </div>
-      <div className="sld-result-bmpo">
-        <span className="sld-result-bmpo-k">BMPO</span>
-        <span className="sld-result-bmpo-v">$295/mo · 60 mo</span>
-      </div>
 
       <div className="sld-result-funding-row">
         <div className="sld-result-funding-row-l">
@@ -1010,9 +1006,18 @@ function CalendarLandedMock(): JSX.Element {
           <span className="sld-result-funding-flag is-approved">Pre-approved</span>
         </div>
       </div>
-      <div className="sld-result-bmpo">
-        <span className="sld-result-bmpo-k">BMPO</span>
-        <span className="sld-result-bmpo-v">$342/mo · 60 mo</span>
+
+      <div className="sld-result-funding-row">
+        <div className="sld-result-funding-row-l">
+          <span className="sld-result-funding-check is-approved" aria-hidden>
+            ✓
+          </span>
+          <span className="sld-result-funding-label">BNPL</span>
+        </div>
+        <div className="sld-result-funding-row-r">
+          <span className="sld-result-funding-amt">$5,000</span>
+          <span className="sld-result-funding-flag is-approved">Pre-approved</span>
+        </div>
       </div>
 
       <div className="sld-result-decline">
@@ -1749,16 +1754,18 @@ function RoutingPatternsGrid(): JSX.Element {
 /** Persona walkthroughs — 3 buyer journeys side-by-side. */
 function PersonasStrip(): JSX.Element {
   // Same rich pre-qual payload the landing-page persona cards carry —
-  // credit / available / DTI / income / consumer + merchant direct
-  // funding (with BMPO + pre-approved flags) / decline reason.
+  // credit / available / income / DTI plus three funding rails
+  // (Consumer-direct / Merchant-direct / BNPL) each with pre-approved
+  // Y/N + funding estimate, plus a decline reason when applicable.
   const PERSONAS: Array<{
     name: string;
     initials: string;
     tier: 'A' | 'B' | 'C';
     source: string;
-    signals: { creditScore: string; availableCredit: string; dti: string; income: string };
-    consumer: { preApproved: boolean; estimate: string; bmpo: string };
-    merchant: { preApproved: boolean; estimate: string; bmpo: string };
+    signals: { creditScore: string; availableCredit: string; income: string; dti: string };
+    consumer: { preApproved: boolean; estimate: string };
+    merchant: { preApproved: boolean; estimate: string };
+    bnpl: { preApproved: boolean; estimate: string };
     decline: string;
     path: Array<{ h: string; b: string }>;
     outcomeTag: string;
@@ -1769,14 +1776,15 @@ function PersonasStrip(): JSX.Element {
       initials: 'JM',
       tier: 'A',
       source: 'Meta · creative #042',
-      signals: { creditScore: '724', availableCredit: '$12.4k', dti: '22%', income: '$98k' },
-      consumer: { preApproved: true, estimate: '$14,200', bmpo: '$295/mo · 60 mo' },
-      merchant: { preApproved: true, estimate: '$18,500', bmpo: '$342/mo · 60 mo' },
+      signals: { creditScore: '724', availableCredit: '$12.4k', income: '$98k', dti: '22%' },
+      consumer: { preApproved: true, estimate: '$14,200' },
+      merchant: { preApproved: true, estimate: '$18,500' },
+      bnpl: { preApproved: true, estimate: '$5,000' },
       decline: '—',
       path: [
         { h: 'Form submit', b: '4 of 6 fast-path questions in 41s' },
         { h: 'Budget gate', b: '$15k stated → continue' },
-        { h: 'ORACLE pull', b: '3 signals back in 2.8s · both rails pre-approved' },
+        { h: 'ORACLE pull', b: '3 signals back in 2.8s · all three rails pre-approved' },
         { h: 'Tier composite', b: 'Tier A · top decile' },
         { h: 'Routed', b: 'Senior closer · Thu 2:00 PM' },
       ],
@@ -1788,14 +1796,15 @@ function PersonasStrip(): JSX.Element {
       initials: 'AS',
       tier: 'B',
       source: 'Google · best-coaching search',
-      signals: { creditScore: '688', availableCredit: '$7.2k', dti: '31%', income: '$72k' },
-      consumer: { preApproved: true, estimate: '$8,400', bmpo: '$198/mo · 60 mo' },
-      merchant: { preApproved: true, estimate: '$11,200', bmpo: '$238/mo · 60 mo' },
+      signals: { creditScore: '688', availableCredit: '$7.2k', income: '$72k', dti: '31%' },
+      consumer: { preApproved: true, estimate: '$8,400' },
+      merchant: { preApproved: true, estimate: '$11,200' },
+      bnpl: { preApproved: true, estimate: '$3,500' },
       decline: '—',
       path: [
         { h: 'Form submit', b: 'Reviews-flow variant · 6 fields' },
         { h: 'Budget gate', b: '$8k < high-ticket → masterclass route' },
-        { h: 'ORACLE pull', b: 'Both rails approved · stated budget under threshold' },
+        { h: 'ORACLE pull', b: 'All three rails approved · stated budget under threshold' },
         { h: 'Routed', b: 'Live workshop · 30-day re-pull' },
       ],
       outcomeTag: 'MASTERCLASS',
@@ -1806,19 +1815,20 @@ function PersonasStrip(): JSX.Element {
       initials: 'CR',
       tier: 'C',
       source: 'Affiliate · partner #018',
-      signals: { creditScore: '598', availableCredit: '$1.2k', dti: '51%', income: '$44k' },
-      consumer: { preApproved: false, estimate: '$0', bmpo: '—' },
-      merchant: { preApproved: true, estimate: '$3,500', bmpo: '$98/mo · 48 mo' },
+      signals: { creditScore: '598', availableCredit: '$1.2k', income: '$44k', dti: '51%' },
+      consumer: { preApproved: false, estimate: '$0' },
+      merchant: { preApproved: true, estimate: '$3,500' },
+      bnpl: { preApproved: true, estimate: '$1,500' },
       decline: 'Consumer-direct lenders require DTI < 45%',
       path: [
         { h: 'Form submit', b: 'Bailed at field 3 · recovered 6h later' },
         { h: 'Budget gate', b: '$3k < threshold → low-ticket flow' },
-        { h: 'ORACLE pull', b: 'Consumer-direct declined · merchant-direct still open' },
-        { h: 'Tier composite', b: 'Tier C · partial via merchant-direct' },
-        { h: 'Routed', b: 'Free-guide + 90-day re-pull · merchant offer kept' },
+        { h: 'ORACLE pull', b: 'Consumer-direct declined · merchant + BNPL still open' },
+        { h: 'Tier composite', b: 'Tier C · partial via merchant + BNPL' },
+        { h: 'Routed', b: 'Free guide + 90-day re-pull · low-ticket with BNPL' },
       ],
       outcomeTag: 'NURTURE',
-      outcome: 'Never touched closer · merchant-direct kept the option open',
+      outcome: 'Never touched closer · two rails kept the option open',
     },
   ];
   return (
@@ -1843,12 +1853,12 @@ function PersonasStrip(): JSX.Element {
               <span className="sld-persona-signal-v">{p.signals.availableCredit}</span>
             </div>
             <div className="sld-persona-signal">
-              <span className="sld-persona-signal-k">DTI</span>
-              <span className="sld-persona-signal-v">{p.signals.dti}</span>
-            </div>
-            <div className="sld-persona-signal">
               <span className="sld-persona-signal-k">Income</span>
               <span className="sld-persona-signal-v">{p.signals.income}</span>
+            </div>
+            <div className="sld-persona-signal">
+              <span className="sld-persona-signal-k">DTI</span>
+              <span className="sld-persona-signal-v">{p.signals.dti}</span>
             </div>
           </div>
           <div className="sld-persona-funding">
@@ -1875,10 +1885,6 @@ function PersonasStrip(): JSX.Element {
                 </span>
               </div>
             </div>
-            <div className="sld-persona-bmpo">
-              <span className="sld-persona-bmpo-k">BMPO</span>
-              <span className="sld-persona-bmpo-v">{p.consumer.bmpo}</span>
-            </div>
             <div className="sld-persona-funding-row">
               <div className="sld-persona-funding-l">
                 <span
@@ -1902,9 +1908,28 @@ function PersonasStrip(): JSX.Element {
                 </span>
               </div>
             </div>
-            <div className="sld-persona-bmpo">
-              <span className="sld-persona-bmpo-k">BMPO</span>
-              <span className="sld-persona-bmpo-v">{p.merchant.bmpo}</span>
+            <div className="sld-persona-funding-row">
+              <div className="sld-persona-funding-l">
+                <span
+                  className={`sld-persona-funding-check ${
+                    p.bnpl.preApproved ? 'is-approved' : 'is-declined'
+                  }`}
+                  aria-hidden
+                >
+                  {p.bnpl.preApproved ? '✓' : '×'}
+                </span>
+                <span className="sld-persona-funding-label">BNPL</span>
+              </div>
+              <div className="sld-persona-funding-r">
+                <span className="sld-persona-funding-amt">{p.bnpl.estimate}</span>
+                <span
+                  className={`sld-persona-funding-flag ${
+                    p.bnpl.preApproved ? 'is-approved' : 'is-declined'
+                  }`}
+                >
+                  {p.bnpl.preApproved ? 'Pre-approved' : 'Declined'}
+                </span>
+              </div>
             </div>
             <div className="sld-persona-decline">
               <span className="sld-persona-decline-k">Decline reason</span>
@@ -2037,7 +2062,7 @@ export default function EzCheckSalesDeck(): JSX.Element {
             key={i}
             id={`slide-${i}`}
             data-idx={i}
-            className={`sld-slide ${s.dark ? 'sld-slide-dark' : ''}`}
+            className="sld-slide sld-slide-dark"
             aria-label={`Slide ${i + 1}: ${s.title}`}
           >
             <div className="sld-slide-n">{s.n}</div>
@@ -4505,5 +4530,262 @@ g .sld-tree-node-root + text.sld-tree-node-tag {
 .sld-slide-dark .sld-persona-c .sld-persona-outcome {
   border-color: rgba(167, 139, 250, 0.40);
   box-shadow: 0 18px 40px -16px rgba(139, 92, 246, 0.55);
+}
+
+/* ====================== UNIFIED DARK CHROME · ALL SLIDES =====================
+ * Every slide now ships with sld-slide-dark. The block below adds the
+ * dark overrides for the components that weren't previously dark-aware
+ * — cover, agenda, stat row, stage row, marketplace viz, bar race,
+ * breakdown, pricing tier (non-hero), onboarding module, agents viz,
+ * routing flow, and the routing-tree scene wrapper.
+ *
+ * Card surfaces (white panels) are intentionally KEPT light — they
+ * read as floating data panels on the dark backdrop, same pattern as
+ * the routing-tree section the user marked as the gold standard.
+ */
+
+/* Slide-level chrome */
+.sld-slide-dark .sld-section-title { color: rgba(238, 242, 248, 0.62); }
+.sld-slide-dark .sld-disclaimer { color: rgba(238, 242, 248, 0.45); }
+.sld-slide-dark .sld-takeaway {
+  background: rgba(96, 165, 250, 0.10);
+  border-left-color: var(--ezk-blue-2);
+  color: rgba(238, 242, 248, 0.78);
+}
+
+/* Cover slide — wordmark + copy lift onto dark */
+.sld-slide-dark .sld-cover-mark-l { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-cover-mark-slash { color: rgba(238, 242, 248, 0.40); }
+.sld-slide-dark .sld-cover-mark-r { color: #fff; }
+.sld-slide-dark .sld-cover-sub { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .sld-cover-meta { color: rgba(238, 242, 248, 0.55); }
+
+/* Agenda items — light cards float on dark */
+.sld-slide-dark .sld-agenda-item {
+  background: rgba(30, 40, 64, 0.55);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-agenda-h { color: #fff; }
+.sld-slide-dark .sld-agenda-b { color: rgba(238, 242, 248, 0.74); }
+
+/* Cost-of-doing-nothing stat row — translucent cells on dark */
+.sld-slide-dark .sld-stat-row {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.22);
+}
+.sld-slide-dark .sld-stat {
+  background: rgba(30, 40, 64, 0.55);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-stat-v { color: #fff; }
+.sld-slide-dark .sld-stat-k { color: rgba(238, 242, 248, 0.62); }
+
+/* Time breakdown — dark variant */
+.sld-slide-dark .sld-breakdown-row { color: rgba(238, 242, 248, 0.78); }
+.sld-slide-dark .sld-breakdown-k { color: #fff; }
+.sld-slide-dark .sld-breakdown-bar { background: rgba(96, 165, 250, 0.10); }
+.sld-slide-dark .sld-breakdown-fill {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.55) 0%, rgba(100, 116, 139, 0.85) 100%);
+}
+.sld-slide-dark .sld-breakdown-fill.accent {
+  background: linear-gradient(90deg, var(--ezk-blue-deep) 0%, var(--ezk-blue-2) 100%);
+}
+.sld-slide-dark .sld-breakdown-v { color: #fff; }
+.sld-slide-dark .sld-breakdown-foot { color: rgba(238, 242, 248, 0.45); }
+
+/* Pillars — float on dark with subtle inner glow */
+.sld-slide-dark .sld-pillar {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-pillar-h { color: #fff; }
+.sld-slide-dark .sld-pillar-b { color: rgba(238, 242, 248, 0.74); }
+
+/* Mini stats row */
+.sld-slide-dark .sld-mini-stats {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.22);
+}
+.sld-slide-dark .sld-mini-stat {
+  background: rgba(30, 40, 64, 0.55);
+}
+.sld-slide-dark .sld-mini-stat-v { color: #fff; }
+.sld-slide-dark .sld-mini-stat-k { color: rgba(238, 242, 248, 0.62); }
+
+/* Hero stat row (below cover-style hero) */
+.sld-slide-dark .sld-hero-stat-row {
+  border-top-color: rgba(96, 165, 250, 0.22);
+}
+.sld-slide-dark .sld-hero-stat-v { color: #fff; }
+.sld-slide-dark .sld-hero-stat-k { color: rgba(238, 242, 248, 0.62); }
+.sld-slide-dark .sld-chip {
+  background: rgba(30, 40, 64, 0.55);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: rgba(238, 242, 248, 0.78);
+}
+
+/* Smart-form deep-dive bullets */
+.sld-slide-dark .sld-deep-bullets li {
+  background: rgba(30, 40, 64, 0.55);
+  border-color: rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-deep-bullet-h { color: #fff; }
+.sld-slide-dark .sld-deep-bullet-b { color: rgba(238, 242, 248, 0.74); }
+
+/* Bar race */
+.sld-slide-dark .sld-bar-label { color: rgba(238, 242, 248, 0.78); }
+.sld-slide-dark .sld-bar-track { background: rgba(96, 165, 250, 0.10); }
+.sld-slide-dark .sld-bar-fill.without {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.45) 0%, rgba(100, 116, 139, 0.85) 100%);
+}
+.sld-slide-dark .sld-bar-delta {
+  background: rgba(96, 165, 250, 0.10);
+  border-color: rgba(96, 165, 250, 0.30);
+}
+.sld-slide-dark .sld-bar-delta-val { color: #fff; }
+.sld-slide-dark .sld-bar-delta-sub { color: rgba(238, 242, 248, 0.55); }
+
+/* Marketplace / Agents viz dashed bus — already styled; backdrops adjust */
+.sld-slide-dark .sld-agents-app-card {
+  background:
+    radial-gradient(ellipse 80% 100% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 70%),
+    rgba(30, 40, 64, 0.55);
+  border-color: rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-agents-row { border-bottom-color: rgba(96, 165, 250, 0.18); }
+.sld-slide-dark .sld-agents-k { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-agents-v { color: #fff; }
+.sld-slide-dark .sld-agents-result {
+  background: rgba(30, 40, 64, 0.55);
+  border-color: rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-agents-result-code { color: #fff; }
+.sld-slide-dark .sld-agents-result-label { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-agents-result-tick {
+  border-top-color: rgba(96, 165, 250, 0.18);
+  color: rgba(238, 242, 248, 0.55);
+}
+
+/* Routing flow (Stage 3) */
+.sld-slide-dark .sld-routing-node {
+  background: rgba(30, 40, 64, 0.55);
+  border-color: rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-routing-node-tag { color: rgba(238, 242, 248, 0.55); }
+.sld-slide-dark .sld-routing-node-tag.accent { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-routing-node-h { color: #fff; }
+.sld-slide-dark .sld-routing-node-b { color: rgba(238, 242, 248, 0.62); }
+.sld-slide-dark .sld-routing-arrow { color: var(--ezk-blue-2); }
+.sld-slide-dark .sld-routing-fanout-node {
+  background: rgba(30, 40, 64, 0.55);
+  border-color: rgba(96, 165, 250, 0.24);
+}
+.sld-slide-dark .sld-routing-fanout-node.accent {
+  background:
+    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(96, 165, 250, 0.20), transparent 65%),
+    rgba(30, 40, 64, 0.75);
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+/* Pricing tier — keep is-hero dark; lighten the others' fill so they
+ * still read as data panels on the navy backdrop */
+.sld-slide-dark .sld-tier:not(.is-hero) {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border-color: rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-tier:not(.is-hero) .sld-tier-head { color: #fff; }
+.sld-slide-dark .sld-tier:not(.is-hero) .sld-tier-body { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .sld-tier:not(.is-hero) .sld-tier-v {
+  background: linear-gradient(135deg, #fff 0%, var(--ezk-blue-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sld-slide-dark .sld-tier:not(.is-hero) .sld-tier-when { color: rgba(238, 242, 248, 0.55); }
+
+/* Onboarding module strip */
+.sld-slide-dark .sld-onb-mod {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.14), transparent 65%),
+    linear-gradient(180deg, rgba(30, 40, 64, 0.55) 0%, rgba(16, 22, 36, 0.55) 100%);
+  border-color: rgba(96, 165, 250, 0.24);
+  backdrop-filter: blur(14px);
+}
+.sld-slide-dark .sld-onb-mod-h { color: #fff; }
+.sld-slide-dark .sld-onb-mod-b { color: rgba(238, 242, 248, 0.74); }
+.sld-slide-dark .sld-onb-mod-time {
+  background: rgba(96, 165, 250, 0.10);
+  color: rgba(238, 242, 248, 0.74);
+}
+
+/* Routing tree scene — keep the SVG visualization untouched per
+ * "don't change the routing parting", but adjust the wrapper plate
+ * so it sits on a dark slide. */
+.sld-slide-dark .sld-tree-scene {
+  background: rgba(96, 165, 250, 0.06);
+  border-color: rgba(96, 165, 250, 0.24);
+}
+.sld-slide-dark .sld-tree-legend {
+  color: rgba(238, 242, 248, 0.74);
+}
+
+/* Sticky brand-chrome chips at top (slide title + counter) need glass
+ * on the dark backdrop instead of white. */
+.sld-slide-dark + .sld-slide-dark .sld-brand,
+.sld-slide-dark + .sld-slide-dark .sld-counter {
+  background: rgba(30, 40, 64, 0.85);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: #fff;
+}
+.sld-brand {
+  background: rgba(30, 40, 64, 0.85);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: #fff;
+}
+.sld-counter {
+  background: rgba(30, 40, 64, 0.85);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: rgba(238, 242, 248, 0.85);
+}
+.sld-counter-sep { color: rgba(238, 242, 248, 0.45); }
+
+/* Bottom dot-nav — glassy on dark */
+.sld-nav {
+  background: rgba(30, 40, 64, 0.85);
+  border-color: rgba(96, 165, 250, 0.24);
+}
+.sld-nav-btn { color: rgba(238, 242, 248, 0.74); }
+.sld-nav-btn:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.18);
+  color: var(--ezk-blue-2);
+}
+.sld-dot { background: rgba(96, 165, 250, 0.30); }
+.sld-dot:hover, .sld-dot.is-active { background: var(--ezk-blue-2); }
+
+/* Animated mesh — keep, but the slide backdrop overrides it locally
+ * so the mesh shows through subtly at the edges where slides
+ * transition. */
+
+/* Unified slide root background (override the page-level light mesh) */
+.sld-root {
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(96, 165, 250, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 90%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
+    linear-gradient(180deg, #0F172A 0%, #0A0F1F 100%);
+}
+.sld-mesh {
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 20%, rgba(96, 165, 250, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 30%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(96, 165, 250, 0.14) 0%, transparent 55%);
 }
 `;

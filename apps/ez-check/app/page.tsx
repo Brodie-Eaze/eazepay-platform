@@ -224,12 +224,15 @@ const PERSONAS: Array<{
   initials: string;
   tier: 'A' | 'B' | 'C';
   source: string;
-  /** Top-line buyer signals — surfaced as a 4-up at the top of the card. */
-  signals: { creditScore: string; availableCredit: string; dti: string; income: string };
-  /** Consumer-direct funding rail. */
-  consumer: { preApproved: boolean; estimate: string; bmpo: string };
-  /** Merchant-direct funding rail. */
-  merchant: { preApproved: boolean; estimate: string; bmpo: string };
+  /** Top-line buyer signals — surfaced as a 4-up at the top of the card.
+   *  Order matches the hero result-card spec: credit · available · income · DTI. */
+  signals: { creditScore: string; availableCredit: string; income: string; dti: string };
+  /** Consumer-direct funding rail (personal loan). */
+  consumer: { preApproved: boolean; estimate: string };
+  /** Merchant-direct funding rail (merchant-financed). */
+  merchant: { preApproved: boolean; estimate: string };
+  /** BNPL funding rail (buy-now-pay-later). */
+  bnpl: { preApproved: boolean; estimate: string };
   /** Decline reason — em-dash when no decline. */
   decline: string;
   path: Array<{ h: string; b: string }>;
@@ -241,15 +244,16 @@ const PERSONAS: Array<{
     initials: 'JM',
     tier: 'A',
     source: 'Meta · creative #042',
-    signals: { creditScore: '724', availableCredit: '$12.4k', dti: '22%', income: '$98k' },
-    consumer: { preApproved: true, estimate: '$14,200', bmpo: '$295/mo · 60 mo' },
-    merchant: { preApproved: true, estimate: '$18,500', bmpo: '$342/mo · 60 mo' },
+    signals: { creditScore: '724', availableCredit: '$12.4k', income: '$98k', dti: '22%' },
+    consumer: { preApproved: true, estimate: '$14,200' },
+    merchant: { preApproved: true, estimate: '$18,500' },
+    bnpl: { preApproved: true, estimate: '$5,000' },
     decline: '—',
     path: [
       { h: 'Form submit', b: 'Answered 4 of 6 fast-path questions in 41s' },
       { h: 'Budget gate', b: '$15k stated → continue' },
-      { h: 'ORACLE pull', b: '3 signals returned in 2.8s' },
-      { h: 'Tier composite', b: 'Tier A · top decile · both rails pre-approved' },
+      { h: 'ORACLE pull', b: '3 signals returned in 2.8s · all three rails pre-approved' },
+      { h: 'Tier composite', b: 'Tier A · top decile' },
       { h: 'Routed to calendar', b: 'Sarah · senior closer · Thu 2:00 PM' },
     ],
     outcomeTag: 'CALENDAR',
@@ -260,14 +264,15 @@ const PERSONAS: Array<{
     initials: 'AS',
     tier: 'B',
     source: 'Google · "best coaching for ..."',
-    signals: { creditScore: '688', availableCredit: '$7.2k', dti: '31%', income: '$72k' },
-    consumer: { preApproved: true, estimate: '$8,400', bmpo: '$198/mo · 60 mo' },
-    merchant: { preApproved: true, estimate: '$11,200', bmpo: '$238/mo · 60 mo' },
+    signals: { creditScore: '688', availableCredit: '$7.2k', income: '$72k', dti: '31%' },
+    consumer: { preApproved: true, estimate: '$8,400' },
+    merchant: { preApproved: true, estimate: '$11,200' },
+    bnpl: { preApproved: true, estimate: '$3,500' },
     decline: '—',
     path: [
       { h: 'Form submit', b: 'Answered full 6-field path · reviews-flow variant' },
       { h: 'Budget gate', b: '$8k below high-ticket threshold → masterclass route' },
-      { h: 'ORACLE pull', b: 'Both rails pre-approved · stated budget under threshold' },
+      { h: 'ORACLE pull', b: 'All three rails pre-approved · stated budget under threshold' },
       { h: 'Routed to masterclass', b: 'Live workshop · 30-day re-pull scheduled' },
     ],
     outcomeTag: 'MASTERCLASS',
@@ -278,19 +283,20 @@ const PERSONAS: Array<{
     initials: 'CR',
     tier: 'C',
     source: 'Affiliate · partner #018',
-    signals: { creditScore: '598', availableCredit: '$1.2k', dti: '51%', income: '$44k' },
-    consumer: { preApproved: false, estimate: '$0', bmpo: '—' },
-    merchant: { preApproved: true, estimate: '$3,500', bmpo: '$98/mo · 48 mo' },
+    signals: { creditScore: '598', availableCredit: '$1.2k', income: '$44k', dti: '51%' },
+    consumer: { preApproved: false, estimate: '$0' },
+    merchant: { preApproved: true, estimate: '$3,500' },
+    bnpl: { preApproved: true, estimate: '$1,500' },
     decline: 'Consumer-direct lenders require DTI < 45%',
     path: [
       { h: 'Form submit', b: 'Bailed at field 3 · recovered via resume-link email 6h later' },
       { h: 'Budget gate', b: '$3k below threshold → low-ticket flow' },
-      { h: 'ORACLE pull', b: 'Consumer-direct declined · merchant-direct still available' },
-      { h: 'Tier composite', b: 'Tier C · partial fundability via merchant-direct only' },
-      { h: 'Routed to nurture', b: 'Free guide + 90-day re-pull · low-ticket merchant offer' },
+      { h: 'ORACLE pull', b: 'Consumer-direct declined · merchant-direct + BNPL still open' },
+      { h: 'Tier composite', b: 'Tier C · partial fundability via merchant-direct + BNPL' },
+      { h: 'Routed to nurture', b: 'Free guide + 90-day re-pull · low-ticket offer with BNPL' },
     ],
     outcomeTag: 'NURTURE',
-    outcome: 'Closer never touched the lead · merchant-direct keeps the option open',
+    outcome: 'Closer never touched the lead · two rails still keep the option open',
   },
 ];
 
@@ -982,12 +988,12 @@ export default function EzCheckLanding(): JSX.Element {
                         <span className="ezl-persona-signal-v">{p.signals.availableCredit}</span>
                       </div>
                       <div className="ezl-persona-signal">
-                        <span className="ezl-persona-signal-k">DTI</span>
-                        <span className="ezl-persona-signal-v">{p.signals.dti}</span>
-                      </div>
-                      <div className="ezl-persona-signal">
                         <span className="ezl-persona-signal-k">Income</span>
                         <span className="ezl-persona-signal-v">{p.signals.income}</span>
+                      </div>
+                      <div className="ezl-persona-signal">
+                        <span className="ezl-persona-signal-k">DTI</span>
+                        <span className="ezl-persona-signal-v">{p.signals.dti}</span>
                       </div>
                     </div>
                     <div className="ezl-persona-funding">
@@ -1014,10 +1020,6 @@ export default function EzCheckLanding(): JSX.Element {
                           </span>
                         </div>
                       </div>
-                      <div className="ezl-persona-bmpo">
-                        <span className="ezl-persona-bmpo-k">BMPO</span>
-                        <span className="ezl-persona-bmpo-v">{p.consumer.bmpo}</span>
-                      </div>
                       <div className="ezl-persona-funding-row">
                         <div className="ezl-persona-funding-l">
                           <span
@@ -1041,9 +1043,28 @@ export default function EzCheckLanding(): JSX.Element {
                           </span>
                         </div>
                       </div>
-                      <div className="ezl-persona-bmpo">
-                        <span className="ezl-persona-bmpo-k">BMPO</span>
-                        <span className="ezl-persona-bmpo-v">{p.merchant.bmpo}</span>
+                      <div className="ezl-persona-funding-row">
+                        <div className="ezl-persona-funding-l">
+                          <span
+                            className={`ezl-persona-funding-check ${
+                              p.bnpl.preApproved ? 'is-approved' : 'is-declined'
+                            }`}
+                            aria-hidden
+                          >
+                            {p.bnpl.preApproved ? '✓' : '×'}
+                          </span>
+                          <span className="ezl-persona-funding-label">BNPL</span>
+                        </div>
+                        <div className="ezl-persona-funding-r">
+                          <span className="ezl-persona-funding-amt">{p.bnpl.estimate}</span>
+                          <span
+                            className={`ezl-persona-funding-flag ${
+                              p.bnpl.preApproved ? 'is-approved' : 'is-declined'
+                            }`}
+                          >
+                            {p.bnpl.preApproved ? 'Pre-approved' : 'Declined'}
+                          </span>
+                        </div>
                       </div>
                       <div className="ezl-persona-decline">
                         <span className="ezl-persona-decline-k">Decline reason</span>
@@ -1311,15 +1332,17 @@ function ParticleField({ count = 22 }: { count?: number }): JSX.Element {
  * Shows the FULL pre-qual payload that lands in the operator's admin
  * console the second a buyer hits submit:
  *
- *   • Credit score · available credit · DTI · annual income
- *   • Consumer-direct funding estimate + pre-approved flag + BMPO
- *   • Merchant-direct funding estimate + pre-approved flag + BMPO
+ *   • Credit score · available credit · income · DTI
+ *   • Consumer-direct rail — pre-approved Y/N + funding estimate
+ *   • Merchant-direct rail — pre-approved Y/N + funding estimate
+ *   • BNPL rail            — pre-approved Y/N + funding estimate
  *   • Decline reason (if any — Tier-A buyers have none)
  *   • Calendar routing destination
  *
- * BMPO = Best Monthly Payment Offer — the lowest monthly the buyer
- * could lock under each funding rail. Shown directly under the
- * corresponding funding line, above the decline-reason row.
+ * Three funding rails are evaluated in parallel; each can pre-approve
+ * the buyer independently. A buyer can be Tier C overall but still
+ * land a BNPL pre-approval — that case is shown on the persona cards
+ * further down the page.
  */
 function CalendarLandedMock(): JSX.Element {
   return (
@@ -1349,16 +1372,16 @@ function CalendarLandedMock(): JSX.Element {
           <span className="ezl-result-signal-v">724</span>
         </div>
         <div className="ezl-result-signal">
-          <span className="ezl-result-signal-k">Available credit</span>
+          <span className="ezl-result-signal-k">Available</span>
           <span className="ezl-result-signal-v">$12.4k</span>
+        </div>
+        <div className="ezl-result-signal">
+          <span className="ezl-result-signal-k">Income</span>
+          <span className="ezl-result-signal-v">$98k</span>
         </div>
         <div className="ezl-result-signal">
           <span className="ezl-result-signal-k">DTI</span>
           <span className="ezl-result-signal-v">22%</span>
-        </div>
-        <div className="ezl-result-signal">
-          <span className="ezl-result-signal-k">Annual income</span>
-          <span className="ezl-result-signal-v">$98k</span>
         </div>
       </div>
 
@@ -1376,10 +1399,6 @@ function CalendarLandedMock(): JSX.Element {
           <span className="ezl-result-funding-flag is-approved">Pre-approved</span>
         </div>
       </div>
-      <div className="ezl-result-bmpo">
-        <span className="ezl-result-bmpo-k">BMPO</span>
-        <span className="ezl-result-bmpo-v">$295/mo · 60 mo</span>
-      </div>
 
       <div className="ezl-result-funding-row">
         <div className="ezl-result-funding-row-l">
@@ -1393,9 +1412,18 @@ function CalendarLandedMock(): JSX.Element {
           <span className="ezl-result-funding-flag is-approved">Pre-approved</span>
         </div>
       </div>
-      <div className="ezl-result-bmpo">
-        <span className="ezl-result-bmpo-k">BMPO</span>
-        <span className="ezl-result-bmpo-v">$342/mo · 60 mo</span>
+
+      <div className="ezl-result-funding-row">
+        <div className="ezl-result-funding-row-l">
+          <span className="ezl-result-funding-check is-approved" aria-hidden>
+            ✓
+          </span>
+          <span className="ezl-result-funding-label">BNPL</span>
+        </div>
+        <div className="ezl-result-funding-row-r">
+          <span className="ezl-result-funding-amt">$5,000</span>
+          <span className="ezl-result-funding-flag is-approved">Pre-approved</span>
+        </div>
       </div>
 
       <div className="ezl-result-decline">
