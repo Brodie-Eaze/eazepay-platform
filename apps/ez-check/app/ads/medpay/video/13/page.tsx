@@ -415,7 +415,7 @@ export default function MedPayVideoV13(): JSX.Element {
           color: ${TEAL_2};
         }
 
-        /* ============ ACT 4 · smart routing (5.9–7.9s) ================== */
+        /* ============ ACT 4 · smart routing · multi-hop pipeline (5.9–7.9s) === */
         .v13-act4 {
           position: absolute;
           inset: 0;
@@ -424,91 +424,212 @@ export default function MedPayVideoV13(): JSX.Element {
             vs-in-up 0.45s 6s forwards,
             vs-fade-out 0.4s 7.8s forwards;
         }
-        .v13-route-src {
+        .v13-pipe {
           position: absolute;
-          top: 510px;
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 12px 22px;
-          background: rgba(34, 184, 160, 0.18);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          border-radius: 999px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 16px;
-          font-weight: 700;
-          color: ${TEAL_2};
-          letter-spacing: 0.04em;
+          top: 470px;
+          left: 80px;
+          right: 80px;
+          height: 870px;
         }
-        .v13-route-tracks {
+        .v13-node {
           position: absolute;
-          top: 640px;
-          left: 30px;
-          right: 30px;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-        .v13-track {
-          padding: 18px 22px;
-          border-radius: 18px;
-          background: rgba(15, 23, 42, 0.78);
+          left: 0;
+          right: 0;
+          padding: 12px 18px;
+          border-radius: 16px;
+          background: rgba(15, 23, 42, 0.85);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          opacity: 0.32;
           backdrop-filter: blur(14px);
+          text-align: center;
+          opacity: 0.32;
         }
-        .v13-track.is-active {
+        .v13-node.is-form {
+          top: 0;
           opacity: 1;
-          border-color: rgba(34, 184, 160, 0.7);
-          box-shadow: 0 20px 50px -20px rgba(34, 184, 160, 0.5);
+          border-color: rgba(34, 184, 160, 0.55);
         }
-        .v13-track-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+        .v13-node.is-hop-1 {
+          top: 160px;
+          animation: v13-node-lit 0.3s 6.35s forwards;
         }
-        .v13-track-tier {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
+        .v13-node.is-hop-2 {
+          top: 340px;
+          animation: v13-node-lit 0.3s 6.55s forwards;
         }
-        .v13-track-dest {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.18em;
-          color: rgba(255, 255, 255, 0.45);
-          text-transform: uppercase;
+        .v13-node.is-hop-3 {
+          top: 540px;
+          animation: v13-node-lit 0.3s 6.75s forwards;
         }
-        .v13-track-h {
-          margin-top: 6px;
-          font-size: 24px;
-          font-weight: 800;
-          letter-spacing: -0.018em;
-          color: #fff;
+        .v13-node.is-terminal {
+          top: 720px;
+          background: linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.16));
+          animation: v13-node-lit-terminal 0.45s 6.95s forwards;
         }
-        .v13-track-b {
-          margin-top: 4px;
-          font-size: 14px;
-          color: rgba(255, 255, 255, 0.55);
-        }
-        .v13-track-1 {
-          animation: v13-track-pulse 0.4s 6.6s forwards;
-        }
-        @keyframes v13-track-pulse {
+        @keyframes v13-node-lit {
           0% {
             opacity: 0.32;
           }
           100% {
             opacity: 1;
             border-color: rgba(34, 184, 160, 0.7);
-            box-shadow: 0 20px 50px -20px rgba(34, 184, 160, 0.5);
+            box-shadow: 0 14px 36px -16px rgba(34, 184, 160, 0.55);
+          }
+        }
+        @keyframes v13-node-lit-terminal {
+          0% {
+            opacity: 0.32;
+            transform: scale(1);
+          }
+          60% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            border-color: rgba(34, 184, 160, 0.9);
+            box-shadow: 0 20px 50px -16px rgba(34, 184, 160, 0.65);
+          }
+        }
+        .v13-node-k {
+          font-family: 'SF Mono', Menlo, monospace;
+          font-size: 11px;
+          letter-spacing: 0.22em;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.45);
+          text-transform: uppercase;
+        }
+        .v13-node.is-form .v13-node-k,
+        .v13-node.is-hop-1 .v13-node-k,
+        .v13-node.is-hop-2 .v13-node-k,
+        .v13-node.is-hop-3 .v13-node-k,
+        .v13-node.is-terminal .v13-node-k {
+          color: ${TEAL_2};
+        }
+        .v13-node-h {
+          margin-top: 5px;
+          font-size: 22px;
+          font-weight: 800;
+          letter-spacing: -0.018em;
+          color: #fff;
+        }
+        .v13-node-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+        }
+        .v13-opts {
+          margin-top: 10px;
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .v13-opt {
+          padding: 5px 11px;
+          font-family: 'SF Mono', Menlo, monospace;
+          font-size: 12px;
+          font-weight: 700;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px dashed rgba(255, 255, 255, 0.2);
+          border-radius: 999px;
+          color: rgba(255, 255, 255, 0.5);
+          letter-spacing: 0.04em;
+        }
+        .v13-opt.is-pick {
+          background: rgba(34, 184, 160, 0.2);
+          border: 1px solid rgba(34, 184, 160, 0.7);
+          color: ${TEAL_2};
+          font-weight: 800;
+        }
+        .v13-edge-line {
+          position: absolute;
+          left: 50%;
+          margin-left: -1px;
+          width: 2px;
+          background: rgba(34, 184, 160, 0.45);
+        }
+        .v13-edge-line-1 {
+          top: 95px;
+          height: 65px;
+        }
+        .v13-edge-line-2 {
+          top: 275px;
+          height: 65px;
+        }
+        .v13-edge-line-3 {
+          top: 475px;
+          height: 65px;
+        }
+        .v13-edge-line-4 {
+          top: 655px;
+          height: 65px;
+        }
+        .v13-branch {
+          position: absolute;
+          height: 2px;
+          background: transparent;
+          border-top: 2px dashed rgba(255, 255, 255, 0.18);
+        }
+        .v13-branch-1 {
+          top: 198px;
+          left: 60%;
+          right: -20px;
+        }
+        .v13-branch-2 {
+          top: 378px;
+          left: 60%;
+          right: -20px;
+        }
+        .v13-branch-3 {
+          top: 578px;
+          left: 60%;
+          right: -20px;
+        }
+        .v13-dot {
+          position: absolute;
+          left: 50%;
+          margin-left: -9px;
+          margin-top: -9px;
+          width: 18px;
+          height: 18px;
+          background: #fff;
+          border-radius: 50%;
+          box-shadow:
+            0 0 14px ${TEAL_2},
+            0 0 40px rgba(34, 184, 160, 0.75);
+          opacity: 0;
+          top: -20px;
+          animation: v13-dot-fall 1.5s 6s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+        }
+        @keyframes v13-dot-fall {
+          0% {
+            top: -20px;
+            opacity: 0;
+          }
+          5% {
+            top: 20px;
+            opacity: 1;
+          }
+          22% {
+            top: 210px;
+            opacity: 1;
+          }
+          50% {
+            top: 395px;
+            opacity: 1;
+          }
+          75% {
+            top: 595px;
+            opacity: 1;
+          }
+          100% {
+            top: 765px;
+            opacity: 1;
           }
         }
         .v13-route-only {
           position: absolute;
-          top: 1340px;
+          top: 1380px;
           left: 30px;
           right: 30px;
           padding: 14px 22px;
@@ -517,13 +638,17 @@ export default function MedPayVideoV13(): JSX.Element {
           border-radius: 14px;
           text-align: center;
           font-family: 'SF Mono', Menlo, monospace;
-          font-size: 13px;
-          letter-spacing: 0.22em;
+          font-size: 12px;
+          letter-spacing: 0.18em;
           font-weight: 700;
           color: ${TEAL_2};
           text-transform: uppercase;
           opacity: 0;
-          animation: vs-in-up 0.4s 7.1s forwards;
+          animation: vs-in-up 0.4s 7.2s forwards;
+        }
+        .v13-route-only em {
+          color: rgba(255, 255, 255, 0.55);
+          font-style: normal;
         }
 
         /* ============ ACT 5 · closer call · MONEY SHOT (7.9–11.1s) ===== */
@@ -1054,40 +1179,65 @@ export default function MedPayVideoV13(): JSX.Element {
         </div>
       </section>
 
-      {/* ─── ACT 4 · smart routing ──────────────────────────────────── */}
+      {/* ─── ACT 4 · smart routing · multi-hop pipeline ─────────────── */}
       <section className="v13-act4">
-        <div className="v13-step-tag">Smart routing · by qualification</div>
+        <div className="v13-step-tag">Smart routing · multi-hop pipeline</div>
         <h3 className="v13-step-h">
-          Tier A reaches your closer. <em>Tire-kickers don&apos;t.</em>
+          Every fork. <em>Sarah lands where she should.</em>
         </h3>
-        <div className="v13-route-src">Sarah · Tier A</div>
-        <div className="v13-route-tracks">
-          <div className="v13-track v13-track-1">
-            <div className="v13-track-head">
-              <span className="v13-track-tier">Tier A · high-ticket</span>
-              <span className="v13-track-dest">→ Your closer</span>
-            </div>
-            <div className="v13-track-h">Senior closer · Thu 2:00 PM</div>
-            <div className="v13-track-b">Pre-approved budget honored at consult.</div>
+        <div className="v13-pipe">
+          <div className="v13-edge-line v13-edge-line-1" />
+          <div className="v13-edge-line v13-edge-line-2" />
+          <div className="v13-edge-line v13-edge-line-3" />
+          <div className="v13-edge-line v13-edge-line-4" />
+          <div className="v13-branch v13-branch-1" />
+          <div className="v13-branch v13-branch-2" />
+          <div className="v13-branch v13-branch-3" />
+
+          <div className="v13-node is-form">
+            <div className="v13-node-k">Lead capture</div>
+            <div className="v13-node-h">Form submit</div>
           </div>
-          <div className="v13-track">
-            <div className="v13-track-head">
-              <span className="v13-track-tier">Tier B · mid-ticket</span>
-              <span className="v13-track-dest">→ Consultation</span>
+
+          <div className="v13-node is-hop-1">
+            <div className="v13-node-k">Hop 1 · Budget</div>
+            <div className="v13-node-h">≥ $10K?</div>
+            <div className="v13-opts">
+              <span className="v13-opt is-pick">YES ✓</span>
+              <span className="v13-opt">NO → Tier C/D</span>
             </div>
-            <div className="v13-track-h">Right-sized financing options</div>
-            <div className="v13-track-b">Pre-qualified within their range.</div>
           </div>
-          <div className="v13-track">
-            <div className="v13-track-head">
-              <span className="v13-track-tier">Below threshold</span>
-              <span className="v13-track-dest">→ Nurture</span>
+
+          <div className="v13-node is-hop-2">
+            <div className="v13-node-k">Hop 2 · Tier</div>
+            <div className="v13-node-h">A / B / C / D?</div>
+            <div className="v13-opts">
+              <span className="v13-opt is-pick">A ✓</span>
+              <span className="v13-opt">B</span>
+              <span className="v13-opt">C</span>
+              <span className="v13-opt">D</span>
             </div>
-            <div className="v13-track-h">Drip · re-qualify later</div>
-            <div className="v13-track-b">Never wastes your closer&apos;s time.</div>
           </div>
+
+          <div className="v13-node is-hop-3">
+            <div className="v13-node-k">Hop 3 · Calendar</div>
+            <div className="v13-node-h">Senior · Standard?</div>
+            <div className="v13-opts">
+              <span className="v13-opt is-pick">Senior ✓</span>
+              <span className="v13-opt">Standard</span>
+            </div>
+          </div>
+
+          <div className="v13-node is-terminal">
+            <div className="v13-node-k">Terminal · Sarah&apos;s path</div>
+            <div className="v13-node-h">Senior closer · Thu 2:00 PM</div>
+          </div>
+
+          <div className="v13-dot" />
         </div>
-        <div className="v13-route-only">Only pre-approved buyers reach your team</div>
+        <div className="v13-route-only">
+          Solid = current rules · <em>dashed = A/B test surface</em>
+        </div>
       </section>
 
       {/* ─── ACT 5 · closer call · THE MONEY SHOT ───────────────────── */}
