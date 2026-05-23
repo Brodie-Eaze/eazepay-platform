@@ -347,11 +347,11 @@ export default function MedPayVideoV11(): JSX.Element {
         /* the SVG tree itself */
         .v11-tree {
           position: absolute;
-          top: 400px;
-          left: 30px;
-          right: 30px;
-          height: 1100px;
-          padding: 24px;
+          top: 380px;
+          left: 24px;
+          right: 24px;
+          bottom: 200px;
+          padding: 22px;
           background: rgba(15, 23, 42, 0.55);
           border: 1px solid rgba(34, 184, 160, 0.3);
           border-radius: 28px;
@@ -400,13 +400,13 @@ export default function MedPayVideoV11(): JSX.Element {
         }
         .v11-tree-node-tag {
           font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.18em;
+          font-size: 13px;
+          letter-spacing: 0.16em;
           font-weight: 700;
           fill: ${TEAL_2};
         }
         .v11-tree-node-h {
-          font-size: 16px;
+          font-size: 20px;
           font-weight: 800;
           letter-spacing: -0.015em;
         }
@@ -425,7 +425,7 @@ export default function MedPayVideoV11(): JSX.Element {
         /* tally below the tree */
         .v11-a5-tally {
           position: absolute;
-          bottom: 70px;
+          bottom: 90px;
           left: 60px;
           right: 60px;
           text-align: center;
@@ -595,183 +595,161 @@ export default function MedPayVideoV11(): JSX.Element {
       <section className="v11-a5">
         <div className="v11-a5-tag">The MedPay way</div>
         <h3 className="v11-a5-h">
-          Smart routing. <em>One buyer's path.</em>
+          Three financial gates. <em>Qualified buyer.</em>
         </h3>
         <div className="v11-tree">
           <svg
-            viewBox="0 0 1000 1100"
+            viewBox="0 0 1000 1300"
             preserveAspectRatio="xMidYMid meet"
             className="v11-tree-svg"
-            aria-label="Multi-hop routing tree"
+            aria-label="Three-gate financial qualification tree"
           >
-            {/* dashed alternative edges (everything not on the buyer's path) */}
+            {/* dashed alternative edges · what happens to non-qualifiers */}
             <g className="v11-tree-edges-dashed">
-              <path d="M500,210 L240,330" />
-              <path d="M240,400 L130,520" />
-              <path d="M240,400 L350,520" />
-              <path d="M760,400 L650,520" />
-              <path d="M130,590 L80,720" />
-              <path d="M350,590 L430,720" />
-              <path d="M650,590 L570,720" />
-              <path d="M870,590 L920,720" />
+              <path d="M400,205 L280,205" />
+              <path d="M400,365 L280,365" />
+              <path d="M400,525 L280,525" />
             </g>
 
-            {/* solid traced edges along the buyer's actual path */}
+            {/* solid traced edges along the qualified buyer's path */}
             <g className="v11-tree-edges-solid">
-              <path d="M500,70 L500,150" />
-              <path d="M500,210 L760,330" />
-              <path d="M760,400 L870,520" />
-              <path d="M870,590 L790,720" />
+              <path d="M500,80 L500,165" />
+              <path d="M500,245 L500,325" />
+              <path d="M500,405 L500,485" />
+              <path d="M500,565 L500,645" />
+              <path d="M500,790 L500,865" />
+              <path d="M500,945 L500,1020" />
             </g>
 
-            {/* hidden trace path used by animateMotion for the orb */}
+            {/* hidden trace path the orb follows · top to bottom */}
             <path
               id="v11-trace"
-              d="M500,28 L500,150 L500,210 L760,330 L760,400 L870,520 L870,590 L790,720"
+              d="M500,50 L500,205 L500,365 L500,525 L500,715 L500,905 L500,1060"
               fill="none"
               stroke="none"
             />
 
-            {/* nodes */}
+            {/* L0 · lead capture */}
             <g className="v11-tree-node is-root">
-              <rect x="430" y="10" width="140" height="60" rx="14" />
-              <text className="v11-tree-node-tag" x="500" y="32">
+              <rect x="380" y="20" width="240" height="60" rx="14" />
+              <text className="v11-tree-node-tag" x="500" y="42">
                 LEAD CAPTURE
               </text>
-              <text className="v11-tree-node-h" x="500" y="55">
+              <text className="v11-tree-node-h" x="500" y="65">
                 Form submit
               </text>
             </g>
 
+            {/* L1 · credit score · gate 1 */}
             <g className="v11-tree-node is-traced">
-              <rect x="430" y="150" width="140" height="60" rx="14" />
-              <text className="v11-tree-node-tag" x="500" y="172">
-                HOP 1 · BUDGET
+              <rect x="380" y="165" width="240" height="80" rx="14" />
+              <text className="v11-tree-node-tag" x="500" y="190">
+                HOP 1 · CREDIT SCORE
               </text>
-              <text className="v11-tree-node-h" x="500" y="195">
-                ≥ $10k?
+              <text className="v11-tree-node-h" x="500" y="220">
+                ≥ 700?
+              </text>
+              <text className="v11-tree-node-tag" x="500" y="237" style={{ opacity: 0.55 }}>
+                ✓ Pass · high-ticket lane
+              </text>
+            </g>
+            {/* L1 alt · low-ticket lane */}
+            <g className="v11-tree-node">
+              <rect x="60" y="175" width="220" height="60" rx="14" />
+              <text className="v11-tree-node-tag" x="170" y="197">
+                ALT · LOW-TICKET LANE
+              </text>
+              <text className="v11-tree-node-h" x="170" y="220" style={{ fontSize: 14 }}>
+                Self-serve checkout
               </text>
             </g>
 
-            <g className="v11-tree-node">
-              <rect x="170" y="330" width="140" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="240" y="352">
-                HOP 2 · TIER
+            {/* L2 · income · gate 2 */}
+            <g className="v11-tree-node is-traced">
+              <rect x="380" y="325" width="240" height="80" rx="14" />
+              <text className="v11-tree-node-tag" x="500" y="350">
+                HOP 2 · INCOME
               </text>
-              <text className="v11-tree-node-h" x="240" y="376">
-                A / B / C / D
+              <text className="v11-tree-node-h" x="500" y="380">
+                ≥ $80k / yr?
+              </text>
+              <text className="v11-tree-node-tag" x="500" y="397" style={{ opacity: 0.55 }}>
+                ✓ Pass · income qualified
               </text>
             </g>
-            <g className="v11-tree-node is-traced">
-              <rect x="690" y="330" width="140" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="760" y="352">
-                HOP 2 · INTENT
+            {/* L2 alt · consult */}
+            <g className="v11-tree-node">
+              <rect x="60" y="335" width="220" height="60" rx="14" />
+              <text className="v11-tree-node-tag" x="170" y="357">
+                ALT · CONSULT
               </text>
-              <text className="v11-tree-node-h" x="760" y="376">
-                Hot · warm · cold
+              <text className="v11-tree-node-h" x="170" y="380" style={{ fontSize: 14 }}>
+                Right-sized offer
               </text>
             </g>
 
-            <g className="v11-tree-node">
-              <rect x="60" y="520" width="140" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="130" y="542">
-                HOP 3 · CALENDAR
-              </text>
-              <text className="v11-tree-node-h" x="130" y="566">
-                Senior · standard
-              </text>
-            </g>
-            <g className="v11-tree-node">
-              <rect x="280" y="520" width="140" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="350" y="542">
-                HOP 3 · OFFER
-              </text>
-              <text className="v11-tree-node-h" x="350" y="566">
-                Masterclass
-              </text>
-            </g>
-            <g className="v11-tree-node">
-              <rect x="580" y="520" width="140" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="650" y="542">
-                HOP 3 · WEBINAR
-              </text>
-              <text className="v11-tree-node-h" x="650" y="566">
-                Live · recorded
-              </text>
-            </g>
+            {/* L3 · available credit · gate 3 */}
             <g className="v11-tree-node is-traced">
-              <rect x="800" y="520" width="140" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="870" y="542">
-                HOP 3 · CALENDAR
+              <rect x="380" y="485" width="240" height="80" rx="14" />
+              <text className="v11-tree-node-tag" x="500" y="510">
+                HOP 3 · AVAILABLE CREDIT
               </text>
-              <text className="v11-tree-node-h" x="870" y="566">
-                Senior · standard
+              <text className="v11-tree-node-h" x="500" y="540">
+                Headroom ≥ $15k?
+              </text>
+              <text className="v11-tree-node-tag" x="500" y="557" style={{ opacity: 0.55 }}>
+                ✓ Pass · ready to fund
+              </text>
+            </g>
+            {/* L3 alt · BNPL */}
+            <g className="v11-tree-node">
+              <rect x="60" y="495" width="220" height="60" rx="14" />
+              <text className="v11-tree-node-tag" x="170" y="517">
+                ALT · BNPL OR DECLINE
+              </text>
+              <text className="v11-tree-node-h" x="170" y="540" style={{ fontSize: 14 }}>
+                Klarna / Affirm
               </text>
             </g>
 
-            <g className="v11-tree-node">
-              <rect x="20" y="720" width="120" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="80" y="742">
-                TERMINAL
-              </text>
-              <text className="v11-tree-node-h" x="80" y="766">
-                Calendar
-              </text>
-            </g>
-            <g className="v11-tree-node">
-              <rect x="370" y="720" width="120" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="430" y="742">
-                TERMINAL
-              </text>
-              <text className="v11-tree-node-h" x="430" y="766">
-                Masterclass
-              </text>
-            </g>
-            <g className="v11-tree-node">
-              <rect x="510" y="720" width="120" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="570" y="742">
-                TERMINAL
-              </text>
-              <text className="v11-tree-node-h" x="570" y="766">
-                Webinar live
-              </text>
-            </g>
+            {/* L4 · sales call · HERO QUALIFIED BUYER */}
             <g className="v11-tree-node is-traced">
-              <rect x="730" y="720" width="120" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="742">
-                TERMINAL
+              <rect x="320" y="645" width="360" height="145" rx="18" />
+              <text className="v11-tree-node-tag" x="500" y="675" style={{ fontSize: 13 }}>
+                SALES CALL
               </text>
-              <text className="v11-tree-node-h" x="790" y="766">
-                Sales call
+              <text className="v11-tree-node-h" x="500" y="715" style={{ fontSize: 22 }}>
+                Qualified buyer
               </text>
-            </g>
-            <g className="v11-tree-node">
-              <rect x="860" y="720" width="120" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="920" y="742">
-                TERMINAL
+              <text className="v11-tree-node-tag" x="500" y="745" style={{ opacity: 0.65 }}>
+                Pre-approved budget attached
               </text>
-              <text className="v11-tree-node-h" x="920" y="766">
-                Calendar
+              <text className="v11-tree-node-tag" x="500" y="765" style={{ opacity: 0.55 }}>
+                Closer only talks to buyers who can pay
               </text>
             </g>
 
-            {/* additional level showing the lender marketplace + funded outcome */}
-            <g className="v11-tree-edges-solid">
-              <path d="M790,790 L790,890" />
-              <path d="M790,960 L790,1040" />
-            </g>
+            {/* L5 · lender marketplace */}
             <g className="v11-tree-node is-traced">
-              <rect x="640" y="890" width="300" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="912">
+              <rect x="350" y="865" width="300" height="80" rx="14" />
+              <text className="v11-tree-node-tag" x="500" y="890">
                 LENDER MARKETPLACE
               </text>
-              <text className="v11-tree-node-h" x="790" y="936">
+              <text className="v11-tree-node-h" x="500" y="918" style={{ fontSize: 16 }}>
                 1 app · 5 lenders · instant
               </text>
+              <text className="v11-tree-node-tag" x="500" y="935" style={{ opacity: 0.55 }}>
+                Best terms picked automatically
+              </text>
             </g>
+
+            {/* L6 · funded */}
             <g className="v11-tree-node is-traced">
-              <rect x="690" y="1040" width="200" height="60" rx="14" />
-              <text className="v11-tree-node-h" x="790" y="1078" style={{ fontSize: 22 }}>
+              <rect x="390" y="1020" width="220" height="80" rx="14" />
+              <text className="v11-tree-node-tag" x="500" y="1045">
+                OUTCOME
+              </text>
+              <text className="v11-tree-node-h" x="500" y="1078" style={{ fontSize: 28 }}>
                 Funded.
               </text>
             </g>
@@ -786,7 +764,7 @@ export default function MedPayVideoV11(): JSX.Element {
         </div>
         <div className="v11-a5-tally">
           <div className="v11-a5-tally-h">
-            One ecosystem. <em>Lead to funded.</em>
+            Three gates. <em>One qualified buyer.</em>
           </div>
         </div>
       </section>
