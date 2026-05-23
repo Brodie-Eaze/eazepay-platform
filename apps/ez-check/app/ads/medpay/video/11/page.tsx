@@ -653,14 +653,14 @@ export default function MedPayVideoV11(): JSX.Element {
                 ✓ Pass · high-ticket lane
               </text>
             </g>
-            {/* L1 alt · low-ticket lane */}
+            {/* L1 alt · smaller offer */}
             <g className="v11-tree-node">
               <rect x="60" y="175" width="220" height="60" rx="14" />
               <text className="v11-tree-node-tag" x="170" y="197">
-                ALT · LOW-TICKET LANE
+                ALT · LOWER-PRICED
               </text>
               <text className="v11-tree-node-h" x="170" y="220" style={{ fontSize: 14 }}>
-                Self-serve checkout
+                Smaller offer
               </text>
             </g>
 
