@@ -1,20 +1,20 @@
 /**
- * Video ad V11 — "Your closer talks to qualified buyers" · 18s · 1080×1920
+ * Video ad V11 v6 · 27s · 1080x1920
  *
- * Practice-owner POV Facebook scroll-stopper. The single message: your
- * closer's time goes to buyers who can pay, not info-shoppers. Ecosystem
- * mechanics (smart form → financial pre-qual → smart routing → closer
- * call → lender marketplace → funded) are the PROOF behind that message,
- * not a 6-step product tour.
+ * Old-funnel vs MedPay-funnel contrast for practice owners. The MedPay
+ * section uses a proper SVG multi-hop routing tree (same topology as the
+ * landing-page gold standard): root, one budget gate, two parallel hops,
+ * four terminal-feeders, six terminals. A glowing orb traces one buyer's
+ * path through the tree and lights up each node it passes.
  *
- *   0.0–2.4   HOOK   · two phones side-by-side · "Same closer. Different call."
- *   2.4–3.4   PIVOT  · "MedPay routes only qualified buyers to your closer"
- *   3.4–5.9   PROOF  · smart form · financial check returns Tier A · $14.2k
- *   5.9–7.9   PROOF  · smart routing splits Tier A/B/below
- *   7.9–11.1  PAYOFF · closer call w/ pre-approved buyer (money shot)
- *  11.1–13.6  PROOF  · 1 application · 5 lenders · funded $15,200
- *  13.6–15.6  STAMP  · "Your closer talks to qualified buyers"
- *  15.6–18.0  CTA + compliance
+ *    0.0 to 3.0   HOOK    Practice owner. There are two ways to run your clinic.
+ *    3.0 to 4.0   TAG     Here is how most do it today.
+ *    4.0 to 10.0  TODAY   Lead. Closer dials all. Hours on unqualified buyers.
+ *   10.0 to 11.0  PIVOT   Now here is MedPay.
+ *   11.0 to 20.0  MEDPAY  SVG tree, orb traces one buyer's path through the hops.
+ *   20.0 to 22.0  RESULT  Qualified buyers. Booked calls. Funded same day.
+ *   22.0 to 24.0  STAMP   That is MedPay.
+ *   24.0 to 27.0  CTA + compliance
  */
 import { VideoStage, TEAL_2 } from '../_stage';
 import { Mark, Tag, Cta, SHARED_CHROME_CSS } from '../_chrome';
@@ -33,1017 +33,98 @@ export default function MedPayVideoV12(): JSX.Element {
             opacity: 0;
           }
         }
-        @keyframes v12-stamp-in {
+        @keyframes v12-pop-in {
           0% {
             opacity: 0;
-            transform: scale(1.18);
-          }
-          70% {
-            opacity: 1;
-            transform: scale(0.97);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        /* ============ ACT 1 · hook · two phones (0–2.4s) ================ */
-        .v12-act1 {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          animation:
-            vs-in-up 0.4s 0.1s forwards,
-            vs-fade-out 0.4s 2.4s forwards;
-        }
-        .v12-hook-h {
-          position: absolute;
-          top: 170px;
-          left: 0;
-          right: 0;
-          text-align: center;
-          font-size: 64px;
-          font-weight: 800;
-          letter-spacing: -0.034em;
-          line-height: 1.05;
-          color: #fff;
-          text-shadow: 0 0 40px rgba(34, 184, 160, 0.25);
-        }
-        .v12-hook-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-hook-sub {
-          position: absolute;
-          top: 280px;
-          left: 0;
-          right: 0;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 18px;
-          letter-spacing: 0.28em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.55);
-          text-transform: uppercase;
-        }
-
-        /* the two phone mockups */
-        .v12-phones {
-          position: absolute;
-          top: 360px;
-          left: 30px;
-          right: 30px;
-          bottom: 260px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-        .v12-phone {
-          position: relative;
-          padding: 22px 18px 26px;
-          border-radius: 32px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(14px);
-          display: flex;
-          flex-direction: column;
-        }
-        .v12-phone-tag {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
-        .v12-phone.is-bad .v12-phone-tag {
-          color: rgba(248, 113, 113, 0.85);
-        }
-        .v12-phone.is-good .v12-phone-tag {
-          color: ${TEAL_2};
-        }
-        .v12-phone-callerid {
-          margin-top: 10px;
-          padding: 14px 14px;
-          background: rgba(0, 0, 0, 0.35);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-        }
-        .v12-phone-name {
-          font-size: 21px;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.015em;
-        }
-        .v12-phone-meta {
-          margin-top: 4px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.5);
-        }
-        .v12-phone.is-good .v12-phone-meta {
-          color: ${TEAL_2};
-        }
-        .v12-phone-quote {
-          margin-top: 14px;
-          padding: 14px 16px;
-          border-radius: 14px;
-          font-size: 16px;
-          line-height: 1.35;
-          color: #fff;
-        }
-        .v12-phone.is-bad .v12-phone-quote {
-          background: rgba(248, 113, 113, 0.1);
-          border: 1px solid rgba(248, 113, 113, 0.25);
-          color: rgba(255, 255, 255, 0.85);
-        }
-        .v12-phone.is-good .v12-phone-quote {
-          background: rgba(34, 184, 160, 0.12);
-          border: 1px solid rgba(34, 184, 160, 0.35);
-        }
-        .v12-phone-outcome {
-          margin-top: auto;
-          padding-top: 12px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          text-transform: uppercase;
-          text-align: center;
-        }
-        .v12-phone.is-bad .v12-phone-outcome {
-          color: rgba(248, 113, 113, 0.85);
-        }
-        .v12-phone.is-good .v12-phone-outcome {
-          color: ${TEAL_2};
-        }
-        .v12-phone.is-good {
-          border-color: rgba(34, 184, 160, 0.55);
-          box-shadow: 0 20px 60px -20px rgba(34, 184, 160, 0.4);
-        }
-
-        /* V12 hook · stats rows inside the two cards */
-        .v12-stat {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 12px 14px;
-          margin-top: 10px;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 12px;
-        }
-        .v12-stat.is-end {
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .v12-phone.is-good .v12-stat.is-end {
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.16));
-          border-color: rgba(34, 184, 160, 0.55);
-        }
-        .v12-stat-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.18em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.55);
-          text-transform: uppercase;
-        }
-        .v12-stat-v {
-          font-size: 28px;
-          font-weight: 800;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-          letter-spacing: -0.02em;
-        }
-        .v12-phone.is-bad .v12-stat.is-end .v12-stat-v {
-          color: rgba(248, 113, 113, 0.95);
-        }
-        .v12-phone.is-good .v12-stat.is-end .v12-stat-v {
-          color: ${TEAL_2};
-        }
-
-        /* ============ ACT 2 · pivot (2.4–3.4s) =========================== */
-        .v12-act2 {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          animation:
-            vs-in-up 0.4s 2.5s forwards,
-            vs-fade-out 0.4s 3.3s forwards;
-        }
-        .v12-pivot-h {
-          position: absolute;
-          top: 770px;
-          left: 50px;
-          right: 50px;
-          text-align: center;
-          font-size: 76px;
-          font-weight: 800;
-          letter-spacing: -0.036em;
-          line-height: 1.04;
-          color: #fff;
-          text-shadow: 0 0 50px rgba(34, 184, 160, 0.3);
-        }
-        .v12-pivot-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-
-        /* ============ ACT 3 · smart form + pre-qual (3.4–5.9s) ========== */
-        .v12-act3 {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          animation:
-            vs-in-up 0.45s 3.5s forwards,
-            vs-fade-out 0.4s 5.8s forwards;
-        }
-        .v12-step-tag {
-          position: absolute;
-          top: 250px;
-          left: 0;
-          right: 0;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 15px;
-          letter-spacing: 0.3em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v12-step-h {
-          position: absolute;
-          top: 305px;
-          left: 30px;
-          right: 30px;
-          text-align: center;
-          font-size: 52px;
-          font-weight: 800;
-          letter-spacing: -0.028em;
-          line-height: 1.05;
-          color: #fff;
-        }
-        .v12-step-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-form {
-          position: absolute;
-          top: 540px;
-          left: 90px;
-          right: 90px;
-          padding: 22px;
-          border-radius: 26px;
-          background: rgba(15, 23, 42, 0.92);
-          border: 1px solid rgba(34, 184, 160, 0.35);
-          box-shadow: 0 30px 70px -20px rgba(34, 184, 160, 0.4);
-        }
-        .v12-form-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 13px 16px;
-          margin-bottom: 10px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          opacity: 0;
-        }
-        .v12-form-row:last-child {
-          margin-bottom: 0;
-        }
-        .v12-form-row:nth-child(1) {
-          animation: vs-in-up 0.3s 3.8s forwards;
-        }
-        .v12-form-row:nth-child(2) {
-          animation: vs-in-up 0.3s 4s forwards;
-        }
-        .v12-form-row:nth-child(3) {
-          animation: vs-in-up 0.3s 4.2s forwards;
-        }
-        .v12-form-row:nth-child(4) {
-          animation: vs-in-up 0.3s 4.4s forwards;
-        }
-        .v12-form-label {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.16em;
-          color: rgba(255, 255, 255, 0.5);
-          text-transform: uppercase;
-        }
-        .v12-form-val {
-          font-weight: 700;
-          font-size: 16px;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-        }
-        .v12-form-val::after {
-          content: ' ✓';
-          color: ${TEAL_2};
-        }
-        .v12-finchk {
-          position: absolute;
-          top: 1080px;
-          left: 60px;
-          right: 60px;
-          padding: 22px 26px;
-          border-radius: 22px;
-          background:
-            radial-gradient(ellipse 70% 60% at 0% 0%, rgba(34, 184, 160, 0.16), transparent 60%),
-            rgba(15, 23, 42, 0.92);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          box-shadow: 0 30px 70px -16px rgba(34, 184, 160, 0.5);
-          opacity: 0;
-          animation: vs-in-up 0.45s 4.8s forwards;
-        }
-        .v12-finchk-tag {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v12-finchk-h {
-          margin-top: 6px;
-          font-size: 28px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          color: #fff;
-        }
-        .v12-finchk-sub {
-          margin-top: 3px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.55);
-        }
-        .v12-finchk-cells {
-          margin-top: 16px;
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 12px;
-        }
-        .v12-finchk-cell {
-          padding: 14px 12px;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(34, 184, 160, 0.3);
-          border-radius: 12px;
-          text-align: center;
-        }
-        .v12-finchk-cell-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.2em;
-          color: rgba(255, 255, 255, 0.5);
-          text-transform: uppercase;
-        }
-        .v12-finchk-cell-v {
-          margin-top: 5px;
-          font-size: 26px;
-          font-weight: 800;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-        }
-        .v12-finchk-cell-v.is-teal {
-          color: ${TEAL_2};
-        }
-
-        /* ============ ACT 4 · smart routing · multi-hop pipeline (5.9–7.9s) === */
-        .v12-act4 {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          animation:
-            vs-in-up 0.45s 6s forwards,
-            vs-fade-out 0.4s 7.8s forwards;
-        }
-        .v12-pipe {
-          position: absolute;
-          top: 470px;
-          left: 80px;
-          right: 80px;
-          height: 870px;
-        }
-        .v12-node {
-          position: absolute;
-          left: 0;
-          right: 0;
-          padding: 12px 18px;
-          border-radius: 16px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(14px);
-          text-align: center;
-          opacity: 0.32;
-        }
-        .v12-node.is-form {
-          top: 0;
-          opacity: 1;
-          border-color: rgba(34, 184, 160, 0.55);
-        }
-        .v12-node.is-hop-1 {
-          top: 160px;
-          animation: v12-node-lit 0.3s 6.35s forwards;
-        }
-        .v12-node.is-hop-2 {
-          top: 340px;
-          animation: v12-node-lit 0.3s 6.55s forwards;
-        }
-        .v12-node.is-hop-3 {
-          top: 540px;
-          animation: v12-node-lit 0.3s 6.75s forwards;
-        }
-        .v12-node.is-terminal {
-          top: 720px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.16));
-          animation: v12-node-lit-terminal 0.45s 6.95s forwards;
-        }
-        @keyframes v12-node-lit {
-          0% {
-            opacity: 0.32;
-          }
-          100% {
-            opacity: 1;
-            border-color: rgba(34, 184, 160, 0.7);
-            box-shadow: 0 14px 36px -16px rgba(34, 184, 160, 0.55);
-          }
-        }
-        @keyframes v12-node-lit-terminal {
-          0% {
-            opacity: 0.32;
-            transform: scale(1);
+            transform: scale(0.94) translateY(18px);
           }
           60% {
             opacity: 1;
-            transform: scale(1.05);
+            transform: scale(1.02);
           }
           100% {
             opacity: 1;
-            transform: scale(1);
-            border-color: rgba(34, 184, 160, 0.9);
-            box-shadow: 0 20px 50px -16px rgba(34, 184, 160, 0.65);
+            transform: scale(1) translateY(0);
           }
         }
-        .v12-node-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.45);
-          text-transform: uppercase;
-        }
-        .v12-node.is-form .v12-node-k,
-        .v12-node.is-hop-1 .v12-node-k,
-        .v12-node.is-hop-2 .v12-node-k,
-        .v12-node.is-hop-3 .v12-node-k,
-        .v12-node.is-terminal .v12-node-k {
-          color: ${TEAL_2};
-        }
-        .v12-node-h {
-          margin-top: 5px;
-          font-size: 22px;
-          font-weight: 800;
-          letter-spacing: -0.018em;
-          color: #fff;
-        }
-        .v12-node-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-opts {
-          margin-top: 10px;
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .v12-opt {
-          padding: 5px 11px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          font-weight: 700;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          border-radius: 999px;
-          color: rgba(255, 255, 255, 0.5);
-          letter-spacing: 0.04em;
-        }
-        .v12-opt.is-pick {
-          background: rgba(34, 184, 160, 0.2);
-          border: 1px solid rgba(34, 184, 160, 0.7);
-          color: ${TEAL_2};
-          font-weight: 800;
-        }
-        .v12-edge-line {
-          position: absolute;
-          left: 50%;
-          margin-left: -1px;
-          width: 2px;
-          background: rgba(34, 184, 160, 0.45);
-        }
-        .v12-edge-line-1 {
-          top: 95px;
-          height: 65px;
-        }
-        .v12-edge-line-2 {
-          top: 275px;
-          height: 65px;
-        }
-        .v12-edge-line-3 {
-          top: 475px;
-          height: 65px;
-        }
-        .v12-edge-line-4 {
-          top: 655px;
-          height: 65px;
-        }
-        .v12-branch {
-          position: absolute;
-          height: 2px;
-          background: transparent;
-          border-top: 2px dashed rgba(255, 255, 255, 0.18);
-        }
-        .v12-branch-1 {
-          top: 198px;
-          left: 60%;
-          right: -20px;
-        }
-        .v12-branch-2 {
-          top: 378px;
-          left: 60%;
-          right: -20px;
-        }
-        .v12-branch-3 {
-          top: 578px;
-          left: 60%;
-          right: -20px;
-        }
-        .v12-dot {
-          position: absolute;
-          left: 50%;
-          margin-left: -9px;
-          margin-top: -9px;
-          width: 18px;
-          height: 18px;
-          background: #fff;
-          border-radius: 50%;
-          box-shadow:
-            0 0 14px ${TEAL_2},
-            0 0 40px rgba(34, 184, 160, 0.75);
-          opacity: 0;
-          top: -20px;
-          animation: v12-dot-fall 1.5s 6s cubic-bezier(0.7, 0, 0.3, 1) forwards;
-        }
-        @keyframes v12-dot-fall {
+        @keyframes v12-blur-in {
           0% {
-            top: -20px;
             opacity: 0;
-          }
-          5% {
-            top: 20px;
-            opacity: 1;
-          }
-          22% {
-            top: 210px;
-            opacity: 1;
-          }
-          50% {
-            top: 395px;
-            opacity: 1;
-          }
-          75% {
-            top: 595px;
-            opacity: 1;
+            filter: blur(20px);
           }
           100% {
-            top: 765px;
             opacity: 1;
+            filter: blur(0);
           }
         }
-        .v12-route-only {
-          position: absolute;
-          top: 1380px;
-          left: 30px;
-          right: 30px;
-          padding: 14px 22px;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(34, 184, 160, 0.5);
-          border-radius: 14px;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.18em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-          opacity: 0;
-          animation: vs-in-up 0.4s 7.2s forwards;
-        }
-        .v12-route-only em {
-          color: rgba(255, 255, 255, 0.55);
-          font-style: normal;
-        }
 
-        /* ============ ACT 5 · closer call · MONEY SHOT (7.9–11.1s) ===== */
-        .v12-act5 {
+        /* ─── ACT 1 hook (0 to 3s) ─────────────────────────────────────── */
+        .v12-a1 {
           position: absolute;
           inset: 0;
           opacity: 0;
           animation:
-            vs-in-up 0.45s 8s forwards,
-            vs-fade-out 0.4s 11s forwards;
+            vs-in-up 0.5s 0.2s forwards,
+            vs-fade-out 0.5s 3s forwards;
         }
-        .v12-call-tag {
+        .v12-a1-pre {
           position: absolute;
-          top: 220px;
+          top: 600px;
           left: 0;
           right: 0;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 15px;
-          letter-spacing: 0.3em;
+          font-size: 38px;
           font-weight: 700;
+          letter-spacing: 0.06em;
           color: ${TEAL_2};
           text-transform: uppercase;
+          opacity: 0;
+          animation: v12-blur-in 0.5s 0.4s forwards;
         }
-        .v12-call-h {
+        .v12-a1-h {
           position: absolute;
-          top: 275px;
-          left: 30px;
-          right: 30px;
+          top: 680px;
+          left: 40px;
+          right: 40px;
           text-align: center;
-          font-size: 48px;
+          font-size: 96px;
           font-weight: 800;
-          letter-spacing: -0.024em;
-          line-height: 1.05;
+          letter-spacing: -0.04em;
+          line-height: 1.02;
           color: #fff;
+          text-shadow: 0 0 80px rgba(34, 184, 160, 0.4);
+          opacity: 0;
+          animation: v12-blur-in 0.6s 0.9s forwards;
         }
-        .v12-call-h em {
+        .v12-a1-h em {
           font-style: normal;
           color: ${TEAL_2};
         }
-
-        .v12-call {
+        .v12-a1-sub {
           position: absolute;
-          top: 460px;
-          left: 60px;
-          right: 60px;
-          padding: 24px;
-          border-radius: 28px;
-          background: rgba(15, 23, 42, 0.92);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          box-shadow: 0 30px 70px -16px rgba(34, 184, 160, 0.5);
-        }
-        .v12-call-id {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 14px 16px;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(34, 184, 160, 0.3);
-          border-radius: 16px;
-        }
-        .v12-call-name {
-          font-size: 22px;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.015em;
-        }
-        .v12-call-name em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-call-time {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.16em;
-          color: rgba(255, 255, 255, 0.55);
-          text-align: right;
-        }
-        .v12-call-status {
-          margin-top: 2px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-
-        .v12-call-preapp {
-          margin-top: 14px;
-          padding: 14px 16px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.16));
-          border: 1px solid rgba(34, 184, 160, 0.65);
-          border-radius: 14px;
-          display: grid;
-          grid-template-columns: auto 1fr auto;
-          gap: 14px;
-          align-items: center;
-        }
-        .v12-call-preapp-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v12-call-preapp-v {
-          font-size: 26px;
-          font-weight: 800;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-        }
-        .v12-call-preapp-tier {
-          padding: 5px 11px;
-          background: rgba(34, 184, 160, 0.22);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          border-radius: 999px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          font-weight: 700;
-          color: ${TEAL_2};
-          letter-spacing: 0.04em;
-        }
-
-        .v12-call-msgs {
-          margin-top: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        .v12-call-msg {
-          padding: 12px 14px;
-          font-size: 16px;
-          line-height: 1.35;
-          border-radius: 14px;
-          max-width: 86%;
-          opacity: 0;
-        }
-        .v12-call-msg.is-closer {
-          align-self: flex-start;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.85);
-          border-bottom-left-radius: 4px;
-        }
-        .v12-call-msg.is-buyer {
-          align-self: flex-end;
-          background: rgba(34, 184, 160, 0.18);
-          border: 1px solid rgba(34, 184, 160, 0.45);
-          color: #fff;
-          border-bottom-right-radius: 4px;
-        }
-        .v12-call-msgs .v12-call-msg:nth-child(1) {
-          animation: vs-in-up 0.35s 8.8s forwards;
-        }
-        .v12-call-msgs .v12-call-msg:nth-child(2) {
-          animation: vs-in-up 0.35s 9.6s forwards;
-        }
-        .v12-call-who {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          text-transform: uppercase;
-          margin-bottom: 3px;
-        }
-        .v12-call-msg.is-closer .v12-call-who {
-          color: rgba(255, 255, 255, 0.45);
-        }
-        .v12-call-msg.is-buyer .v12-call-who {
-          color: ${TEAL_2};
-        }
-
-        .v12-call-outcome {
-          position: absolute;
-          top: 1300px;
-          left: 60px;
-          right: 60px;
-          padding: 16px 22px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.45), rgba(34, 184, 160, 0.22));
-          border: 1px solid rgba(34, 184, 160, 0.7);
-          border-radius: 16px;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 14px;
-          letter-spacing: 0.24em;
-          font-weight: 700;
-          color: #fff;
-          text-transform: uppercase;
-          opacity: 0;
-          animation: v12-stamp-in 0.45s 10.4s forwards;
-        }
-        .v12-call-outcome em {
-          color: ${TEAL_2};
-          font-style: normal;
-        }
-
-        /* ============ ACT 6 · lender marketplace (11.1–13.6s) ========== */
-        .v12-act6 {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          animation:
-            vs-in-up 0.4s 11.2s forwards,
-            vs-fade-out 0.4s 13.5s forwards;
-        }
-        .v12-mkt-tag {
-          position: absolute;
-          top: 250px;
+          top: 1080px;
           left: 0;
           right: 0;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 15px;
-          letter-spacing: 0.3em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v12-mkt-h {
-          position: absolute;
-          top: 305px;
-          left: 30px;
-          right: 30px;
-          text-align: center;
-          font-size: 52px;
-          font-weight: 800;
-          letter-spacing: -0.028em;
-          line-height: 1.05;
-          color: #fff;
-        }
-        .v12-mkt-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-mkt-app {
-          position: absolute;
-          top: 500px;
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 12px 24px;
-          background: rgba(34, 184, 160, 0.18);
-          border: 1px solid rgba(34, 184, 160, 0.6);
-          border-radius: 999px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 14px;
-          font-weight: 700;
-          color: ${TEAL_2};
-          letter-spacing: 0.08em;
-        }
-        .v12-mkt-lenders {
-          position: absolute;
-          top: 610px;
-          left: 30px;
-          right: 30px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-        .v12-lender {
-          padding: 16px 18px;
-          border-radius: 16px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          opacity: 0;
-        }
-        .v12-lender:nth-child(1) {
-          animation: vs-in-up 0.3s 11.6s forwards;
-        }
-        .v12-lender:nth-child(2) {
-          animation: vs-in-up 0.3s 11.75s forwards;
-        }
-        .v12-lender:nth-child(3) {
-          animation: vs-in-up 0.3s 11.9s forwards;
-        }
-        .v12-lender:nth-child(4) {
-          animation: vs-in-up 0.3s 12.05s forwards;
-        }
-        .v12-lender:nth-child(5) {
-          animation: vs-in-up 0.3s 12.2s forwards;
-        }
-        .v12-lender.is-best {
-          border-color: rgba(34, 184, 160, 0.85);
-          background:
-            linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.18)),
-            rgba(15, 23, 42, 0.85);
-          box-shadow: 0 20px 50px -16px rgba(34, 184, 160, 0.6);
-        }
-        .v12-lender.is-decline {
-          opacity: 0.55;
-        }
-        .v12-lender-name {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.6);
-          text-transform: uppercase;
-        }
-        .v12-lender-dec {
-          margin-top: 4px;
-          font-size: 18px;
-          font-weight: 800;
-          color: #fff;
-        }
-        .v12-lender.is-decline .v12-lender-dec {
-          color: rgba(248, 113, 113, 0.85);
-        }
-        .v12-lender.is-best .v12-lender-dec {
-          color: ${TEAL_2};
-        }
-        .v12-lender-tag {
-          margin-top: 6px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.45);
-          text-transform: uppercase;
-        }
-        .v12-lender.is-best .v12-lender-tag {
-          color: ${TEAL_2};
-        }
-
-        .v12-mkt-stamp {
-          position: absolute;
-          top: 1320px;
-          left: 30px;
-          right: 30px;
-          padding: 20px 24px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.45), rgba(34, 184, 160, 0.22));
-          border: 1px solid rgba(34, 184, 160, 0.7);
-          border-radius: 18px;
-          text-align: center;
-          opacity: 0;
-          animation: v12-stamp-in 0.5s 12.6s forwards;
-        }
-        .v12-mkt-stamp-h {
           font-size: 32px;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          color: #fff;
-        }
-        .v12-mkt-stamp-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-          font-variant-numeric: tabular-nums;
-        }
-        .v12-mkt-stamp-b {
-          margin-top: 4px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.55);
-          text-transform: uppercase;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.6);
+          line-height: 1.4;
+          padding: 0 80px;
+          opacity: 0;
+          animation: vs-in-up 0.5s 1.8s forwards;
         }
 
-        /* ============ ACT 7 · stamp · the message (13.6–15.6s) ========= */
-        .v12-act7 {
+        /* ─── ACT 2 tag (3 to 4s) ──────────────────────────────────────── */
+        .v12-a2 {
           position: absolute;
           inset: 0;
           opacity: 0;
-          animation: vs-in-up 0.55s 13.7s forwards;
+          animation:
+            vs-in-up 0.4s 3.1s forwards,
+            vs-fade-out 0.3s 4s forwards;
         }
-        .v12-final-h {
-          position: absolute;
-          top: 420px;
-          left: 30px;
-          right: 30px;
-          text-align: center;
-          font-size: 82px;
-          font-weight: 800;
-          letter-spacing: -0.036em;
-          line-height: 1.03;
-          color: #fff;
-          text-shadow: 0 0 60px rgba(34, 184, 160, 0.4);
-        }
-        .v12-final-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-final-sub {
-          position: absolute;
-          top: 700px;
-          left: 0;
-          right: 0;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 18px;
-          letter-spacing: 0.3em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.65);
-          text-transform: uppercase;
-        }
-        .v12-final-sub em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v12-final-mark {
+        .v12-a2-h {
           position: absolute;
           top: 800px;
           left: 0;
@@ -1051,273 +132,662 @@ export default function MedPayVideoV12(): JSX.Element {
           text-align: center;
           font-size: 64px;
           font-weight: 800;
+          letter-spacing: -0.03em;
+          color: #fff;
+        }
+        .v12-a2-h em {
+          font-style: normal;
+          color: rgba(248, 113, 113, 0.9);
+        }
+
+        /* ─── ACT 3 today's funnel (4 to 10s) ──────────────────────────── */
+        .v12-a3 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation:
+            vs-in-up 0.5s 4.1s forwards,
+            vs-fade-out 0.5s 9.9s forwards;
+        }
+        .v12-a3-tag {
+          position: absolute;
+          top: 200px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 24px;
+          font-weight: 700;
+          letter-spacing: 0.26em;
+          color: rgba(248, 113, 113, 0.85);
+          text-transform: uppercase;
+        }
+        .v12-a3-h {
+          position: absolute;
+          top: 250px;
+          left: 30px;
+          right: 30px;
+          text-align: center;
+          font-size: 60px;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          line-height: 1.05;
+          color: #fff;
+        }
+        .v12-a3-steps {
+          position: absolute;
+          top: 440px;
+          left: 60px;
+          right: 60px;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        }
+        .v12-a3-step {
+          display: grid;
+          grid-template-columns: 56px 1fr auto;
+          gap: 22px;
+          align-items: center;
+          padding: 24px 28px;
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          opacity: 0;
+        }
+        .v12-a3-step:nth-child(1) {
+          animation: v12-pop-in 0.5s 4.4s forwards;
+        }
+        .v12-a3-step:nth-child(2) {
+          animation: v12-pop-in 0.5s 5.4s forwards;
+        }
+        .v12-a3-step:nth-child(3) {
+          animation: v12-pop-in 0.5s 6.4s forwards;
+        }
+        .v12-a3-step:nth-child(4) {
+          animation: v12-pop-in 0.5s 7.4s forwards;
+        }
+        .v12-a3-step.is-bad {
+          border-color: rgba(248, 113, 113, 0.4);
+        }
+        .v12-a3-num {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.06);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 26px;
+          font-weight: 800;
+          color: rgba(255, 255, 255, 0.7);
+          letter-spacing: -0.01em;
+        }
+        .v12-a3-step.is-bad .v12-a3-num {
+          background: rgba(248, 113, 113, 0.14);
+          color: rgba(248, 113, 113, 0.95);
+        }
+        .v12-a3-body {
+          display: flex;
+          flex-direction: column;
+        }
+        .v12-a3-h2 {
+          font-size: 30px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.018em;
+          line-height: 1.15;
+        }
+        .v12-a3-b {
+          margin-top: 4px;
+          font-size: 19px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.55);
+          line-height: 1.3;
+        }
+        .v12-a3-pill {
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          padding: 8px 14px;
+          background: rgba(248, 113, 113, 0.14);
+          border: 1px solid rgba(248, 113, 113, 0.4);
+          border-radius: 999px;
+          color: rgba(248, 113, 113, 0.95);
+          white-space: nowrap;
+        }
+        .v12-a3-tally {
+          position: absolute;
+          bottom: 110px;
+          left: 60px;
+          right: 60px;
+          text-align: center;
+          padding: 26px 28px;
+          background: rgba(248, 113, 113, 0.1);
+          border: 1px solid rgba(248, 113, 113, 0.3);
+          border-radius: 20px;
+          opacity: 0;
+          animation: v12-pop-in 0.5s 8.4s forwards;
+        }
+        .v12-a3-tally-h {
+          font-size: 38px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.022em;
+          line-height: 1.15;
+        }
+        .v12-a3-tally-h em {
+          font-style: normal;
+          color: rgba(248, 113, 113, 0.95);
+        }
+
+        /* ─── ACT 4 pivot (10 to 11s) ──────────────────────────────────── */
+        .v12-a4 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation:
+            vs-in-up 0.4s 10.1s forwards,
+            vs-fade-out 0.3s 11s forwards;
+        }
+        .v12-a4-h {
+          position: absolute;
+          top: 800px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 76px;
+          font-weight: 800;
           letter-spacing: -0.034em;
+          color: #fff;
+          text-shadow: 0 0 60px rgba(34, 184, 160, 0.4);
+        }
+        .v12-a4-h em {
+          font-style: normal;
           color: ${TEAL_2};
+        }
+
+        /* ─── ACT 5 MedPay multi-hop routing tree (11 to 20s) ─────────── */
+        .v12-a5 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation:
+            vs-in-up 0.5s 11.1s forwards,
+            vs-fade-out 0.5s 19.9s forwards;
+        }
+        .v12-a5-tag {
+          position: absolute;
+          top: 200px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 24px;
+          font-weight: 700;
+          letter-spacing: 0.26em;
+          color: ${TEAL_2};
+          text-transform: uppercase;
+        }
+        .v12-a5-h {
+          position: absolute;
+          top: 250px;
+          left: 30px;
+          right: 30px;
+          text-align: center;
+          font-size: 56px;
+          font-weight: 800;
+          letter-spacing: -0.028em;
+          line-height: 1.05;
+          color: #fff;
+        }
+        .v12-a5-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+        }
+
+        /* the SVG tree itself */
+        .v12-tree {
+          position: absolute;
+          top: 380px;
+          left: 24px;
+          right: 24px;
+          bottom: 200px;
+          padding: 22px;
+          background: rgba(15, 23, 42, 0.55);
+          border: 1px solid rgba(34, 184, 160, 0.3);
+          border-radius: 28px;
+          box-shadow: 0 30px 80px -20px rgba(34, 184, 160, 0.35);
+        }
+        .v12-tree-svg {
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
+
+        /* dashed alternative edges */
+        .v12-tree-edges-dashed path {
+          fill: none;
+          stroke: rgba(255, 255, 255, 0.18);
+          stroke-width: 2;
+          stroke-dasharray: 6 6;
+        }
+        /* solid traced edges (the one buyer's path) */
+        .v12-tree-edges-solid path {
+          fill: none;
+          stroke: ${TEAL_2};
+          stroke-width: 3.5;
+          filter: drop-shadow(0 0 8px rgba(34, 184, 160, 0.55));
+        }
+        /* node rects */
+        .v12-tree-node rect {
+          fill: rgba(15, 23, 42, 0.92);
+          stroke: rgba(255, 255, 255, 0.18);
+          stroke-width: 1.6;
+        }
+        .v12-tree-node.is-traced rect {
+          stroke: ${TEAL_2};
+          stroke-width: 2.4;
+          filter: drop-shadow(0 0 12px rgba(34, 184, 160, 0.55));
+          fill: rgba(14, 124, 102, 0.2);
+        }
+        .v12-tree-node.is-root rect {
+          fill: rgba(14, 124, 102, 0.32);
+          stroke: ${TEAL_2};
+          stroke-width: 2;
+        }
+        .v12-tree-node text {
+          fill: rgba(255, 255, 255, 0.9);
+          text-anchor: middle;
+        }
+        .v12-tree-node-tag {
+          font-family: 'SF Mono', Menlo, monospace;
+          font-size: 13px;
+          letter-spacing: 0.16em;
+          font-weight: 700;
+          fill: ${TEAL_2};
+        }
+        .v12-tree-node-h {
+          font-size: 20px;
+          font-weight: 800;
+          letter-spacing: -0.015em;
+        }
+        .v12-tree-node.is-root .v12-tree-node-h,
+        .v12-tree-node.is-traced .v12-tree-node-h {
+          fill: #fff;
+        }
+
+        /* the glowing buyer orb · uses SVG animateMotion */
+        .v12-tree-orb {
+          fill: #fff;
+          filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 14px ${TEAL_2})
+            drop-shadow(0 0 30px rgba(34, 184, 160, 0.85));
+        }
+
+        /* tally below the tree */
+        .v12-a5-tally {
+          position: absolute;
+          bottom: 90px;
+          left: 60px;
+          right: 60px;
+          text-align: center;
+          padding: 22px 28px;
+          background: linear-gradient(135deg, rgba(14, 124, 102, 0.4), rgba(34, 184, 160, 0.2));
+          border: 1px solid rgba(34, 184, 160, 0.55);
+          border-radius: 20px;
+          opacity: 0;
+          animation: v12-pop-in 0.5s 18.6s forwards;
+        }
+        .v12-a5-tally-h {
+          font-size: 34px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.022em;
+          line-height: 1.15;
+        }
+        .v12-a5-tally-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+        }
+
+        /* ─── ACT 6 result (20 to 22s) ─────────────────────────────────── */
+        .v12-a6 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation:
+            vs-in-up 0.5s 20.1s forwards,
+            vs-fade-out 0.4s 21.9s forwards;
+        }
+        .v12-a6-h {
+          position: absolute;
+          top: 700px;
+          left: 30px;
+          right: 30px;
+          text-align: center;
+          font-size: 84px;
+          font-weight: 800;
+          letter-spacing: -0.036em;
+          line-height: 1.04;
+          color: #fff;
+          text-shadow: 0 0 60px rgba(34, 184, 160, 0.4);
+        }
+        .v12-a6-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+        }
+        .v12-a6-sub {
+          position: absolute;
+          top: 1040px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 28px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.55);
+        }
+
+        /* ─── ACT 7 stamp (22 to 24s) ──────────────────────────────────── */
+        .v12-a7 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation: v12-blur-in 0.6s 22s forwards;
+        }
+        .v12-a7-pre {
+          position: absolute;
+          top: 680px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 32px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.65);
+          letter-spacing: -0.005em;
+        }
+        .v12-a7-h {
+          position: absolute;
+          top: 760px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 110px;
+          font-weight: 800;
+          letter-spacing: -0.04em;
+          line-height: 1;
+          color: ${TEAL_2};
+          text-shadow: 0 0 80px rgba(34, 184, 160, 0.55);
         }
       `}
     >
       <Mark />
-      <Tag>MedPay · qualified buyers</Tag>
+      <Tag>MedPay · for practice owners</Tag>
 
-      {/* ─── ACT 1 · hook · day stats ───────────────────────────────── */}
-      <section className="v12-act1">
-        <h1 className="v12-hook-h">
+      {/* ─── ACT 1 hook · day-stats variant ───────────────────────────── */}
+      <section className="v12-a1">
+        <div className="v12-a1-pre">Your closer&apos;s day</div>
+        <h1 className="v12-a1-h">
           Same hours. <em>Different day.</em>
         </h1>
-        <div className="v12-hook-sub">Your closer&apos;s day · 8 AM to 5 PM</div>
-        <div className="v12-phones">
-          <div className="v12-phone is-bad">
-            <div className="v12-phone-tag">Yesterday · without MedPay</div>
-            <div className="v12-stat">
-              <div className="v12-stat-k">Dials made</div>
-              <div className="v12-stat-v">80</div>
-            </div>
-            <div className="v12-stat">
-              <div className="v12-stat-k">&ldquo;Just info&rdquo;</div>
-              <div className="v12-stat-v">47</div>
-            </div>
-            <div className="v12-stat">
-              <div className="v12-stat-k">No-shows</div>
-              <div className="v12-stat-v">21</div>
-            </div>
-            <div className="v12-stat is-end">
-              <div className="v12-stat-k">Funded</div>
-              <div className="v12-stat-v">6</div>
-            </div>
-            <div className="v12-phone-outcome">7.5% conversion</div>
-          </div>
-          <div className="v12-phone is-good">
-            <div className="v12-phone-tag">Today · with MedPay</div>
-            <div className="v12-stat">
-              <div className="v12-stat-k">Dials made</div>
-              <div className="v12-stat-v">25</div>
-            </div>
-            <div className="v12-stat">
-              <div className="v12-stat-k">Pre-approved</div>
-              <div className="v12-stat-v">25</div>
-            </div>
-            <div className="v12-stat">
-              <div className="v12-stat-k">No-shows</div>
-              <div className="v12-stat-v">2</div>
-            </div>
-            <div className="v12-stat is-end">
-              <div className="v12-stat-k">Funded</div>
-              <div className="v12-stat-v">18</div>
-            </div>
-            <div className="v12-phone-outcome">72% conversion</div>
-          </div>
+        <div className="v12-a1-sub">
+          80 dials, 6 funded. With <em>MedPay</em>: 25 dials, 18 funded.
         </div>
       </section>
 
-      {/* ─── ACT 2 · pivot ──────────────────────────────────────────── */}
-      <section className="v12-act2">
-        <h2 className="v12-pivot-h">
-          <em>MedPay</em> routes only qualified buyers to your closer.
+      {/* ─── ACT 2 tag ─────────────────────────────────────────────────── */}
+      <section className="v12-a2">
+        <h2 className="v12-a2-h">
+          Here&apos;s how <em>most do it today.</em>
         </h2>
       </section>
 
-      {/* ─── ACT 3 · smart form + financial check ───────────────────── */}
-      <section className="v12-act3">
-        <div className="v12-step-tag">Smart form · pulls financial data</div>
-        <h3 className="v12-step-h">
-          4 fields. <em>We pre-qualify in seconds.</em>
-        </h3>
-        <div className="v12-form">
-          <div className="v12-form-row">
-            <span className="v12-form-label">Email</span>
-            <span className="v12-form-val">sarah@gmail.com</span>
-          </div>
-          <div className="v12-form-row">
-            <span className="v12-form-label">Date of birth</span>
-            <span className="v12-form-val">03/14/1989</span>
-          </div>
-          <div className="v12-form-row">
-            <span className="v12-form-label">Last 4 SSN</span>
-            <span className="v12-form-val">••7421</span>
-          </div>
-          <div className="v12-form-row">
-            <span className="v12-form-label">Budget</span>
-            <span className="v12-form-val">$14,200</span>
-          </div>
-        </div>
-        <div className="v12-finchk">
-          <div className="v12-finchk-tag">↓ Financial pre-qual · auto</div>
-          <div className="v12-finchk-h">Soft-pull · zero credit impact</div>
-          <div className="v12-finchk-sub">Returns in &lt; 3 seconds</div>
-          <div className="v12-finchk-cells">
-            <div className="v12-finchk-cell">
-              <div className="v12-finchk-cell-k">Credit</div>
-              <div className="v12-finchk-cell-v">724</div>
-            </div>
-            <div className="v12-finchk-cell">
-              <div className="v12-finchk-cell-k">Budget</div>
-              <div className="v12-finchk-cell-v">$14k</div>
-            </div>
-            <div className="v12-finchk-cell">
-              <div className="v12-finchk-cell-k">Tier</div>
-              <div className="v12-finchk-cell-v is-teal">A</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── ACT 4 · smart routing · multi-hop pipeline ─────────────── */}
-      <section className="v12-act4">
-        <div className="v12-step-tag">Smart routing · multi-hop pipeline</div>
-        <h3 className="v12-step-h">
-          Every fork. <em>Sarah lands where she should.</em>
-        </h3>
-        <div className="v12-pipe">
-          <div className="v12-edge-line v12-edge-line-1" />
-          <div className="v12-edge-line v12-edge-line-2" />
-          <div className="v12-edge-line v12-edge-line-3" />
-          <div className="v12-edge-line v12-edge-line-4" />
-          <div className="v12-branch v12-branch-1" />
-          <div className="v12-branch v12-branch-2" />
-          <div className="v12-branch v12-branch-3" />
-
-          <div className="v12-node is-form">
-            <div className="v12-node-k">Lead capture</div>
-            <div className="v12-node-h">Form submit</div>
-          </div>
-
-          <div className="v12-node is-hop-1">
-            <div className="v12-node-k">Hop 1 · Budget</div>
-            <div className="v12-node-h">≥ $10K?</div>
-            <div className="v12-opts">
-              <span className="v12-opt is-pick">YES ✓</span>
-              <span className="v12-opt">NO → Tier C/D</span>
-            </div>
-          </div>
-
-          <div className="v12-node is-hop-2">
-            <div className="v12-node-k">Hop 2 · Tier</div>
-            <div className="v12-node-h">A / B / C / D?</div>
-            <div className="v12-opts">
-              <span className="v12-opt is-pick">A ✓</span>
-              <span className="v12-opt">B</span>
-              <span className="v12-opt">C</span>
-              <span className="v12-opt">D</span>
-            </div>
-          </div>
-
-          <div className="v12-node is-hop-3">
-            <div className="v12-node-k">Hop 3 · Calendar</div>
-            <div className="v12-node-h">Senior · Standard?</div>
-            <div className="v12-opts">
-              <span className="v12-opt is-pick">Senior ✓</span>
-              <span className="v12-opt">Standard</span>
-            </div>
-          </div>
-
-          <div className="v12-node is-terminal">
-            <div className="v12-node-k">Terminal · Sarah&apos;s path</div>
-            <div className="v12-node-h">Senior closer · Thu 2:00 PM</div>
-          </div>
-
-          <div className="v12-dot" />
-        </div>
-        <div className="v12-route-only">
-          Solid = current rules · <em>dashed = A/B test surface</em>
-        </div>
-      </section>
-
-      {/* ─── ACT 5 · closer call · THE MONEY SHOT ───────────────────── */}
-      <section className="v12-act5">
-        <div className="v12-call-tag">Your closer · already knows the budget</div>
-        <h3 className="v12-call-h">
-          They pick up <em>pre-approved.</em>
-        </h3>
-        <div className="v12-call">
-          <div className="v12-call-id">
-            <div>
-              <div className="v12-call-name">
-                Mike → <em>Sarah M.</em>
-              </div>
-              <div className="v12-call-status">● Live · 4 min 12 sec</div>
-            </div>
-            <div className="v12-call-time">
-              <div>Thu 2:05 PM</div>
-              <div className="v12-call-status">Outbound</div>
-            </div>
-          </div>
-          <div className="v12-call-preapp">
-            <div>
-              <div className="v12-call-preapp-k">Pre-approved</div>
-              <div className="v12-call-preapp-v">$14,200</div>
+      {/* ─── ACT 3 today's funnel ──────────────────────────────────────── */}
+      <section className="v12-a3">
+        <div className="v12-a3-tag">Today&apos;s funnel</div>
+        <h3 className="v12-a3-h">Your day, every day.</h3>
+        <div className="v12-a3-steps">
+          <div className="v12-a3-step">
+            <div className="v12-a3-num">1</div>
+            <div className="v12-a3-body">
+              <div className="v12-a3-h2">Lead fills your form.</div>
+              <div className="v12-a3-b">Name, email, maybe a phone number.</div>
             </div>
             <div></div>
-            <div className="v12-call-preapp-tier">Tier A · 724</div>
           </div>
-          <div className="v12-call-msgs">
-            <div className="v12-call-msg is-closer">
-              <div className="v12-call-who">Mike (closer)</div>
-              &ldquo;Sarah, you&apos;re pre-approved for $14,200 — want to start Thursday or next
-              week?&rdquo;
+          <div className="v12-a3-step is-bad">
+            <div className="v12-a3-num">2</div>
+            <div className="v12-a3-body">
+              <div className="v12-a3-h2">Your closer dials every one.</div>
+              <div className="v12-a3-b">No idea who can pay. Calls the whole list.</div>
             </div>
-            <div className="v12-call-msg is-buyer">
-              <div className="v12-call-who">Sarah (buyer)</div>
-              &ldquo;Thursday. Let&apos;s book it.&rdquo;
+            <div className="v12-a3-pill">80 dials</div>
+          </div>
+          <div className="v12-a3-step is-bad">
+            <div className="v12-a3-num">3</div>
+            <div className="v12-a3-body">
+              <div className="v12-a3-h2">Hours on unqualified buyers.</div>
+              <div className="v12-a3-b">
+                &ldquo;Just info.&rdquo; &ldquo;Can&apos;t afford.&rdquo; &ldquo;Maybe later.&rdquo;
+              </div>
             </div>
+            <div className="v12-a3-pill">~6 hrs</div>
+          </div>
+          <div className="v12-a3-step is-bad">
+            <div className="v12-a3-num">4</div>
+            <div className="v12-a3-body">
+              <div className="v12-a3-h2">A few cases close.</div>
+              <div className="v12-a3-b">The rest ghost, cancel, or decline at checkout.</div>
+            </div>
+            <div className="v12-a3-pill">Few</div>
           </div>
         </div>
-        <div className="v12-call-outcome">
-          ✓ <em>Closed in 4 min</em> · no objection · ready to fund
+        <div className="v12-a3-tally">
+          <div className="v12-a3-tally-h">
+            Your team is <em>bleeding hours.</em>
+          </div>
         </div>
       </section>
 
-      {/* ─── ACT 6 · lender marketplace · funded ────────────────────── */}
-      <section className="v12-act6">
-        <div className="v12-mkt-tag">One application · every lender</div>
-        <h3 className="v12-mkt-h">
-          Instant decision. <em>Best terms picked for her.</em>
-        </h3>
-        <div className="v12-mkt-app">1 APPLICATION · 5 LENDERS · 8 SECONDS</div>
-        <div className="v12-mkt-lenders">
-          <div className="v12-lender">
-            <div className="v12-lender-name">Lender A</div>
-            <div className="v12-lender-dec">$14,200</div>
-            <div className="v12-lender-tag">Approved · 11.9% APR</div>
-          </div>
-          <div className="v12-lender">
-            <div className="v12-lender-name">Lender B</div>
-            <div className="v12-lender-dec">$13,800</div>
-            <div className="v12-lender-tag">Approved · 12.4% APR</div>
-          </div>
-          <div className="v12-lender is-best">
-            <div className="v12-lender-name">Lender C</div>
-            <div className="v12-lender-dec">$15,200</div>
-            <div className="v12-lender-tag">★ Best terms · 9.8% APR</div>
-          </div>
-          <div className="v12-lender is-decline">
-            <div className="v12-lender-name">Lender D</div>
-            <div className="v12-lender-dec">—</div>
-            <div className="v12-lender-tag">Declined</div>
-          </div>
-          <div className="v12-lender">
-            <div className="v12-lender-name">Lender E</div>
-            <div className="v12-lender-dec">$14,500</div>
-            <div className="v12-lender-tag">Approved · 11.2% APR</div>
-          </div>
-        </div>
-        <div className="v12-mkt-stamp">
-          <div className="v12-mkt-stamp-h">
-            <em>$15,200</em> funded · 48-hour wire
-          </div>
-          <div className="v12-mkt-stamp-b">Patient picked best terms · same visit</div>
-        </div>
-      </section>
-
-      {/* ─── ACT 7 · stamp · the message ────────────────────────────── */}
-      <section className="v12-act7">
-        <h2 className="v12-final-h">
-          Your closer talks to <em>qualified buyers.</em>
+      {/* ─── ACT 4 pivot ───────────────────────────────────────────────── */}
+      <section className="v12-a4">
+        <h2 className="v12-a4-h">
+          Now here&apos;s <em>MedPay.</em>
         </h2>
-        <div className="v12-final-sub">Smart form · pre-qual · routing · funded</div>
-        <div className="v12-final-mark">That&apos;s MedPay.</div>
       </section>
 
-      <Cta label="Show me on my funnel" ctaDelay={15.8} disclDelay={16.2} />
+      {/* ─── ACT 5 MedPay routing tree ─────────────────────────────────── */}
+      <section className="v12-a5">
+        <div className="v12-a5-tag">The MedPay way · high-ticket flow</div>
+        <h3 className="v12-a5-h">
+          Qualified buyers sell. <em>The rest get a guide.</em>
+        </h3>
+        <div className="v12-tree">
+          <svg
+            viewBox="0 0 1000 1200"
+            preserveAspectRatio="xMidYMid meet"
+            className="v12-tree-svg"
+            aria-label="MedPay high-ticket routing tree"
+          >
+            {/* solid teal edges along the qualified path */}
+            <g className="v12-tree-edges-solid">
+              {/* root to credit gate */}
+              <path d="M280,100 L280,180" />
+              {/* credit gate to income gate */}
+              <path d="M280,280 L280,360" />
+              {/* income gate to sales call */}
+              <path d="M280,460 L280,540" />
+              {/* sales call to lender mkt */}
+              <path d="M280,720 L280,800" />
+              {/* lender mkt to funded */}
+              <path d="M280,900 L280,980" />
+            </g>
+
+            {/* NO branches off each gate · same solid teal but no orb traces them */}
+            <g className="v12-tree-edges-solid" style={{ opacity: 0.55 }}>
+              {/* credit NO → send guide */}
+              <path d="M410,230 L580,230" />
+              {/* income NO → send guide */}
+              <path d="M410,410 L580,410" />
+            </g>
+
+            {/* hidden trace path the orb follows · qualified spine top to bottom */}
+            <path
+              id="v12-trace"
+              d="M280,55 L280,230 L280,410 L280,630 L280,850 L280,1020"
+              fill="none"
+              stroke="none"
+            />
+
+            {/* L0 · lead capture */}
+            <g className="v12-tree-node is-root">
+              <rect x="150" y="20" width="260" height="80" rx="14" />
+              <text className="v12-tree-node-tag" x="280" y="52">
+                LEAD CAPTURE
+              </text>
+              <text className="v12-tree-node-h" x="280" y="82">
+                Form submit
+              </text>
+            </g>
+
+            {/* L1 · credit score gate */}
+            <g className="v12-tree-node is-traced">
+              <rect x="150" y="180" width="260" height="100" rx="14" />
+              <text className="v12-tree-node-tag" x="280" y="212">
+                HOP 1 · CREDIT SCORE
+              </text>
+              <text className="v12-tree-node-h" x="280" y="254" style={{ fontSize: 30 }}>
+                ≥ 700?
+              </text>
+            </g>
+            {/* L1 NO branch · send guide */}
+            <g className="v12-tree-node">
+              <rect x="580" y="180" width="320" height="100" rx="14" />
+              <text className="v12-tree-node-tag" x="740" y="212">
+                NO · SEND GUIDE
+              </text>
+              <text className="v12-tree-node-h" x="740" y="248" style={{ fontSize: 22 }}>
+                Credit-building guide
+              </text>
+              <text
+                className="v12-tree-node-tag"
+                x="740"
+                y="270"
+                style={{ opacity: 0.55, fontSize: 11 }}
+              >
+                Nurture drip · re-engage later
+              </text>
+            </g>
+
+            {/* L2 · income gate */}
+            <g className="v12-tree-node is-traced">
+              <rect x="150" y="360" width="260" height="100" rx="14" />
+              <text className="v12-tree-node-tag" x="280" y="392">
+                HOP 2 · INCOME
+              </text>
+              <text className="v12-tree-node-h" x="280" y="434" style={{ fontSize: 30 }}>
+                ≥ $80k?
+              </text>
+            </g>
+            {/* L2 NO branch · send guide */}
+            <g className="v12-tree-node">
+              <rect x="580" y="360" width="320" height="100" rx="14" />
+              <text className="v12-tree-node-tag" x="740" y="392">
+                NO · SEND GUIDE
+              </text>
+              <text className="v12-tree-node-h" x="740" y="428" style={{ fontSize: 22 }}>
+                Planning guide
+              </text>
+              <text
+                className="v12-tree-node-tag"
+                x="740"
+                y="450"
+                style={{ opacity: 0.55, fontSize: 11 }}
+              >
+                Save · plan · re-qualify later
+              </text>
+            </g>
+
+            {/* L3 · sales call HERO */}
+            <g className="v12-tree-node is-traced">
+              <rect x="80" y="540" width="400" height="180" rx="18" />
+              <text className="v12-tree-node-tag" x="280" y="580" style={{ fontSize: 14 }}>
+                SALES CALL
+              </text>
+              <text className="v12-tree-node-h" x="280" y="630" style={{ fontSize: 32 }}>
+                Qualified buyer
+              </text>
+              <text
+                className="v12-tree-node-tag"
+                x="280"
+                y="665"
+                style={{ opacity: 0.7, fontSize: 13 }}
+              >
+                Pre-approved budget attached
+              </text>
+              <text
+                className="v12-tree-node-tag"
+                x="280"
+                y="690"
+                style={{ opacity: 0.55, fontSize: 12 }}
+              >
+                Closer only talks to buyers
+              </text>
+            </g>
+
+            {/* L4 · lender marketplace */}
+            <g className="v12-tree-node is-traced">
+              <rect x="100" y="800" width="360" height="100" rx="14" />
+              <text className="v12-tree-node-tag" x="280" y="832">
+                LENDER MARKETPLACE
+              </text>
+              <text className="v12-tree-node-h" x="280" y="874" style={{ fontSize: 20 }}>
+                1 app · 5 lenders · instant
+              </text>
+            </g>
+
+            {/* L5 · funded */}
+            <g className="v12-tree-node is-traced">
+              <rect x="170" y="980" width="220" height="100" rx="14" />
+              <text className="v12-tree-node-tag" x="280" y="1012">
+                OUTCOME
+              </text>
+              <text className="v12-tree-node-h" x="280" y="1054" style={{ fontSize: 34 }}>
+                Funded.
+              </text>
+            </g>
+
+            {/* the glowing orb */}
+            <circle r="16" className="v12-tree-orb">
+              <animateMotion dur="8s" begin="11.5s" fill="freeze" rotate="auto">
+                <mpath href="#v12-trace" />
+              </animateMotion>
+            </circle>
+          </svg>
+        </div>
+        <div className="v12-a5-tally">
+          <div className="v12-a5-tally-h">
+            Every lead handled. <em>Nothing wasted.</em>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── ACT 6 result ──────────────────────────────────────────────── */}
+      <section className="v12-a6">
+        <h2 className="v12-a6-h">
+          <em>Qualified</em> buyers.
+          <br />
+          <em>Booked</em> calls.
+          <br />
+          <em>Funded</em> same day.
+        </h2>
+        <div className="v12-a6-sub">No more wasted hours.</div>
+      </section>
+
+      {/* ─── ACT 7 stamp ───────────────────────────────────────────────── */}
+      <section className="v12-a7">
+        <div className="v12-a7-pre">That&apos;s</div>
+        <h2 className="v12-a7-h">MedPay.</h2>
+      </section>
+
+      <Cta label="Book a 15-min walkthrough" ctaDelay={24.2} disclDelay={24.6} />
     </VideoStage>
   );
 }

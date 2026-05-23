@@ -15,9 +15,11 @@ const OUT_DIR = resolve(__dirname, '..', 'public', 'ads', 'medpay', 'video');
 const RAW_DIR = resolve(__dirname, '.video-raw-new');
 
 const ALL = [
-  { n: '11', name: 'how-medpay-works', ms: 28_000 },
-  { n: '12', name: 'meet-the-agents', ms: 19_000 },
-  { n: '13', name: 'pre-call-plus-finance', ms: 19_000 },
+  { n: '11', name: 'two-ways-to-run-your-clinic', ms: 28_000 },
+  { n: '12', name: 'same-hours-different-day', ms: 28_000 },
+  { n: '13', name: 'same-lead-different-hour', ms: 28_000 },
+  { n: '14', name: 'closer-hates-this-call', ms: 28_000 },
+  { n: '15', name: 'calendar-only-buyers', ms: 28_000 },
 ];
 const ONLY = (process.env.AD_ONLY || '').split(',').filter(Boolean);
 const VARIANTS = ONLY.length ? ALL.filter((v) => ONLY.includes(v.n)) : ALL;
