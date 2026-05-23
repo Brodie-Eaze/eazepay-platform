@@ -626,10 +626,17 @@ export default function MedPayVideoV11(): JSX.Element {
               <path d="M410,410 L580,410" />
             </g>
 
-            {/* hidden trace path the orb follows · qualified spine top to bottom */}
+            {/* three hidden trace paths · multiple leads stream through */}
             <path
-              id="v11-trace"
+              id="v11-trace-qual"
               d="M280,55 L280,230 L280,410 L280,630 L280,850 L280,1020"
+              fill="none"
+              stroke="none"
+            />
+            <path id="v11-trace-cfail" d="M280,55 L280,230 L740,230" fill="none" stroke="none" />
+            <path
+              id="v11-trace-ifail"
+              d="M280,55 L280,230 L280,410 L740,410"
               fill="none"
               stroke="none"
             />
@@ -753,9 +760,40 @@ export default function MedPayVideoV11(): JSX.Element {
             </g>
 
             {/* the glowing orb */}
-            <circle r="16" className="v11-tree-orb">
-              <animateMotion dur="8s" begin="11.5s" fill="freeze" rotate="auto">
-                <mpath href="#v11-trace" />
+            {/* multiple leads streaming through the tree in real time */}
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="7s" begin="11.5s" fill="freeze">
+                <mpath href="#v11-trace-qual" />
+              </animateMotion>
+            </circle>
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="2.5s" begin="12.4s" fill="freeze">
+                <mpath href="#v11-trace-cfail" />
+              </animateMotion>
+            </circle>
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="7s" begin="13.0s" fill="freeze">
+                <mpath href="#v11-trace-qual" />
+              </animateMotion>
+            </circle>
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="3.5s" begin="13.8s" fill="freeze">
+                <mpath href="#v11-trace-ifail" />
+              </animateMotion>
+            </circle>
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="7s" begin="14.6s" fill="freeze">
+                <mpath href="#v11-trace-qual" />
+              </animateMotion>
+            </circle>
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="2.5s" begin="15.8s" fill="freeze">
+                <mpath href="#v11-trace-cfail" />
+              </animateMotion>
+            </circle>
+            <circle r="14" className="v11-tree-orb">
+              <animateMotion dur="3.5s" begin="16.4s" fill="freeze">
+                <mpath href="#v11-trace-ifail" />
               </animateMotion>
             </circle>
           </svg>
