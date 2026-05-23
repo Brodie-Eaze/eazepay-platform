@@ -15,7 +15,7 @@ const OUT_DIR = resolve(__dirname, '..', 'public', 'ads', 'medpay', 'video');
 const RAW_DIR = resolve(__dirname, '.video-raw-new');
 
 const ALL = [
-  { n: '11', name: 'how-medpay-works', ms: 19_000 },
+  { n: '11', name: 'how-medpay-works', ms: 26_000 },
   { n: '12', name: 'meet-the-agents', ms: 19_000 },
   { n: '13', name: 'pre-call-plus-finance', ms: 19_000 },
 ];
