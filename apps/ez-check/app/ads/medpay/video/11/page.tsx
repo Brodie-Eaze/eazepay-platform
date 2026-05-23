@@ -1,20 +1,16 @@
 /**
- * Video ad V11 — "Your closer talks to qualified buyers" · 18s · 1080×1920
+ * Video ad V11 v3 — "Hey practice owner" · 18s · 1080×1920
  *
- * Practice-owner POV Facebook scroll-stopper. The single message: your
- * closer's time goes to buyers who can pay, not info-shoppers. Ecosystem
- * mechanics (smart form → financial pre-qual → smart routing → closer
- * call → lender marketplace → funded) are the PROOF behind that message,
- * not a 6-step product tour.
+ * Facebook-first direct-address ad. Stops the scroll by talking AT the
+ * practice owner, not demoing the product. Structure:
  *
- *   0.0–2.4   HOOK   · two phones side-by-side · "Same closer. Different call."
- *   2.4–3.4   PIVOT  · "MedPay routes only qualified buyers to your closer"
- *   3.4–5.9   PROOF  · smart form · financial check returns Tier A · $14.2k
- *   5.9–7.9   PROOF  · smart routing splits Tier A/B/below
- *   7.9–11.1  PAYOFF · closer call w/ pre-approved buyer (money shot)
- *  11.1–13.6  PROOF  · 1 application · 5 lenders · funded $15,200
- *  13.6–15.6  STAMP  · "Your closer talks to qualified buyers"
- *  15.6–18.0  CTA + compliance
+ *   0.0–2.8   HOOK    · "Hey practice owner — your closer wastes 80% of their day"
+ *   2.8–5.5   PAIN    · their closer's call list · names marked no-show/declined
+ *   5.5–7.2   PIVOT   · "MedPay only books qualified buyers"
+ *   7.2–10.8  PROOF   · 3 plain-English steps · form → pre-qual → calendar
+ *  10.8–14.6  WOW     · the actual closer's Monday dashboard · today's funded
+ *  14.6–15.8  STAMP   · "Your closer talks to qualified buyers."
+ *  15.8–18.0  CTA + compliance
  */
 import { VideoStage, TEAL_2 } from '../_stage';
 import { Mark, Tag, Cta, SHARED_CHROME_CSS } from '../_chrome';
@@ -33,992 +29,727 @@ export default function MedPayVideoV11(): JSX.Element {
             opacity: 0;
           }
         }
-        @keyframes v11-stamp-in {
+        @keyframes v11-pop-in {
           0% {
             opacity: 0;
-            transform: scale(1.18);
+            transform: scale(0.92) translateY(20px);
           }
-          70% {
+          60% {
             opacity: 1;
-            transform: scale(0.97);
+            transform: scale(1.02) translateY(-2px);
           }
           100% {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1) translateY(0);
+          }
+        }
+        @keyframes v11-blur-in {
+          0% {
+            opacity: 0;
+            filter: blur(20px);
+          }
+          100% {
+            opacity: 1;
+            filter: blur(0);
+          }
+        }
+        @keyframes v11-strike {
+          0% {
+            width: 0%;
+          }
+          100% {
+            width: 100%;
+          }
+        }
+        @keyframes v11-ring-pulse {
+          0%,
+          100% {
+            box-shadow: 0 0 0 0 rgba(34, 184, 160, 0);
+          }
+          50% {
+            box-shadow: 0 0 0 14px rgba(34, 184, 160, 0);
           }
         }
 
-        /* ============ ACT 1 · hook · two phones (0–2.4s) ================ */
-        .v11-act1 {
+        /* ─── ACT 1 · direct-address hook (0–2.8s) ─────────────────────── */
+        .v11-a1 {
           position: absolute;
           inset: 0;
           opacity: 0;
           animation:
             vs-in-up 0.4s 0.1s forwards,
-            vs-fade-out 0.4s 2.4s forwards;
+            vs-fade-out 0.4s 2.8s forwards;
         }
-        .v11-hook-h {
+        .v11-a1-line-1 {
           position: absolute;
-          top: 170px;
+          top: 380px;
           left: 0;
           right: 0;
           text-align: center;
-          font-size: 64px;
+          font-size: 96px;
           font-weight: 800;
-          letter-spacing: -0.034em;
-          line-height: 1.05;
+          letter-spacing: -0.04em;
+          line-height: 1;
           color: #fff;
-          text-shadow: 0 0 40px rgba(34, 184, 160, 0.25);
-        }
-        .v11-hook-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v11-hook-sub {
-          position: absolute;
-          top: 280px;
-          left: 0;
-          right: 0;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 18px;
-          letter-spacing: 0.28em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.55);
-          text-transform: uppercase;
-        }
-
-        /* the two phone mockups */
-        .v11-phones {
-          position: absolute;
-          top: 360px;
-          left: 30px;
-          right: 30px;
-          bottom: 260px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-        .v11-phone {
-          position: relative;
-          padding: 22px 18px 26px;
-          border-radius: 32px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(14px);
-          display: flex;
-          flex-direction: column;
-        }
-        .v11-phone-tag {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
-        .v11-phone.is-bad .v11-phone-tag {
-          color: rgba(248, 113, 113, 0.85);
-        }
-        .v11-phone.is-good .v11-phone-tag {
-          color: ${TEAL_2};
-        }
-        .v11-phone-callerid {
-          margin-top: 10px;
-          padding: 14px 14px;
-          background: rgba(0, 0, 0, 0.35);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-        }
-        .v11-phone-name {
-          font-size: 21px;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.015em;
-        }
-        .v11-phone-meta {
-          margin-top: 4px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.5);
-        }
-        .v11-phone.is-good .v11-phone-meta {
-          color: ${TEAL_2};
-        }
-        .v11-phone-quote {
-          margin-top: 14px;
-          padding: 14px 16px;
-          border-radius: 14px;
-          font-size: 16px;
-          line-height: 1.35;
-          color: #fff;
-        }
-        .v11-phone.is-bad .v11-phone-quote {
-          background: rgba(248, 113, 113, 0.1);
-          border: 1px solid rgba(248, 113, 113, 0.25);
-          color: rgba(255, 255, 255, 0.85);
-        }
-        .v11-phone.is-good .v11-phone-quote {
-          background: rgba(34, 184, 160, 0.12);
-          border: 1px solid rgba(34, 184, 160, 0.35);
-        }
-        .v11-phone-outcome {
-          margin-top: auto;
-          padding-top: 12px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          text-transform: uppercase;
-          text-align: center;
-        }
-        .v11-phone.is-bad .v11-phone-outcome {
-          color: rgba(248, 113, 113, 0.85);
-        }
-        .v11-phone.is-good .v11-phone-outcome {
-          color: ${TEAL_2};
-        }
-        .v11-phone.is-good {
-          border-color: rgba(34, 184, 160, 0.55);
-          box-shadow: 0 20px 60px -20px rgba(34, 184, 160, 0.4);
-        }
-
-        /* ============ ACT 2 · pivot (2.4–3.4s) =========================== */
-        .v11-act2 {
-          position: absolute;
-          inset: 0;
           opacity: 0;
-          animation:
-            vs-in-up 0.4s 2.5s forwards,
-            vs-fade-out 0.4s 3.3s forwards;
+          animation: v11-blur-in 0.5s 0.4s forwards;
         }
-        .v11-pivot-h {
+        .v11-a1-line-2 {
           position: absolute;
-          top: 770px;
-          left: 50px;
-          right: 50px;
+          top: 530px;
+          left: 0;
+          right: 0;
           text-align: center;
           font-size: 76px;
           font-weight: 800;
-          letter-spacing: -0.036em;
-          line-height: 1.04;
-          color: #fff;
-          text-shadow: 0 0 50px rgba(34, 184, 160, 0.3);
-        }
-        .v11-pivot-h em {
-          font-style: normal;
+          letter-spacing: -0.034em;
+          line-height: 1.05;
           color: ${TEAL_2};
-        }
-
-        /* ============ ACT 3 · smart form + pre-qual (3.4–5.9s) ========== */
-        .v11-act3 {
-          position: absolute;
-          inset: 0;
+          padding: 0 80px;
           opacity: 0;
-          animation:
-            vs-in-up 0.45s 3.5s forwards,
-            vs-fade-out 0.4s 5.8s forwards;
+          animation: v11-blur-in 0.5s 1s forwards;
         }
-        .v11-step-tag {
+        .v11-a1-stat {
           position: absolute;
-          top: 250px;
+          top: 820px;
           left: 0;
           right: 0;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 15px;
-          letter-spacing: 0.3em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v11-step-h {
-          position: absolute;
-          top: 305px;
-          left: 30px;
-          right: 30px;
-          text-align: center;
-          font-size: 52px;
+          font-size: 280px;
           font-weight: 800;
-          letter-spacing: -0.028em;
-          line-height: 1.05;
+          letter-spacing: -0.06em;
+          line-height: 1;
           color: #fff;
+          text-shadow: 0 0 80px rgba(34, 184, 160, 0.55);
+          opacity: 0;
+          animation: v11-pop-in 0.6s 1.5s forwards;
         }
-        .v11-step-h em {
+        .v11-a1-stat em {
           font-style: normal;
           color: ${TEAL_2};
-        }
-        .v11-form {
-          position: absolute;
-          top: 540px;
-          left: 90px;
-          right: 90px;
-          padding: 22px;
-          border-radius: 26px;
-          background: rgba(15, 23, 42, 0.92);
-          border: 1px solid rgba(34, 184, 160, 0.35);
-          box-shadow: 0 30px 70px -20px rgba(34, 184, 160, 0.4);
-        }
-        .v11-form-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 13px 16px;
-          margin-bottom: 10px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          opacity: 0;
-        }
-        .v11-form-row:last-child {
-          margin-bottom: 0;
-        }
-        .v11-form-row:nth-child(1) {
-          animation: vs-in-up 0.3s 3.8s forwards;
-        }
-        .v11-form-row:nth-child(2) {
-          animation: vs-in-up 0.3s 4s forwards;
-        }
-        .v11-form-row:nth-child(3) {
-          animation: vs-in-up 0.3s 4.2s forwards;
-        }
-        .v11-form-row:nth-child(4) {
-          animation: vs-in-up 0.3s 4.4s forwards;
-        }
-        .v11-form-label {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.16em;
-          color: rgba(255, 255, 255, 0.5);
-          text-transform: uppercase;
-        }
-        .v11-form-val {
-          font-weight: 700;
-          font-size: 16px;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-        }
-        .v11-form-val::after {
-          content: ' ✓';
-          color: ${TEAL_2};
-        }
-        .v11-finchk {
-          position: absolute;
-          top: 1080px;
-          left: 60px;
-          right: 60px;
-          padding: 22px 26px;
-          border-radius: 22px;
-          background:
-            radial-gradient(ellipse 70% 60% at 0% 0%, rgba(34, 184, 160, 0.16), transparent 60%),
-            rgba(15, 23, 42, 0.92);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          box-shadow: 0 30px 70px -16px rgba(34, 184, 160, 0.5);
-          opacity: 0;
-          animation: vs-in-up 0.45s 4.8s forwards;
-        }
-        .v11-finchk-tag {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v11-finchk-h {
-          margin-top: 6px;
-          font-size: 28px;
-          font-weight: 800;
+          font-size: 80px;
           letter-spacing: -0.02em;
-          color: #fff;
+          display: block;
+          margin-top: 14px;
+          line-height: 1.05;
         }
-        .v11-finchk-sub {
-          margin-top: 3px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.55);
-        }
-        .v11-finchk-cells {
-          margin-top: 16px;
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 12px;
-        }
-        .v11-finchk-cell {
-          padding: 14px 12px;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(34, 184, 160, 0.3);
-          border-radius: 12px;
+        .v11-a1-sub {
+          position: absolute;
+          top: 1340px;
+          left: 0;
+          right: 0;
           text-align: center;
+          font-size: 36px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.3;
+          padding: 0 60px;
+          opacity: 0;
+          animation: vs-in-up 0.45s 2s forwards;
         }
-        .v11-finchk-cell-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.2em;
-          color: rgba(255, 255, 255, 0.5);
-          text-transform: uppercase;
-        }
-        .v11-finchk-cell-v {
-          margin-top: 5px;
-          font-size: 26px;
-          font-weight: 800;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-        }
-        .v11-finchk-cell-v.is-teal {
+        .v11-a1-sub em {
+          font-style: normal;
           color: ${TEAL_2};
+          font-weight: 800;
         }
 
-        /* ============ ACT 4 · smart routing · multi-hop pipeline (5.9–7.9s) === */
-        .v11-act4 {
+        /* ─── ACT 2 · pain · the call list (2.8–5.5s) ──────────────────── */
+        .v11-a2 {
           position: absolute;
           inset: 0;
           opacity: 0;
           animation:
-            vs-in-up 0.45s 6s forwards,
-            vs-fade-out 0.4s 7.8s forwards;
+            vs-in-up 0.4s 2.9s forwards,
+            vs-fade-out 0.4s 5.4s forwards;
         }
-        /* the pipeline holds 5 nodes stacked vertically with an animated dot */
-        .v11-pipe {
+        .v11-a2-h {
           position: absolute;
-          top: 470px;
-          left: 80px;
-          right: 80px;
-          height: 870px;
-        }
-        .v11-node {
-          position: absolute;
-          left: 0;
-          right: 0;
-          padding: 12px 18px;
-          border-radius: 16px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(14px);
-          text-align: center;
-          opacity: 0.32;
-        }
-        .v11-node.is-form {
-          top: 0;
-          opacity: 1;
-          border-color: rgba(34, 184, 160, 0.55);
-        }
-        .v11-node.is-hop-1 {
-          top: 160px;
-          animation: v11-node-lit 0.3s 6.35s forwards;
-        }
-        .v11-node.is-hop-2 {
-          top: 340px;
-          animation: v11-node-lit 0.3s 6.55s forwards;
-        }
-        .v11-node.is-hop-3 {
-          top: 540px;
-          animation: v11-node-lit 0.3s 6.75s forwards;
-        }
-        .v11-node.is-terminal {
-          top: 720px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.16));
-          animation: v11-node-lit-terminal 0.45s 6.95s forwards;
-        }
-        @keyframes v11-node-lit {
-          0% {
-            opacity: 0.32;
-          }
-          100% {
-            opacity: 1;
-            border-color: rgba(34, 184, 160, 0.7);
-            box-shadow: 0 14px 36px -16px rgba(34, 184, 160, 0.55);
-          }
-        }
-        @keyframes v11-node-lit-terminal {
-          0% {
-            opacity: 0.32;
-            transform: scale(1);
-          }
-          60% {
-            opacity: 1;
-            transform: scale(1.05);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-            border-color: rgba(34, 184, 160, 0.9);
-            box-shadow: 0 20px 50px -16px rgba(34, 184, 160, 0.65);
-          }
-        }
-        .v11-node-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.45);
-          text-transform: uppercase;
-        }
-        .v11-node.is-form .v11-node-k,
-        .v11-node.is-hop-1 .v11-node-k,
-        .v11-node.is-hop-2 .v11-node-k,
-        .v11-node.is-hop-3 .v11-node-k,
-        .v11-node.is-terminal .v11-node-k {
-          color: ${TEAL_2};
-        }
-        .v11-node-h {
-          margin-top: 5px;
-          font-size: 22px;
-          font-weight: 800;
-          letter-spacing: -0.018em;
-          color: #fff;
-        }
-        .v11-node-h em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        /* option chips inside hop nodes */
-        .v11-opts {
-          margin-top: 10px;
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .v11-opt {
-          padding: 5px 11px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          font-weight: 700;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          border-radius: 999px;
-          color: rgba(255, 255, 255, 0.5);
-          letter-spacing: 0.04em;
-        }
-        .v11-opt.is-pick {
-          background: rgba(34, 184, 160, 0.2);
-          border: 1px solid rgba(34, 184, 160, 0.7);
-          color: ${TEAL_2};
-          font-weight: 800;
-        }
-
-        /* vertical edges between nodes (Sarah's path = solid teal) */
-        .v11-edge-line {
-          position: absolute;
-          left: 50%;
-          margin-left: -1px;
-          width: 2px;
-          background: rgba(34, 184, 160, 0.45);
-        }
-        .v11-edge-line-1 {
-          top: 95px;
-          height: 65px;
-        } /* form → hop 1 */
-        .v11-edge-line-2 {
-          top: 275px;
-          height: 65px;
-        } /* hop 1 → hop 2 */
-        .v11-edge-line-3 {
-          top: 475px;
-          height: 65px;
-        } /* hop 2 → hop 3 */
-        .v11-edge-line-4 {
-          top: 655px;
-          height: 65px;
-        } /* hop 3 → terminal */
-
-        /* small dashed branch lines splaying off each hop = A/B test surface */
-        .v11-branch {
-          position: absolute;
-          height: 2px;
-          background: transparent;
-          border-top: 2px dashed rgba(255, 255, 255, 0.18);
-        }
-        .v11-branch-1 {
-          top: 198px;
-          left: 60%;
-          right: -20px;
-        }
-        .v11-branch-2 {
-          top: 378px;
-          left: 60%;
-          right: -20px;
-        }
-        .v11-branch-3 {
-          top: 578px;
-          left: 60%;
-          right: -20px;
-        }
-
-        /* the animated dot tracing Sarah's path through the pipeline */
-        .v11-dot {
-          position: absolute;
-          left: 50%;
-          margin-left: -9px;
-          margin-top: -9px;
-          width: 18px;
-          height: 18px;
-          background: #fff;
-          border-radius: 50%;
-          box-shadow:
-            0 0 14px ${TEAL_2},
-            0 0 40px rgba(34, 184, 160, 0.75);
-          opacity: 0;
-          top: -20px;
-          animation: v11-dot-fall 1.5s 6s cubic-bezier(0.7, 0, 0.3, 1) forwards;
-        }
-        @keyframes v11-dot-fall {
-          0% {
-            top: -20px;
-            opacity: 0;
-          }
-          5% {
-            top: 20px;
-            opacity: 1;
-          }
-          22% {
-            top: 210px;
-            opacity: 1;
-          } /* on hop 1 center */
-          50% {
-            top: 395px;
-            opacity: 1;
-          } /* on hop 2 center */
-          75% {
-            top: 595px;
-            opacity: 1;
-          } /* on hop 3 center */
-          100% {
-            top: 765px;
-            opacity: 1;
-          } /* on terminal */
-        }
-
-        /* legend strip below the pipeline */
-        .v11-route-only {
-          position: absolute;
-          top: 1380px;
-          left: 30px;
-          right: 30px;
-          padding: 14px 22px;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(34, 184, 160, 0.5);
-          border-radius: 14px;
-          text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.18em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-          opacity: 0;
-          animation: vs-in-up 0.4s 7.2s forwards;
-        }
-        .v11-route-only em {
-          color: rgba(255, 255, 255, 0.55);
-          font-style: normal;
-        }
-
-        /* ============ ACT 5 · closer call · MONEY SHOT (7.9–11.1s) ===== */
-        .v11-act5 {
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          animation:
-            vs-in-up 0.45s 8s forwards,
-            vs-fade-out 0.4s 11s forwards;
-        }
-        .v11-call-tag {
-          position: absolute;
-          top: 220px;
+          top: 200px;
           left: 0;
           right: 0;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 15px;
-          letter-spacing: 0.3em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v11-call-h {
-          position: absolute;
-          top: 275px;
-          left: 30px;
-          right: 30px;
-          text-align: center;
-          font-size: 48px;
+          font-size: 60px;
           font-weight: 800;
-          letter-spacing: -0.024em;
+          letter-spacing: -0.03em;
           line-height: 1.05;
           color: #fff;
         }
-        .v11-call-h em {
+        .v11-a2-h em {
           font-style: normal;
-          color: ${TEAL_2};
+          color: rgba(248, 113, 113, 0.95);
         }
-
-        .v11-call {
+        .v11-a2-sub {
+          position: absolute;
+          top: 360px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 26px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.55);
+        }
+        .v11-a2-list {
           position: absolute;
           top: 460px;
           left: 60px;
           right: 60px;
-          padding: 24px;
-          border-radius: 28px;
-          background: rgba(15, 23, 42, 0.92);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          box-shadow: 0 30px 70px -16px rgba(34, 184, 160, 0.5);
-        }
-        .v11-call-id {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 14px 16px;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(34, 184, 160, 0.3);
-          border-radius: 16px;
-        }
-        .v11-call-name {
-          font-size: 22px;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.015em;
-        }
-        .v11-call-name em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v11-call-time {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.16em;
-          color: rgba(255, 255, 255, 0.55);
-          text-align: right;
-        }
-        .v11-call-status {
-          margin-top: 2px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-
-        .v11-call-preapp {
-          margin-top: 14px;
-          padding: 14px 16px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.16));
-          border: 1px solid rgba(34, 184, 160, 0.65);
-          border-radius: 14px;
-          display: grid;
-          grid-template-columns: auto 1fr auto;
-          gap: 14px;
-          align-items: center;
-        }
-        .v11-call-preapp-k {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.22em;
-          font-weight: 700;
-          color: ${TEAL_2};
-          text-transform: uppercase;
-        }
-        .v11-call-preapp-v {
-          font-size: 26px;
-          font-weight: 800;
-          color: #fff;
-          font-variant-numeric: tabular-nums;
-        }
-        .v11-call-preapp-tier {
-          padding: 5px 11px;
-          background: rgba(34, 184, 160, 0.22);
-          border: 1px solid rgba(34, 184, 160, 0.55);
-          border-radius: 999px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          font-weight: 700;
-          color: ${TEAL_2};
-          letter-spacing: 0.04em;
-        }
-
-        .v11-call-msgs {
-          margin-top: 16px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 14px;
         }
-        .v11-call-msg {
-          padding: 12px 14px;
-          font-size: 16px;
-          line-height: 1.35;
-          border-radius: 14px;
-          max-width: 86%;
+        .v11-a2-row {
+          display: grid;
+          grid-template-columns: 96px 1fr auto;
+          gap: 20px;
+          align-items: center;
+          padding: 22px 24px;
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(248, 113, 113, 0.18);
+          border-radius: 18px;
           opacity: 0;
         }
-        .v11-call-msg.is-closer {
-          align-self: flex-start;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.85);
-          border-bottom-left-radius: 4px;
+        .v11-a2-row:nth-child(1) {
+          animation: vs-in-up 0.3s 3.1s forwards;
         }
-        .v11-call-msg.is-buyer {
-          align-self: flex-end;
-          background: rgba(34, 184, 160, 0.18);
-          border: 1px solid rgba(34, 184, 160, 0.45);
-          color: #fff;
-          border-bottom-right-radius: 4px;
+        .v11-a2-row:nth-child(2) {
+          animation: vs-in-up 0.3s 3.3s forwards;
         }
-        .v11-call-msgs .v11-call-msg:nth-child(1) {
-          animation: vs-in-up 0.35s 8.8s forwards;
+        .v11-a2-row:nth-child(3) {
+          animation: vs-in-up 0.3s 3.5s forwards;
         }
-        .v11-call-msgs .v11-call-msg:nth-child(2) {
-          animation: vs-in-up 0.35s 9.6s forwards;
+        .v11-a2-row:nth-child(4) {
+          animation: vs-in-up 0.3s 3.7s forwards;
         }
-        .v11-call-who {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.22em;
+        .v11-a2-row:nth-child(5) {
+          animation: vs-in-up 0.3s 3.9s forwards;
+        }
+        .v11-a2-row:nth-child(6) {
+          animation: vs-in-up 0.3s 4.1s forwards;
+        }
+        .v11-a2-row:nth-child(7) {
+          animation: vs-in-up 0.3s 4.3s forwards;
+        }
+        .v11-a2-time {
+          font-size: 22px;
           font-weight: 700;
+          color: rgba(255, 255, 255, 0.55);
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -0.01em;
+        }
+        .v11-a2-name {
+          font-size: 28px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.92);
+          letter-spacing: -0.015em;
+        }
+        .v11-a2-meta {
+          font-size: 17px;
+          font-weight: 600;
+          color: rgba(248, 113, 113, 0.85);
+          margin-top: 3px;
+          letter-spacing: 0.01em;
+        }
+        .v11-a2-tag {
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
           text-transform: uppercase;
-          margin-bottom: 3px;
+          padding: 7px 14px;
+          background: rgba(248, 113, 113, 0.14);
+          border: 1px solid rgba(248, 113, 113, 0.4);
+          border-radius: 999px;
+          color: rgba(248, 113, 113, 0.95);
         }
-        .v11-call-msg.is-closer .v11-call-who {
-          color: rgba(255, 255, 255, 0.45);
-        }
-        .v11-call-msg.is-buyer .v11-call-who {
-          color: ${TEAL_2};
-        }
-
-        .v11-call-outcome {
+        .v11-a2-tally {
           position: absolute;
-          top: 1300px;
+          bottom: 110px;
           left: 60px;
           right: 60px;
-          padding: 16px 22px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.45), rgba(34, 184, 160, 0.22));
-          border: 1px solid rgba(34, 184, 160, 0.7);
-          border-radius: 16px;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 14px;
-          letter-spacing: 0.24em;
-          font-weight: 700;
-          color: #fff;
-          text-transform: uppercase;
+          padding: 22px 24px;
+          background: rgba(248, 113, 113, 0.1);
+          border: 1px solid rgba(248, 113, 113, 0.3);
+          border-radius: 18px;
           opacity: 0;
-          animation: v11-stamp-in 0.45s 10.4s forwards;
+          animation: v11-pop-in 0.5s 4.6s forwards;
         }
-        .v11-call-outcome em {
-          color: ${TEAL_2};
+        .v11-a2-tally-h {
+          font-size: 32px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.02em;
+        }
+        .v11-a2-tally-h em {
           font-style: normal;
+          color: rgba(248, 113, 113, 0.95);
+        }
+        .v11-a2-tally-sub {
+          margin-top: 4px;
+          font-size: 18px;
+          color: rgba(255, 255, 255, 0.55);
         }
 
-        /* ============ ACT 6 · lender marketplace (11.1–13.6s) ========== */
-        .v11-act6 {
+        /* ─── ACT 3 · pivot (5.5–7.2s) ─────────────────────────────────── */
+        .v11-a3 {
           position: absolute;
           inset: 0;
           opacity: 0;
           animation:
-            vs-in-up 0.4s 11.2s forwards,
-            vs-fade-out 0.4s 13.5s forwards;
+            vs-in-up 0.4s 5.6s forwards,
+            vs-fade-out 0.4s 7.1s forwards;
         }
-        .v11-mkt-tag {
+        .v11-a3-pre {
           position: absolute;
-          top: 250px;
+          top: 660px;
           left: 0;
           right: 0;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 15px;
-          letter-spacing: 0.3em;
+          font-size: 28px;
           font-weight: 700;
+          letter-spacing: 0.2em;
           color: ${TEAL_2};
           text-transform: uppercase;
+          opacity: 0;
+          animation: v11-blur-in 0.5s 5.8s forwards;
         }
-        .v11-mkt-h {
+        .v11-a3-h {
           position: absolute;
-          top: 305px;
+          top: 740px;
+          left: 50px;
+          right: 50px;
+          text-align: center;
+          font-size: 86px;
+          font-weight: 800;
+          letter-spacing: -0.038em;
+          line-height: 1.03;
+          color: #fff;
+          text-shadow: 0 0 60px rgba(34, 184, 160, 0.4);
+          opacity: 0;
+          animation: v11-blur-in 0.6s 6.1s forwards;
+        }
+        .v11-a3-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+        }
+        .v11-a3-sub {
+          position: absolute;
+          top: 1090px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 28px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.6);
+          letter-spacing: -0.005em;
+          opacity: 0;
+          animation: vs-in-up 0.45s 6.7s forwards;
+        }
+        .v11-a3-sub em {
+          font-style: normal;
+          color: ${TEAL_2};
+          font-weight: 700;
+        }
+
+        /* ─── ACT 4 · 3 plain-English steps (7.2–10.8s) ─────────────────── */
+        .v11-a4 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation:
+            vs-in-up 0.4s 7.3s forwards,
+            vs-fade-out 0.4s 10.7s forwards;
+        }
+        .v11-a4-h {
+          position: absolute;
+          top: 200px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 60px;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          line-height: 1.05;
+          color: #fff;
+        }
+        .v11-a4-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+        }
+        .v11-a4-steps {
+          position: absolute;
+          top: 380px;
+          left: 50px;
+          right: 50px;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+        }
+        .v11-a4-step {
+          display: grid;
+          grid-template-columns: 130px 1fr;
+          gap: 26px;
+          padding: 26px 28px;
+          background: rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(34, 184, 160, 0.3);
+          border-radius: 22px;
+          opacity: 0;
+        }
+        .v11-a4-step:nth-child(1) {
+          animation: v11-pop-in 0.5s 7.6s forwards;
+        }
+        .v11-a4-step:nth-child(2) {
+          animation: v11-pop-in 0.5s 8.3s forwards;
+        }
+        .v11-a4-step:nth-child(3) {
+          animation: v11-pop-in 0.5s 9s forwards;
+        }
+        .v11-a4-step-n {
+          font-size: 96px;
+          font-weight: 800;
+          letter-spacing: -0.05em;
+          color: ${TEAL_2};
+          line-height: 1;
+        }
+        .v11-a4-step-body {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .v11-a4-step-h {
+          font-size: 34px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.022em;
+          line-height: 1.1;
+        }
+        .v11-a4-step-b {
+          margin-top: 6px;
+          font-size: 22px;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.62);
+          line-height: 1.35;
+        }
+        .v11-a4-step-b em {
+          font-style: normal;
+          color: ${TEAL_2};
+          font-weight: 700;
+        }
+        .v11-a4-result {
+          position: absolute;
+          top: 1340px;
+          left: 50px;
+          right: 50px;
+          padding: 24px 28px;
+          background: linear-gradient(135deg, rgba(14, 124, 102, 0.45), rgba(34, 184, 160, 0.22));
+          border: 1px solid rgba(34, 184, 160, 0.65);
+          border-radius: 22px;
+          text-align: center;
+          opacity: 0;
+          animation: v11-pop-in 0.5s 9.7s forwards;
+        }
+        .v11-a4-result-h {
+          font-size: 36px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.022em;
+        }
+        .v11-a4-result-h em {
+          font-style: normal;
+          color: ${TEAL_2};
+          font-variant-numeric: tabular-nums;
+        }
+
+        /* ─── ACT 5 · the WOW · closer's Monday dashboard (10.8–14.6s) ──── */
+        .v11-a5 {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          animation:
+            vs-in-up 0.45s 10.9s forwards,
+            vs-fade-out 0.4s 14.5s forwards;
+        }
+        .v11-a5-pre {
+          position: absolute;
+          top: 175px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 0.26em;
+          text-transform: uppercase;
+          color: ${TEAL_2};
+        }
+        .v11-a5-h {
+          position: absolute;
+          top: 220px;
           left: 30px;
           right: 30px;
           text-align: center;
-          font-size: 52px;
+          font-size: 56px;
           font-weight: 800;
           letter-spacing: -0.028em;
           line-height: 1.05;
           color: #fff;
         }
-        .v11-mkt-h em {
+        .v11-a5-h em {
           font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v11-mkt-app {
-          position: absolute;
-          top: 500px;
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 12px 24px;
-          background: rgba(34, 184, 160, 0.18);
-          border: 1px solid rgba(34, 184, 160, 0.6);
-          border-radius: 999px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 14px;
-          font-weight: 700;
-          color: ${TEAL_2};
-          letter-spacing: 0.08em;
-        }
-        .v11-mkt-lenders {
-          position: absolute;
-          top: 610px;
-          left: 30px;
-          right: 30px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-        .v11-lender {
-          padding: 16px 18px;
-          border-radius: 16px;
-          background: rgba(15, 23, 42, 0.85);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          opacity: 0;
-        }
-        .v11-lender:nth-child(1) {
-          animation: vs-in-up 0.3s 11.6s forwards;
-        }
-        .v11-lender:nth-child(2) {
-          animation: vs-in-up 0.3s 11.75s forwards;
-        }
-        .v11-lender:nth-child(3) {
-          animation: vs-in-up 0.3s 11.9s forwards;
-        }
-        .v11-lender:nth-child(4) {
-          animation: vs-in-up 0.3s 12.05s forwards;
-        }
-        .v11-lender:nth-child(5) {
-          animation: vs-in-up 0.3s 12.2s forwards;
-        }
-        .v11-lender.is-best {
-          border-color: rgba(34, 184, 160, 0.85);
-          background:
-            linear-gradient(135deg, rgba(14, 124, 102, 0.3), rgba(34, 184, 160, 0.18)),
-            rgba(15, 23, 42, 0.85);
-          box-shadow: 0 20px 50px -16px rgba(34, 184, 160, 0.6);
-        }
-        .v11-lender.is-decline {
-          opacity: 0.55;
-        }
-        .v11-lender-name {
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 11px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.6);
-          text-transform: uppercase;
-        }
-        .v11-lender-dec {
-          margin-top: 4px;
-          font-size: 18px;
-          font-weight: 800;
-          color: #fff;
-        }
-        .v11-lender.is-decline .v11-lender-dec {
-          color: rgba(248, 113, 113, 0.85);
-        }
-        .v11-lender.is-best .v11-lender-dec {
-          color: ${TEAL_2};
-        }
-        .v11-lender-tag {
-          margin-top: 6px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 10px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.45);
-          text-transform: uppercase;
-        }
-        .v11-lender.is-best .v11-lender-tag {
           color: ${TEAL_2};
         }
 
-        .v11-mkt-stamp {
+        /* the dashboard frame */
+        .v11-a5-app {
           position: absolute;
-          top: 1320px;
-          left: 30px;
-          right: 30px;
-          padding: 20px 24px;
-          background: linear-gradient(135deg, rgba(14, 124, 102, 0.45), rgba(34, 184, 160, 0.22));
-          border: 1px solid rgba(34, 184, 160, 0.7);
-          border-radius: 18px;
-          text-align: center;
-          opacity: 0;
-          animation: v11-stamp-in 0.5s 12.6s forwards;
+          top: 400px;
+          left: 40px;
+          right: 40px;
+          padding: 22px;
+          background: rgba(7, 14, 28, 0.96);
+          border: 1px solid rgba(34, 184, 160, 0.3);
+          border-radius: 28px;
+          box-shadow: 0 40px 90px -16px rgba(34, 184, 160, 0.55);
         }
-        .v11-mkt-stamp-h {
-          font-size: 32px;
+        .v11-a5-app-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 4px 8px 18px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .v11-a5-app-brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 22px;
           font-weight: 800;
-          letter-spacing: -0.02em;
           color: #fff;
+          letter-spacing: -0.018em;
         }
-        .v11-mkt-stamp-h em {
+        .v11-a5-app-brand .v11-dot-sq {
+          width: 24px;
+          height: 24px;
+          border-radius: 7px;
+          background: linear-gradient(135deg, #0e7c66, ${TEAL_2});
+        }
+        .v11-a5-app-brand em {
           font-style: normal;
           color: ${TEAL_2};
+        }
+        .v11-a5-app-user {
+          font-size: 16px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.55);
+        }
+        .v11-a5-app-user em {
+          font-style: normal;
+          color: #fff;
+        }
+
+        /* hero stats strip */
+        .v11-a5-stats {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 14px;
+          margin-top: 18px;
+          padding-bottom: 18px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .v11-a5-stat {
+          padding: 14px 14px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+          text-align: center;
+        }
+        .v11-a5-stat.is-hero {
+          background: linear-gradient(135deg, rgba(14, 124, 102, 0.35), rgba(34, 184, 160, 0.18));
+          border-color: rgba(34, 184, 160, 0.65);
+        }
+        .v11-a5-stat-k {
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.55);
+        }
+        .v11-a5-stat-v {
+          margin-top: 6px;
+          font-size: 36px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.025em;
           font-variant-numeric: tabular-nums;
         }
-        .v11-mkt-stamp-b {
-          margin-top: 4px;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 12px;
-          letter-spacing: 0.2em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.55);
-          text-transform: uppercase;
+        .v11-a5-stat.is-hero .v11-a5-stat-v {
+          color: ${TEAL_2};
         }
 
-        /* ============ ACT 7 · stamp · the message (13.6–15.6s) ========= */
-        .v11-act7 {
+        /* today's call list */
+        .v11-a5-list {
+          margin-top: 18px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .v11-a5-card {
+          display: grid;
+          grid-template-columns: 56px 1fr auto;
+          gap: 18px;
+          align-items: center;
+          padding: 16px 18px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 16px;
+          opacity: 0;
+        }
+        .v11-a5-card:nth-child(1) {
+          animation: vs-in-up 0.3s 11.4s forwards;
+        }
+        .v11-a5-card:nth-child(2) {
+          animation: vs-in-up 0.3s 11.6s forwards;
+        }
+        .v11-a5-card:nth-child(3) {
+          animation: vs-in-up 0.3s 11.8s forwards;
+        }
+        .v11-a5-card:nth-child(4) {
+          animation: vs-in-up 0.3s 12s forwards;
+        }
+        .v11-a5-card:nth-child(5) {
+          animation: vs-in-up 0.3s 12.2s forwards;
+        }
+        .v11-a5-card.is-funded {
+          background: linear-gradient(135deg, rgba(14, 124, 102, 0.18), rgba(34, 184, 160, 0.06));
+          border-color: rgba(34, 184, 160, 0.45);
+        }
+        .v11-a5-card.is-live {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(34, 184, 160, 0.55);
+          animation:
+            vs-in-up 0.3s 12s forwards,
+            v11-ring-pulse 1.6s 12.4s infinite;
+        }
+        .v11-a5-avatar {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #1e3a8a, #5b21b6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.01em;
+        }
+        .v11-a5-avatar.av-1 {
+          background: linear-gradient(135deg, #be185d, #db2777);
+        }
+        .v11-a5-avatar.av-2 {
+          background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        }
+        .v11-a5-avatar.av-3 {
+          background: linear-gradient(135deg, #6d28d9, #a855f7);
+        }
+        .v11-a5-avatar.av-4 {
+          background: linear-gradient(135deg, #0e7c66, ${TEAL_2});
+        }
+        .v11-a5-avatar.av-5 {
+          background: linear-gradient(135deg, #ca8a04, #facc15);
+          color: #1a1a1a;
+        }
+        .v11-a5-who {
+          display: flex;
+          flex-direction: column;
+        }
+        .v11-a5-who-n {
+          font-size: 24px;
+          font-weight: 800;
+          color: #fff;
+          letter-spacing: -0.018em;
+        }
+        .v11-a5-who-m {
+          margin-top: 3px;
+          font-size: 16px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.55);
+        }
+        .v11-a5-who-m em {
+          font-style: normal;
+          color: ${TEAL_2};
+          font-weight: 700;
+        }
+        .v11-a5-status {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+        }
+        .v11-a5-amount {
+          font-size: 22px;
+          font-weight: 800;
+          color: #fff;
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -0.015em;
+        }
+        .v11-a5-card.is-funded .v11-a5-amount {
+          color: ${TEAL_2};
+        }
+        .v11-a5-pill {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          padding: 5px 10px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.65);
+        }
+        .v11-a5-card.is-funded .v11-a5-pill {
+          background: rgba(34, 184, 160, 0.22);
+          color: ${TEAL_2};
+        }
+        .v11-a5-card.is-live .v11-a5-pill {
+          background: rgba(34, 184, 160, 0.55);
+          color: #fff;
+        }
+        .v11-a5-card.is-live .v11-a5-pill::before {
+          content: '●';
+          color: #fff;
+          margin-right: 5px;
+          animation: v11-ring-pulse 1.2s infinite;
+        }
+
+        /* ─── ACT 6 · stamp · the message (14.6–15.8s) ─────────────────── */
+        .v11-a6 {
           position: absolute;
           inset: 0;
           opacity: 0;
-          animation: vs-in-up 0.55s 13.7s forwards;
+          animation: vs-in-up 0.55s 14.7s forwards;
         }
-        .v11-final-h {
+        .v11-a6-h {
           position: absolute;
-          top: 420px;
+          top: 580px;
           left: 30px;
           right: 30px;
           text-align: center;
-          font-size: 82px;
+          font-size: 84px;
           font-weight: 800;
           letter-spacing: -0.036em;
           line-height: 1.03;
           color: #fff;
           text-shadow: 0 0 60px rgba(34, 184, 160, 0.4);
         }
-        .v11-final-h em {
+        .v11-a6-h em {
           font-style: normal;
           color: ${TEAL_2};
         }
-        .v11-final-sub {
+        .v11-a6-mark {
           position: absolute;
-          top: 700px;
+          top: 900px;
           left: 0;
           right: 0;
           text-align: center;
-          font-family: 'SF Mono', Menlo, monospace;
-          font-size: 18px;
-          letter-spacing: 0.3em;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.65);
-          text-transform: uppercase;
-        }
-        .v11-final-sub em {
-          font-style: normal;
-          color: ${TEAL_2};
-        }
-        .v11-final-mark {
-          position: absolute;
-          top: 800px;
-          left: 0;
-          right: 0;
-          text-align: center;
-          font-size: 64px;
+          font-size: 68px;
           font-weight: 800;
           letter-spacing: -0.034em;
           color: ${TEAL_2};
@@ -1026,251 +757,240 @@ export default function MedPayVideoV11(): JSX.Element {
       `}
     >
       <Mark />
-      <Tag>MedPay · qualified buyers</Tag>
+      <Tag>MedPay · for practice owners</Tag>
 
-      {/* ─── ACT 1 · hook · two phones ──────────────────────────────── */}
-      <section className="v11-act1">
-        <h1 className="v11-hook-h">
-          Same closer. <em>Different call.</em>
-        </h1>
-        <div className="v11-hook-sub">Practice owners · who&apos;s on the line</div>
-        <div className="v11-phones">
-          <div className="v11-phone is-bad">
-            <div className="v11-phone-tag">Without MedPay</div>
-            <div className="v11-phone-callerid">
-              <div className="v11-phone-name">Mike → Lead 47</div>
-              <div className="v11-phone-meta">Inbound · 14 min · no record</div>
-            </div>
-            <div className="v11-phone-quote">
-              <div className="v11-call-who">Lead</div>
-              &ldquo;Just looking for info… I don&apos;t know what I can afford.&rdquo;
-            </div>
-            <div className="v11-phone-outcome">✗ No close · 14 min lost</div>
-          </div>
-          <div className="v11-phone is-good">
-            <div className="v11-phone-tag">With MedPay</div>
-            <div className="v11-phone-callerid">
-              <div className="v11-phone-name">Mike → Sarah M.</div>
-              <div className="v11-phone-meta">Tier A · $14,200 pre-approved</div>
-            </div>
-            <div className="v11-phone-quote">
-              <div className="v11-call-who">Buyer</div>
-              &ldquo;Pre-approved $14,200? Thursday works perfect.&rdquo;
-            </div>
-            <div className="v11-phone-outcome">✓ Closed · 4 min</div>
-          </div>
+      {/* ─── ACT 1 · direct-address hook ──────────────────────────────── */}
+      <section className="v11-a1">
+        <div className="v11-a1-line-1">Practice owner —</div>
+        <div className="v11-a1-line-2">your closer spends</div>
+        <div className="v11-a1-stat">
+          80%
+          <em>of their day on people who can&apos;t pay.</em>
+        </div>
+        <div className="v11-a1-sub">
+          80 dials. 47 &ldquo;just info.&rdquo; 21 no-shows. <em>6 funded.</em>
         </div>
       </section>
 
-      {/* ─── ACT 2 · pivot ──────────────────────────────────────────── */}
-      <section className="v11-act2">
-        <h2 className="v11-pivot-h">
-          <em>MedPay</em> routes only qualified buyers to your closer.
+      {/* ─── ACT 2 · their closer's call list ─────────────────────────── */}
+      <section className="v11-a2">
+        <h2 className="v11-a2-h">
+          Sound like <em>yesterday?</em>
         </h2>
-      </section>
-
-      {/* ─── ACT 3 · smart form + financial check ───────────────────── */}
-      <section className="v11-act3">
-        <div className="v11-step-tag">Smart form · pulls financial data</div>
-        <h3 className="v11-step-h">
-          4 fields. <em>We pre-qualify in seconds.</em>
-        </h3>
-        <div className="v11-form">
-          <div className="v11-form-row">
-            <span className="v11-form-label">Email</span>
-            <span className="v11-form-val">sarah@gmail.com</span>
-          </div>
-          <div className="v11-form-row">
-            <span className="v11-form-label">Date of birth</span>
-            <span className="v11-form-val">03/14/1989</span>
-          </div>
-          <div className="v11-form-row">
-            <span className="v11-form-label">Last 4 SSN</span>
-            <span className="v11-form-val">••7421</span>
-          </div>
-          <div className="v11-form-row">
-            <span className="v11-form-label">Budget</span>
-            <span className="v11-form-val">$14,200</span>
-          </div>
-        </div>
-        <div className="v11-finchk">
-          <div className="v11-finchk-tag">↓ Financial pre-qual · auto</div>
-          <div className="v11-finchk-h">Soft-pull · zero credit impact</div>
-          <div className="v11-finchk-sub">Returns in &lt; 3 seconds</div>
-          <div className="v11-finchk-cells">
-            <div className="v11-finchk-cell">
-              <div className="v11-finchk-cell-k">Credit</div>
-              <div className="v11-finchk-cell-v">724</div>
-            </div>
-            <div className="v11-finchk-cell">
-              <div className="v11-finchk-cell-k">Budget</div>
-              <div className="v11-finchk-cell-v">$14k</div>
-            </div>
-            <div className="v11-finchk-cell">
-              <div className="v11-finchk-cell-k">Tier</div>
-              <div className="v11-finchk-cell-v is-teal">A</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── ACT 4 · smart routing · multi-hop pipeline ─────────────── */}
-      <section className="v11-act4">
-        <div className="v11-step-tag">Smart routing · multi-hop pipeline</div>
-        <h3 className="v11-step-h">
-          Every fork. <em>Sarah lands where she should.</em>
-        </h3>
-        <div className="v11-pipe">
-          <div className="v11-edge-line v11-edge-line-1" />
-          <div className="v11-edge-line v11-edge-line-2" />
-          <div className="v11-edge-line v11-edge-line-3" />
-          <div className="v11-edge-line v11-edge-line-4" />
-          <div className="v11-branch v11-branch-1" />
-          <div className="v11-branch v11-branch-2" />
-          <div className="v11-branch v11-branch-3" />
-
-          <div className="v11-node is-form">
-            <div className="v11-node-k">Lead capture</div>
-            <div className="v11-node-h">Form submit</div>
-          </div>
-
-          <div className="v11-node is-hop-1">
-            <div className="v11-node-k">Hop 1 · Budget</div>
-            <div className="v11-node-h">≥ $10K?</div>
-            <div className="v11-opts">
-              <span className="v11-opt is-pick">YES ✓</span>
-              <span className="v11-opt">NO → Tier C/D</span>
-            </div>
-          </div>
-
-          <div className="v11-node is-hop-2">
-            <div className="v11-node-k">Hop 2 · Tier</div>
-            <div className="v11-node-h">A / B / C / D?</div>
-            <div className="v11-opts">
-              <span className="v11-opt is-pick">A ✓</span>
-              <span className="v11-opt">B</span>
-              <span className="v11-opt">C</span>
-              <span className="v11-opt">D</span>
-            </div>
-          </div>
-
-          <div className="v11-node is-hop-3">
-            <div className="v11-node-k">Hop 3 · Calendar</div>
-            <div className="v11-node-h">Senior · Standard?</div>
-            <div className="v11-opts">
-              <span className="v11-opt is-pick">Senior ✓</span>
-              <span className="v11-opt">Standard</span>
-            </div>
-          </div>
-
-          <div className="v11-node is-terminal">
-            <div className="v11-node-k">Terminal · Sarah&apos;s path</div>
-            <div className="v11-node-h">Senior closer · Thu 2:00 PM</div>
-          </div>
-
-          <div className="v11-dot" />
-        </div>
-        <div className="v11-route-only">
-          Solid = current rules · <em>dashed = A/B test surface</em>
-        </div>
-      </section>
-
-      {/* ─── ACT 5 · closer call · THE MONEY SHOT ───────────────────── */}
-      <section className="v11-act5">
-        <div className="v11-call-tag">Your closer · already knows the budget</div>
-        <h3 className="v11-call-h">
-          They pick up <em>pre-approved.</em>
-        </h3>
-        <div className="v11-call">
-          <div className="v11-call-id">
+        <div className="v11-a2-sub">Mike&apos;s actual call log · Tuesday</div>
+        <div className="v11-a2-list">
+          <div className="v11-a2-row">
+            <div className="v11-a2-time">9:00</div>
             <div>
-              <div className="v11-call-name">
-                Mike → <em>Sarah M.</em>
+              <div className="v11-a2-name">Sarah M.</div>
+              <div className="v11-a2-meta">Cancelled · couldn&apos;t afford</div>
+            </div>
+            <div className="v11-a2-tag">✗ Cancel</div>
+          </div>
+          <div className="v11-a2-row">
+            <div className="v11-a2-time">9:30</div>
+            <div>
+              <div className="v11-a2-name">Mike R.</div>
+              <div className="v11-a2-meta">No-show · second this week</div>
+            </div>
+            <div className="v11-a2-tag">✗ Ghost</div>
+          </div>
+          <div className="v11-a2-row">
+            <div className="v11-a2-time">10:00</div>
+            <div>
+              <div className="v11-a2-name">Lisa K.</div>
+              <div className="v11-a2-meta">Declined at checkout</div>
+            </div>
+            <div className="v11-a2-tag">✗ Declined</div>
+          </div>
+          <div className="v11-a2-row">
+            <div className="v11-a2-time">10:30</div>
+            <div>
+              <div className="v11-a2-name">John D.</div>
+              <div className="v11-a2-meta">&ldquo;Just looking for info.&rdquo;</div>
+            </div>
+            <div className="v11-a2-tag">✗ No close</div>
+          </div>
+          <div className="v11-a2-row">
+            <div className="v11-a2-time">11:00</div>
+            <div>
+              <div className="v11-a2-name">Priya N.</div>
+              <div className="v11-a2-meta">No answer · 3rd attempt</div>
+            </div>
+            <div className="v11-a2-tag">✗ Miss</div>
+          </div>
+        </div>
+        <div className="v11-a2-tally">
+          <div className="v11-a2-tally-h">
+            5 calls in 2 hours. <em>0 closes.</em>
+          </div>
+          <div className="v11-a2-tally-sub">And it&apos;s only 11 AM.</div>
+        </div>
+      </section>
+
+      {/* ─── ACT 3 · pivot ────────────────────────────────────────────── */}
+      <section className="v11-a3">
+        <div className="v11-a3-pre">Here&apos;s the fix</div>
+        <h2 className="v11-a3-h">
+          MedPay only books <em>qualified buyers</em> for your closer.
+        </h2>
+        <div className="v11-a3-sub">
+          Pre-approved · <em>real budget</em> · ready to pay
+        </div>
+      </section>
+
+      {/* ─── ACT 4 · 3 plain-English steps ────────────────────────────── */}
+      <section className="v11-a4">
+        <h2 className="v11-a4-h">
+          Here&apos;s what happens <em>before they pick up.</em>
+        </h2>
+        <div className="v11-a4-steps">
+          <div className="v11-a4-step">
+            <div className="v11-a4-step-n">1</div>
+            <div className="v11-a4-step-body">
+              <div className="v11-a4-step-h">Patient fills your form.</div>
+              <div className="v11-a4-step-b">4 fields. Same one you use today.</div>
+            </div>
+          </div>
+          <div className="v11-a4-step">
+            <div className="v11-a4-step-n">2</div>
+            <div className="v11-a4-step-body">
+              <div className="v11-a4-step-h">MedPay pre-qualifies them.</div>
+              <div className="v11-a4-step-b">
+                Credit, budget, tier — <em>soft-pull, zero impact.</em>
               </div>
-              <div className="v11-call-status">● Live · 4 min 12 sec</div>
-            </div>
-            <div className="v11-call-time">
-              <div>Thu 2:05 PM</div>
-              <div className="v11-call-status">Outbound</div>
             </div>
           </div>
-          <div className="v11-call-preapp">
-            <div>
-              <div className="v11-call-preapp-k">Pre-approved</div>
-              <div className="v11-call-preapp-v">$14,200</div>
-            </div>
-            <div></div>
-            <div className="v11-call-preapp-tier">Tier A · 724</div>
-          </div>
-          <div className="v11-call-msgs">
-            <div className="v11-call-msg is-closer">
-              <div className="v11-call-who">Mike (closer)</div>
-              &ldquo;Sarah, you&apos;re pre-approved for $14,200 — want to start Thursday or next
-              week?&rdquo;
-            </div>
-            <div className="v11-call-msg is-buyer">
-              <div className="v11-call-who">Sarah (buyer)</div>
-              &ldquo;Thursday. Let&apos;s book it.&rdquo;
+          <div className="v11-a4-step">
+            <div className="v11-a4-step-n">3</div>
+            <div className="v11-a4-step-body">
+              <div className="v11-a4-step-h">Books straight to your closer.</div>
+              <div className="v11-a4-step-b">
+                <em>Only if they qualify.</em> Tire-kickers go to nurture.
+              </div>
             </div>
           </div>
         </div>
-        <div className="v11-call-outcome">
-          ✓ <em>Closed in 4 min</em> · no objection · ready to fund
+        <div className="v11-a4-result">
+          <div className="v11-a4-result-h">
+            <em>Every</em> call your closer takes is a buyer.
+          </div>
         </div>
       </section>
 
-      {/* ─── ACT 6 · lender marketplace · funded ────────────────────── */}
-      <section className="v11-act6">
-        <div className="v11-mkt-tag">One application · every lender</div>
-        <h3 className="v11-mkt-h">
-          Instant decision. <em>Best terms picked for her.</em>
+      {/* ─── ACT 5 · THE WOW · closer's Monday dashboard ──────────────── */}
+      <section className="v11-a5">
+        <div className="v11-a5-pre">Monday · 11 AM</div>
+        <h3 className="v11-a5-h">
+          Here&apos;s what your closer sees <em>inside MedPay.</em>
         </h3>
-        <div className="v11-mkt-app">1 APPLICATION · 5 LENDERS · 8 SECONDS</div>
-        <div className="v11-mkt-lenders">
-          <div className="v11-lender">
-            <div className="v11-lender-name">Lender A</div>
-            <div className="v11-lender-dec">$14,200</div>
-            <div className="v11-lender-tag">Approved · 11.9% APR</div>
+        <div className="v11-a5-app">
+          <div className="v11-a5-app-top">
+            <div className="v11-a5-app-brand">
+              <span className="v11-dot-sq" />
+              <span>
+                <em>Med</em>Pay
+              </span>
+            </div>
+            <div className="v11-a5-app-user">
+              <em>Mike (closer)</em> · today&apos;s queue
+            </div>
           </div>
-          <div className="v11-lender">
-            <div className="v11-lender-name">Lender B</div>
-            <div className="v11-lender-dec">$13,800</div>
-            <div className="v11-lender-tag">Approved · 12.4% APR</div>
+          <div className="v11-a5-stats">
+            <div className="v11-a5-stat">
+              <div className="v11-a5-stat-k">Calls</div>
+              <div className="v11-a5-stat-v">5</div>
+            </div>
+            <div className="v11-a5-stat">
+              <div className="v11-a5-stat-k">Funded</div>
+              <div className="v11-a5-stat-v">4</div>
+            </div>
+            <div className="v11-a5-stat is-hero">
+              <div className="v11-a5-stat-k">Today</div>
+              <div className="v11-a5-stat-v">$48k</div>
+            </div>
           </div>
-          <div className="v11-lender is-best">
-            <div className="v11-lender-name">Lender C</div>
-            <div className="v11-lender-dec">$15,200</div>
-            <div className="v11-lender-tag">★ Best terms · 9.8% APR</div>
+          <div className="v11-a5-list">
+            <div className="v11-a5-card is-funded">
+              <div className="v11-a5-avatar av-1">SM</div>
+              <div className="v11-a5-who">
+                <div className="v11-a5-who-n">Sarah M.</div>
+                <div className="v11-a5-who-m">
+                  Pre-approved <em>$14,200</em> · Tier A
+                </div>
+              </div>
+              <div className="v11-a5-status">
+                <div className="v11-a5-amount">$14,200</div>
+                <div className="v11-a5-pill">✓ Funded</div>
+              </div>
+            </div>
+            <div className="v11-a5-card is-funded">
+              <div className="v11-a5-avatar av-2">JK</div>
+              <div className="v11-a5-who">
+                <div className="v11-a5-who-n">Jordan K.</div>
+                <div className="v11-a5-who-m">
+                  Pre-approved <em>$22,000</em> · Tier A
+                </div>
+              </div>
+              <div className="v11-a5-status">
+                <div className="v11-a5-amount">$22,000</div>
+                <div className="v11-a5-pill">✓ Funded</div>
+              </div>
+            </div>
+            <div className="v11-a5-card is-funded">
+              <div className="v11-a5-avatar av-3">PN</div>
+              <div className="v11-a5-who">
+                <div className="v11-a5-who-n">Priya N.</div>
+                <div className="v11-a5-who-m">
+                  Pre-approved <em>$8,500</em> · Tier B
+                </div>
+              </div>
+              <div className="v11-a5-status">
+                <div className="v11-a5-amount">$8,500</div>
+                <div className="v11-a5-pill">✓ Funded</div>
+              </div>
+            </div>
+            <div className="v11-a5-card is-live">
+              <div className="v11-a5-avatar av-4">DM</div>
+              <div className="v11-a5-who">
+                <div className="v11-a5-who-n">Devon M.</div>
+                <div className="v11-a5-who-m">
+                  Pre-approved <em>$3,300</em> · live now
+                </div>
+              </div>
+              <div className="v11-a5-status">
+                <div className="v11-a5-amount">$3,300</div>
+                <div className="v11-a5-pill">Live</div>
+              </div>
+            </div>
+            <div className="v11-a5-card">
+              <div className="v11-a5-avatar av-5">AL</div>
+              <div className="v11-a5-who">
+                <div className="v11-a5-who-n">Alex L.</div>
+                <div className="v11-a5-who-m">
+                  Pre-approved <em>$11,400</em> · 1:30 PM
+                </div>
+              </div>
+              <div className="v11-a5-status">
+                <div className="v11-a5-amount">$11,400</div>
+                <div className="v11-a5-pill">Upcoming</div>
+              </div>
+            </div>
           </div>
-          <div className="v11-lender is-decline">
-            <div className="v11-lender-name">Lender D</div>
-            <div className="v11-lender-dec">—</div>
-            <div className="v11-lender-tag">Declined</div>
-          </div>
-          <div className="v11-lender">
-            <div className="v11-lender-name">Lender E</div>
-            <div className="v11-lender-dec">$14,500</div>
-            <div className="v11-lender-tag">Approved · 11.2% APR</div>
-          </div>
-        </div>
-        <div className="v11-mkt-stamp">
-          <div className="v11-mkt-stamp-h">
-            <em>$15,200</em> funded · 48-hour wire
-          </div>
-          <div className="v11-mkt-stamp-b">Patient picked best terms · same visit</div>
         </div>
       </section>
 
-      {/* ─── ACT 7 · stamp · the message ────────────────────────────── */}
-      <section className="v11-act7">
-        <h2 className="v11-final-h">
-          Your closer talks to <em>qualified buyers.</em>
+      {/* ─── ACT 6 · stamp · the message ──────────────────────────────── */}
+      <section className="v11-a6">
+        <h2 className="v11-a6-h">
+          Talk to <em>qualified buyers.</em>
+          <br />
+          Not info-shoppers.
         </h2>
-        <div className="v11-final-sub">Smart form · pre-qual · routing · funded</div>
-        <div className="v11-final-mark">That&apos;s MedPay.</div>
+        <div className="v11-a6-mark">That&apos;s MedPay.</div>
       </section>
 
-      <Cta label="Show me on my funnel" ctaDelay={15.8} disclDelay={16.2} />
+      <Cta label="Book a 15-min demo" ctaDelay={15.9} disclDelay={16.3} />
     </VideoStage>
   );
 }
