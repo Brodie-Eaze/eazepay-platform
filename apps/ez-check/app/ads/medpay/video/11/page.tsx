@@ -593,181 +593,161 @@ export default function MedPayVideoV11(): JSX.Element {
 
       {/* ─── ACT 5 MedPay routing tree ─────────────────────────────────── */}
       <section className="v11-a5">
-        <div className="v11-a5-tag">The MedPay way</div>
+        <div className="v11-a5-tag">The MedPay way · high-ticket flow</div>
         <h3 className="v11-a5-h">
-          Two routes. <em>Both funded.</em>
+          Qualified buyers sell. <em>The rest get a guide.</em>
         </h3>
         <div className="v11-tree">
           <svg
-            viewBox="0 0 1000 1450"
+            viewBox="0 0 1000 1200"
             preserveAspectRatio="xMidYMid meet"
             className="v11-tree-svg"
-            aria-label="MedPay smart routing tree"
+            aria-label="MedPay high-ticket routing tree"
           >
-            {/* solid teal edges along both real routes */}
+            {/* solid teal edges along the qualified path */}
             <g className="v11-tree-edges-solid">
               {/* root to credit gate */}
-              <path d="M500,90 L500,180" />
-              {/* fork from credit gate · LEFT high-ticket */}
-              <path d="M460,270 L210,340" />
-              {/* fork from credit gate · RIGHT low-ticket */}
-              <path d="M540,270 L790,340" />
-              {/* LEFT high-ticket chain */}
-              <path d="M210,420 L210,500" />
-              <path d="M210,600 L210,680" />
-              <path d="M210,780 L210,860" />
-              <path d="M210,1010 L210,1090" />
-              <path d="M210,1170 L210,1260" />
-              {/* RIGHT low-ticket chain */}
-              <path d="M790,420 L790,500" />
-              <path d="M790,600 L790,680" />
-              <path d="M790,780 L790,860" />
-              <path d="M790,940 L790,1090" />
+              <path d="M280,100 L280,180" />
+              {/* credit gate to income gate */}
+              <path d="M280,280 L280,360" />
+              {/* income gate to sales call */}
+              <path d="M280,460 L280,540" />
+              {/* sales call to lender mkt */}
+              <path d="M280,720 L280,800" />
+              {/* lender mkt to funded */}
+              <path d="M280,900 L280,980" />
             </g>
 
-            {/* hidden trace path the orb follows · traces the LEFT high-ticket route */}
+            {/* NO branches off each gate · same solid teal but no orb traces them */}
+            <g className="v11-tree-edges-solid" style={{ opacity: 0.55 }}>
+              {/* credit NO → send guide */}
+              <path d="M410,230 L580,230" />
+              {/* income NO → send guide */}
+              <path d="M410,410 L580,410" />
+            </g>
+
+            {/* hidden trace path the orb follows · qualified spine top to bottom */}
             <path
               id="v11-trace"
-              d="M500,55 L500,225 L210,380 L210,560 L210,740 L210,945 L210,1130 L210,1310"
+              d="M280,55 L280,230 L280,410 L280,630 L280,850 L280,1020"
               fill="none"
               stroke="none"
             />
 
             {/* L0 · lead capture */}
             <g className="v11-tree-node is-root">
-              <rect x="380" y="20" width="240" height="70" rx="14" />
-              <text className="v11-tree-node-tag" x="500" y="46">
+              <rect x="150" y="20" width="260" height="80" rx="14" />
+              <text className="v11-tree-node-tag" x="280" y="52">
                 LEAD CAPTURE
               </text>
-              <text className="v11-tree-node-h" x="500" y="72">
+              <text className="v11-tree-node-h" x="280" y="82">
                 Form submit
               </text>
             </g>
 
-            {/* L1 · credit score · the fork */}
+            {/* L1 · credit score gate */}
             <g className="v11-tree-node is-traced">
-              <rect x="370" y="180" width="260" height="90" rx="14" />
-              <text className="v11-tree-node-tag" x="500" y="208">
+              <rect x="150" y="180" width="260" height="100" rx="14" />
+              <text className="v11-tree-node-tag" x="280" y="212">
                 HOP 1 · CREDIT SCORE
               </text>
-              <text className="v11-tree-node-h" x="500" y="244" style={{ fontSize: 24 }}>
+              <text className="v11-tree-node-h" x="280" y="254" style={{ fontSize: 30 }}>
                 ≥ 700?
               </text>
             </g>
-
-            {/* L2 · two route labels */}
-            <g className="v11-tree-node is-traced">
-              <rect x="80" y="340" width="260" height="80" rx="14" />
-              <text className="v11-tree-node-tag" x="210" y="366">
-                ≥ 700 · YES
-              </text>
-              <text className="v11-tree-node-h" x="210" y="398" style={{ fontSize: 22 }}>
-                High-ticket route
-              </text>
-            </g>
+            {/* L1 NO branch · send guide */}
             <g className="v11-tree-node">
-              <rect x="660" y="340" width="260" height="80" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="366">
-                &lt; 700 · NO
+              <rect x="580" y="180" width="320" height="100" rx="14" />
+              <text className="v11-tree-node-tag" x="740" y="212">
+                NO · SEND GUIDE
               </text>
-              <text className="v11-tree-node-h" x="790" y="398" style={{ fontSize: 22 }}>
-                Low-ticket route
+              <text className="v11-tree-node-h" x="740" y="248" style={{ fontSize: 22 }}>
+                Credit-building guide
+              </text>
+              <text
+                className="v11-tree-node-tag"
+                x="740"
+                y="270"
+                style={{ opacity: 0.55, fontSize: 11 }}
+              >
+                Nurture drip · re-engage later
               </text>
             </g>
 
-            {/* L3 · LEFT income gate · RIGHT smaller offer */}
+            {/* L2 · income gate */}
             <g className="v11-tree-node is-traced">
-              <rect x="80" y="500" width="260" height="100" rx="14" />
-              <text className="v11-tree-node-tag" x="210" y="528">
+              <rect x="150" y="360" width="260" height="100" rx="14" />
+              <text className="v11-tree-node-tag" x="280" y="392">
                 HOP 2 · INCOME
               </text>
-              <text className="v11-tree-node-h" x="210" y="564" style={{ fontSize: 22 }}>
-                ≥ $80k / yr?
+              <text className="v11-tree-node-h" x="280" y="434" style={{ fontSize: 30 }}>
+                ≥ $80k?
               </text>
             </g>
+            {/* L2 NO branch · send guide */}
             <g className="v11-tree-node">
-              <rect x="660" y="500" width="260" height="100" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="528">
-                SMALLER OFFER
+              <rect x="580" y="360" width="320" height="100" rx="14" />
+              <text className="v11-tree-node-tag" x="740" y="392">
+                NO · SEND GUIDE
               </text>
-              <text className="v11-tree-node-h" x="790" y="564" style={{ fontSize: 20 }}>
-                Lower-priced package
+              <text className="v11-tree-node-h" x="740" y="428" style={{ fontSize: 22 }}>
+                Planning guide
+              </text>
+              <text
+                className="v11-tree-node-tag"
+                x="740"
+                y="450"
+                style={{ opacity: 0.55, fontSize: 11 }}
+              >
+                Save · plan · re-qualify later
               </text>
             </g>
 
-            {/* L4 · LEFT available credit · RIGHT BNPL */}
+            {/* L3 · sales call HERO */}
             <g className="v11-tree-node is-traced">
-              <rect x="80" y="680" width="260" height="100" rx="14" />
-              <text className="v11-tree-node-tag" x="210" y="708">
-                HOP 3 · AVAILABLE CREDIT
-              </text>
-              <text className="v11-tree-node-h" x="210" y="744" style={{ fontSize: 22 }}>
-                Headroom ≥ $15k?
-              </text>
-            </g>
-            <g className="v11-tree-node">
-              <rect x="660" y="680" width="260" height="100" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="708">
-                BNPL
-              </text>
-              <text className="v11-tree-node-h" x="790" y="744" style={{ fontSize: 22 }}>
-                Klarna · Affirm
-              </text>
-            </g>
-
-            {/* L5 · LEFT sales call (HERO) · RIGHT short-term plan */}
-            <g className="v11-tree-node is-traced">
-              <rect x="50" y="860" width="320" height="150" rx="18" />
-              <text className="v11-tree-node-tag" x="210" y="892">
+              <rect x="80" y="540" width="400" height="180" rx="18" />
+              <text className="v11-tree-node-tag" x="280" y="580" style={{ fontSize: 14 }}>
                 SALES CALL
               </text>
-              <text className="v11-tree-node-h" x="210" y="932" style={{ fontSize: 26 }}>
+              <text className="v11-tree-node-h" x="280" y="630" style={{ fontSize: 32 }}>
                 Qualified buyer
               </text>
-              <text className="v11-tree-node-tag" x="210" y="966" style={{ opacity: 0.65 }}>
-                Pre-approved budget
+              <text
+                className="v11-tree-node-tag"
+                x="280"
+                y="665"
+                style={{ opacity: 0.7, fontSize: 13 }}
+              >
+                Pre-approved budget attached
               </text>
-              <text className="v11-tree-node-tag" x="210" y="990" style={{ opacity: 0.55 }}>
+              <text
+                className="v11-tree-node-tag"
+                x="280"
+                y="690"
+                style={{ opacity: 0.55, fontSize: 12 }}
+              >
                 Closer only talks to buyers
               </text>
             </g>
-            <g className="v11-tree-node">
-              <rect x="660" y="860" width="260" height="80" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="888">
-                SHORT-TERM
-              </text>
-              <text className="v11-tree-node-h" x="790" y="920" style={{ fontSize: 20 }}>
-                Approved · 4-pay plan
-              </text>
-            </g>
 
-            {/* L6 · LEFT lender marketplace · RIGHT funded (low-ticket terminal) */}
+            {/* L4 · lender marketplace */}
             <g className="v11-tree-node is-traced">
-              <rect x="60" y="1090" width="300" height="80" rx="14" />
-              <text className="v11-tree-node-tag" x="210" y="1118">
+              <rect x="100" y="800" width="360" height="100" rx="14" />
+              <text className="v11-tree-node-tag" x="280" y="832">
                 LENDER MARKETPLACE
               </text>
-              <text className="v11-tree-node-h" x="210" y="1150" style={{ fontSize: 18 }}>
+              <text className="v11-tree-node-h" x="280" y="874" style={{ fontSize: 20 }}>
                 1 app · 5 lenders · instant
               </text>
             </g>
-            <g className="v11-tree-node">
-              <rect x="680" y="1090" width="220" height="90" rx="14" />
-              <text className="v11-tree-node-tag" x="790" y="1118">
-                OUTCOME · LOW
-              </text>
-              <text className="v11-tree-node-h" x="790" y="1156" style={{ fontSize: 28 }}>
-                Funded.
-              </text>
-            </g>
 
-            {/* L7 · LEFT funded (high-ticket terminal) */}
+            {/* L5 · funded */}
             <g className="v11-tree-node is-traced">
-              <rect x="100" y="1260" width="220" height="90" rx="14" />
-              <text className="v11-tree-node-tag" x="210" y="1288">
-                OUTCOME · HIGH
+              <rect x="170" y="980" width="220" height="100" rx="14" />
+              <text className="v11-tree-node-tag" x="280" y="1012">
+                OUTCOME
               </text>
-              <text className="v11-tree-node-h" x="210" y="1326" style={{ fontSize: 28 }}>
+              <text className="v11-tree-node-h" x="280" y="1054" style={{ fontSize: 34 }}>
                 Funded.
               </text>
             </g>
@@ -782,7 +762,7 @@ export default function MedPayVideoV11(): JSX.Element {
         </div>
         <div className="v11-a5-tally">
           <div className="v11-a5-tally-h">
-            Two routes. <em>Every lead earns.</em>
+            Every lead handled. <em>Nothing wasted.</em>
           </div>
         </div>
       </section>
