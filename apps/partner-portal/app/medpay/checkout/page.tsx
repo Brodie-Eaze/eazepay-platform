@@ -15,7 +15,7 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -78,7 +78,21 @@ function planFromSearch(p: string | null): PlanCode {
   return '10k';
 }
 
-export default function MedPayCheckout(): JSX.Element {
+/**
+ * Default export wraps the page in a Suspense boundary so the
+ * `useSearchParams()` call inside MedPayCheckoutInner doesn't trigger
+ * Next.js's "missing Suspense with CSR bailout" build error — without
+ * this, the whole page renders the global error template in production.
+ */
+export default function MedPayCheckoutPage(): JSX.Element {
+  return (
+    <Suspense fallback={null}>
+      <MedPayCheckoutInner />
+    </Suspense>
+  );
+}
+
+function MedPayCheckoutInner(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planCode: PlanCode = planFromSearch(searchParams.get('plan'));
