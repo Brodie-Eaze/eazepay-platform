@@ -1,0 +1,58 @@
+# syntax=docker/dockerfile:1.6
+#
+# EZ Check — standalone production image for Railway.
+#
+# Mirrors the partner-portal Dockerfile shape (deps → builder → runner,
+# Next.js standalone output, ~150MB final image) but isolated to the
+# @eazepay/ez-check workspace package. No partner-portal code is built
+# or shipped here.
+
+# ─── 1. deps ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
+WORKDIR /repo
+
+RUN apk add --no-cache libc6-compat \
+  && corepack enable \
+  && corepack prepare pnpm@9.12.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/ez-check/package.json apps/ez-check/
+
+RUN pnpm install --frozen-lockfile --filter=@eazepay/ez-check...
+
+# ─── 2. builder ───────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /repo
+
+RUN apk add --no-cache libc6-compat \
+  && corepack enable \
+  && corepack prepare pnpm@9.12.0 --activate
+
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/ez-check/node_modules ./apps/ez-check/node_modules
+COPY tsconfig.base.json ./
+COPY apps/ez-check ./apps/ez-check
+
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter=@eazepay/ez-check build
+
+# ─── 3. runner ────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /repo
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/ez-check/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/ez-check/.next/static ./apps/ez-check/.next/static
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/ez-check/public ./apps/ez-check/public
+
+USER nextjs
+EXPOSE 3000
+
+# server.js lives at apps/ez-check/server.js inside the standalone bundle
+# (trace root is the monorepo root via next.config.mjs).
+CMD ["node", "apps/ez-check/server.js"]
