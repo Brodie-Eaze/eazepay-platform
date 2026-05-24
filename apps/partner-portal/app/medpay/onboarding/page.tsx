@@ -80,16 +80,15 @@ const STEPS: Step[] = [
     n: '02',
     agent: 'ORACLE',
     title: 'Smart forms & financial qualification',
-    body: 'Build your smart form and the smart-routing rules that decide which calendar each qualified buyer lands on. We hand you straight off to your HighLevel sub-account so the form, the CRM webhook, and the pipeline all live in one place. Come back and mark this complete once the smart form is live in HighLevel.',
+    body: 'Build your smart form and the smart-routing rules that decide which calendar each qualified buyer lands on. We hand you straight off to HighSale so the form, the CRM webhook, and the pipeline all live in one place. Come back and mark this complete once the smart form is live.',
     items: [
-      'Smart form field configuration in HighLevel',
+      'Smart form field configuration in HighSale',
       'Smart routing rules · calendar + sales rep',
       'CRM webhook + pixel tracking',
     ],
     time: '≈ 15 min',
-    configLabel: 'Open HighLevel',
-    // TODO: swap to the practice-specific sub-account / snapshot URL
-    configHref: 'https://app.gohighlevel.com/',
+    configLabel: 'Open HighSale',
+    configHref: 'https://highsale.com/',
     external: true,
   },
   {
@@ -105,8 +104,7 @@ const STEPS: Step[] = [
     ],
     time: '≈ 2–3 business days',
     configLabel: 'Open MiCamp onboarding',
-    // TODO: swap to the MedPay-specific MiCamp partner intake URL if one exists
-    configHref: 'https://www.micamp.com/onboarding/',
+    configHref: 'https://micamp.com/',
     external: true,
   },
   {
@@ -126,12 +124,36 @@ const STEPS: Step[] = [
   },
 ];
 
+const STORAGE_KEY = 'medpay-onboarding-done-v1';
+
 export default function MedPayOnboarding(): JSX.Element {
   const [done, setDone] = useState<Set<string>>(new Set());
   const [activeIdx, setActiveIdx] = useState(0);
 
   const completeCount = done.size;
   const progressPct = Math.round((completeCount / STEPS.length) * 100);
+
+  /**
+   * Hydrate completed-modules state from localStorage on mount so the
+   * practice owner can close the tab and pick up where they left off.
+   * Wrapped in try/catch because localStorage can throw in some Safari
+   * private-mode / iframe sandbox contexts and onboarding shouldn't break.
+   */
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const ids = JSON.parse(raw);
+      if (Array.isArray(ids)) {
+        const valid = ids.filter(
+          (id): id is string => typeof id === 'string' && STEPS.some((s) => s.id === id),
+        );
+        if (valid.length) setDone(new Set(valid));
+      }
+    } catch {
+      /* ignore — fall back to empty state */
+    }
+  }, []);
 
   useEffect(() => {
     // first incomplete step gets the active glow
@@ -144,6 +166,12 @@ export default function MedPayOnboarding(): JSX.Element {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      // persist immediately so a quick refresh doesn't lose the click
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
+      } catch {
+        /* ignore storage failures */
+      }
       return next;
     });
   }
@@ -313,6 +341,22 @@ export default function MedPayOnboarding(): JSX.Element {
           <div className="mp-onb-footer-meta">NMLS #2456701 · FCRA · ECOA · TILA</div>
         </div>
       </footer>
+
+      {/*
+        Floating concierge CTA · Hub + Concierge pattern. Persistent across
+        the whole onboarding page so a practice owner who's stuck on any
+        module (HighSale wiring, MiCamp app, lender form) can grab a launch
+        engineer instantly without scrolling back to the header.
+      */}
+      <a
+        href="mailto:launch@eazepay.com?subject=MedPay%20launch%20call%20%E2%80%94%20stuck%20on%20onboarding&body=Hi%20launch%20team%2C%20I%27m%20setting%20up%20MedPay%20and%20want%20to%20jump%20on%20a%2015-min%20call%20to%20walk%20through%20it%20together.%20Practice%20name%3A%20"
+        className="mp-onb-fab"
+        aria-label="Book a 15-min launch call with the MedPay team"
+      >
+        <span className="mp-onb-fab-dot" aria-hidden />
+        <span className="mp-onb-fab-h">Stuck?</span>
+        <span className="mp-onb-fab-b">Book a 15-min launch call →</span>
+      </a>
     </div>
   );
 }
@@ -732,10 +776,48 @@ const CSS = `
   color: var(--ink-3); text-transform: uppercase;
 }
 
+/* Floating concierge CTA · stays bottom-right on every scroll position */
+.mp-onb-fab {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 50;
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #0E7C66, #22B8A0);
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 18px 44px -10px rgba(14, 124, 102, 0.55), 0 2px 8px rgba(0, 0, 0, 0.18);
+  text-decoration: none;
+  font-size: 14px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.mp-onb-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 52px -10px rgba(14, 124, 102, 0.65), 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+.mp-onb-fab-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
+  animation: mp-onb-fab-pulse 1.8s ease-in-out infinite;
+}
+@keyframes mp-onb-fab-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45); }
+  50%      { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+}
+.mp-onb-fab-h { font-weight: 700; letter-spacing: -0.01em; }
+.mp-onb-fab-b { opacity: 0.92; }
+
 @media (max-width: 760px) {
   .mp-onb-launch { flex-direction: column; align-items: flex-start; }
   .mp-onb-footer-inner { flex-direction: column; align-items: flex-start; }
   .mp-onb-nav-links { display: none; }
+  .mp-onb-fab {
+    bottom: 16px; right: 16px;
+    padding: 12px 18px;
+    font-size: 13px;
+  }
+  .mp-onb-fab-h { display: none; }
   .mp-onb-step-head { grid-template-columns: 36px 1fr; gap: 12px; }
   .step-num { width: 36px; height: 36px; }
 }
