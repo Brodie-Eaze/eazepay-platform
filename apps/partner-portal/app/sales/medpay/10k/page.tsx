@@ -772,7 +772,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={360}>
           <div className="sld-cta-grid">
-            <a href="/medpay/checkout" className="sld-cta sld-cta-primary">
+            <a href="/medpay/checkout?plan=10k" className="sld-cta sld-cta-primary">
               <div className="sld-cta-eyebrow">Start onboarding now</div>
               <div className="sld-cta-h">Sign up</div>
               <div className="sld-cta-b">
@@ -3139,7 +3139,7 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={360}>
         <div className="sld-finale-ctas sld-finale-ctas-single">
-          <a href="/medpay/checkout" className="sld-finale-primary">
+          <a href="/medpay/checkout?plan=10k" className="sld-finale-primary">
             <span className="sld-finale-primary-h">Get started · $10,000</span>
             <span className="sld-finale-primary-sub">
               Sign today · KYB clears in 60s · live in 5 days
