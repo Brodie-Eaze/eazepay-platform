@@ -17,10 +17,72 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+/**
+ * Three pricing plans the sales decks send prospects to. The query param
+ * `?plan=5k|10k|10k-guarantee` drives the hero amount, the agreement
+ * text, what Stripe actually charges today, and the contingent-invoice
+ * disclosure. Default is `10k` (matches the legacy /sales/medpay deck
+ * which had no plan-aware decks behind it).
+ */
+type PlanCode = '5k' | '10k' | '10k-guarantee';
+type Plan = {
+  tag: string;
+  heroAmount: string;
+  heroSubline: string;
+  agreementLine: string;
+  stripeTag: string;
+  stripeAmount: string;
+  payButtonLabel: string;
+  contingentNote?: string;
+};
+
+const PLANS: Record<PlanCode, Plan> = {
+  '5k': {
+    tag: '01 · PLATFORM SETUP',
+    heroAmount: '$5,000',
+    heroSubline: 'USD · charged on signing',
+    agreementLine:
+      'I agree to the $5,000 one-time platform fee, $3 per smart-form lead, and 4% of settled loan amount. I have authority to bind the named business.',
+    stripeTag: 'PAY SETUP FEE',
+    stripeAmount: '$5,000.00',
+    payButtonLabel: 'Pay $5,000 with Stripe',
+  },
+  '10k': {
+    tag: '01 · PLATFORM SETUP',
+    heroAmount: '$10,000',
+    heroSubline: 'USD · charged on signing',
+    agreementLine:
+      'I agree to the $10,000 one-time platform fee, $3 per smart-form lead, and 4% of settled loan amount. I have authority to bind the named business.',
+    stripeTag: 'PAY SETUP FEE',
+    stripeAmount: '$10,000.00',
+    payButtonLabel: 'Pay $10,000 with Stripe',
+  },
+  '10k-guarantee': {
+    tag: '01 · PLATFORM SETUP · 10x GUARANTEE',
+    heroAmount: '$10,000',
+    heroSubline: 'USD · total · $5,000 today + $5,000 day 90 (contingent)',
+    agreementLine:
+      'I agree to the $10,000 total platform fee — $5,000 charged today, $5,000 invoiced on day 90 only if MedPay funds $50,000+ in patient loans for my practice in the first 90 days (otherwise the second $5,000 is waived). Plus $3 per smart-form lead and 4% of settled loan amount. I have authority to bind the named business.',
+    stripeTag: 'PAY TODAY · 10x GUARANTEE',
+    stripeAmount: '$5,000.00',
+    payButtonLabel: 'Pay $5,000 today with Stripe',
+    contingentNote:
+      'Second $5,000 invoiced on day 90 only if MedPay funds $50,000+ in patient loans for you. If we miss the threshold, the second $5,000 is waived. 10x guarantee.',
+  },
+};
+
+function planFromSearch(p: string | null): PlanCode {
+  if (p === '5k' || p === '10k' || p === '10k-guarantee') return p;
+  return '10k';
+}
 
 export default function MedPayCheckout(): JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planCode: PlanCode = planFromSearch(searchParams.get('plan'));
+  const plan = PLANS[planCode];
   const [agreed, setAgreed] = useState(false);
   const [billingEmail, setBillingEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -114,11 +176,19 @@ export default function MedPayCheckout(): JSX.Element {
           <div className="mpf-container">
             <div className="mpf-pricing-grid">
               <PricingTier
-                tag="01 · PLATFORM SETUP"
-                head="One-time platform fee"
-                body="Full account configuration, agent stack activation, lender-marketplace provisioning, partner-portal access, staff training. Paid once on signing."
-                v="$10,000"
-                when="USD · charged on signing"
+                tag={plan.tag}
+                head={
+                  planCode === '10k-guarantee'
+                    ? 'Platform fee · 10x guarantee'
+                    : 'One-time platform fee'
+                }
+                body={
+                  planCode === '10k-guarantee'
+                    ? "Full account configuration, agent stack activation, lender-marketplace provisioning, partner-portal access, staff training. $5,000 charged today. The second $5,000 invoices on day 90 only if MedPay funds $50,000+ in patient loans for you — otherwise it's waived."
+                    : 'Full account configuration, agent stack activation, lender-marketplace provisioning, partner-portal access, staff training. Paid once on signing.'
+                }
+                v={plan.heroAmount}
+                when={plan.heroSubline}
                 hero
               />
               <PricingTier
@@ -252,16 +322,13 @@ export default function MedPayCheckout(): JSX.Element {
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
                   />
-                  <span>
-                    I agree to the $10,000 one-time platform fee, $3 per smart-form lead, and 4% of
-                    settled loan amount. I have authority to bind the named business.
-                  </span>
+                  <span>{plan.agreementLine}</span>
                 </label>
                 <div className="mpf-stripe-block">
                   <div className="mpf-stripe-head">
                     <div className="mpf-stripe-head-l">
-                      <span className="mpf-stripe-tag">PAY SETUP FEE</span>
-                      <span className="mpf-stripe-amt">$10,000.00</span>
+                      <span className="mpf-stripe-tag">{plan.stripeTag}</span>
+                      <span className="mpf-stripe-amt">{plan.stripeAmount}</span>
                     </div>
                     <div className="mpf-stripe-cards" aria-hidden>
                       <span className="mpf-stripe-card-pill">VISA</span>
@@ -279,9 +346,12 @@ export default function MedPayCheckout(): JSX.Element {
                     aria-disabled={!canProceed || paying}
                     disabled={!canProceed || paying}
                   >
-                    {paying ? 'Opening Stripe…' : 'Pay $10,000 with Stripe'}
+                    {paying ? 'Opening Stripe…' : plan.payButtonLabel}
                     <ArrowIcon />
                   </button>
+                  {plan.contingentNote ? (
+                    <div className="mpf-stripe-note">{plan.contingentNote}</div>
+                  ) : null}
                   {stripeNote ? <div className="mpf-stripe-note">{stripeNote}</div> : null}
                 </div>
                 <div className="mpf-co-foot">

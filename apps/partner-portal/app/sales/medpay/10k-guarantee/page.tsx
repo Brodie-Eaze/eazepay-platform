@@ -644,10 +644,13 @@ const SLIDES_RAW: Slide[] = [
                 </div>
               </div>
               <div className="sld-pricing-tier-r">
-                <div className="sld-pricing-tier-v">$5,000</div>
-                <div className="sld-pricing-tier-when">USD · paid on signing</div>
-                <div className="sld-pricing-tier-when" style={{ marginTop: 4 }}>
-                  + $5,000 day 90 (contingent)
+                <div className="sld-pricing-tier-v">$10,000</div>
+                <div className="sld-pricing-tier-when">USD · total · paid in two parts</div>
+                <div className="sld-pricing-tier-when" style={{ marginTop: 10, fontWeight: 600 }}>
+                  $5,000 today
+                </div>
+                <div className="sld-pricing-tier-when" style={{ marginTop: 2 }}>
+                  $5,000 day 90 — waived if we don&apos;t fund $50k+
                 </div>
               </div>
             </div>
@@ -787,7 +790,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={360}>
           <div className="sld-cta-grid">
-            <a href="/medpay/checkout" className="sld-cta sld-cta-primary">
+            <a href="/medpay/checkout?plan=10k-guarantee" className="sld-cta sld-cta-primary">
               <div className="sld-cta-eyebrow">Start onboarding now</div>
               <div className="sld-cta-h">Sign up</div>
               <div className="sld-cta-b">
@@ -3155,7 +3158,7 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={360}>
         <div className="sld-finale-ctas sld-finale-ctas-single">
-          <a href="/medpay/checkout" className="sld-finale-primary">
+          <a href="/medpay/checkout?plan=10k-guarantee" className="sld-finale-primary">
             <span className="sld-finale-primary-h">Get started · $5,000 today</span>
             <span className="sld-finale-primary-sub">
               10x guarantee · $5,000 day 90 only if we deliver
