@@ -2104,7 +2104,7 @@ function OnboardingTimeline(): JSX.Element {
   const ms = [
     {
       d: 'Day 0',
-      t: 'Agreement signed · $10k paid',
+      t: 'Agreement signed · $5k paid',
       b: 'KYB clears in 60s · CSM assigned · kickoff scheduled',
     },
     {
@@ -3152,7 +3152,7 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $10k setup · $3 / lead · 4%
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $5k setup · $3 / lead · 4%
           settled
         </div>
       </Reveal>
