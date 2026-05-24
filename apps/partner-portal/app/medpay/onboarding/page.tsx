@@ -7,12 +7,17 @@
  * agent stack (CORE / NEXUS / ORACLE / FLUX) as the four setup
  * modules instead of Aurean's (PRISM / VEGA / NEXUS / FLUX).
  *
- * The four modules map 1:1 across MedPay / TradePay / CoachPay so
- * any partner moving across verticals sees the same shape:
- *   01 CORE   — Account setup
- *   02 NEXUS  — Intake & lender marketplace
- *   03 ORACLE — Smart forms & financial qualification
- *   04 FLUX   — Payment processing
+ * The four modules walk the practice owner through the actual
+ * configuration tools each one lives in. CTAs either open a third-party
+ * tool in a new tab (HighLevel, MiCamp) or route to an internal MedPay
+ * setup page. Step type carries an `external: boolean` flag that
+ * switches the CTA between Next.js <Link> and a target="_blank" <a>
+ * with an external-link arrow icon.
+ *
+ *   01 CORE   — Account setup            -> /medpay/signup (internal)
+ *   02 ORACLE — Smart forms + routing    -> HighLevel sub-account (external)
+ *   03 FLUX   — Payment processing       -> MiCamp onboarding (external)
+ *   04 NEXUS  — Lender marketplace setup -> /medpay/onboarding/lender-marketplace (internal)
  *
  * Visual DNA preserved from Aurean:
  *   • Dark base (#0a0a14) with radial ambient glow + dot grid
@@ -46,6 +51,12 @@ type Step = {
   time: string;
   configLabel: string;
   configHref: string;
+  /**
+   * When true the CTA opens in a new tab with rel="noopener noreferrer"
+   * and shows an external-link arrow. Use for hand-offs to third-party
+   * tools (HighLevel, MiCamp). Default false = internal Next.js route.
+   */
+  external?: boolean;
 };
 
 const STEPS: Step[] = [
@@ -65,49 +76,53 @@ const STEPS: Step[] = [
     configHref: '/medpay/signup',
   },
   {
-    id: 'nexus',
-    n: '02',
-    agent: 'NEXUS',
-    title: 'Lender marketplace',
-    body: "We submit your practice to the EazePay lender marketplace for underwriting. Each lender has to approve you for traffic before they appear in the waterfall — once they're live, NEXUS quotes them in parallel and surfaces the cheapest monthly to the patient.",
-    items: [
-      'Lender panel underwriting',
-      'Carrier appetite + ticket caps',
-      'Best-offer presentation rules',
-    ],
-    time: '≈ 2–3 business days',
-    configLabel: 'Configure NEXUS',
-    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=LenderPanelMatrix',
-  },
-  {
     id: 'oracle',
-    n: '03',
+    n: '02',
     agent: 'ORACLE',
     title: 'Smart forms & financial qualification',
-    body: 'Configure your smart-form fields, set up the smart routing rules that decide which lender quotes which lead, and connect your HighSale CRM so every soft-pull lands as a contact.',
+    body: 'Build your smart form and the smart-routing rules that decide which calendar each qualified buyer lands on. We hand you straight off to your HighLevel sub-account so the form, the CRM webhook, and the pipeline all live in one place. Come back and mark this complete once the smart form is live in HighLevel.',
     items: [
-      'Smart form configuration',
-      'Smart routing rules',
-      'HighSale CRM connection (API + webhook)',
+      'Smart form field configuration in HighLevel',
+      'Smart routing rules · calendar + sales rep',
+      'CRM webhook + pixel tracking',
     ],
     time: '≈ 15 min',
-    configLabel: 'Configure ORACLE',
-    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=AgentsPanel',
+    configLabel: 'Open HighLevel',
+    // TODO: swap to the practice-specific sub-account / snapshot URL
+    configHref: 'https://app.gohighlevel.com/',
+    external: true,
   },
   {
     id: 'flux',
-    n: '04',
+    n: '03',
     agent: 'FLUX',
     title: 'Payment processing',
-    body: 'FLUX onboards your practice to MiCamp Solutions — a payment processor with better-than-industry rates for the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded loans still settle merchant-direct from each lender, separately. Confirm your routing details and sign the MiCamp processing agreement.',
+    body: 'We onboard you to MiCamp Solutions for the general checkout payments you take outside the lender flow (deposits, cash sales, follow-on charges). Lender-funded loans still settle merchant-direct from each lender, separately. Click through to complete the MiCamp merchant application and sign the processing agreement.',
     items: [
       'MiCamp merchant account application',
       'Settlement bank routing + voided check',
       'MiCamp processing agreement signed',
     ],
     time: '≈ 2–3 business days',
-    configLabel: 'Configure FLUX',
-    configHref: '/admin?surface=brand-portal&brand=med-pay&panel=PayoutDestinationsPanel',
+    configLabel: 'Open MiCamp onboarding',
+    // TODO: swap to the MedPay-specific MiCamp partner intake URL if one exists
+    configHref: 'https://www.micamp.com/onboarding/',
+    external: true,
+  },
+  {
+    id: 'nexus',
+    n: '04',
+    agent: 'NEXUS',
+    title: 'Lender marketplace',
+    body: 'Tell us your ticket sizes, treatment categories, monthly volume target, and any existing lender relationships. We use this to underwrite you with the right panel of lenders so NEXUS can quote them in parallel on every soft-pull and surface the cheapest monthly to the patient.',
+    items: [
+      'Practice profile + ticket caps',
+      'Treatment categories funded',
+      'Existing lender relationships (if any)',
+    ],
+    time: '≈ 10 min',
+    configLabel: 'Open lender setup',
+    configHref: '/medpay/onboarding/lender-marketplace',
   },
 ];
 
@@ -230,9 +245,20 @@ export default function MedPayOnboarding(): JSX.Element {
                           ))}
                         </ul>
                         <div className="mp-onb-step-actions">
-                          <Link href={s.configHref} className="btn-primary">
-                            {s.configLabel} <ArrowIcon />
-                          </Link>
+                          {s.external ? (
+                            <a
+                              href={s.configHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-primary"
+                            >
+                              {s.configLabel} <ExternalIcon />
+                            </a>
+                          ) : (
+                            <Link href={s.configHref} className="btn-primary">
+                              {s.configLabel} <ArrowIcon />
+                            </Link>
+                          )}
                           <button
                             type="button"
                             className="btn-ghost"
@@ -306,6 +332,19 @@ function ArrowIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M5 12h14M13 6l6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function ExternalIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1h5"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
