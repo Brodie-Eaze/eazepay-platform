@@ -1,188 +1,449 @@
 {
   "base": "https://eazepay-platform-production.up.railway.app",
-  "capturedAt": "2026-05-25T07:25:44.350Z",
+  "capturedAt": "2026-05-25T07:59:12.429Z",
   "shots": [
     {
-      "phase": "01 · Landing",
+      "phase": "01",
       "actor": "operator",
-      "label": "MedPay · landing page",
+      "label": "MedPay landing",
       "url": "/landing/medpay",
-      "file": "01-medpay-landing-page.png",
+      "file": "01-medpay-landing.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/landing/medpay"
     },
     {
-      "phase": "01 · Landing",
+      "phase": "01",
       "actor": "operator",
-      "label": "TradePay · landing page",
+      "label": "TradePay landing",
       "url": "/landing/tradepay",
-      "file": "02-tradepay-landing-page.png",
+      "file": "02-tradepay-landing.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/landing/tradepay"
     },
     {
-      "phase": "01 · Landing",
+      "phase": "01",
       "actor": "operator",
-      "label": "CoachPay · landing page",
+      "label": "CoachPay landing",
       "url": "/landing/coachpay",
-      "file": "03-coachpay-landing-page.png",
+      "file": "03-coachpay-landing.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/landing/coachpay"
     },
     {
-      "phase": "01 · Landing",
+      "phase": "01",
       "actor": "operator",
-      "label": "MedPay · sales deck",
+      "label": "MedPay sales deck",
       "url": "/sales/medpay",
       "file": "04-medpay-sales-deck.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/sales/medpay"
     },
     {
-      "phase": "02 · Checkout",
+      "phase": "01",
       "actor": "operator",
-      "label": "Checkout · MedPay",
+      "label": "TradePay sales deck",
+      "url": "/sales/tradepay",
+      "file": "05-tradepay-sales-deck.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/sales/tradepay"
+    },
+    {
+      "phase": "01",
+      "actor": "operator",
+      "label": "CoachPay sales deck",
+      "url": "/sales/coachpay",
+      "file": "06-coachpay-sales-deck.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/sales/coachpay"
+    },
+    {
+      "phase": "02",
+      "actor": "operator",
+      "label": "Checkout · $5k tier",
+      "url": "/medpay/checkout?plan=5k",
+      "file": "07-checkout-5k-tier.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/medpay/checkout?plan=5k"
+    },
+    {
+      "phase": "02",
+      "actor": "operator",
+      "label": "Checkout · $10k tier",
       "url": "/medpay/checkout?plan=10k",
-      "file": "05-checkout-medpay.png",
+      "file": "08-checkout-10k-tier.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/medpay/checkout?plan=10k"
     },
     {
-      "phase": "02 · Checkout",
+      "phase": "02",
       "actor": "operator",
-      "label": "Welcome",
+      "label": "Checkout · $10k + guarantee",
+      "url": "/medpay/checkout?plan=10k-guarantee",
+      "file": "09-checkout-10k-guarantee.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/medpay/checkout?plan=10k-guarantee"
+    },
+    {
+      "phase": "02",
+      "actor": "operator",
+      "label": "Welcome / success",
       "url": "/welcome/medpay",
-      "file": "06-welcome.png",
+      "file": "10-welcome-success.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/welcome/medpay"
     },
     {
-      "phase": "03 · Onboarding",
+      "phase": "03",
       "actor": "operator",
       "label": "Onboarding hub",
       "url": "/medpay/onboarding",
-      "file": "07-onboarding-hub.png",
+      "file": "11-onboarding-hub.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/medpay/onboarding"
     },
     {
-      "phase": "03 · Onboarding",
+      "phase": "03",
       "actor": "operator",
-      "label": "HighSale + Pixie · smart form + routing",
+      "label": "Partner portal · signup config",
+      "url": "/medpay/signup",
+      "file": "12-partner-portal-signup-config.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/medpay/signup"
+    },
+    {
+      "phase": "03",
+      "actor": "operator",
+      "label": "HighSale + Pixie · external",
       "url": "https://highsale.com/",
       "kind": "integration",
-      "file": "08-highsale-pixie-smart-form-routing.png",
+      "file": "13-highsale-pixie-external.png",
       "status": "ok",
       "finalUrl": "https://highsale.com/"
     },
     {
-      "phase": "03 · Onboarding",
+      "phase": "03",
       "actor": "operator",
-      "label": "Lender marketplace · setup",
+      "label": "Lender marketplace setup",
       "url": "/medpay/onboarding/lender-marketplace",
-      "file": "09-lender-marketplace-setup.png",
+      "file": "14-lender-marketplace-setup.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/medpay/onboarding/lender-marketplace"
     },
     {
-      "phase": "03 · Onboarding",
+      "phase": "03",
       "actor": "operator",
-      "label": "MyCamp · payment processor",
+      "label": "MyCamp processor · external",
       "url": "https://micamp.com/",
       "kind": "integration",
-      "file": "10-mycamp-payment-processor.png",
+      "file": "15-mycamp-processor-external.png",
       "status": "ok",
       "finalUrl": "https://www.micamp.com/"
     },
     {
-      "phase": "04 · Partner Portal",
+      "phase": "04",
       "actor": "operator",
-      "label": "Portal home",
+      "label": "Portal · home dashboard",
       "url": "/v/medpay",
-      "file": "11-portal-home.png",
+      "file": "16-portal-home-dashboard.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay"
     },
     {
-      "phase": "04 · Partner Portal",
+      "phase": "04",
       "actor": "operator",
-      "label": "Send link · application to client",
+      "label": "Portal · send link to client",
       "url": "/v/medpay/send-link",
-      "file": "12-send-link-application-to-client.png",
+      "file": "17-portal-send-link-to-client.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/send-link"
     },
     {
-      "phase": "05 · Consumer applies",
+      "phase": "04",
+      "actor": "operator",
+      "label": "Portal · submit application",
+      "url": "/v/medpay/submit",
+      "file": "18-portal-submit-application.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/submit"
+    },
+    {
+      "phase": "04",
+      "actor": "operator",
+      "label": "Portal · team management",
+      "url": "/v/medpay/team",
+      "file": "19-portal-team-management.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/team"
+    },
+    {
+      "phase": "04",
+      "actor": "operator",
+      "label": "Portal · API keys",
+      "url": "/v/medpay/api-keys",
+      "file": "20-portal-api-keys.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/api-keys"
+    },
+    {
+      "phase": "04",
+      "actor": "operator",
+      "label": "Portal · settings",
+      "url": "/v/medpay/settings",
+      "file": "21-portal-settings.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/settings"
+    },
+    {
+      "phase": "05",
       "actor": "consumer",
-      "label": "Branded apply / intake form",
+      "label": "Client intake · Pixie smart form",
       "url": "/apply/medpay",
-      "file": "13-branded-apply-intake-form.png",
+      "file": "22-client-intake-pixie-smart-form.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/apply/medpay"
     },
     {
-      "phase": "06 · Offers · real-time",
+      "phase": "06",
+      "actor": "eazepay",
+      "label": "Lenders panel · admin view",
+      "url": "/lenders",
+      "file": "23-lenders-panel-admin-view.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/lenders"
+    },
+    {
+      "phase": "06",
+      "actor": "eazepay",
+      "label": "Marketplaces panel · admin",
+      "url": "/marketplaces",
+      "file": "24-marketplaces-panel-admin.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/lender-marketplace"
+    },
+    {
+      "phase": "06",
+      "actor": "eazepay",
+      "label": "Lender marketplace · public dev hub",
+      "url": "/lender-marketplace",
+      "file": "25-lender-marketplace-public-dev-hub.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/lender-marketplace"
+    },
+    {
+      "phase": "07",
       "actor": "consumer",
       "label": "Client sees ranked offers",
       "url": "/apply/medpay#offers",
-      "file": "14-client-sees-ranked-offers.png",
+      "file": "26-client-sees-ranked-offers.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/apply/medpay#offers"
     },
     {
-      "phase": "06 · Offers · real-time",
+      "phase": "07",
       "actor": "operator",
-      "label": "Applications list · operator view",
+      "label": "Portal · applications list",
       "url": "/v/medpay/applications",
-      "file": "15-applications-list-operator-view.png",
+      "file": "27-portal-applications-list.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/applications"
     },
     {
-      "phase": "06 · Offers · real-time",
+      "phase": "07",
       "actor": "eazepay",
-      "label": "Command Centre · applications",
+      "label": "Command Centre · all applications",
+      "url": "/applications",
+      "file": "28-command-centre-all-applications.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/applications"
+    },
+    {
+      "phase": "07",
+      "actor": "eazepay",
+      "label": "Admin · marketplace dashboard",
       "url": "/admin/marketplace",
-      "file": "16-command-centre-applications.png",
+      "file": "29-admin-marketplace-dashboard.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/admin/marketplace"
     },
     {
-      "phase": "07 · Outcome",
+      "phase": "08",
       "actor": "operator",
       "label": "Application detail · live status",
       "url": "/v/medpay/applications/demo",
-      "file": "17-application-detail-live-status.png",
+      "file": "30-application-detail-live-status.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/applications/demo"
     },
     {
-      "phase": "07 · Outcome",
+      "phase": "08",
+      "actor": "eazepay",
+      "label": "Webhooks · inbound from lenders",
+      "url": "/webhooks",
+      "file": "31-webhooks-inbound-from-lenders.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/webhooks"
+    },
+    {
+      "phase": "08",
+      "actor": "eazepay",
+      "label": "Events log · audit trail",
+      "url": "/events",
+      "file": "32-events-log-audit-trail.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/events"
+    },
+    {
+      "phase": "08",
+      "actor": "eazepay",
+      "label": "Dead-letter queue",
+      "url": "/dead-letter",
+      "file": "33-dead-letter-queue.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/dead-letter"
+    },
+    {
+      "phase": "09",
       "actor": "operator",
-      "label": "Settlements · payouts to operator bank",
+      "label": "Portal · billing",
+      "url": "/v/medpay/billing",
+      "file": "34-portal-billing.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/billing"
+    },
+    {
+      "phase": "09",
+      "actor": "operator",
+      "label": "Portal · settlements (payouts)",
       "url": "/v/medpay/settlements",
-      "file": "18-settlements-payouts-to-operator-bank.png",
+      "file": "35-portal-settlements-payouts.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/applications"
     },
     {
-      "phase": "07 · Outcome",
+      "phase": "09",
       "actor": "operator",
-      "label": "Insights · pipeline + funded $",
+      "label": "Portal · insights / pipeline",
       "url": "/v/medpay/insights",
-      "file": "19-insights-pipeline-funded.png",
+      "file": "36-portal-insights-pipeline.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/v/medpay/insights"
     },
     {
-      "phase": "07 · Outcome",
+      "phase": "09",
+      "actor": "eazepay",
+      "label": "Admin · invoices",
+      "url": "/invoices",
+      "file": "37-admin-invoices.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/invoices"
+    },
+    {
+      "phase": "09",
+      "actor": "eazepay",
+      "label": "Admin · payouts",
+      "url": "/payouts",
+      "file": "38-admin-payouts.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/invoices"
+    },
+    {
+      "phase": "09",
+      "actor": "eazepay",
+      "label": "Admin · settlements",
+      "url": "/settlements",
+      "file": "39-admin-settlements.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/settlements"
+    },
+    {
+      "phase": "09",
+      "actor": "eazepay",
+      "label": "Admin · reports",
+      "url": "/reports",
+      "file": "40-admin-reports.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/reports"
+    },
+    {
+      "phase": "10",
       "actor": "eazepay",
       "label": "Command Centre · control panel",
       "url": "/control-panel",
-      "file": "20-command-centre-control-panel.png",
+      "file": "41-command-centre-control-panel.png",
       "status": "ok",
       "finalUrl": "https://eazepay-platform-production.up.railway.app/control-panel"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Partners list",
+      "url": "/partners",
+      "file": "42-partners-list.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/partners"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Approvals queue",
+      "url": "/approvals",
+      "file": "43-approvals-queue.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/onboarding-pipeline"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Activity feed",
+      "url": "/activity",
+      "file": "44-activity-feed.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/activity"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Audit log",
+      "url": "/audit",
+      "file": "45-audit-log.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/audit"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Queues · async ops",
+      "url": "/queues",
+      "file": "46-queues-async-ops.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/queues"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Insights · platform-wide",
+      "url": "/insights",
+      "file": "47-insights-platform-wide.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/insights"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Security",
+      "url": "/security",
+      "file": "48-security.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/security"
+    },
+    {
+      "phase": "10",
+      "actor": "eazepay",
+      "label": "Sandbox · API playground",
+      "url": "/sandbox",
+      "file": "49-sandbox-api-playground.png",
+      "status": "ok",
+      "finalUrl": "https://eazepay-platform-production.up.railway.app/sandbox"
     }
   ]
 }
