@@ -1,0 +1,30 @@
+# Railway service configuration for the standalone EazePay Platform
+# Overview app — the end-to-end engineering walkthrough.
+#
+# Separate Railway service from the partner-portal. Only serves the
+# root route (/), no auth, public marketing-style page meant to be
+# shared with engineers, partners, investors.
+#
+# Wire-up steps (one-time, takes <2 min in Railway dashboard):
+#   1. Go to Railway dashboard → eazepay-platform project → New Service
+#   2. Deploy from GitHub repo → select Brodie-Eaze/eazepay-platform
+#   3. In Settings → Build → Config Path, set: railway.platform-overview.toml
+#   4. (Optional) Settings → Networking → Generate Domain
+#      Railway gives you e.g. eazepay-overview-production.up.railway.app
+#      OR Add a Custom Domain like flow.eazepay.com → CNAME to Railway
+#   5. Deploy. Railway sets $PORT; the Next.js standalone server
+#      binds 0.0.0.0:$PORT.
+#
+# No env vars required — the page is fully static once built. The
+# screenshots are baked into the image at /apps/platform-overview/public.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.platform-overview"
+
+[deploy]
+startCommand = "node apps/platform-overview/server.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+healthcheckPath = "/"
+healthcheckTimeout = 30

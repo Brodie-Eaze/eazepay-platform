@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1.6
+#
+# Platform Overview — standalone production image for Railway.
+#
+# Mirrors the ez-check Dockerfile shape (deps → builder → runner,
+# Next.js standalone output, ~150MB final image) but isolated to the
+# @eazepay/platform-overview workspace package.
+
+# ─── 1. deps ──────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
+WORKDIR /repo
+
+RUN apk add --no-cache libc6-compat \
+  && corepack enable \
+  && corepack prepare pnpm@9.12.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/platform-overview/package.json apps/platform-overview/
+
+RUN pnpm install --frozen-lockfile --filter=@eazepay/platform-overview...
+
+# ─── 2. builder ───────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /repo
+
+RUN apk add --no-cache libc6-compat \
+  && corepack enable \
+  && corepack prepare pnpm@9.12.0 --activate
+
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/platform-overview/node_modules ./apps/platform-overview/node_modules
+COPY tsconfig.base.json ./
+COPY apps/platform-overview ./apps/platform-overview
+
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm --filter=@eazepay/platform-overview build
+
+# ─── 3. runner ────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /repo
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/platform-overview/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/platform-overview/.next/static ./apps/platform-overview/.next/static
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/platform-overview/public ./apps/platform-overview/public
+
+USER nextjs
+EXPOSE 3000
+
+# server.js lives at apps/platform-overview/server.js inside the standalone
+# bundle (trace root is the monorepo root via next.config.mjs).
+CMD ["node", "apps/platform-overview/server.js"]
