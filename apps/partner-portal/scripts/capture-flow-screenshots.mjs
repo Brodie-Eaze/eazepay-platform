@@ -1,27 +1,9 @@
 /**
  * capture-flow-screenshots.mjs — captures every screen across the
- * end-to-end EazePay customer journey for the /platform/flow gallery.
+ * full EazePay platform for the /platform/flow engineering walkthrough.
  *
- * Maps 1:1 to the journey the operator + consumer take:
- *   1. Landing (per brand)
- *   2. Sales deck (per brand)
- *   3. Checkout (per brand)
- *   4. Welcome
- *   5. Onboarding hub
- *   6. Configure HighSale + Pixie (smart form / routing)
- *   7. Configure Lender Marketplace
- *   8. Configure MyCamp processor
- *   9. Partner Portal home
- *  10. Send Link (operator sends app to client)
- *  11. Client intake form
- *  12. Real-time offers landing page
- *  13. Applications list (operator view)
- *  14. Application detail (live status + outcomes)
- *  15. Command Centre (EazePay admin / marketplace)
- *
- * Auth-gated routes are still captured — they redirect to /sign-in and
- * the gallery labels them as "logged-in view (sign-in shown)" so the
- * journey is visible end-to-end even before the first real auth.
+ * Maps to the operator + consumer journey end-to-end and EVERY admin
+ * + workspace surface engineers need to understand. ~50 screens.
  */
 import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -32,47 +14,75 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = resolve(__dirname, '..', 'public', 'flow-screenshots');
 const BASE = process.env.BASE_URL ?? 'https://eazepay-platform-production.up.railway.app';
 
-/**
- * The full operator + consumer journey, in the order the gallery
- * should display. Phase numbers match the user's spec. Tags:
- *  - actor: 'operator' | 'consumer' | 'eazepay'
- *  - kind: 'page' | 'integration' (integration = external SaaS we
- *    only link to, no screenshot)
- */
 const FLOW = [
-  /* ───── PHASE 1 · OPERATOR DISCOVERS BRAND ───── */
-  { phase: '01 · Landing', actor: 'operator', label: 'MedPay · landing page', url: '/landing/medpay' },
-  { phase: '01 · Landing', actor: 'operator', label: 'TradePay · landing page', url: '/landing/tradepay' },
-  { phase: '01 · Landing', actor: 'operator', label: 'CoachPay · landing page', url: '/landing/coachpay' },
-  { phase: '01 · Landing', actor: 'operator', label: 'MedPay · sales deck', url: '/sales/medpay' },
+  /* ───── PHASE 1 · DISCOVER · per-brand entry ───── */
+  { phase: '01', actor: 'operator', label: 'MedPay landing', url: '/landing/medpay' },
+  { phase: '01', actor: 'operator', label: 'TradePay landing', url: '/landing/tradepay' },
+  { phase: '01', actor: 'operator', label: 'CoachPay landing', url: '/landing/coachpay' },
+  { phase: '01', actor: 'operator', label: 'MedPay sales deck', url: '/sales/medpay' },
+  { phase: '01', actor: 'operator', label: 'TradePay sales deck', url: '/sales/tradepay' },
+  { phase: '01', actor: 'operator', label: 'CoachPay sales deck', url: '/sales/coachpay' },
 
-  /* ───── PHASE 2 · OPERATOR CHECKS OUT ───── */
-  { phase: '02 · Checkout', actor: 'operator', label: 'Checkout · MedPay', url: '/medpay/checkout?plan=10k' },
-  { phase: '02 · Checkout', actor: 'operator', label: 'Welcome', url: '/welcome/medpay' },
+  /* ───── PHASE 2 · CHECKOUT · plan-aware ───── */
+  { phase: '02', actor: 'operator', label: 'Checkout · $5k tier', url: '/medpay/checkout?plan=5k' },
+  { phase: '02', actor: 'operator', label: 'Checkout · $10k tier', url: '/medpay/checkout?plan=10k' },
+  { phase: '02', actor: 'operator', label: 'Checkout · $10k + guarantee', url: '/medpay/checkout?plan=10k-guarantee' },
+  { phase: '02', actor: 'operator', label: 'Welcome / success', url: '/welcome/medpay' },
 
-  /* ───── PHASE 3 · ONBOARDING (CONFIGURE THE 4 MODULES) ───── */
-  { phase: '03 · Onboarding', actor: 'operator', label: 'Onboarding hub', url: '/medpay/onboarding' },
-  { phase: '03 · Onboarding', actor: 'operator', label: 'HighSale + Pixie · smart form + routing', url: 'https://highsale.com/', kind: 'integration' },
-  { phase: '03 · Onboarding', actor: 'operator', label: 'Lender marketplace · setup', url: '/medpay/onboarding/lender-marketplace' },
-  { phase: '03 · Onboarding', actor: 'operator', label: 'MyCamp · payment processor', url: 'https://micamp.com/', kind: 'integration' },
+  /* ───── PHASE 3 · ONBOARDING · configure 4 modules ───── */
+  { phase: '03', actor: 'operator', label: 'Onboarding hub', url: '/medpay/onboarding' },
+  { phase: '03', actor: 'operator', label: 'Partner portal · signup config', url: '/medpay/signup' },
+  { phase: '03', actor: 'operator', label: 'HighSale + Pixie · external', url: 'https://highsale.com/', kind: 'integration' },
+  { phase: '03', actor: 'operator', label: 'Lender marketplace setup', url: '/medpay/onboarding/lender-marketplace' },
+  { phase: '03', actor: 'operator', label: 'MyCamp processor · external', url: 'https://micamp.com/', kind: 'integration' },
 
-  /* ───── PHASE 4 · OPERATOR IN PARTNER PORTAL ───── */
-  { phase: '04 · Partner Portal', actor: 'operator', label: 'Portal home', url: '/v/medpay' },
-  { phase: '04 · Partner Portal', actor: 'operator', label: 'Send link · application to client', url: '/v/medpay/send-link' },
+  /* ───── PHASE 4 · PARTNER PORTAL ───── */
+  { phase: '04', actor: 'operator', label: 'Portal · home dashboard', url: '/v/medpay' },
+  { phase: '04', actor: 'operator', label: 'Portal · send link to client', url: '/v/medpay/send-link' },
+  { phase: '04', actor: 'operator', label: 'Portal · submit application', url: '/v/medpay/submit' },
+  { phase: '04', actor: 'operator', label: 'Portal · team management', url: '/v/medpay/team' },
+  { phase: '04', actor: 'operator', label: 'Portal · API keys', url: '/v/medpay/api-keys' },
+  { phase: '04', actor: 'operator', label: 'Portal · settings', url: '/v/medpay/settings' },
 
-  /* ───── PHASE 5 · CONSUMER APPLIES ───── */
-  { phase: '05 · Consumer applies', actor: 'consumer', label: 'Branded apply / intake form', url: '/apply/medpay' },
+  /* ───── PHASE 5 · CLIENT INTAKE (Pixie smart form + HighSale API) ─── */
+  { phase: '05', actor: 'consumer', label: 'Client intake · Pixie smart form', url: '/apply/medpay' },
 
-  /* ───── PHASE 6 · OFFERS LAND (real-time) ───── */
-  { phase: '06 · Offers · real-time', actor: 'consumer', label: 'Client sees ranked offers', url: '/apply/medpay#offers' },
-  { phase: '06 · Offers · real-time', actor: 'operator', label: 'Applications list · operator view', url: '/v/medpay/applications' },
-  { phase: '06 · Offers · real-time', actor: 'eazepay', label: 'Command Centre · applications', url: '/admin/marketplace' },
+  /* ───── PHASE 6 · DECISION ENGINE + LENDER MARKETPLACE ───── */
+  { phase: '06', actor: 'eazepay', label: 'Lenders panel · admin view', url: '/lenders' },
+  { phase: '06', actor: 'eazepay', label: 'Marketplaces panel · admin', url: '/marketplaces' },
+  { phase: '06', actor: 'eazepay', label: 'Lender marketplace · public dev hub', url: '/lender-marketplace' },
 
-  /* ───── PHASE 7 · OUTCOME (approved / settled / declined) ───── */
-  { phase: '07 · Outcome', actor: 'operator', label: 'Application detail · live status', url: '/v/medpay/applications/demo' },
-  { phase: '07 · Outcome', actor: 'operator', label: 'Settlements · payouts to operator bank', url: '/v/medpay/settlements' },
-  { phase: '07 · Outcome', actor: 'operator', label: 'Insights · pipeline + funded $', url: '/v/medpay/insights' },
-  { phase: '07 · Outcome', actor: 'eazepay', label: 'Command Centre · control panel', url: '/control-panel' },
+  /* ───── PHASE 7 · OFFERS LAND · 3 places simultaneously ───── */
+  { phase: '07', actor: 'consumer', label: 'Client sees ranked offers', url: '/apply/medpay#offers' },
+  { phase: '07', actor: 'operator', label: 'Portal · applications list', url: '/v/medpay/applications' },
+  { phase: '07', actor: 'eazepay', label: 'Command Centre · all applications', url: '/applications' },
+  { phase: '07', actor: 'eazepay', label: 'Admin · marketplace dashboard', url: '/admin/marketplace' },
+
+  /* ───── PHASE 8 · UNDERWRITING + OUTCOME (webhook back) ───── */
+  { phase: '08', actor: 'operator', label: 'Application detail · live status', url: '/v/medpay/applications/demo' },
+  { phase: '08', actor: 'eazepay', label: 'Webhooks · inbound from lenders', url: '/webhooks' },
+  { phase: '08', actor: 'eazepay', label: 'Events log · audit trail', url: '/events' },
+  { phase: '08', actor: 'eazepay', label: 'Dead-letter queue', url: '/dead-letter' },
+
+  /* ───── PHASE 9 · MONEY + REPORTING ───── */
+  { phase: '09', actor: 'operator', label: 'Portal · billing', url: '/v/medpay/billing' },
+  { phase: '09', actor: 'operator', label: 'Portal · settlements (payouts)', url: '/v/medpay/settlements' },
+  { phase: '09', actor: 'operator', label: 'Portal · insights / pipeline', url: '/v/medpay/insights' },
+  { phase: '09', actor: 'eazepay', label: 'Admin · invoices', url: '/invoices' },
+  { phase: '09', actor: 'eazepay', label: 'Admin · payouts', url: '/payouts' },
+  { phase: '09', actor: 'eazepay', label: 'Admin · settlements', url: '/settlements' },
+  { phase: '09', actor: 'eazepay', label: 'Admin · reports', url: '/reports' },
+
+  /* ───── PHASE 10 · OPS / OBSERVABILITY ───── */
+  { phase: '10', actor: 'eazepay', label: 'Command Centre · control panel', url: '/control-panel' },
+  { phase: '10', actor: 'eazepay', label: 'Partners list', url: '/partners' },
+  { phase: '10', actor: 'eazepay', label: 'Approvals queue', url: '/approvals' },
+  { phase: '10', actor: 'eazepay', label: 'Activity feed', url: '/activity' },
+  { phase: '10', actor: 'eazepay', label: 'Audit log', url: '/audit' },
+  { phase: '10', actor: 'eazepay', label: 'Queues · async ops', url: '/queues' },
+  { phase: '10', actor: 'eazepay', label: 'Insights · platform-wide', url: '/insights' },
+  { phase: '10', actor: 'eazepay', label: 'Security', url: '/security' },
+  { phase: '10', actor: 'eazepay', label: 'Sandbox · API playground', url: '/sandbox' },
 ];
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -87,11 +97,6 @@ async function main() {
   });
   const page = await ctx.newPage();
 
-  /* ── master demo bootstrap ─────────────────────────────────────────
-   * Hit /api/auth/demo with preset=master so the auth-gated workspace
-   * + admin pages render their real UI instead of redirecting to
-   * /sign-in. Requires DEMO_MASTER_ENABLED=true in the env, which is
-   * already set on production. */
   process.stdout.write('  bootstrapping master demo cookie ... ');
   const bootstrap = await ctx.request.post(`${BASE}/api/auth/demo`, {
     headers: { origin: BASE, referer: `${BASE}/` },
@@ -117,7 +122,6 @@ async function main() {
 
     try {
       await page.goto(fullUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
-      // give animations a beat to settle
       await page.waitForTimeout(1800);
       finalUrl = page.url();
       if (finalUrl.includes('/sign-in')) status = 'redirected-to-signin';
@@ -128,12 +132,7 @@ async function main() {
       process.stdout.write(`${status}\n`);
     }
 
-    manifest.push({
-      ...entry,
-      file: fname,
-      status,
-      finalUrl,
-    });
+    manifest.push({ ...entry, file: fname, status, finalUrl });
   }
 
   await writeFile(
