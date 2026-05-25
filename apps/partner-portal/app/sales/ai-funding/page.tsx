@@ -27,7 +27,7 @@ interface Slide {
  * Transformation → Verticals (Healthcare, Construction/Solar/Home, Coaching/Pro) →
  * Trust → Pricing → Onboarding → Big finale CTA. */
 const SLIDES_RAW: Slide[] = [
-  /* 01 — WHAT IS MEDPAY (high-level product overview, comes right
+  /* 01 — WHAT IS AI FUNDING (high-level product overview, comes right
      after the brand title slide) */
   {
     n: '01',
@@ -189,7 +189,7 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 04 — WHAT MEDPAY IS */
+  /* 04 — WHAT AI FUNDING IS */
   {
     n: '04',
     title: 'What AI Funding is',
@@ -1145,6 +1145,14 @@ const SLIDES_RAW: Slide[] = [
     title: 'Trusted by 2,000+ businesses',
     build: () => <TrustedBy />,
   },
+
+  /* 33 — APEX RESULT CONSOLE (what the Pre-Approval Agent actually
+     returns for every lead — concrete artefact to show buyers) */
+  {
+    n: '33',
+    title: 'APEX · Pre-approval result',
+    build: () => <ApexOutput />,
+  },
 ];
 
 /** Narrative ordering of SLIDES_RAW into the final 30-slide rep-led
@@ -1166,6 +1174,7 @@ const NARRATIVE_ORDER = [
   27, // · 5 agents · one platform
   10, // · Buyer journey overview (4-panel storyboard)
   4, //  · Stage 1: APEX soft-pull pre-approval
+  32, // · Stage 1 · APEX result console (what comes back per lead)
   18, // · Stage 2: FORGE smart forms + NEXUS multi-stage routing
   6, //  · Stage 3: Lender marketplace
   7, //  · Stage 4: Best offer wins
@@ -2272,6 +2281,165 @@ function SmartRoutingViz(): JSX.Element {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** APEX result console — concrete artefact slide. Shows exactly what
+ *  the Pre-Approval Agent returns for every lead within ~10 seconds of
+ *  soft-pull. Three columns: Financial profile · Verdicts · Funding
+ *  estimates. Designed to look like a real product UI, not a
+ *  brochure, because reps drop this slide on prospects who ask
+ *  "okay, but what do I actually see?". */
+function ApexOutput(): JSX.Element {
+  const totalEstimate = 15700 + 10400 + 2000; // 28,100
+  const fmt = (n: number) => `$${n.toLocaleString('en-US')}`;
+  return (
+    <div className="sld-stack">
+      <Reveal>
+        <div className="sld-eyebrow">
+          <span className="sld-eyebrow-dot" />
+          APEX · Pre-approval result
+        </div>
+      </Reveal>
+      <Reveal delay={120}>
+        <h2 className="sld-h2">
+          <span className="grad-blue-deep">This is what comes back</span>{' '}
+          <span className="grad-blue">for every single lead.</span>
+        </h2>
+      </Reveal>
+      <Reveal delay={240}>
+        <p className="sld-sub">
+          Soft-pull · FCRA-compliant · zero credit impact. APEX returns a complete pre-approval
+          profile in under 10 seconds and writes it into your CRM. Your reps walk into the call
+          already knowing the credit band, the available headroom, the qualifying programs, and the
+          funding ceiling per program.
+        </p>
+      </Reveal>
+      <Reveal delay={360}>
+        <div className="sld-apex">
+          <div className="sld-apex-head">
+            <div className="sld-apex-head-l">
+              <span className="sld-apex-glyph" aria-hidden>
+                <svg viewBox="0 0 24 24">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                  <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.25" />
+                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                </svg>
+              </span>
+              <div>
+                <div className="sld-apex-title">APEX · Pre-approval result</div>
+                <div className="sld-apex-buyer">
+                  <span className="sld-apex-buyer-k">buyer_id</span>
+                  <span className="sld-apex-buyer-v">ezc_8f7a2c</span>
+                  <span className="sld-apex-buyer-sep">·</span>
+                  <span className="sld-apex-buyer-k">latency</span>
+                  <span className="sld-apex-buyer-v">8.3s</span>
+                </div>
+              </div>
+            </div>
+            <div className="sld-apex-status">
+              <span className="sld-apex-status-dot" />
+              APPROVED
+            </div>
+          </div>
+
+          <div className="sld-apex-grid">
+            <div className="sld-apex-col">
+              <div className="sld-apex-col-h">Financial profile</div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Income</span>
+                <span className="sld-apex-v">{fmt(54999)}</span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Available credit</span>
+                <span className="sld-apex-v">{fmt(34849)}</span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Credit score</span>
+                <span className="sld-apex-v sld-apex-v-strong">772</span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">DTI</span>
+                <span className="sld-apex-v">1%</span>
+              </div>
+            </div>
+
+            <div className="sld-apex-col">
+              <div className="sld-apex-col-h">Pre-qualification</div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Merchant Direct</span>
+                <span className="sld-apex-pill sld-apex-pill-yes">
+                  <span className="sld-apex-pill-dot" /> Yes
+                </span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Consumer Direct</span>
+                <span className="sld-apex-pill sld-apex-pill-yes">
+                  <span className="sld-apex-pill-dot" /> Yes
+                </span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">BNPL</span>
+                <span className="sld-apex-pill sld-apex-pill-yes">
+                  <span className="sld-apex-pill-dot" /> Yes
+                </span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Disqualify reason</span>
+                <span className="sld-apex-v sld-apex-v-muted">N/A</span>
+              </div>
+            </div>
+
+            <div className="sld-apex-col">
+              <div className="sld-apex-col-h">Funding estimates</div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Merchant Direct</span>
+                <span className="sld-apex-v sld-apex-v-money">{fmt(15700)}</span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">Consumer Direct</span>
+                <span className="sld-apex-v sld-apex-v-money">{fmt(10400)}</span>
+              </div>
+              <div className="sld-apex-row">
+                <span className="sld-apex-k">BNPL</span>
+                <span className="sld-apex-v sld-apex-v-money">{fmt(2000)}</span>
+              </div>
+              <div className="sld-apex-row sld-apex-row-total">
+                <span className="sld-apex-k">Total potential</span>
+                <span className="sld-apex-v sld-apex-v-total">{fmt(totalEstimate)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="sld-apex-foot">
+            <span className="sld-apex-foot-dot" />
+            Returned to FORGE in 8.3s · streamed to your CRM · logged for audit
+          </div>
+        </div>
+      </Reveal>
+      <Reveal delay={480}>
+        <div className="sld-mini-stats">
+          <MiniStat v="< 10s" k="Decision time" />
+          <MiniStat v="0" k="Credit impact" />
+          <MiniStat v="3 programs" k="Quoted in parallel" />
+          <MiniStat v="100%" k="Of inbound leads" />
+        </div>
+      </Reveal>
+      <Reveal delay={600}>
+        <p className="sld-takeaway">
+          For the rep: no more guessing. The screen above is in your CRM before the buyer hangs up
+          the form. You open the call with the right program and the right number, not a discovery
+          question.
+        </p>
+      </Reveal>
     </div>
   );
 }
@@ -6947,5 +7115,213 @@ const CSS = `
   .sld-trust-grid { grid-template-columns: 1fr; }
   .sld-brand { display: none; }
   .sld-mp { transform: none; }
+}
+
+/* ===== APEX · Pre-approval result console (slide after Stage 1) =====
+ * Mocked as a real product UI: status bar, 3-column readout, footer.
+ * Mono numerals + monospaced spacing make it read as data, not copy. */
+.sld-apex {
+  position: relative;
+  margin: 28px 0 8px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.86) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 30px 60px -32px rgba(59, 130, 246, 0.35),
+    0 12px 28px -16px rgba(8, 18, 40, 0.55);
+  overflow: hidden;
+}
+.sld-apex::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
+    radial-gradient(80% 60% at 100% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 55%);
+}
+.sld-apex-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+.sld-apex-head-l {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.sld-apex-glyph {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(139, 92, 246, 0.22));
+  color: #c7d2fe;
+}
+.sld-apex-glyph svg { width: 20px; height: 20px; }
+.sld-apex-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+}
+.sld-apex-buyer {
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: rgba(148, 163, 184, 0.78);
+}
+.sld-apex-buyer-k {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  color: rgba(148, 163, 184, 0.55);
+}
+.sld-apex-buyer-v {
+  color: #cbd5e1;
+}
+.sld-apex-buyer-sep {
+  color: rgba(148, 163, 184, 0.4);
+}
+.sld-apex-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+}
+.sld-apex-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+  animation: apexPulse 2.4s ease-in-out infinite;
+}
+@keyframes apexPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.04); }
+}
+.sld-apex-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+.sld-apex-col {
+  padding: 18px 22px 22px;
+  border-right: 1px solid rgba(148, 163, 184, 0.10);
+}
+.sld-apex-col:last-child { border-right: 0; }
+.sld-apex-col-h {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(148, 163, 184, 0.7);
+  margin-bottom: 14px;
+}
+.sld-apex-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.10);
+}
+.sld-apex-row:last-child { border-bottom: 0; }
+.sld-apex-row-total {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(59, 130, 246, 0.32);
+  border-bottom: 0;
+}
+.sld-apex-k {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+.sld-apex-v {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+}
+.sld-apex-v-strong {
+  color: #93c5fd;
+  font-weight: 700;
+}
+.sld-apex-v-money {
+  color: #bfdbfe;
+  font-weight: 600;
+}
+.sld-apex-v-muted {
+  color: rgba(148, 163, 184, 0.55);
+}
+.sld-apex-v-total {
+  color: #ddd6fe;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+}
+.sld-apex-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.sld-apex-pill-yes {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+.sld-apex-pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+.sld-apex-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: rgba(148, 163, 184, 0.78);
+  border-top: 1px solid rgba(148, 163, 184, 0.10);
+  background: rgba(8, 15, 32, 0.4);
+}
+.sld-apex-foot-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+}
+@media (max-width: 980px) {
+  .sld-apex-grid { grid-template-columns: 1fr; }
+  .sld-apex-col { border-right: 0; border-bottom: 1px solid rgba(148, 163, 184, 0.10); }
+  .sld-apex-col:last-child { border-bottom: 0; }
+}
+@media (max-width: 640px) {
+  .sld-apex-head { flex-direction: column; align-items: flex-start; }
+  .sld-apex-status { align-self: flex-start; }
 }
 `;
