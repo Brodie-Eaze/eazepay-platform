@@ -24,6 +24,7 @@
 import {
   bigint,
   index,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -169,3 +170,57 @@ export const applicationEvents = pgTable(
 
 export type ApplicationEvent = typeof applicationEvents.$inferSelect;
 export type NewApplicationEvent = typeof applicationEvents.$inferInsert;
+
+/* ---------- offers ----------
+ *
+ * Every offer a lender returns for an application. The marketplace
+ * fans an application out to N lenders; each one POSTs back to
+ * `/api/v1/webhooks/lenders/<id>` with their decision. We persist
+ * one row per (lender, application) pair. The row is updated, not
+ * duplicated, when the same lender re-quotes after additional info
+ * lands (e.g. soft pull refresh) — the unique index enforces this.
+ *
+ * Indexing strategy:
+ *   offers (application_id, created_at DESC)   ← waterfall view per app
+ *   offers (lender_id, application_id) UNIQUE  ← idempotent upsert key
+ *
+ * Money columns are integer cents and APR is basis points (e.g. 1499
+ * = 14.99%) to keep all math integer-safe across the lifecycle.
+ */
+export const offers = pgTable(
+  'offers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    applicationId: uuid('application_id').notNull(),
+    lenderId: text('lender_id').notNull(),
+    /** Display name at write time so historical UI keeps rendering
+     * even if the lender catalogue entry is later renamed/removed. */
+    lenderName: text('lender_name'),
+    /** approved | counter | declined | ineligible */
+    decision: text('decision').notNull(),
+    amountCents: bigint('amount_cents', { mode: 'number' }),
+    aprBps: integer('apr_bps'),
+    termMonths: integer('term_months'),
+    monthlyPaymentCents: bigint('monthly_payment_cents', { mode: 'number' }),
+    /** Set when the consumer (or admin) selects this offer. NULL until then. */
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    /** Lender-provided expiry. After this, accept attempts are rejected. */
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    /** Free-form reason on decline / counter. Surfaced in the offers UI. */
+    declinedReason: text('declined_reason'),
+    /** Full raw webhook payload for audit + regulator replay (JSON-encoded). */
+    rawPayload: text('raw_payload'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    appCreatedIdx: index('offers_app_created_idx').on(t.applicationId, t.createdAt),
+    lenderAppUnique: uniqueIndex('offers_lender_application_unique').on(
+      t.lenderId,
+      t.applicationId,
+    ),
+  }),
+);
+
+export type Offer = typeof offers.$inferSelect;
+export type NewOffer = typeof offers.$inferInsert;
