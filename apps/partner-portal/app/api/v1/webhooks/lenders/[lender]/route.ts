@@ -15,6 +15,10 @@ import {
   publishApplicationEvent,
   type ApplicationLifecycleEvent,
 } from '../../../../../../lib/realtime';
+import {
+  notifyApplicationOutcome,
+  type OutcomeEventType,
+} from '../../../../../../lib/notify-application-outcome';
 
 /**
  * Inbound lender webhook — `POST /api/v1/webhooks/lenders/[lender]`.
@@ -176,6 +180,20 @@ export async function POST(req: NextRequest, ctx: { params: { lender: string } }
         eventType: event.event_type,
         lenderId: lender.id,
         applied: persistence.applied,
+      });
+    }
+    // Email + SMS the practice owner on key transitions. Whitelist is
+    // inside notifyApplicationOutcome so the webhook itself doesn't
+    // need to filter — quiet for application.quoted (high-volume),
+    // noisy for decisioned / bound / funded / defaulted / hardship.
+    const eventTypeStr = event.event_type as OutcomeEventType | undefined;
+    if (eventTypeStr) {
+      const evt = event as { decision?: string };
+      void notifyApplicationOutcome({
+        applicationId: persistence.applicationId,
+        eventType: eventTypeStr,
+        decision: evt.decision,
+        lenderName: lender.display_name,
       });
     }
   }

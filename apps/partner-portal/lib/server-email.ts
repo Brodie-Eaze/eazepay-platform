@@ -240,6 +240,73 @@ export async function sendPasswordResetEmail(input: {
   });
 }
 
+/**
+ * Application-outcome email. Fires on key lifecycle transitions
+ * (offers_available, approved, declined, funded). Inline-rendered
+ * because the body is short + the template doesn't live in
+ * @eazepay/service-email yet — when it does, swap to a render fn.
+ */
+export interface ApplicationOutcomeVars {
+  /** Practice display name — first line of greeting. */
+  practiceName: string;
+  /** Consumer first name + masked last initial — never the full surname. */
+  consumerLabel: string;
+  /** Plain-English status (e.g. "Approved", "Funded", "Offers ready"). */
+  statusLabel: string;
+  /** Optional money figure to show in the body (e.g. "$14,200"). */
+  amountLabel?: string;
+  /** Optional lender that drove the event (e.g. "Cherry"). */
+  lenderLabel?: string;
+  /** Deep link back into the partner portal application detail page. */
+  applicationUrl: string;
+}
+
+export async function sendApplicationOutcomeEmail(input: {
+  brand: SendableBrand;
+  to: string;
+  vars: ApplicationOutcomeVars;
+  /** Stable per (applicationId, eventType) so retries dedupe at Resend. */
+  idempotencyKey: string;
+}): Promise<SendBrandedEmailResult> {
+  const brand = resolveBrandContext(input.brand);
+  const { practiceName, consumerLabel, statusLabel, amountLabel, lenderLabel, applicationUrl } =
+    input.vars;
+  const subject = `${statusLabel} · ${consumerLabel}`;
+  const moneyLine = amountLabel
+    ? `<p style="margin:0 0 8px;font-size:15px;">Amount: <strong>${amountLabel}</strong></p>`
+    : '';
+  const lenderLine = lenderLabel
+    ? `<p style="margin:0 0 8px;font-size:15px;">Lender: <strong>${lenderLabel}</strong></p>`
+    : '';
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f6f8fa;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;color:#0a1a2f;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;border:1px solid rgba(14,124,102,0.16);">
+    <tr><td style="padding:28px 28px 8px;">
+      <p style="margin:0;font-size:12px;letter-spacing:0.18em;color:${brand.accentHex};text-transform:uppercase;font-weight:700;">${brand.brandName} · application update</p>
+      <h1 style="margin:8px 0 4px;font-size:24px;letter-spacing:-0.018em;">${statusLabel}</h1>
+      <p style="margin:0 0 18px;font-size:14px;color:#3a4a63;">Consumer: <strong>${consumerLabel}</strong></p>
+      ${moneyLine}
+      ${lenderLine}
+      <p style="margin:18px 0 22px;font-size:14px;line-height:1.55;color:#3a4a63;">Hi ${practiceName}, this application just transitioned. Open the partner portal to see the full lender waterfall + next steps.</p>
+      <a href="${applicationUrl}" style="display:inline-block;padding:11px 20px;background:${brand.accentHex};color:#fff;text-decoration:none;border-radius:999px;font-size:14px;font-weight:600;">Open in partner portal →</a>
+    </td></tr>
+    <tr><td style="padding:14px 28px 24px;font-size:11px;color:#6b7a91;border-top:1px solid #eee;">${brand.brandName} · NMLS #2456701 · This is a transactional notification triggered by your practice's ${brand.brandName} activity.</td></tr>
+  </table>
+  </body></html>`;
+  const text = `${statusLabel} · ${consumerLabel}
+${amountLabel ? `Amount: ${amountLabel}\n` : ''}${lenderLabel ? `Lender: ${lenderLabel}\n` : ''}
+Open: ${applicationUrl}
+
+${brand.brandName} · NMLS #2456701`;
+  return dispatchBrandedEmail({
+    brand: input.brand,
+    to: input.to,
+    subject,
+    html,
+    text,
+    idempotencyKey: input.idempotencyKey,
+  });
+}
+
 /** Test util — reset the mock dedup cache between specs. */
 export function _resetMockSeenKeys(): void {
   MOCK_SEEN_KEYS.clear();
