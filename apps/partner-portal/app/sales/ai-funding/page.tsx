@@ -3762,7 +3762,9 @@ export default function AIFundingSalesDeck(): JSX.Element {
 const CSS = `
 .sld-root {
   --af-blue: #3B82F6;
+  --af-blue-2: #60A5FA;
   --af-violet: #8B5CF6;
+  --af-violet-2: #A78BFA;
   --af-light: #EEF2FF;
   --af-deep: #0B1224;
   --af-ink: #0F172A;
