@@ -47,6 +47,7 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/invoices/confirm', // recipient confirm/dispute page — token IS the credential, no session needed
   '/accept', // team-invite accept landing (/accept/<brand>?token=...)
   '/sales', // sales-team pitch decks (sales reps share links with prospects)
+  '/platform', // public platform overview pages (/platform/flow gallery, etc.)
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
