@@ -130,9 +130,16 @@ interface OnboardingWizardProps {
   /** When set: pre-fill industry, hide Step 1, swap chrome to the brand
    *  palette + header. When unset: full 5-step generic EAZE form. */
   brand?: BrandSlug;
+  /** When true: skip the wizard's own header (caller is providing
+   *  chrome). Used by /medpay/signup which wraps the wizard in the
+   *  branded onboarding-hub chrome. */
+  hideHeader?: boolean;
 }
 
-export default function OnboardingWizard({ brand }: OnboardingWizardProps): JSX.Element {
+export default function OnboardingWizard({
+  brand,
+  hideHeader,
+}: OnboardingWizardProps): JSX.Element {
   const router = useRouter();
   const theme = brand ? BRAND_THEME[brand] : null;
   const stepOrder = useMemo(() => (brand ? BRANDED_STEPS : GENERIC_STEPS), [brand]);
@@ -197,8 +204,8 @@ export default function OnboardingWizard({ brand }: OnboardingWizardProps): JSX.
   const submitLabel = theme ? `Submit ${theme.name} application` : 'Submit application';
 
   return (
-    <main className={`min-h-screen ${chrome.surfaceTint}`}>
-      <WizardHeader theme={theme} brand={brand} />
+    <main className={hideHeader ? '' : `min-h-screen ${chrome.surfaceTint}`}>
+      {hideHeader ? null : <WizardHeader theme={theme} brand={brand} />}
 
       <div className="max-w-3xl mx-auto px-6 lg:px-10 py-10">
         <Breadcrumb stepOrder={stepOrder} stepIdx={stepIdx} accentBg={chrome.accentBg} />
