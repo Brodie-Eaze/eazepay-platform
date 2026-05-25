@@ -113,9 +113,9 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={360}>
           <div className="sld-stat-row">
             <CountStat to={38} suffix="%" k="Industry same-day close (no financing)" />
-            <CountStat to={1.4} decimals={1} prefix="$" suffix="M" k="Case acceptance lost / yr" />
+            <CountStat to={1.4} decimals={1} prefix="$" suffix="M" k="Revenue lost / yr" />
             <CountStat to={54} suffix="%" k="Inbound never pre-qualified" />
-            <CountStat label="2–4 wks" k="Consult → deposit" />
+            <CountStat label="2–4 wks" k="Lead → deposit" />
           </div>
         </Reveal>
         <Reveal delay={480}>
@@ -1142,7 +1142,7 @@ const SLIDES_RAW: Slide[] = [
   /* 32 — TRUSTED BY 1,000+ PRACTICES (enterprise social proof) */
   {
     n: '32',
-    title: 'Trusted by 1,000+ practices',
+    title: 'Trusted by 2,000+ businesses',
     build: () => <TrustedBy />,
   },
 ];
@@ -1155,7 +1155,7 @@ const NARRATIVE_ORDER = [
   25, // 02 · Welcome + agenda
   0, //  03 · What is AI Funding
   26, // 04 · Who is it for
-  31, // 05 · Trusted by 1,000+ practices (NEW v7)
+  31, // 05 · Trusted by 2,000+ businesses (NEW v7)
 
   // ACT 1 — Problem
   1, //  06 · The cost of doing nothing
@@ -1163,7 +1163,7 @@ const NARRATIVE_ORDER = [
 
   // ACT 2 — Solution (high level + agents + journey)
   3, //  · The 3 pillars
-  27, // · Six agents · one platform
+  27, // · 5 agents · one platform
   10, // · Buyer journey overview (4-panel storyboard)
   4, //  · Stage 1: APEX soft-pull pre-approval
   18, // · Stage 2: FORGE smart forms + NEXUS multi-stage routing
@@ -1720,7 +1720,7 @@ function VsTable(): JSX.Element {
       single: 'Soft pull with that lender',
       med: 'Soft pull across the marketplace',
     },
-    { k: 'Agent layer', single: 'None', med: 'Six autonomous agents' },
+    { k: 'Agent layer', single: 'None', med: '5 autonomous agents' },
     {
       k: 'Pixel attribution',
       single: 'On form-fill (junk signal)',
@@ -2533,8 +2533,10 @@ function WhoIsItFor(): JSX.Element {
   );
 }
 
-/** Six autonomous agents · one platform. 3+3 grid of agents with
- *  role, what-they-watch, and output. */
+/** Five autonomous agents · one platform. Grid of agents with
+ *  role, what-they-watch, and output. Compliance is an always-on
+ *  overlay, not a slot in this grid — covered separately by the
+ *  Security + compliance slide. */
 function SixAgents(): JSX.Element {
   // Each agent gets a unique geometric SVG glyph + a "version · LIVE"
   // tag so the grid reads like an ops console, not a static brochure.
@@ -2678,31 +2680,6 @@ function SixAgents(): JSX.Element {
         </svg>
       ),
     },
-    {
-      code: 'VEGA',
-      role: 'Compliance audit',
-      watches: 'Every consent + disclosure',
-      output: 'FCRA / ECOA / TILA trail',
-      version: 'v1.9',
-      glyph: (
-        <svg viewBox="0 0 40 40" aria-hidden>
-          <path
-            d="M20 4 L34 10 L34 22 Q34 30 20 36 Q6 30 6 22 L6 10 Z"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            fill="none"
-          />
-          <path
-            d="M14 20 L18 24 L26 16"
-            stroke="currentColor"
-            strokeWidth="2"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ),
-    },
   ];
   return (
     <div className="sld-stack">
@@ -2714,15 +2691,16 @@ function SixAgents(): JSX.Element {
       </Reveal>
       <Reveal delay={120}>
         <h2 className="sld-h2">
-          <span className="grad-blue-deep">Six autonomous agents.</span>{' '}
+          <span className="grad-blue-deep">5 autonomous agents.</span>{' '}
           <span className="grad-blue">One platform.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          AI Funding is a stack of six specialised agents working in parallel on every buyer session
-          &mdash; pre-approval, data + smart forms, lender routing, sales conversation, merchant
-          funding, and compliance audit. Every agent is named, observable, and logged.
+          AI Funding is a stack of five specialised agents working in parallel on every buyer
+          session &mdash; pre-approval, data + smart forms, lender routing, sales conversation, and
+          merchant funding. Every agent is named, observable, and logged. Compliance audit (FCRA /
+          ECOA / TILA) runs as an always-on overlay across the stack.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3011,7 +2989,7 @@ function ValueStack(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          AI Funding replaces a stack of six vendors that most practices duct-tape together.
+          AI Funding replaces a stack of six vendors that most operators duct-tape together.
           Here&apos;s everything included &mdash; and what you&apos;d typically pay if you bought it
           piecemeal.
         </p>
@@ -3054,7 +3032,7 @@ function ValueStack(): JSX.Element {
   );
 }
 
-/** Trusted by 1,000+ practices — enterprise social proof slide.
+/** Trusted by 2,000+ businesses — enterprise social proof slide.
  *  Goes right after "Who it's for" so the prospect knows AI Funding
  *  isn't a side project before we walk into the problem. */
 function TrustedBy(): JSX.Element {
@@ -3159,7 +3137,7 @@ function BigFinaleCTA(): JSX.Element {
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
           $10,000 to set up. $3 per smart-form lead. 4% of loans that actually settle. Live in up to
-          five business days. 1,000+ practices already running on AI Funding.
+          five business days. 2,000+ businesses already running on AI Funding.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3177,7 +3155,7 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#4755691 · FCRA · ECOA · TILA · 1,000+ practices · $10k setup · $3 / lead · 4%
+          NMLS&nbsp;#4755691 · FCRA · ECOA · TILA · 2,000+ businesses · $10k setup · $3 / lead · 4%
           settled
         </div>
       </Reveal>
@@ -5585,7 +5563,7 @@ const CSS = `
   font-size: 13px; color: var(--af-ink-2); line-height: 1.5;
 }
 
-/* ===== Six agents grid · 3x2 ops-console feel ===== */
+/* ===== 5 agents grid · ops-console feel ===== */
 .sld-agents-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -6245,7 +6223,7 @@ const CSS = `
   border: 1px dashed var(--af-line-strong);
 }
 
-/* ===== Trusted by 1,000+ practices ===== */
+/* ===== Trusted by 2,000+ businesses ===== */
 .sld-trust-hero {
   padding: 28px 24px;
   background:
