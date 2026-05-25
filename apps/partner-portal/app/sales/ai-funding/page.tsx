@@ -357,7 +357,12 @@ const SLIDES_RAW: Slide[] = [
           </p>
         </Reveal>
         <Reveal delay={360}>
-          <MarketplaceViz />
+          <div className="sld-mini-stats">
+            <MiniStat v="3 tiers" k="Fundable / Nurture / Filter" />
+            <MiniStat v="Real-time" k="Routing decision" />
+            <MiniStat v="Closer-calendar" k="Direct booking" />
+            <MiniStat v="0" k="Manual triage" />
+          </div>
         </Reveal>
       </div>
     ),
@@ -389,9 +394,6 @@ const SLIDES_RAW: Slide[] = [
           </p>
         </Reveal>
         <Reveal delay={360}>
-          <OfferStack />
-        </Reveal>
-        <Reveal delay={480}>
           <div className="sld-mini-stats">
             <MiniStat v={<AnimatedCounter to={3} />} k="Decision signals" />
             <MiniStat v="Pre-rep" k="Brief delivered" />
@@ -430,9 +432,6 @@ const SLIDES_RAW: Slide[] = [
           </p>
         </Reveal>
         <Reveal delay={360}>
-          <BankWire />
-        </Reveal>
-        <Reveal delay={480}>
           <div className="sld-mini-stats">
             <MiniStat v="Hours" k="Approval window" />
             <MiniStat v="Days" k="Funding window" />
@@ -1153,6 +1152,137 @@ const SLIDES_RAW: Slide[] = [
     title: 'APEX · Pre-approval result',
     build: () => <ApexOutput />,
   },
+
+  /* 34 — LENDER MARKETPLACE DEEP-DIVE (what NEXUS does to the lender
+     panel — parallel quotes, ranked cheapest-first) */
+  {
+    n: '34',
+    title: 'Lender marketplace',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · NEXUS · Marketplace
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">One application,</span>{' '}
+            <span className="grad-blue">every lender in parallel.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            NEXUS fires the buyer&apos;s profile across the full lender panel simultaneously. Quotes
+            return in seconds, ranked cheapest-first by total cost &mdash; not by lender commission.
+            The buyer sees the best price the marketplace can produce, not the best price one lender
+            felt like giving.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <MarketplaceViz />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat v="All lenders" k="Quoted in parallel" />
+            <MiniStat v="< 30s" k="Quotes return" />
+            <MiniStat v="Total cost" k="Ranking signal" />
+            <MiniStat v="No reseller" k="Skim" />
+          </div>
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 35 — BEST OFFER WINS (the offer stack the buyer actually picks) */
+  {
+    n: '35',
+    title: 'Best offer wins',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · The offer
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">Best offer wins.</span>{' '}
+            <span className="grad-blue">Buyer signs in the same session.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            Three ranked offers on one screen, sorted by total cost. The starred row is what buyers
+            actually pick 80% of the time. One tap to accept. E-signature on the same screen. They
+            are funded before the rep gets off the call.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <OfferStack />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat v={<AnimatedCounter to={3} />} k="Offers shown" />
+            <MiniStat v="One tap" k="To accept" />
+            <MiniStat v="E-SIGN" k="Legally binding" />
+            <MiniStat v="$0" k="Buyer pays today" />
+          </div>
+        </Reveal>
+      </div>
+    ),
+  },
+
+  /* 36 — MERCHANT-DIRECT FUNDING (the bank wire — lender → operator
+     direct, no marketplace intermediary skim) */
+  {
+    n: '36',
+    title: 'Merchant-direct funding',
+    build: () => (
+      <div className="sld-stack">
+        <Reveal>
+          <div className="sld-eyebrow">
+            <span className="sld-eyebrow-dot" />
+            How it works · VAULT · Disbursement
+          </div>
+        </Reveal>
+        <Reveal delay={120}>
+          <h2 className="sld-h2">
+            <span className="grad-blue-deep">Lender disburses</span>{' '}
+            <span className="grad-blue">direct to your business account.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={240}>
+          <p className="sld-sub">
+            No marketplace intermediary holding the funds. No reseller skim. The lender wires the
+            full amount straight to your bank account within 48 to 72 hours of the loan settling.
+            The lender carries the credit risk &mdash; no clawback on routine defaults.
+          </p>
+        </Reveal>
+        <Reveal delay={360}>
+          <BankWire />
+        </Reveal>
+        <Reveal delay={480}>
+          <div className="sld-mini-stats">
+            <MiniStat
+              v={
+                <span>
+                  <AnimatedCounter to={48} />–<AnimatedCounter to={72} delay={300} />
+                  hr
+                </span>
+              }
+              k="Wire-to-account"
+            />
+            <MiniStat v="No" k="Clawback on default" />
+            <MiniStat v="ACH" k="Disbursement rail" />
+            <MiniStat v="Daily" k="Reconciliation report" />
+          </div>
+        </Reveal>
+      </div>
+    ),
+  },
 ];
 
 /** Narrative ordering of SLIDES_RAW into the final 30-slide rep-led
@@ -1171,16 +1301,26 @@ const NARRATIVE_ORDER = [
 
   // ACT 2 — Solution (high level + agents + journey)
   3, //  · The 3 pillars
-  27, // · 5 agents · one platform
+  27, // · 5 agents · one platform (overview grid)
   10, // · Buyer journey overview (4-panel storyboard)
-  4, //  · Stage 1: APEX soft-pull pre-approval
-  32, // · Stage 1 · APEX result console (what comes back per lead)
-  18, // · Stage 2: FORGE smart forms + NEXUS multi-stage routing
-  6, //  · Stage 3: Lender marketplace
-  7, //  · Stage 4: Best offer wins
-  19, // · Stage 5: Smartphone continuity
-  8, //  · Stage 6: VAULT merchant-direct funding
-  28, // · Funded-event pixel attribution
+
+  // ACT 2a — Agent deep-dives (one slide per agent · brief copy + stats)
+  4, //  · Agent 1 · APEX Pre-Approval
+  32, // · APEX result console (the actual artefact)
+  5, //  · Agent 2 · FORGE Data
+  6, //  · Agent 3 · NEXUS Routing
+  7, //  · Agent 4 · CLOSE Sales
+  8, //  · Agent 5 · VAULT Funding
+
+  // ACT 2b — Platform mechanics (deep visualizations of how the
+  // marketplace, smart routing, offers, smartphone, and disbursement
+  // actually work end-to-end)
+  18, // · Smart routing — NEXUS (multi-stage funnel viz)
+  33, // · Lender marketplace (parallel quote viz)
+  34, // · Best offer wins (offer stack)
+  19, // · Smartphone continuity
+  35, // · Merchant-direct funding (bank wire)
+  28, // · BEACON pixel attribution
 
   // ACT 3 — Transformation
   9, //  18 · Without/With
