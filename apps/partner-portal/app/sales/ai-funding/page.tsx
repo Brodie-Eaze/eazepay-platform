@@ -24,7 +24,7 @@ interface Slide {
  * The exported SLIDES array (further down) re-orders these via
  * NARRATIVE_ORDER + appends new slides for the final sales narrative
  * arc: Problem → Solution journey (with Smart Routing + Smartphone) →
- * Transformation → Verticals (Dental, Med Spa, Derm/Vet/Vision) →
+ * Transformation → Verticals (Healthcare, Construction/Solar/Home, Coaching/Pro) →
  * Trust → Pricing → Onboarding → Big finale CTA. */
 const SLIDES_RAW: Slide[] = [
   /* 01 — WHAT IS MEDPAY (high-level product overview, comes right
@@ -96,13 +96,13 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            Every consult that ends with <em>&ldquo;we&apos;ll get back to you&rdquo;</em>{' '}
+            Every deal that ends with <em>&ldquo;we&apos;ll get back to you&rdquo;</em>{' '}
             <span className="grad-blue-deep">walks out unfunded.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            A mid-size practice loses an estimated{' '}
+            A mid-size operator loses an estimated{' '}
             <strong>
               $<AnimatedCounter to={1.4} decimals={1} />M a year
             </strong>{' '}
@@ -211,7 +211,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            Three things matter to a practice owner. AI Funding nails all three.
+            Three things matter to a business owner. AI Funding nails all three.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -525,7 +525,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-blue">Practices that turned</span>{' '}
+            <span className="grad-blue">Operators that turned</span>{' '}
             <span className="grad-blue-deep">cash-pay walkaways</span>{' '}
             <span className="grad-blue">into funded buyers.</span>
           </h2>
@@ -533,24 +533,24 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={240}>
           <div className="sld-cases-grid">
             <CaseCard
-              tag="Implant practice · TX"
+              tag="Healthcare · TX"
               quote="We were losing one case a week to financing. AI Funding killed that. The first month we ran it, our same-day close went from a third to two-thirds."
               outcomes={[
                 { v: '2.1x', l: 'Same-day close uplift' },
                 { v: '$184k', l: 'Recovered / 90 days' },
               ]}
               name="Dr. Helio Park"
-              role="Owner · implant practice"
+              role="Owner · multi-chair clinic"
             />
             <CaseCard
-              tag="Med spa · CA"
-              quote="The agentic form is the thing. Buyers used to bounce on income questions. Now they finish the apply flow and we book the consult on the call."
+              tag="Solar + roofing · AZ"
+              quote="My estimators used to leave $40k jobs on the table because the homeowner couldn't get a bank loan approved before the next rep showed up. Now they walk out with a funded approval in their hand."
               outcomes={[
-                { v: '−41%', l: 'Form drop-off' },
-                { v: '+38%', l: 'Booked consults / lead' },
+                { v: '+42%', l: 'In-home close rate' },
+                { v: 'Hours', l: 'Approval window (vs. days)' },
               ]}
-              name="Mara Coelho"
-              role="Founder · multi-location practice"
+              name="Mark Coelho"
+              role="Owner · 28-crew solar + roofing"
             />
           </div>
         </Reveal>
@@ -602,7 +602,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            We carry the regulatory weight so your practice doesn&apos;t have to.
+            We carry the regulatory weight so your business doesn&apos;t have to.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -626,7 +626,7 @@ const SLIDES_RAW: Slide[] = [
             />
             <TrustItem
               head="No clawback"
-              body="The lender carries the credit risk for routine defaults. Not your practice."
+              body="The lender carries the credit risk for routine defaults. Not your business."
             />
           </div>
         </Reveal>
@@ -673,8 +673,8 @@ const SLIDES_RAW: Slide[] = [
                 <div className="sld-pricing-tier-tag">02 · USAGE</div>
                 <div className="sld-pricing-tier-h">Per lead through the smart form</div>
                 <div className="sld-pricing-tier-b">
-                  Every lead that runs through HELIX intake and the ORACLE soft-pull is billed at
-                  flat rate. No charge for traffic that never reaches the form.
+                  Every lead that runs through FORGE intake and the APEX soft-pull is billed at flat
+                  rate. No charge for traffic that never reaches the form.
                 </div>
               </div>
               <div className="sld-pricing-tier-r">
@@ -791,7 +791,7 @@ const SLIDES_RAW: Slide[] = [
             className="sld-sub"
             style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}
           >
-            Two paths from here. Pick whichever fits how your practice operates.
+            Two paths from here. Pick whichever fits how your business operates.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -830,10 +830,10 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 19 — SMART ROUTING (HELIX) */
+  /* 19 — SMART ROUTING (NEXUS) */
   {
     n: '19',
-    title: 'Smart routing — HELIX',
+    title: 'Smart routing — NEXUS',
     build: () => (
       <div className="sld-stack">
         <Reveal>
@@ -850,10 +850,10 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            HELIX runs the lead through your funnel in stages. First it pulls the financial
-            qualification from ORACLE. Then it routes &mdash; can be one stage, can be three. Credit
-            score, then income, then available credit. High-ticket leads land on a calendar slot
-            pre-approved. Low-ticket leads land on a guide, an e-book, or a starter offer. Your
+            FORGE structures the lead through your funnel in stages. First APEX returns a soft-pull
+            pre-approval. Then NEXUS routes &mdash; can be one stage, can be three. Credit score,
+            then income, then available credit. High-ticket buyers land on a calendar slot
+            pre-approved. Low-ticket buyers land on a guide, an e-book, or a starter offer. Your
             calendar fills with qualified buyers. Your reps stop wasting time on people who
             can&apos;t pay.
           </p>
@@ -888,7 +888,7 @@ const SLIDES_RAW: Slide[] = [
             <p className="sld-sub">
               Some buyers want to think. Some want to talk to a spouse. Some need 10 minutes. AI
               Funding texts a secure link to the same approved offer. They tap accept from the
-              couch. You still book the case.
+              couch. You still book the deal.
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -915,7 +915,7 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 21 — VERTICAL: DENTAL CLINICS */
+  /* 21 — VERTICAL: HEALTHCARE + ELECTIVE CARE */
   {
     n: '21',
     title: 'Vertical — Healthcare + elective care',
@@ -1118,10 +1118,10 @@ const SLIDES_RAW: Slide[] = [
     build: () => <SixAgents />,
   },
 
-  /* 29 — ECHO PIXEL ATTRIBUTION (deep dive) */
+  /* 29 — BEACON PIXEL ATTRIBUTION (deep dive) */
   {
     n: '29',
-    title: 'ECHO · Pixel attribution',
+    title: 'BEACON · Pixel attribution',
     build: () => <EchoPixel />,
   },
 
@@ -1165,13 +1165,13 @@ const NARRATIVE_ORDER = [
   3, //  · The 3 pillars
   27, // · Six agents · one platform
   10, // · Buyer journey overview (4-panel storyboard)
-  4, //  · Stage 1: Soft-pull pre-qual
-  18, // · Stage 2: HELIX smart forms + multi-stage routing
+  4, //  · Stage 1: APEX soft-pull pre-approval
+  18, // · Stage 2: FORGE smart forms + NEXUS multi-stage routing
   6, //  · Stage 3: Lender marketplace
   7, //  · Stage 4: Best offer wins
   19, // · Stage 5: Smartphone continuity
-  8, //  · Stage 6: Merchant-direct funding
-  28, // · ECHO pixel attribution
+  8, //  · Stage 6: VAULT merchant-direct funding
+  28, // · Funded-event pixel attribution
 
   // ACT 3 — Transformation
   9, //  18 · Without/With
@@ -1179,9 +1179,9 @@ const NARRATIVE_ORDER = [
   29, // 20 · The compound effect (NEW · 12-month projection)
 
   // ACT 4 — Verticals
-  20, // 21 · Vertical: Dental clinics
-  21, // 22 · Vertical: Med spas
-  22, // 23 · Vertical: Derm · Vet · Vision
+  20, // 21 · Vertical: Healthcare + elective care
+  21, // 22 · Vertical: Construction · Solar · Home services
+  22, // 23 · Vertical: Coaching · Education · Pro services
 
   // ACT 5 — Trust + decide
   13, // 25 · Vs competitors
@@ -1516,7 +1516,7 @@ function OfferCardMock(): JSX.Element {
         </span>
         <span className="sld-mock-meta">Illustrative</span>
       </div>
-      <div className="sld-mock-project">Implant consult · approved</div>
+      <div className="sld-mock-project">$12k project · approved</div>
       <div className="sld-mock-amount">
         $12,000
         <span className="sld-mock-amount-sub">approved</span>
@@ -1724,7 +1724,7 @@ function VsTable(): JSX.Element {
     {
       k: 'Pixel attribution',
       single: 'On form-fill (junk signal)',
-      med: 'ECHO fires on funded job (real signal)',
+      med: 'BEACON fires on funded job (real signal)',
     },
   ];
   return (
@@ -1843,7 +1843,7 @@ function OfferStack(): JSX.Element {
   );
 }
 
-/** Bank-wire animation for Stage 5 — money flows lender → AI Funding → practice. */
+/** Bank-wire animation for Stage 5 — money flows lender → AI Funding → operator. */
 function BankWire(): JSX.Element {
   return (
     <div className="sld-wire">
@@ -2009,14 +2009,14 @@ function MoneyBreakdown(): JSX.Element {
   // Quiet teal-only breakdown of where the $1.41M leaks.
   const rows = [
     {
-      k: 'Lost case acceptance',
-      sub: '~24 declined cases/yr · $48k avg ticket · 95%',
+      k: 'Lost close rate',
+      sub: '~24 declined deals/yr · $48k avg ticket · 95%',
       v: '$1,094,400',
       pct: '77.7%',
     },
     {
-      k: 'Filler clinical hours',
-      sub: '~7 unfit consults/wk · 1.5 hr · $400/hr · 52',
+      k: 'Filler delivery hours',
+      sub: '~7 unfit sales calls/wk · 1.5 hr · $400/hr · 52',
       v: '$218,400',
       pct: '15.5%',
     },
@@ -2044,7 +2044,7 @@ function MoneyBreakdown(): JSX.Element {
       <div className="sld-money-row sld-money-row-total">
         <div className="sld-money-row-l">
           <div className="sld-money-row-k">Total annual leakage</div>
-          <div className="sld-money-row-sub">illustrative · implant practice</div>
+          <div className="sld-money-row-sub">illustrative · mid-size operator</div>
         </div>
         <div className="sld-money-row-r">
           <div className="sld-money-row-v sld-money-row-v-total">$1.41M</div>
@@ -2068,7 +2068,7 @@ function SampleInvoice(): JSX.Element {
           <div className="sld-invoice-no-v">RCP-2026-001</div>
         </div>
       </div>
-      <div className="sld-invoice-period">Day 0 · Setup · Helio Dental Group</div>
+      <div className="sld-invoice-period">Day 0 · Setup · Sample Operator Co.</div>
       <table className="sld-invoice-table">
         <thead>
           <tr>
@@ -2139,7 +2139,7 @@ function OnboardingTimeline(): JSX.Element {
     {
       d: 'Day 2-3',
       t: 'Smart-form + routing built',
-      b: 'HELIX smart form deployed · routes published · ORACLE wired to bureaus',
+      b: 'FORGE smart form deployed · NEXUS routes published · APEX wired to bureaus',
     },
     {
       d: 'Day 4-5',
@@ -2184,7 +2184,7 @@ function RoadmapStrip(): JSX.Element {
   );
 }
 
-/** Smart-routing (HELIX) visualization — buyer avatar at left, HELIX
+/** Smart-routing (NEXUS) visualization — buyer avatar at left, NEXUS
  *  agent middle, three reps on the right with capacity badges. */
 function SmartRoutingViz(): JSX.Element {
   return (
@@ -2198,16 +2198,16 @@ function SmartRoutingViz(): JSX.Element {
         </div>
         <div className="sld-funnel-connector" aria-hidden />
         <div className="sld-funnel-stage">
-          <span className="sld-funnel-stage-tag">02 · HELIX INTAKE</span>
+          <span className="sld-funnel-stage-tag">02 · FORGE INTAKE</span>
           <span className="sld-funnel-stage-h">Smart form reshapes on partial answers</span>
           <span className="sld-funnel-stage-b">
-            Procedure · ticket · contact — order rewritten by intent
+            Deal type · ticket · contact — order rewritten by intent
           </span>
         </div>
         <div className="sld-funnel-connector" aria-hidden />
         <div className="sld-funnel-stage">
-          <span className="sld-funnel-stage-tag">03 · ORACLE QUALIFY</span>
-          <span className="sld-funnel-stage-h">Financial qualification on every lead</span>
+          <span className="sld-funnel-stage-tag">03 · APEX PRE-APPROVAL</span>
+          <span className="sld-funnel-stage-h">Soft-pull pre-approval on every lead</span>
           <div className="sld-funnel-pills">
             <span className="sld-funnel-pill">Credit</span>
             <span className="sld-funnel-pill">Available</span>
@@ -2221,7 +2221,7 @@ function SmartRoutingViz(): JSX.Element {
       {/* Router pill — quietly indicates the split */}
       <div className="sld-funnel-router">
         <span className="sld-funnel-router-dot" />
-        HELIX router · multi-stage
+        NEXUS router · multi-stage
       </div>
 
       {/* Two-column branches — equal weight, flat, no 3D tilt */}
@@ -2290,7 +2290,7 @@ function SmartphoneMock(): JSX.Element {
               <span className="sld-phone-card-dot" /> AI Funding · approved
             </div>
             <div className="sld-phone-card-amount">$12,000</div>
-            <div className="sld-phone-card-meta">Implant consult · approved</div>
+            <div className="sld-phone-card-meta">$12k project · approved</div>
             <div className="sld-phone-card-row">
               <span>Est. monthly</span>
               <strong>$250 / mo</strong>
@@ -2302,7 +2302,7 @@ function SmartphoneMock(): JSX.Element {
             <div className="sld-phone-card-cta">Accept approval</div>
             <div className="sld-phone-card-foot">FCRA soft pull · 0 impact · e-sign in app</div>
           </div>
-          <div className="sld-phone-tip">Picked up where you left off at the consult.</div>
+          <div className="sld-phone-tip">Picked up where you left off at the sales call.</div>
         </div>
       </div>
     </div>
@@ -2406,7 +2406,7 @@ function WelcomeAgenda(): JSX.Element {
   const agenda = [
     { n: '01', t: 'What is AI Funding', s: 'The product in one sentence' },
     { n: '02', t: 'Who it’s for', s: 'Your vertical, your buyer profile' },
-    { n: '03', t: 'The problem', s: 'Why your case acceptance is leaking' },
+    { n: '03', t: 'The problem', s: 'Why your close rate is leaking' },
     { n: '04', t: 'The solution', s: 'How the platform actually works' },
     { n: '05', t: 'The transformation', s: 'What 12 months of AI Funding looks like' },
     { n: '06', t: 'The ask', s: 'What it costs, how to start' },
@@ -2457,33 +2457,33 @@ function WhoIsItFor(): JSX.Element {
   const verticals = [
     {
       code: 'V01',
-      name: 'Dental',
-      ticket: '$3k – $50k',
-      who: 'Implants, ortho, sleep apnea, full-mouth reconstruction',
+      name: 'Healthcare + elective',
+      ticket: '$2k – $50k',
+      who: 'Dental, med spa, derm, vet, vision, surgical',
     },
     {
       code: 'V02',
-      name: 'Med spa',
-      ticket: '$2k – $15k',
-      who: 'Laser packages, injectable maintenance, body contouring series',
+      name: 'Home services',
+      ticket: '$3k – $30k',
+      who: 'HVAC, roofing, restoration, pool, landscaping, plumbing',
     },
     {
       code: 'V03',
-      name: 'Derm',
-      ticket: '$1k – $30k',
-      who: 'Mohs, cosmetic, mole removal, laser resurfacing',
+      name: 'Solar + clean energy',
+      ticket: '$10k – $80k',
+      who: 'Residential solar, batteries, EV chargers, home electrification',
     },
     {
       code: 'V04',
-      name: 'Veterinary',
-      ticket: '$1k – $25k',
-      who: 'Orthopedic surgery, oncology, dental + soft-tissue cases',
+      name: 'Construction + remodel',
+      ticket: '$5k – $100k',
+      who: 'Kitchen + bath, additions, ADUs, custom builds, contractors',
     },
     {
       code: 'V05',
-      name: 'Vision',
-      ticket: '$3k – $12k',
-      who: 'LASIK, premium IOL, custom progressive lenses',
+      name: 'Coaching + pro services',
+      ticket: '$2k – $40k',
+      who: 'Coaches, masterminds, trade schools, legal + immigration, consultants',
     },
   ];
   return (
@@ -2496,15 +2496,15 @@ function WhoIsItFor(): JSX.Element {
       </Reveal>
       <Reveal delay={120}>
         <h2 className="sld-h2">
-          <span className="grad-blue-deep">Built for high-ticket, elective,</span>{' '}
-          <span className="grad-blue">high-ticket elective healthcare.</span>
+          <span className="grad-blue-deep">Built for high-ticket,</span>{' '}
+          <span className="grad-blue">advisory-sale businesses.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
           Anywhere a buyer sits down, hears a number, and has to decide on the spot &mdash;
           that&apos;s our sweet spot. Five verticals today. Same platform, same flow, same
-          merchant-direct payout. Just the case stories change.
+          merchant-direct payout. Just the deal stories change.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -2523,9 +2523,9 @@ function WhoIsItFor(): JSX.Element {
         <div className="sld-notfor">
           <span className="sld-notfor-k">Not for</span>
           <span className="sld-notfor-v">
-            Low-ticket retail · single-visit walk-ins · cash-only practices · sub-$500 tickets. We
-            don&apos;t replace a credit-card terminal &mdash; we replace the cash-flow objection
-            that walks out of every high-ticket consult.
+            Low-ticket retail · single-visit walk-ins · sub-$500 tickets. We don&apos;t replace a
+            credit-card terminal &mdash; we replace the cash-flow objection that walks out of every
+            high-ticket sales conversation.
           </span>
         </div>
       </Reveal>
@@ -2547,9 +2547,9 @@ function SixAgents(): JSX.Element {
     glyph: JSX.Element;
   }> = [
     {
-      code: 'ORACLE',
-      role: 'Financial qualification',
-      watches: 'Reporting-bureau pull on every lead',
+      code: 'APEX',
+      role: 'Pre-Approval Agent',
+      watches: 'Soft-pull on every lead · FCRA-compliant',
       output: 'Credit · available credit · income · DTI · pre-approval $',
       version: 'v4.2',
       glyph: (
@@ -2566,10 +2566,10 @@ function SixAgents(): JSX.Element {
       ),
     },
     {
-      code: 'HELIX',
-      role: 'Smart forms + smart routing',
+      code: 'FORGE',
+      role: 'Data Agent',
       watches: 'Form behaviour + financial signals',
-      output: 'Reshapes the form · routes by credit → income → DTI',
+      output: 'Reshapes the form · structures the data · enriches every signal',
       version: 'v3.8',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2591,9 +2591,9 @@ function SixAgents(): JSX.Element {
     },
     {
       code: 'NEXUS',
-      role: 'Lender marketplace',
-      watches: 'Lender appetite + rates',
-      output: 'Ranked parallel quotes',
+      role: 'Routing Agent',
+      watches: 'Lender appetite + tier-fit + approval velocity',
+      output: 'Routes the buyer to the right lender first time',
       version: 'v6.1',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2613,10 +2613,10 @@ function SixAgents(): JSX.Element {
       ),
     },
     {
-      code: 'FLUX',
-      role: 'Lender routing',
-      watches: 'Approval rates per tier',
-      output: 'Optimal lender order',
+      code: 'CLOSE',
+      role: 'Sales Agent',
+      watches: 'Buyer hesitation · objections · drop-off triggers',
+      output: 'Handles the payment conversation · books the call · revives ghosts',
       version: 'v2.5',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2640,10 +2640,10 @@ function SixAgents(): JSX.Element {
       ),
     },
     {
-      code: 'ECHO',
-      role: 'Pixel attribution',
-      watches: 'The funded-buyer signal',
-      output: 'Re-trains Meta + Google',
+      code: 'VAULT',
+      role: 'Funding Agent',
+      watches: 'Lender disbursement state · payout windows · ACH timing',
+      output: 'Pushes funds merchant-direct · ledger entry per payout',
       version: 'v5.0',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2720,9 +2720,9 @@ function SixAgents(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          AI Funding is a stack of six specialised agents working in parallel on every lead session
-          &mdash; financial qualification, smart forms + routing, lender selection, lender quoting,
-          pixel attribution, and compliance audit. Every agent is named, observable, and logged.
+          AI Funding is a stack of six specialised agents working in parallel on every buyer session
+          &mdash; pre-approval, data + smart forms, lender routing, sales conversation, merchant
+          funding, and compliance audit. Every agent is named, observable, and logged.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -2759,7 +2759,7 @@ function SixAgents(): JSX.Element {
   );
 }
 
-/** ECHO pixel attribution — deep dive on the "fire on funded job"
+/** BEACON pixel attribution — deep dive on the "fire on funded job"
  *  feedback loop. */
 function EchoPixel(): JSX.Element {
   return (
@@ -2767,7 +2767,7 @@ function EchoPixel(): JSX.Element {
       <Reveal>
         <div className="sld-eyebrow">
           <span className="sld-eyebrow-dot" />
-          ECHO · Pixel attribution
+          BEACON · Pixel attribution
         </div>
       </Reveal>
       <Reveal delay={120}>
@@ -2780,7 +2780,7 @@ function EchoPixel(): JSX.Element {
         <p className="sld-sub">
           Today, your Meta and Google ad pixels fire on a Page View, a Lead, or a Form Submit. Most
           of those leads never fund. Your algorithm optimises for garbage and your CPA drifts up
-          month over month. ECHO breaks the loop.
+          month over month. BEACON breaks the loop.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -2805,7 +2805,7 @@ function EchoPixel(): JSX.Element {
           <div className="sld-echo-3d-stage">
             <span className="sld-echo-3d-tag">STAGE 05 · FIRES</span>
             <span className="sld-echo-3d-h">Funded buyer</span>
-            <span className="sld-echo-3d-sub">ECHO holds the pixel until cash settles</span>
+            <span className="sld-echo-3d-sub">BEACON holds the pixel until cash settles</span>
           </div>
           <div className="sld-echo-3d-stream" aria-hidden>
             <svg viewBox="0 0 400 140" preserveAspectRatio="none">
@@ -2847,9 +2847,9 @@ function EchoPixel(): JSX.Element {
             </div>
           </div>
           <div className="sld-echo-3d-caption">
-            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta,
-            Google, and TikTok is a real funded buyer — not a form-fill. Your algorithm retrains on
-            the right buyer profile.
+            BEACON holds the pixel until stage 05 fires. The weighted conversion that returns to
+            Meta, Google, and TikTok is a real funded buyer — not a form-fill. Your algorithm
+            retrains on the right buyer profile.
           </div>
         </div>
       </Reveal>
@@ -2894,7 +2894,7 @@ function CompoundEffect(): JSX.Element {
         <p className="sld-sub">
           AI Funding does not just close more buyers today. It compounds. Each funded buyer
           re-trains your pixel. The pixel sends better leads. Better leads close at a higher rate.
-          The cycle accelerates. Twelve months in, the practice is unrecognisable.
+          The cycle accelerates. Twelve months in, the business is unrecognisable.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -2915,13 +2915,13 @@ function CompoundEffect(): JSX.Element {
             <div>
               <div className="sld-comp-legend-k">Cumulative recovered revenue</div>
               <div className="sld-comp-legend-v">
-                ~$398k by month 12 · mid-size practice · illustrative
+                ~$398k by month 12 · mid-size operator · illustrative
               </div>
             </div>
             <div>
               <div className="sld-comp-legend-k">CPA trajectory</div>
               <div className="sld-comp-legend-v">
-                −38% by month 12 · driven by ECHO pixel retraining
+                −38% by month 12 · driven by funded-event pixel retraining
               </div>
             </div>
           </div>
@@ -2947,10 +2947,10 @@ function ValueStack(): JSX.Element {
     {
       head: 'Pre-qualification layer',
       items: [
-        'Soft-pull fundability tier (FCRA-compliant)',
+        'APEX soft-pull pre-approval (FCRA-compliant)',
         'Last-4-SSN + DOB + income in-session',
-        'HELIX smart-form intake (−41% drop-off)',
-        'Real-time signal scoring · ORACLE',
+        'FORGE smart-form intake (−41% drop-off)',
+        'Real-time signal scoring · pre-approval $',
       ],
       alt: '$2,400 / mo · standalone form + scoring vendor',
     },
@@ -2958,26 +2958,26 @@ function ValueStack(): JSX.Element {
       head: 'Lender marketplace',
       items: [
         'Parallel quoting across the marketplace',
-        'NEXUS lender selection · ranked total-cost',
-        'FLUX adaptive routing by tier',
-        'Ticket coverage from $1k to $50k',
+        'NEXUS routing · ranked total-cost',
+        'Adaptive routing by credit + income tier',
+        'Ticket coverage from $1k to $100k',
       ],
       alt: '$1,800 / mo + 1.5% take-rate · single-lender programs',
     },
     {
-      head: 'Smart routing + ops',
+      head: 'Sales + ops layer',
       items: [
-        'HELIX best-fit estimator routing',
+        'CLOSE Sales Agent handles the payment conversation',
         'Capacity + geo + ticket-fit matching',
         'Smartphone continuity for off-site signing',
-        'Merchant-direct ACH disbursement',
+        'VAULT merchant-direct ACH disbursement',
       ],
       alt: '$1,200 / mo · routing tool + payment processor',
     },
     {
       head: 'Pixel + attribution',
       items: [
-        'ECHO funded-event pixel retraining',
+        'Funded-event pixel retraining',
         'Server-side CAPI to Meta + Google + TikTok',
         'Funnel-stage event ledger',
         'Per-channel ROAS attribution',
@@ -3074,15 +3074,15 @@ function TrustedBy(): JSX.Element {
       </Reveal>
       <Reveal delay={120}>
         <h2 className="sld-h2">
-          <span className="grad-blue-deep">Over 1,000 practices</span>{' '}
+          <span className="grad-blue-deep">Over 2,000 US businesses</span>{' '}
           <span className="grad-blue">already run on AI Funding.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          We&apos;ve been in market with sales teams, practices, derm groups, vet hospitals and
-          elective-vision practices since launch. The platform is hardened, the lender panel is
-          live, and the support team is staffed for scale.
+          We&apos;ve been in market with healthcare practices, home-services crews, solar
+          installers, construction contractors and coaching programs since launch. The platform is
+          hardened, the lender panel is live, and the support team is staffed for scale.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3090,19 +3090,19 @@ function TrustedBy(): JSX.Element {
           <div className="sld-trust-hero-row">
             <div>
               <div className="sld-trust-hero-v">
-                <AnimatedCounter to={1000} suffix="+" />
+                <AnimatedCounter to={2000} suffix="+" />
               </div>
-              <div className="sld-trust-hero-k">Practices live</div>
+              <div className="sld-trust-hero-k">Businesses live</div>
             </div>
             <div>
               <div className="sld-trust-hero-v">
-                $<AnimatedCounter to={240} suffix="M+" />
+                $<AnimatedCounter to={300} suffix="M+" />
               </div>
-              <div className="sld-trust-hero-k">Funded to date</div>
+              <div className="sld-trust-hero-k">Sales funded to date</div>
             </div>
             <div>
               <div className="sld-trust-hero-v">
-                <AnimatedCounter to={12400} suffix="+" />
+                <AnimatedCounter to={18600} suffix="+" />
               </div>
               <div className="sld-trust-hero-k">Buyers financed</div>
             </div>
@@ -3119,11 +3119,11 @@ function TrustedBy(): JSX.Element {
       <Reveal delay={540}>
         <div className="sld-trust-tiles">
           {[
-            'Dental — 540+ practices',
-            'Med spa — 230+ locations',
-            'Derm — 120+ clinics',
-            'Vet — 80+ hospitals',
-            'Vision — 50+ practices',
+            'Healthcare — 720+ practices',
+            'Home services — 480+ crews',
+            'Solar + clean energy — 320+ installers',
+            'Construction — 280+ contractors',
+            'Coaching + pro services — 200+ programs',
             'All 50 US states',
             'NMLS #4755691',
             'SOC 2 in progress',
@@ -3344,7 +3344,7 @@ function EconomicsSlide(): JSX.Element {
           <div className="sld-econ-delta">
             <span className="sld-econ-delta-tag">Delta</span>
             <span className="sld-econ-delta-val">+ {fmt(delta)} / year</span>
-            <span className="sld-econ-delta-sub">illustrative · varies by practice</span>
+            <span className="sld-econ-delta-sub">illustrative · varies by operator</span>
           </div>
         </div>
       </Reveal>
@@ -5696,7 +5696,7 @@ const CSS = `
   line-height: 1.45;
 }
 
-/* ===== ECHO pixel attribution ===== */
+/* ===== BEACON pixel attribution (sld-echo-* class names retained) ===== */
 .sld-echo-flow {
   display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 12px;
@@ -5743,7 +5743,7 @@ const CSS = `
   margin-top: 2px;
   font-size: 11px; color: var(--af-mute);
 }
-/* ECHO 3D feedback loop — funded stage signals back to ad platforms */
+/* BEACON 3D feedback loop — funded stage signals back to ad platforms */
 .sld-echo-3d {
   position: relative;
   margin-top: 16px;
@@ -5996,8 +5996,8 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
-/* ===== Smart-routing funnel (slide 12 · HELIX + ORACLE) =====
- * Clean three-stage stack with a centered HELIX router pill,
+/* ===== Smart-routing funnel (slide 12 · FORGE + APEX) =====
+ * Clean three-stage stack with a centered NEXUS router pill,
  * then two flat side-by-side branches (no 3D tilt). HIGH-TICKET
  * is the winning path (deep teal outcome bar); LOW-TICKET is
  * the recapture lane (lighter outcome bar). */
@@ -6488,7 +6488,7 @@ const CSS = `
   50% { transform: translateY(4px); opacity: 1; }
 }
 
-/* ===== Smart routing (HELIX) — slide 8 ===== */
+/* ===== Smart routing (NEXUS) — slide 8 ===== */
 .sld-sr {
   display: grid; grid-template-columns: 220px 200px 1fr;
   gap: 24px; align-items: center;
