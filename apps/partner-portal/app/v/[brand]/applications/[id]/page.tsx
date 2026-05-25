@@ -137,6 +137,7 @@ import {
   tierLabel,
   type CreditTier,
 } from '../../../../../lib/marketplace-data';
+import { useApplicationRealtime } from '../../../../../lib/use-application-realtime';
 
 const slugToBrand = (slug: string): BrandCode | null =>
   BRAND_ORDER.find((c) => BRANDS[c].slug === slug) ?? null;
@@ -702,6 +703,14 @@ export default function DealDetailPage() {
      * snapshot — that's fine here because we replace the interval each
      * time `live?.status` flips to a terminal value via this dep. */
   }, [fetchLive, live?.status]);
+
+  /* Realtime: when a lender webhook lands and we publish to Pusher,
+   * trigger an immediate refetch so the status pill flips in <1s
+   * instead of waiting for the next 5s poll. Falls back to poll-only
+   * when NEXT_PUBLIC_PUSHER_KEY / _CLUSTER aren't set. */
+  useApplicationRealtime(app.id, () => {
+    void fetchLive();
+  });
 
   // Ticking "now" so relative timestamps refresh every second (real-time feel).
   const [now, setNow] = useState<number>(FROZEN_NOW);

@@ -11,6 +11,10 @@ import {
 } from '../../../../../../lib/api-v1/shared';
 import { getDb, hasDb } from '../../../../../../lib/db';
 import { applicationEvents, applications, offers } from '../../../../../../lib/db/schema';
+import {
+  publishApplicationEvent,
+  type ApplicationLifecycleEvent,
+} from '../../../../../../lib/realtime';
 
 /**
  * Inbound lender webhook — `POST /api/v1/webhooks/lenders/[lender]`.
@@ -159,6 +163,21 @@ export async function POST(req: NextRequest, ctx: { params: { lender: string } }
     }
   } else {
     persistence = { status: 'skipped', message: 'DATABASE_URL not configured' };
+  }
+
+  // Fan out a realtime push so the practice owner's open application
+  // detail page can refetch immediately instead of waiting for the
+  // 5s poll. Fire-and-forget; failures here never affect the webhook
+  // 2xx contract back to the lender.
+  if (persistence.status === 'ok' && persistence.applicationId) {
+    const rtEvent = realtimeEventForType(event.event_type);
+    if (rtEvent) {
+      void publishApplicationEvent(persistence.applicationId, rtEvent, {
+        eventType: event.event_type,
+        lenderId: lender.id,
+        applied: persistence.applied,
+      });
+    }
   }
 
   return NextResponse.json(
@@ -361,6 +380,25 @@ async function persistWebhook(args: {
 
     default:
       return { status: 'unknown_event', event_type: eventType };
+  }
+}
+
+function realtimeEventForType(eventType: string | undefined): ApplicationLifecycleEvent | null {
+  switch (eventType) {
+    case 'application.quoted':
+      return 'offer-received';
+    case 'application.decisioned':
+      return 'status-changed';
+    case 'offer.bound':
+      return 'offer-accepted';
+    case 'loan.funded':
+      return 'funded';
+    case 'loan.repaid':
+    case 'loan.defaulted':
+    case 'hardship.opened':
+      return 'status-changed';
+    default:
+      return null;
   }
 }
 
