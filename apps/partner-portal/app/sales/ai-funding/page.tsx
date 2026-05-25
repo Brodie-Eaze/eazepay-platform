@@ -24,10 +24,10 @@ interface Slide {
  * The exported SLIDES array (further down) re-orders these via
  * NARRATIVE_ORDER + appends new slides for the final sales narrative
  * arc: Problem → Solution journey (with Smart Routing + Smartphone) →
- * Transformation → Verticals (Healthcare, Construction/Solar/Home, Coaching/Pro) →
+ * Transformation → Verticals (Dental, Med Spa, Derm/Vet/Vision) →
  * Trust → Pricing → Onboarding → Big finale CTA. */
 const SLIDES_RAW: Slide[] = [
-  /* 01 — WHAT IS AI FUNDING (high-level product overview, comes right
+  /* 01 — WHAT IS MEDPAY (high-level product overview, comes right
      after the brand title slide) */
   {
     n: '01',
@@ -43,32 +43,31 @@ const SLIDES_RAW: Slide[] = [
           </Reveal>
           <Reveal delay={120}>
             <h1 className="sld-h1">
-              <span className="grad-blue-deep">Turn</span>{' '}
-              <span className="grad-blue">pipelines</span>
+              <span className="grad-blue-deep">AI Funding is a</span>{' '}
+              <span className="grad-blue">buyer-financing platform</span>
               <br />
-              <span className="grad-blue-deep">into payouts.</span>
+              <span className="grad-blue-deep">built for elective care.</span>
             </h1>
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
-              5 AI agents installed into your existing sales process in 24 hours. They pre-qualify
-              every lead, route only fundable buyers to your closers, and connect to a lender
-              network for soft-pull approvals in hours and funding in days. No CRM rip-and-replace.
-              Your front end stays intact.
+              We help dental, med spa, derm, vet, and vision practices approve more buyers at the
+              consult. Soft-pull pre-qualification, a real-time lender marketplace, and
+              merchant-direct funding in 48 to 72 hours. One signup, one platform.
             </p>
           </Reveal>
           <Reveal delay={360}>
             <div className="sld-chips">
-              <span className="sld-chip">Soft pull · 0 credit impact</span>
-              <span className="sld-chip">$5K – $100K funding</span>
-              <span className="sld-chip">24-hour install · CRM stays as-is</span>
+              <span className="sld-chip">FCRA soft pull · 0 impact</span>
+              <span className="sld-chip">Lender marketplace · parallel quoting</span>
+              <span className="sld-chip">Merchant-direct payout</span>
             </div>
           </Reveal>
           <Reveal delay={480}>
             <div className="sld-hero-stat-row">
-              <HeroStat n={2000} suffix="+" k="US businesses served" />
-              <HeroStat n={300} prefix="$" suffix="M" k="In sales generated" />
-              <HeroStat n={24} suffix="hr" k="From signed to installed" />
+              <HeroStat n={12400} suffix="+" k="Buyers funded" />
+              <HeroStat n={240} prefix="$" suffix="M+" k="Funded to date" />
+              <HeroStat n={48} suffix="-72hr" k="Merchant-direct" />
             </div>
           </Reveal>
         </div>
@@ -96,13 +95,13 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            Every deal that ends with <em>&ldquo;we&apos;ll get back to you&rdquo;</em>{' '}
+            Every consult that ends with <em>&ldquo;we&apos;ll get back to you&rdquo;</em>{' '}
             <span className="grad-blue-deep">walks out unfunded.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            A mid-size operator loses an estimated{' '}
+            A mid-size practice loses an estimated{' '}
             <strong>
               $<AnimatedCounter to={1.4} decimals={1} />M a year
             </strong>{' '}
@@ -113,9 +112,9 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={360}>
           <div className="sld-stat-row">
             <CountStat to={38} suffix="%" k="Industry same-day close (no financing)" />
-            <CountStat to={1.4} decimals={1} prefix="$" suffix="M" k="Revenue lost / yr" />
+            <CountStat to={1.4} decimals={1} prefix="$" suffix="M" k="Case acceptance lost / yr" />
             <CountStat to={54} suffix="%" k="Inbound never pre-qualified" />
-            <CountStat label="2–4 wks" k="Lead → deposit" />
+            <CountStat label="2–4 wks" k="Consult → deposit" />
           </div>
         </Reveal>
         <Reveal delay={480}>
@@ -189,7 +188,7 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 04 — WHAT AI FUNDING IS */
+  /* 04 — WHAT MEDPAY IS */
   {
     n: '04',
     title: 'What AI Funding is',
@@ -211,7 +210,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            Three things matter to a business owner. AI Funding nails all three.
+            Three things matter to a practice owner. AI Funding nails all three.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -243,45 +242,45 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 05 — AGENT 1: AI PRE-APPROVAL */
+  /* 05 — STAGE 1: PRE-QUAL */
   {
     n: '05',
-    title: 'Agent 1 · Pre-Approval',
+    title: 'Stage 1 — Pre-qual',
     build: () => (
       <div className="sld-stack sld-grid-hero">
         <div className="sld-hero-left">
           <Reveal>
             <div className="sld-eyebrow">
               <span className="sld-eyebrow-dot" />
-              The 5 AI agents · 1 of 5 · Pre-Approval
+              How it works · 1 of 5 · Pre-qual
             </div>
           </Reveal>
           <Reveal delay={120}>
             <h2 className="sld-h2">
-              <span className="grad-blue-deep">AI Pre-Approval Agent.</span>{' '}
-              <span className="grad-blue">Buyability surfaced in seconds.</span>
+              <span className="grad-blue-deep">Soft-pull EZ Check.</span>{' '}
+              <span className="grad-blue">Ten seconds. Zero impact.</span>
             </h2>
           </Reveal>
           <Reveal delay={240}>
             <p className="sld-sub">
-              Runs checks behind your existing intake form the second a lead drops their name, email
-              and phone. A real buyability tier comes back before anyone books a call. Soft-pull
-              only · zero credit impact · zero change to your front end.
+              Four fields. Ten seconds. A real fundability tier comes back before the buyer hands
+              the screen back. They have not authorized a hard pull, so they can still walk away
+              with zero credit consequence.
             </p>
           </Reveal>
           <Reveal delay={360}>
             <div className="sld-mini-stats">
               <MiniStat v={<AnimatedCounter to={10} prefix="< " suffix="s" />} k="Decision time" />
               <MiniStat v="0" k="Credit impact" />
-              <MiniStat v="3 fields" k="Friction" />
-              <MiniStat v="100%" k="Of inbound leads" />
+              <MiniStat v="FCRA" k="Compliant" />
+              <MiniStat v="4 fields" k="Friction" />
             </div>
           </Reveal>
           <Reveal delay={480}>
             <p className="sld-takeaway">
-              For the rep: every lead that hits your calendar has already cleared the buyability
-              gate. The next sentence is &ldquo;here&apos;s your plan&rdquo;, not &ldquo;let me
-              check if you can afford it.&rdquo;
+              For the rep: the buyer walks back already knowing they qualify. The next sentence is
+              &ldquo;here&apos;s your treatment plan,&rdquo; not &ldquo;let me check if you can
+              afford it.&rdquo;
             </p>
           </Reveal>
         </div>
@@ -293,150 +292,128 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 06 — AGENT 2: AI DATA */
+  /* 06 — STAGE 2 (REMOVED in v8 — was PRISM agentic-intake slide.
+     Kept as a no-op placeholder so NARRATIVE_ORDER indices into
+     SLIDES_RAW above this point remain stable.) */
   {
     n: '06',
-    title: 'Agent 2 · Data',
-    build: () => (
-      <div className="sld-stack">
-        <Reveal>
-          <div className="sld-eyebrow">
-            <span className="sld-eyebrow-dot" />
-            The 5 AI agents · 2 of 5 · Data
-          </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <h2 className="sld-h2">
-            <span className="grad-blue-deep">AI Data Agent.</span>{' '}
-            <span className="grad-blue">Verified, enriched, streamed to your CRM.</span>
-          </h2>
-        </Reveal>
-        <Reveal delay={240}>
-          <p className="sld-sub">
-            Executes identity verification, enriches every record with credit band + income signal +
-            available-credit headroom, standardises every field, and pushes the enriched profile
-            into your CRM in real time. Your existing CRM stays as-is · no rip-and-replace.
-          </p>
-        </Reveal>
-        <Reveal delay={360}>
-          <div className="sld-mini-stats">
-            <MiniStat v="Real-time" k="CRM sync" />
-            <MiniStat v="Enriched" k="On every lead" />
-            <MiniStat v="HubSpot · GHL · Salesforce" k="CRM compatible" />
-            <MiniStat v="0" k="Manual data entry" />
-          </div>
-        </Reveal>
-      </div>
-    ),
+    title: 'Stage 2 — Reserved',
+    build: () => <></>,
   },
 
-  /* 07 — AGENT 3: AI ROUTING */
+  /* 07 — STAGE 3: MARKETPLACE */
   {
     n: '07',
-    title: 'Agent 3 · Routing',
+    title: 'Stage 3 — Marketplace',
     build: () => (
       <div className="sld-stack">
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            The 5 AI agents · 3 of 5 · Routing
+            How it works · 3 of 5
           </div>
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-blue-deep">AI Routing Agent.</span>{' '}
-            <span className="grad-blue">Fundable buyers to closers. Everyone else nurtured.</span>
+            <span className="grad-blue-deep">Lender marketplace</span>{' '}
+            <span className="grad-blue">runs in parallel.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            Scores and segments every lead the moment the Data Agent finishes. Fundable profiles
-            route straight to a closer&apos;s calendar. Soft-on-paper leads route to a nurture
-            track. Hard-decline leads are filtered out so your team never burns time on unqualified
-            calls.
+            One application fires across every lender simultaneously. Quotes return in seconds,
+            ranked cheapest-first.
           </p>
         </Reveal>
         <Reveal delay={360}>
-          <div className="sld-mini-stats">
-            <MiniStat v="3 tiers" k="Fundable / Nurture / Filter" />
-            <MiniStat v="Real-time" k="Routing decision" />
-            <MiniStat v="Closer-calendar" k="Direct booking" />
-            <MiniStat v="0" k="Manual triage" />
-          </div>
+          <MarketplaceViz />
         </Reveal>
       </div>
     ),
   },
 
-  /* 08 — AGENT 4: AI SALES */
+  /* 08 — STAGE 4: OFFER */
   {
     n: '08',
-    title: 'Agent 4 · Sales',
+    title: 'Stage 4 — Best offer wins',
     build: () => (
       <div className="sld-stack">
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            The 5 AI agents · 4 of 5 · Sales
+            How it works · 4 of 5 · The offer
           </div>
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-blue-deep">AI Sales Agent.</span>{' '}
-            <span className="grad-blue">Your rep picks up already knowing the answer.</span>
+            <span className="grad-blue-deep">Best offer wins.</span>{' '}
+            <span className="grad-blue">Buyer signs in the same visit.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            The instant a fundable lead books, your rep gets a brief inside their CRM: credit band,
-            income signal, available credit, and the recommended offer path. No more &ldquo;can you
-            afford this?&rdquo; conversations. Pricing certainty drives the close.
+            Three ranked offers on one screen. Sorted by total cost, not commission. The starred row
+            is what your buyer actually picks 80% of the time. One tap to accept. E-signature on the
+            same screen. They are funded before they walk out the door.
           </p>
         </Reveal>
         <Reveal delay={360}>
+          <OfferStack />
+        </Reveal>
+        <Reveal delay={480}>
           <div className="sld-mini-stats">
-            <MiniStat v={<AnimatedCounter to={3} />} k="Decision signals" />
-            <MiniStat v="Pre-rep" k="Brief delivered" />
-            <MiniStat v="In-CRM" k="No new tools" />
-            <MiniStat v="↑ Close rate" k="Pricing certainty" />
+            <MiniStat v={<AnimatedCounter to={3} />} k="Offers shown" />
+            <MiniStat v="One tap" k="To accept" />
+            <MiniStat v="E-SIGN" k="Legally binding" />
+            <MiniStat v="$0" k="Buyer pays today" />
           </div>
         </Reveal>
       </div>
     ),
   },
 
-  /* 09 — AGENT 5: AI FUNDING */
+  /* 09 — STAGE 5: FUNDED */
   {
     n: '09',
-    title: 'Agent 5 · Funding',
+    title: 'Stage 5 — Merchant-direct',
     build: () => (
       <div className="sld-stack">
         <Reveal>
           <div className="sld-eyebrow">
             <span className="sld-eyebrow-dot" />
-            The 5 AI agents · 5 of 5 · Funding
+            How it works · 5 of 5 · Disbursement
           </div>
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-blue-deep">AI Funding Agent.</span>{' '}
-            <span className="grad-blue">Lender network · approvals in hours · funded in days.</span>
+            <span className="grad-blue-deep">Lender disburses</span>{' '}
+            <span className="grad-blue">direct to your business account.</span>
           </h2>
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            Matches the approved buyer to the right lender network and submits one canonical
-            application. Approvals come back typically within hours. Funding follows in days. Payout
-            status feeds back into your CRM automatically · no manual reconciliation, no chase
-            calls.
+            No marketplace intermediary holding the funds. No reseller skim. The lender wires the
+            full amount straight to your practice account within 48 to 72 hours of the loan
+            settling. The lender holds the credit risk. No clawback on routine defaults.
           </p>
         </Reveal>
         <Reveal delay={360}>
+          <BankWire />
+        </Reveal>
+        <Reveal delay={480}>
           <div className="sld-mini-stats">
-            <MiniStat v="Hours" k="Approval window" />
-            <MiniStat v="Days" k="Funding window" />
-            <MiniStat v="$5K-$100K" k="Ticket range" />
-            <MiniStat v="Auto" k="CRM payout sync" />
+            <MiniStat
+              v={
+                <span>
+                  <AnimatedCounter to={48} />–<AnimatedCounter to={72} delay={300} />
+                  hr
+                </span>
+              }
+              k="Wire-to-account"
+            />
+            <MiniStat v="No" k="Clawback on default" />
+            <MiniStat v="ACH" k="Disbursement rail" />
+            <MiniStat v="Daily" k="Reconciliation report" />
           </div>
         </Reveal>
       </div>
@@ -524,7 +501,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={120}>
           <h2 className="sld-h2">
-            <span className="grad-blue">Operators that turned</span>{' '}
+            <span className="grad-blue">Practices that turned</span>{' '}
             <span className="grad-blue-deep">cash-pay walkaways</span>{' '}
             <span className="grad-blue">into funded buyers.</span>
           </h2>
@@ -532,24 +509,24 @@ const SLIDES_RAW: Slide[] = [
         <Reveal delay={240}>
           <div className="sld-cases-grid">
             <CaseCard
-              tag="Healthcare · TX"
+              tag="Implant practice · TX"
               quote="We were losing one case a week to financing. AI Funding killed that. The first month we ran it, our same-day close went from a third to two-thirds."
               outcomes={[
                 { v: '2.1x', l: 'Same-day close uplift' },
                 { v: '$184k', l: 'Recovered / 90 days' },
               ]}
               name="Dr. Helio Park"
-              role="Owner · multi-chair clinic"
+              role="Owner · implant practice"
             />
             <CaseCard
-              tag="Solar + roofing · AZ"
-              quote="My estimators used to leave $40k jobs on the table because the homeowner couldn't get a bank loan approved before the next rep showed up. Now they walk out with a funded approval in their hand."
+              tag="Med spa · CA"
+              quote="The agentic form is the thing. Buyers used to bounce on income questions. Now they finish the apply flow and we book the consult on the call."
               outcomes={[
-                { v: '+42%', l: 'In-home close rate' },
-                { v: 'Hours', l: 'Approval window (vs. days)' },
+                { v: '−41%', l: 'Form drop-off' },
+                { v: '+38%', l: 'Booked consults / lead' },
               ]}
-              name="Mark Coelho"
-              role="Owner · 28-crew solar + roofing"
+              name="Mara Coelho"
+              role="Founder · multi-location med spa"
             />
           </div>
         </Reveal>
@@ -601,7 +578,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            We carry the regulatory weight so your business doesn&apos;t have to.
+            We carry the regulatory weight so your practice doesn&apos;t have to.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -625,7 +602,7 @@ const SLIDES_RAW: Slide[] = [
             />
             <TrustItem
               head="No clawback"
-              body="The lender carries the credit risk for routine defaults. Not your business."
+              body="The lender carries the credit risk for routine defaults. Not your practice."
             />
           </div>
         </Reveal>
@@ -672,8 +649,8 @@ const SLIDES_RAW: Slide[] = [
                 <div className="sld-pricing-tier-tag">02 · USAGE</div>
                 <div className="sld-pricing-tier-h">Per lead through the smart form</div>
                 <div className="sld-pricing-tier-b">
-                  Every lead that runs through FORGE intake and the APEX soft-pull is billed at flat
-                  rate. No charge for traffic that never reaches the form.
+                  Every lead that runs through HELIX intake and the ORACLE soft-pull is billed at
+                  flat rate. No charge for traffic that never reaches the form.
                 </div>
               </div>
               <div className="sld-pricing-tier-r">
@@ -790,7 +767,7 @@ const SLIDES_RAW: Slide[] = [
             className="sld-sub"
             style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto' }}
           >
-            Two paths from here. Pick whichever fits how your business operates.
+            Two paths from here. Pick whichever fits how your practice operates.
           </p>
         </Reveal>
         <Reveal delay={360}>
@@ -829,10 +806,10 @@ const SLIDES_RAW: Slide[] = [
     ),
   },
 
-  /* 19 — SMART ROUTING (NEXUS) */
+  /* 19 — SMART ROUTING (HELIX) */
   {
     n: '19',
-    title: 'Smart routing — NEXUS',
+    title: 'Smart routing — HELIX',
     build: () => (
       <div className="sld-stack">
         <Reveal>
@@ -849,10 +826,10 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <p className="sld-sub">
-            FORGE structures the lead through your funnel in stages. First APEX returns a soft-pull
-            pre-approval. Then NEXUS routes &mdash; can be one stage, can be three. Credit score,
-            then income, then available credit. High-ticket buyers land on a calendar slot
-            pre-approved. Low-ticket buyers land on a guide, an e-book, or a starter offer. Your
+            HELIX runs the lead through your funnel in stages. First it pulls the financial
+            qualification from ORACLE. Then it routes &mdash; can be one stage, can be three. Credit
+            score, then income, then available credit. High-ticket leads land on a calendar slot
+            pre-approved. Low-ticket leads land on a guide, an e-book, or a starter offer. Your
             calendar fills with qualified buyers. Your reps stop wasting time on people who
             can&apos;t pay.
           </p>
@@ -887,7 +864,7 @@ const SLIDES_RAW: Slide[] = [
             <p className="sld-sub">
               Some buyers want to think. Some want to talk to a spouse. Some need 10 minutes. AI
               Funding texts a secure link to the same approved offer. They tap accept from the
-              couch. You still book the deal.
+              couch. You still book the case.
             </p>
           </Reveal>
           <Reveal delay={360}>
@@ -924,10 +901,10 @@ const SLIDES_RAW: Slide[] = [
         headline={
           <>
             <span className="grad-blue-deep">Dental, med spa, derm, vet,</span>{' '}
-            <span className="grad-blue">vision, surgical · the high-ticket consults.</span>
+            <span className="grad-blue">vision, surgical — the high-ticket consults.</span>
           </>
         }
-        intro="Healthcare is AI Funding's anchor vertical. Implants, ortho, full-mouth reconstruction, body contouring, LASIK, vet surgical — anywhere a buyer sits down and the ticket is $5k–$50k. The agents pre-qualify behind your existing intake so closers only see buyers who can actually fund."
+        intro="Healthcare is AI Funding's anchor vertical. Implants, ortho, body contouring, LASIK, vet surgical — anywhere a buyer sits down with the operator and the ticket is $5k–$50k. The platform pre-qualifies behind your existing intake so closers only see buyers who can actually fund."
         ticketRange="$3,000 – $50,000"
         ticketLabel="Single tooth implant to multi-modality package"
         highlight={{ v: '38% → 70%+', k: 'Same-day close uplift' }}
@@ -939,17 +916,17 @@ const SLIDES_RAW: Slide[] = [
         ]}
         outcomes={[
           { v: '2.1×', k: 'Same-day close uplift' },
-          { v: '$184k', k: 'Recovered / 90 days · mid-size practice' },
+          { v: '$184k', k: 'Recovered / 90 days · mid-size operator' },
           { v: '−41%', k: 'Form drop-off vs. legacy program' },
         ]}
         quote="We were losing a case a week to financing. First month on AI Funding, same-day close went from a third to two-thirds. Buyers walk in already approved."
         attribution="Dr. Helio Park"
-        attributionRole="Owner · implant practice · Austin TX"
+        attributionRole="Owner · multi-chair clinic · Austin TX"
       />
     ),
   },
 
-  /* 22 — VERTICAL: HOME-SERVICES (construction · solar · roofing) */
+  /* 22 — VERTICAL: HOME-SERVICES · SOLAR · CONSTRUCTION */
   {
     n: '22',
     title: 'Vertical — Construction · Solar · Home services',
@@ -962,12 +939,12 @@ const SLIDES_RAW: Slide[] = [
             <span className="grad-blue">Financing approved before the truck rolls.</span>
           </>
         }
-        intro="Solar installers, roofers, HVAC, kitchen + bath remodel, pool builders. The agents pre-approve the homeowner during the in-home estimate so reps can close on the spot instead of waiting on a lender callback. Funding lands in days — your crew can schedule the install the same week."
+        intro="Solar installers, roofers, HVAC, kitchen + bath remodel, pool builders. The platform pre-approves the homeowner during the in-home estimate so reps can close on the spot instead of waiting on a lender callback. Funding lands in days — your crew can schedule the install the same week."
         ticketRange="$8,000 – $80,000"
         ticketLabel="HVAC retrofit to whole-home solar"
         highlight={{ v: '+42%', k: 'In-home close rate' }}
         pains={[
-          'In-home estimate hits the price — buyer says "let me think about it"',
+          'In-home estimate hits the price — homeowner says "let me think about it"',
           'Bank loans take days; the buyer signs with the competitor by then',
           'Cash-strapped homeowner = financing dependency = single-lender risk',
           'Crew + materials booked against a deal that never gets funded',
@@ -987,7 +964,7 @@ const SLIDES_RAW: Slide[] = [
   /* 23 — VERTICAL: COACHING · EDUCATION · PROFESSIONAL SERVICES */
   {
     n: '23',
-    title: 'Vertical — Coaching · Education · Professional services',
+    title: 'Vertical — Coaching · Education · Pro services',
     build: () => (
       <VerticalSlide
         eyebrow="Verticals · Coaching · education · pro services"
@@ -997,7 +974,7 @@ const SLIDES_RAW: Slide[] = [
             <span className="grad-blue">and pro-services firms.</span>
           </>
         }
-        intro={`Online coaches, masterminds, trade schools, real-estate education, business consultants, immigration + legal services. Anywhere a sales call ends with a $5k–$50k price tag and a payment objection. The agents take the buyer from "interested" to "funded" before they hang up.`}
+        intro={`Online coaches, masterminds, trade schools, real-estate education, business consultants, immigration + legal services. Anywhere a sales call ends with a $5k–$50k price tag and a payment objection. The platform takes the buyer from "interested" to "funded" before they hang up.`}
         ticketRange="$2,500 – $40,000"
         ticketLabel="Group coaching cohort to 1-on-1 mastermind"
         highlight={{ v: '+58%', k: 'Discovery → close conversion' }}
@@ -1012,7 +989,7 @@ const SLIDES_RAW: Slide[] = [
           { v: '+34%', k: 'Average ticket (pricing certainty)' },
           { v: '0', k: 'In-house plans to chase' },
         ]}
-        quote="My closers used to soften the ask because they were scared of the payment conversation. Now the agent surfaces the credit band before the call. They open with confidence and the close rate moved 30 points."
+        quote="My closers used to soften the ask because they were scared of the payment conversation. Now the platform surfaces the credit band before the call. They open with confidence and the close rate moved 30 points."
         attribution="Casey Bell"
         attributionRole="Founder · 8-figure coaching program · Denver CO"
       />
@@ -1036,7 +1013,7 @@ const SLIDES_RAW: Slide[] = [
         <ParticleField count={42} />
         <Reveal>
           <div className="sld-cover-eyebrow">
-            <span className="sld-eyebrow-dot" />A presentation by EAZE AI
+            <span className="sld-eyebrow-dot" />A presentation by EazePay
           </div>
         </Reveal>
         <Reveal delay={120}>
@@ -1062,34 +1039,32 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={240}>
           <div className="sld-cover-wordmark">
-            <span className="grad-blue-deep">AI</span>
-            <span className="grad-blue"> Funding</span>
+            <span className="grad-blue-deep">Med</span>
+            <span className="grad-blue">Pay</span>
           </div>
         </Reveal>
         <Reveal delay={360}>
-          <div className="sld-cover-tagline">Turn pipelines into payouts.</div>
+          <div className="sld-cover-tagline">Outcomes when it matters most.</div>
           <div className="sld-cover-subtagline">
-            5 AI agents installed into your existing sales process in 24 hours.
+            A lender you can depend on. A platform you can depend on as a business owner.
           </div>
         </Reveal>
         <Reveal delay={480}>
           <div className="sld-cover-meta">
             <div className="sld-cover-meta-row">
               <span className="sld-cover-meta-k">For</span>
-              <span className="sld-cover-meta-v">
-                Healthcare · Construction · Solar · Coaching · Pro-services
-              </span>
+              <span className="sld-cover-meta-v">Dental · Med spa · Derm · Vet · Vision</span>
             </div>
             <div className="sld-cover-meta-row">
               <span className="sld-cover-meta-k">Presented by</span>
-              <span className="sld-cover-meta-v">EAZE AI · fund.eazeconsulting.com</span>
+              <span className="sld-cover-meta-v">EazePay · NMLS #2456701</span>
             </div>
           </div>
         </Reveal>
         <Reveal delay={600}>
           <div className="sld-cover-hint">
             <span className="sld-cover-hint-arrow">↓</span>
-            <span>Scroll to begin · ~12 min</span>
+            <span>Scroll to begin · 30 slides · ~15 min</span>
           </div>
         </Reveal>
       </div>
@@ -1110,17 +1085,17 @@ const SLIDES_RAW: Slide[] = [
     build: () => <WhoIsItFor />,
   },
 
-  /* 28 — THE 5 AGENTS OVERVIEW */
+  /* 28 — THE 7 AGENTS OVERVIEW */
   {
     n: '28',
-    title: '5 AI agents · one platform',
+    title: 'Seven agents · one platform',
     build: () => <SixAgents />,
   },
 
-  /* 29 — BEACON PIXEL ATTRIBUTION (deep dive) */
+  /* 29 — ECHO PIXEL ATTRIBUTION (deep dive) */
   {
     n: '29',
-    title: 'BEACON · Pixel attribution',
+    title: 'ECHO · Pixel attribution',
     build: () => <EchoPixel />,
   },
 
@@ -1141,147 +1116,8 @@ const SLIDES_RAW: Slide[] = [
   /* 32 — TRUSTED BY 1,000+ PRACTICES (enterprise social proof) */
   {
     n: '32',
-    title: 'Trusted by 2,000+ businesses',
+    title: 'Trusted by 1,000+ practices',
     build: () => <TrustedBy />,
-  },
-
-  /* 33 — APEX RESULT CONSOLE (what the Pre-Approval Agent actually
-     returns for every lead — concrete artefact to show buyers) */
-  {
-    n: '33',
-    title: 'APEX · Pre-approval result',
-    build: () => <ApexOutput />,
-  },
-
-  /* 34 — LENDER MARKETPLACE DEEP-DIVE (what NEXUS does to the lender
-     panel — parallel quotes, ranked cheapest-first) */
-  {
-    n: '34',
-    title: 'Lender marketplace',
-    build: () => (
-      <div className="sld-stack">
-        <Reveal>
-          <div className="sld-eyebrow">
-            <span className="sld-eyebrow-dot" />
-            How it works · NEXUS · Marketplace
-          </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <h2 className="sld-h2">
-            <span className="grad-blue-deep">One application,</span>{' '}
-            <span className="grad-blue">every lender in parallel.</span>
-          </h2>
-        </Reveal>
-        <Reveal delay={240}>
-          <p className="sld-sub">
-            NEXUS fires the buyer&apos;s profile across the full lender panel simultaneously. Quotes
-            return in seconds, ranked cheapest-first by total cost &mdash; not by lender commission.
-            The buyer sees the best price the marketplace can produce, not the best price one lender
-            felt like giving.
-          </p>
-        </Reveal>
-        <Reveal delay={360}>
-          <MarketplaceViz />
-        </Reveal>
-        <Reveal delay={480}>
-          <div className="sld-mini-stats">
-            <MiniStat v="All lenders" k="Quoted in parallel" />
-            <MiniStat v="< 30s" k="Quotes return" />
-            <MiniStat v="Total cost" k="Ranking signal" />
-            <MiniStat v="No reseller" k="Skim" />
-          </div>
-        </Reveal>
-      </div>
-    ),
-  },
-
-  /* 35 — BEST OFFER WINS (the offer stack the buyer actually picks) */
-  {
-    n: '35',
-    title: 'Best offer wins',
-    build: () => (
-      <div className="sld-stack">
-        <Reveal>
-          <div className="sld-eyebrow">
-            <span className="sld-eyebrow-dot" />
-            How it works · The offer
-          </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <h2 className="sld-h2">
-            <span className="grad-blue-deep">Best offer wins.</span>{' '}
-            <span className="grad-blue">Buyer signs in the same session.</span>
-          </h2>
-        </Reveal>
-        <Reveal delay={240}>
-          <p className="sld-sub">
-            Three ranked offers on one screen, sorted by total cost. The starred row is what buyers
-            actually pick 80% of the time. One tap to accept. E-signature on the same screen. They
-            are funded before the rep gets off the call.
-          </p>
-        </Reveal>
-        <Reveal delay={360}>
-          <OfferStack />
-        </Reveal>
-        <Reveal delay={480}>
-          <div className="sld-mini-stats">
-            <MiniStat v={<AnimatedCounter to={3} />} k="Offers shown" />
-            <MiniStat v="One tap" k="To accept" />
-            <MiniStat v="E-SIGN" k="Legally binding" />
-            <MiniStat v="$0" k="Buyer pays today" />
-          </div>
-        </Reveal>
-      </div>
-    ),
-  },
-
-  /* 36 — MERCHANT-DIRECT FUNDING (the bank wire — lender → operator
-     direct, no marketplace intermediary skim) */
-  {
-    n: '36',
-    title: 'Merchant-direct funding',
-    build: () => (
-      <div className="sld-stack">
-        <Reveal>
-          <div className="sld-eyebrow">
-            <span className="sld-eyebrow-dot" />
-            How it works · VAULT · Disbursement
-          </div>
-        </Reveal>
-        <Reveal delay={120}>
-          <h2 className="sld-h2">
-            <span className="grad-blue-deep">Lender disburses</span>{' '}
-            <span className="grad-blue">direct to your business account.</span>
-          </h2>
-        </Reveal>
-        <Reveal delay={240}>
-          <p className="sld-sub">
-            No marketplace intermediary holding the funds. No reseller skim. The lender wires the
-            full amount straight to your bank account within 48 to 72 hours of the loan settling.
-            The lender carries the credit risk &mdash; no clawback on routine defaults.
-          </p>
-        </Reveal>
-        <Reveal delay={360}>
-          <BankWire />
-        </Reveal>
-        <Reveal delay={480}>
-          <div className="sld-mini-stats">
-            <MiniStat
-              v={
-                <span>
-                  <AnimatedCounter to={48} />–<AnimatedCounter to={72} delay={300} />
-                  hr
-                </span>
-              }
-              k="Wire-to-account"
-            />
-            <MiniStat v="No" k="Clawback on default" />
-            <MiniStat v="ACH" k="Disbursement rail" />
-            <MiniStat v="Daily" k="Reconciliation report" />
-          </div>
-        </Reveal>
-      </div>
-    ),
   },
 ];
 
@@ -1293,7 +1129,7 @@ const NARRATIVE_ORDER = [
   25, // 02 · Welcome + agenda
   0, //  03 · What is AI Funding
   26, // 04 · Who is it for
-  31, // 05 · Trusted by 2,000+ businesses (NEW v7)
+  31, // 05 · Trusted by 1,000+ practices (NEW v7)
 
   // ACT 1 — Problem
   1, //  06 · The cost of doing nothing
@@ -1301,26 +1137,15 @@ const NARRATIVE_ORDER = [
 
   // ACT 2 — Solution (high level + agents + journey)
   3, //  · The 3 pillars
-  27, // · 5 agents · one platform (overview grid)
+  27, // · Six agents · one platform
   10, // · Buyer journey overview (4-panel storyboard)
-
-  // ACT 2a — Agent deep-dives (one slide per agent · brief copy + stats)
-  4, //  · Agent 1 · APEX Pre-Approval
-  32, // · APEX result console (the actual artefact)
-  5, //  · Agent 2 · FORGE Data
-  6, //  · Agent 3 · NEXUS Routing
-  7, //  · Agent 4 · CLOSE Sales
-  8, //  · Agent 5 · VAULT Funding
-
-  // ACT 2b — Platform mechanics (deep visualizations of how the
-  // marketplace, smart routing, offers, smartphone, and disbursement
-  // actually work end-to-end)
-  18, // · Smart routing — NEXUS (multi-stage funnel viz)
-  33, // · Lender marketplace (parallel quote viz)
-  34, // · Best offer wins (offer stack)
-  19, // · Smartphone continuity
-  35, // · Merchant-direct funding (bank wire)
-  28, // · BEACON pixel attribution
+  4, //  · Stage 1: Soft-pull pre-qual
+  18, // · Stage 2: HELIX smart forms + multi-stage routing
+  6, //  · Stage 3: Lender marketplace
+  7, //  · Stage 4: Best offer wins
+  19, // · Stage 5: Smartphone continuity
+  8, //  · Stage 6: Merchant-direct funding
+  28, // · ECHO pixel attribution
 
   // ACT 3 — Transformation
   9, //  18 · Without/With
@@ -1328,18 +1153,20 @@ const NARRATIVE_ORDER = [
   29, // 20 · The compound effect (NEW · 12-month projection)
 
   // ACT 4 — Verticals
-  20, // 21 · Vertical: Healthcare + elective care
-  21, // 22 · Vertical: Construction · Solar · Home services
-  22, // 23 · Vertical: Coaching · Education · Pro services
+  20, // 21 · Vertical: Dental clinics
+  21, // 22 · Vertical: Med spas
+  22, // 23 · Vertical: Derm · Vet · Vision
 
   // ACT 5 — Trust + decide
   13, // 25 · Vs competitors
 
-  // ACT 6 — The ask · sales-deck-only, no pricing/onboarding per brief
-  30, // · Full value stack
+  // ACT 6 — The ask
+  30, // 27 · Full value stack (NEW)
+  15, // 28 · Pricing
+  16, // 29 · Onboarding
 
   // ACT 7 — Close
-  23, // · Big finale CTA
+  23, // 30 · Big finale CTA
 ];
 const SLIDES: Slide[] = NARRATIVE_ORDER.map((i, idx) => ({
   ...SLIDES_RAW[i]!,
@@ -1665,7 +1492,7 @@ function OfferCardMock(): JSX.Element {
         </span>
         <span className="sld-mock-meta">Illustrative</span>
       </div>
-      <div className="sld-mock-project">$12k project · approved</div>
+      <div className="sld-mock-project">Implant consult · approved</div>
       <div className="sld-mock-amount">
         $12,000
         <span className="sld-mock-amount-sub">approved</span>
@@ -1869,11 +1696,11 @@ function VsTable(): JSX.Element {
       single: 'Soft pull with that lender',
       med: 'Soft pull across the marketplace',
     },
-    { k: 'Agent layer', single: 'None', med: '5 autonomous agents' },
+    { k: 'Agent layer', single: 'None', med: 'Six autonomous agents' },
     {
       k: 'Pixel attribution',
       single: 'On form-fill (junk signal)',
-      med: 'BEACON fires on funded job (real signal)',
+      med: 'ECHO fires on funded job (real signal)',
     },
   ];
   return (
@@ -1992,7 +1819,7 @@ function OfferStack(): JSX.Element {
   );
 }
 
-/** Bank-wire animation for Stage 5 — money flows lender → AI Funding → operator. */
+/** Bank-wire animation for Stage 5 — money flows lender → AI Funding → practice. */
 function BankWire(): JSX.Element {
   return (
     <div className="sld-wire">
@@ -2158,14 +1985,14 @@ function MoneyBreakdown(): JSX.Element {
   // Quiet teal-only breakdown of where the $1.41M leaks.
   const rows = [
     {
-      k: 'Lost close rate',
-      sub: '~24 declined deals/yr · $48k avg ticket · 95%',
+      k: 'Lost case acceptance',
+      sub: '~24 declined cases/yr · $48k avg ticket · 95%',
       v: '$1,094,400',
       pct: '77.7%',
     },
     {
-      k: 'Filler delivery hours',
-      sub: '~7 unfit sales calls/wk · 1.5 hr · $400/hr · 52',
+      k: 'Filler clinical hours',
+      sub: '~7 unfit consults/wk · 1.5 hr · $400/hr · 52',
       v: '$218,400',
       pct: '15.5%',
     },
@@ -2193,7 +2020,7 @@ function MoneyBreakdown(): JSX.Element {
       <div className="sld-money-row sld-money-row-total">
         <div className="sld-money-row-l">
           <div className="sld-money-row-k">Total annual leakage</div>
-          <div className="sld-money-row-sub">illustrative · mid-size operator</div>
+          <div className="sld-money-row-sub">illustrative · implant practice</div>
         </div>
         <div className="sld-money-row-r">
           <div className="sld-money-row-v sld-money-row-v-total">$1.41M</div>
@@ -2210,14 +2037,14 @@ function SampleInvoice(): JSX.Element {
       <div className="sld-invoice-head">
         <div>
           <div className="sld-invoice-from">AI Funding · A vertical of EazePay</div>
-          <div className="sld-invoice-meta">NMLS #4755691 · EIN 88-1234567</div>
+          <div className="sld-invoice-meta">NMLS #2456701 · EIN 88-1234567</div>
         </div>
         <div className="sld-invoice-no">
           <div className="sld-invoice-no-k">Receipt</div>
           <div className="sld-invoice-no-v">RCP-2026-001</div>
         </div>
       </div>
-      <div className="sld-invoice-period">Day 0 · Setup · Sample Operator Co.</div>
+      <div className="sld-invoice-period">Day 0 · Setup · Helio Dental Group</div>
       <table className="sld-invoice-table">
         <thead>
           <tr>
@@ -2288,7 +2115,7 @@ function OnboardingTimeline(): JSX.Element {
     {
       d: 'Day 2-3',
       t: 'Smart-form + routing built',
-      b: 'FORGE smart form deployed · NEXUS routes published · APEX wired to bureaus',
+      b: 'HELIX smart form deployed · routes published · ORACLE wired to bureaus',
     },
     {
       d: 'Day 4-5',
@@ -2333,7 +2160,7 @@ function RoadmapStrip(): JSX.Element {
   );
 }
 
-/** Smart-routing (NEXUS) visualization — buyer avatar at left, NEXUS
+/** Smart-routing (HELIX) visualization — buyer avatar at left, HELIX
  *  agent middle, three reps on the right with capacity badges. */
 function SmartRoutingViz(): JSX.Element {
   return (
@@ -2347,16 +2174,16 @@ function SmartRoutingViz(): JSX.Element {
         </div>
         <div className="sld-funnel-connector" aria-hidden />
         <div className="sld-funnel-stage">
-          <span className="sld-funnel-stage-tag">02 · FORGE INTAKE</span>
+          <span className="sld-funnel-stage-tag">02 · HELIX INTAKE</span>
           <span className="sld-funnel-stage-h">Smart form reshapes on partial answers</span>
           <span className="sld-funnel-stage-b">
-            Deal type · ticket · contact — order rewritten by intent
+            Procedure · ticket · contact — order rewritten by intent
           </span>
         </div>
         <div className="sld-funnel-connector" aria-hidden />
         <div className="sld-funnel-stage">
-          <span className="sld-funnel-stage-tag">03 · APEX PRE-APPROVAL</span>
-          <span className="sld-funnel-stage-h">Soft-pull pre-approval on every lead</span>
+          <span className="sld-funnel-stage-tag">03 · ORACLE QUALIFY</span>
+          <span className="sld-funnel-stage-h">Financial qualification on every lead</span>
           <div className="sld-funnel-pills">
             <span className="sld-funnel-pill">Credit</span>
             <span className="sld-funnel-pill">Available</span>
@@ -2370,7 +2197,7 @@ function SmartRoutingViz(): JSX.Element {
       {/* Router pill — quietly indicates the split */}
       <div className="sld-funnel-router">
         <span className="sld-funnel-router-dot" />
-        NEXUS router · multi-stage
+        HELIX router · multi-stage
       </div>
 
       {/* Two-column branches — equal weight, flat, no 3D tilt */}
@@ -2425,165 +2252,6 @@ function SmartRoutingViz(): JSX.Element {
   );
 }
 
-/** APEX result console — concrete artefact slide. Shows exactly what
- *  the Pre-Approval Agent returns for every lead within ~10 seconds of
- *  soft-pull. Three columns: Financial profile · Verdicts · Funding
- *  estimates. Designed to look like a real product UI, not a
- *  brochure, because reps drop this slide on prospects who ask
- *  "okay, but what do I actually see?". */
-function ApexOutput(): JSX.Element {
-  const totalEstimate = 15700 + 10400 + 2000; // 28,100
-  const fmt = (n: number) => `$${n.toLocaleString('en-US')}`;
-  return (
-    <div className="sld-stack">
-      <Reveal>
-        <div className="sld-eyebrow">
-          <span className="sld-eyebrow-dot" />
-          APEX · Pre-approval result
-        </div>
-      </Reveal>
-      <Reveal delay={120}>
-        <h2 className="sld-h2">
-          <span className="grad-blue-deep">This is what comes back</span>{' '}
-          <span className="grad-blue">for every single lead.</span>
-        </h2>
-      </Reveal>
-      <Reveal delay={240}>
-        <p className="sld-sub">
-          Soft-pull · FCRA-compliant · zero credit impact. APEX returns a complete pre-approval
-          profile in under 10 seconds and writes it into your CRM. Your reps walk into the call
-          already knowing the credit band, the available headroom, the qualifying programs, and the
-          funding ceiling per program.
-        </p>
-      </Reveal>
-      <Reveal delay={360}>
-        <div className="sld-apex">
-          <div className="sld-apex-head">
-            <div className="sld-apex-head-l">
-              <span className="sld-apex-glyph" aria-hidden>
-                <svg viewBox="0 0 24 24">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="9"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                  />
-                  <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.25" />
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                </svg>
-              </span>
-              <div>
-                <div className="sld-apex-title">APEX · Pre-approval result</div>
-                <div className="sld-apex-buyer">
-                  <span className="sld-apex-buyer-k">buyer_id</span>
-                  <span className="sld-apex-buyer-v">ezc_8f7a2c</span>
-                  <span className="sld-apex-buyer-sep">·</span>
-                  <span className="sld-apex-buyer-k">latency</span>
-                  <span className="sld-apex-buyer-v">8.3s</span>
-                </div>
-              </div>
-            </div>
-            <div className="sld-apex-status">
-              <span className="sld-apex-status-dot" />
-              APPROVED
-            </div>
-          </div>
-
-          <div className="sld-apex-grid">
-            <div className="sld-apex-col">
-              <div className="sld-apex-col-h">Financial profile</div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Income</span>
-                <span className="sld-apex-v">{fmt(54999)}</span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Available credit</span>
-                <span className="sld-apex-v">{fmt(34849)}</span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Credit score</span>
-                <span className="sld-apex-v sld-apex-v-strong">772</span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">DTI</span>
-                <span className="sld-apex-v">1%</span>
-              </div>
-            </div>
-
-            <div className="sld-apex-col">
-              <div className="sld-apex-col-h">Pre-qualification</div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Merchant Direct</span>
-                <span className="sld-apex-pill sld-apex-pill-yes">
-                  <span className="sld-apex-pill-dot" /> Yes
-                </span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Consumer Direct</span>
-                <span className="sld-apex-pill sld-apex-pill-yes">
-                  <span className="sld-apex-pill-dot" /> Yes
-                </span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">BNPL</span>
-                <span className="sld-apex-pill sld-apex-pill-yes">
-                  <span className="sld-apex-pill-dot" /> Yes
-                </span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Disqualify reason</span>
-                <span className="sld-apex-v sld-apex-v-muted">N/A</span>
-              </div>
-            </div>
-
-            <div className="sld-apex-col">
-              <div className="sld-apex-col-h">Funding estimates</div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Merchant Direct</span>
-                <span className="sld-apex-v sld-apex-v-money">{fmt(15700)}</span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">Consumer Direct</span>
-                <span className="sld-apex-v sld-apex-v-money">{fmt(10400)}</span>
-              </div>
-              <div className="sld-apex-row">
-                <span className="sld-apex-k">BNPL</span>
-                <span className="sld-apex-v sld-apex-v-money">{fmt(2000)}</span>
-              </div>
-              <div className="sld-apex-row sld-apex-row-total">
-                <span className="sld-apex-k">Total potential</span>
-                <span className="sld-apex-v sld-apex-v-total">{fmt(totalEstimate)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="sld-apex-foot">
-            <span className="sld-apex-foot-dot" />
-            Returned to FORGE in 8.3s · streamed to your CRM · logged for audit
-          </div>
-        </div>
-      </Reveal>
-      <Reveal delay={480}>
-        <div className="sld-mini-stats">
-          <MiniStat v="< 10s" k="Decision time" />
-          <MiniStat v="0" k="Credit impact" />
-          <MiniStat v="3 programs" k="Quoted in parallel" />
-          <MiniStat v="100%" k="Of inbound leads" />
-        </div>
-      </Reveal>
-      <Reveal delay={600}>
-        <p className="sld-takeaway">
-          For the rep: no more guessing. The screen above is in your CRM before the buyer hangs up
-          the form. You open the call with the right program and the right number, not a discovery
-          question.
-        </p>
-      </Reveal>
-    </div>
-  );
-}
-
 /** Smartphone mockup — used to show the buyer continuing the flow
  *  later on their phone. */
 function SmartphoneMock(): JSX.Element {
@@ -2598,7 +2266,7 @@ function SmartphoneMock(): JSX.Element {
               <span className="sld-phone-card-dot" /> AI Funding · approved
             </div>
             <div className="sld-phone-card-amount">$12,000</div>
-            <div className="sld-phone-card-meta">$12k project · approved</div>
+            <div className="sld-phone-card-meta">Implant consult · approved</div>
             <div className="sld-phone-card-row">
               <span>Est. monthly</span>
               <strong>$250 / mo</strong>
@@ -2610,7 +2278,7 @@ function SmartphoneMock(): JSX.Element {
             <div className="sld-phone-card-cta">Accept approval</div>
             <div className="sld-phone-card-foot">FCRA soft pull · 0 impact · e-sign in app</div>
           </div>
-          <div className="sld-phone-tip">Picked up where you left off at the sales call.</div>
+          <div className="sld-phone-tip">Picked up where you left off at the consult.</div>
         </div>
       </div>
     </div>
@@ -2714,7 +2382,7 @@ function WelcomeAgenda(): JSX.Element {
   const agenda = [
     { n: '01', t: 'What is AI Funding', s: 'The product in one sentence' },
     { n: '02', t: 'Who it’s for', s: 'Your vertical, your buyer profile' },
-    { n: '03', t: 'The problem', s: 'Why your close rate is leaking' },
+    { n: '03', t: 'The problem', s: 'Why your case acceptance is leaking' },
     { n: '04', t: 'The solution', s: 'How the platform actually works' },
     { n: '05', t: 'The transformation', s: 'What 12 months of AI Funding looks like' },
     { n: '06', t: 'The ask', s: 'What it costs, how to start' },
@@ -2841,10 +2509,8 @@ function WhoIsItFor(): JSX.Element {
   );
 }
 
-/** Five autonomous agents · one platform. Grid of agents with
- *  role, what-they-watch, and output. Compliance is an always-on
- *  overlay, not a slot in this grid — covered separately by the
- *  Security + compliance slide. */
+/** Six autonomous agents · one platform. 3+3 grid of agents with
+ *  role, what-they-watch, and output. */
 function SixAgents(): JSX.Element {
   // Each agent gets a unique geometric SVG glyph + a "version · LIVE"
   // tag so the grid reads like an ops console, not a static brochure.
@@ -2857,9 +2523,9 @@ function SixAgents(): JSX.Element {
     glyph: JSX.Element;
   }> = [
     {
-      code: 'APEX',
-      role: 'Pre-Approval Agent',
-      watches: 'Soft-pull on every lead · FCRA-compliant',
+      code: 'ORACLE',
+      role: 'Financial qualification',
+      watches: 'Reporting-bureau pull on every lead',
       output: 'Credit · available credit · income · DTI · pre-approval $',
       version: 'v4.2',
       glyph: (
@@ -2876,10 +2542,10 @@ function SixAgents(): JSX.Element {
       ),
     },
     {
-      code: 'FORGE',
-      role: 'Data Agent',
+      code: 'HELIX',
+      role: 'Smart forms + smart routing',
       watches: 'Form behaviour + financial signals',
-      output: 'Reshapes the form · structures the data · enriches every signal',
+      output: 'Reshapes the form · routes by credit → income → DTI',
       version: 'v3.8',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2901,9 +2567,9 @@ function SixAgents(): JSX.Element {
     },
     {
       code: 'NEXUS',
-      role: 'Routing Agent',
-      watches: 'Lender appetite + tier-fit + approval velocity',
-      output: 'Routes the buyer to the right lender first time',
+      role: 'Lender marketplace',
+      watches: 'Lender appetite + rates',
+      output: 'Ranked parallel quotes',
       version: 'v6.1',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2923,10 +2589,10 @@ function SixAgents(): JSX.Element {
       ),
     },
     {
-      code: 'CLOSE',
-      role: 'Sales Agent',
-      watches: 'Buyer hesitation · objections · drop-off triggers',
-      output: 'Handles the payment conversation · books the call · revives ghosts',
+      code: 'FLUX',
+      role: 'Lender routing',
+      watches: 'Approval rates per tier',
+      output: 'Optimal lender order',
       version: 'v2.5',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2950,10 +2616,10 @@ function SixAgents(): JSX.Element {
       ),
     },
     {
-      code: 'VAULT',
-      role: 'Funding Agent',
-      watches: 'Lender disbursement state · payout windows · ACH timing',
-      output: 'Pushes funds merchant-direct · ledger entry per payout',
+      code: 'ECHO',
+      role: 'Pixel attribution',
+      watches: 'The funded-buyer signal',
+      output: 'Re-trains Meta + Google',
       version: 'v5.0',
       glyph: (
         <svg viewBox="0 0 40 40" aria-hidden>
@@ -2988,6 +2654,31 @@ function SixAgents(): JSX.Element {
         </svg>
       ),
     },
+    {
+      code: 'VEGA',
+      role: 'Compliance audit',
+      watches: 'Every consent + disclosure',
+      output: 'FCRA / ECOA / TILA trail',
+      version: 'v1.9',
+      glyph: (
+        <svg viewBox="0 0 40 40" aria-hidden>
+          <path
+            d="M20 4 L34 10 L34 22 Q34 30 20 36 Q6 30 6 22 L6 10 Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill="none"
+          />
+          <path
+            d="M14 20 L18 24 L26 16"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+    },
   ];
   return (
     <div className="sld-stack">
@@ -2999,16 +2690,15 @@ function SixAgents(): JSX.Element {
       </Reveal>
       <Reveal delay={120}>
         <h2 className="sld-h2">
-          <span className="grad-blue-deep">5 autonomous agents.</span>{' '}
+          <span className="grad-blue-deep">Six autonomous agents.</span>{' '}
           <span className="grad-blue">One platform.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          AI Funding is a stack of five specialised agents working in parallel on every buyer
-          session &mdash; pre-approval, data + smart forms, lender routing, sales conversation, and
-          merchant funding. Every agent is named, observable, and logged. Compliance audit (FCRA /
-          ECOA / TILA) runs as an always-on overlay across the stack.
+          AI Funding is a stack of six specialised agents working in parallel on every lead session
+          &mdash; financial qualification, smart forms + routing, lender selection, lender quoting,
+          pixel attribution, and compliance audit. Every agent is named, observable, and logged.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3045,7 +2735,7 @@ function SixAgents(): JSX.Element {
   );
 }
 
-/** BEACON pixel attribution — deep dive on the "fire on funded job"
+/** ECHO pixel attribution — deep dive on the "fire on funded job"
  *  feedback loop. */
 function EchoPixel(): JSX.Element {
   return (
@@ -3053,7 +2743,7 @@ function EchoPixel(): JSX.Element {
       <Reveal>
         <div className="sld-eyebrow">
           <span className="sld-eyebrow-dot" />
-          BEACON · Pixel attribution
+          ECHO · Pixel attribution
         </div>
       </Reveal>
       <Reveal delay={120}>
@@ -3066,7 +2756,7 @@ function EchoPixel(): JSX.Element {
         <p className="sld-sub">
           Today, your Meta and Google ad pixels fire on a Page View, a Lead, or a Form Submit. Most
           of those leads never fund. Your algorithm optimises for garbage and your CPA drifts up
-          month over month. BEACON breaks the loop.
+          month over month. ECHO breaks the loop.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3091,15 +2781,15 @@ function EchoPixel(): JSX.Element {
           <div className="sld-echo-3d-stage">
             <span className="sld-echo-3d-tag">STAGE 05 · FIRES</span>
             <span className="sld-echo-3d-h">Funded buyer</span>
-            <span className="sld-echo-3d-sub">BEACON holds the pixel until cash settles</span>
+            <span className="sld-echo-3d-sub">ECHO holds the pixel until cash settles</span>
           </div>
           <div className="sld-echo-3d-stream" aria-hidden>
             <svg viewBox="0 0 400 140" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="echoBeam" x1="0" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="rgba(139, 92, 246, 0.0)" />
-                  <stop offset="50%" stopColor="rgba(139, 92, 246, 0.55)" />
-                  <stop offset="100%" stopColor="rgba(139, 92, 246, 0.0)" />
+                  <stop offset="0%" stopColor="rgba(96, 165, 250, 0.0)" />
+                  <stop offset="50%" stopColor="rgba(96, 165, 250, 0.55)" />
+                  <stop offset="100%" stopColor="rgba(96, 165, 250, 0.0)" />
                 </linearGradient>
               </defs>
               <path
@@ -3133,9 +2823,9 @@ function EchoPixel(): JSX.Element {
             </div>
           </div>
           <div className="sld-echo-3d-caption">
-            BEACON holds the pixel until stage 05 fires. The weighted conversion that returns to
-            Meta, Google, and TikTok is a real funded buyer — not a form-fill. Your algorithm
-            retrains on the right buyer profile.
+            ECHO holds the pixel until stage 05 fires. The weighted conversion that returns to Meta,
+            Google, and TikTok is a real funded buyer — not a form-fill. Your algorithm retrains on
+            the right buyer profile.
           </div>
         </div>
       </Reveal>
@@ -3180,7 +2870,7 @@ function CompoundEffect(): JSX.Element {
         <p className="sld-sub">
           AI Funding does not just close more buyers today. It compounds. Each funded buyer
           re-trains your pixel. The pixel sends better leads. Better leads close at a higher rate.
-          The cycle accelerates. Twelve months in, the business is unrecognisable.
+          The cycle accelerates. Twelve months in, the practice is unrecognisable.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3201,13 +2891,13 @@ function CompoundEffect(): JSX.Element {
             <div>
               <div className="sld-comp-legend-k">Cumulative recovered revenue</div>
               <div className="sld-comp-legend-v">
-                ~$398k by month 12 · mid-size operator · illustrative
+                ~$398k by month 12 · mid-size practice · illustrative
               </div>
             </div>
             <div>
               <div className="sld-comp-legend-k">CPA trajectory</div>
               <div className="sld-comp-legend-v">
-                −38% by month 12 · driven by funded-event pixel retraining
+                −38% by month 12 · driven by ECHO pixel retraining
               </div>
             </div>
           </div>
@@ -3233,10 +2923,10 @@ function ValueStack(): JSX.Element {
     {
       head: 'Pre-qualification layer',
       items: [
-        'APEX soft-pull pre-approval (FCRA-compliant)',
+        'Soft-pull fundability tier (FCRA-compliant)',
         'Last-4-SSN + DOB + income in-session',
-        'FORGE smart-form intake (−41% drop-off)',
-        'Real-time signal scoring · pre-approval $',
+        'HELIX smart-form intake (−41% drop-off)',
+        'Real-time signal scoring · ORACLE',
       ],
       alt: '$2,400 / mo · standalone form + scoring vendor',
     },
@@ -3244,26 +2934,26 @@ function ValueStack(): JSX.Element {
       head: 'Lender marketplace',
       items: [
         'Parallel quoting across the marketplace',
-        'NEXUS routing · ranked total-cost',
-        'Adaptive routing by credit + income tier',
-        'Ticket coverage from $1k to $100k',
+        'NEXUS lender selection · ranked total-cost',
+        'FLUX adaptive routing by tier',
+        'Ticket coverage from $1k to $50k',
       ],
       alt: '$1,800 / mo + 1.5% take-rate · single-lender programs',
     },
     {
-      head: 'Sales + ops layer',
+      head: 'Smart routing + ops',
       items: [
-        'CLOSE Sales Agent handles the payment conversation',
+        'HELIX best-fit estimator routing',
         'Capacity + geo + ticket-fit matching',
         'Smartphone continuity for off-site signing',
-        'VAULT merchant-direct ACH disbursement',
+        'Merchant-direct ACH disbursement',
       ],
       alt: '$1,200 / mo · routing tool + payment processor',
     },
     {
       head: 'Pixel + attribution',
       items: [
-        'Funded-event pixel retraining',
+        'ECHO funded-event pixel retraining',
         'Server-side CAPI to Meta + Google + TikTok',
         'Funnel-stage event ledger',
         'Per-channel ROAS attribution',
@@ -3297,7 +2987,7 @@ function ValueStack(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          AI Funding replaces a stack of six vendors that most operators duct-tape together.
+          AI Funding replaces a stack of six vendors that most practices duct-tape together.
           Here&apos;s everything included &mdash; and what you&apos;d typically pay if you bought it
           piecemeal.
         </p>
@@ -3340,7 +3030,7 @@ function ValueStack(): JSX.Element {
   );
 }
 
-/** Trusted by 2,000+ businesses — enterprise social proof slide.
+/** Trusted by 1,000+ practices — enterprise social proof slide.
  *  Goes right after "Who it's for" so the prospect knows AI Funding
  *  isn't a side project before we walk into the problem. */
 function TrustedBy(): JSX.Element {
@@ -3360,15 +3050,15 @@ function TrustedBy(): JSX.Element {
       </Reveal>
       <Reveal delay={120}>
         <h2 className="sld-h2">
-          <span className="grad-blue-deep">Over 2,000 US businesses</span>{' '}
+          <span className="grad-blue-deep">Over 1,000 practices</span>{' '}
           <span className="grad-blue">already run on AI Funding.</span>
         </h2>
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          We&apos;ve been in market with healthcare practices, home-services crews, solar
-          installers, construction contractors and coaching programs since launch. The platform is
-          hardened, the lender panel is live, and the support team is staffed for scale.
+          We&apos;ve been in market with dental clinics, med spas, derm groups, vet hospitals and
+          elective-vision practices since launch. The platform is hardened, the lender panel is
+          live, and the support team is staffed for scale.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3376,19 +3066,19 @@ function TrustedBy(): JSX.Element {
           <div className="sld-trust-hero-row">
             <div>
               <div className="sld-trust-hero-v">
-                <AnimatedCounter to={2000} suffix="+" />
+                <AnimatedCounter to={1000} suffix="+" />
               </div>
-              <div className="sld-trust-hero-k">Businesses live</div>
+              <div className="sld-trust-hero-k">Practices live</div>
             </div>
             <div>
               <div className="sld-trust-hero-v">
-                $<AnimatedCounter to={300} suffix="M+" />
+                $<AnimatedCounter to={240} suffix="M+" />
               </div>
-              <div className="sld-trust-hero-k">Sales funded to date</div>
+              <div className="sld-trust-hero-k">Funded to date</div>
             </div>
             <div>
               <div className="sld-trust-hero-v">
-                <AnimatedCounter to={18600} suffix="+" />
+                <AnimatedCounter to={12400} suffix="+" />
               </div>
               <div className="sld-trust-hero-k">Buyers financed</div>
             </div>
@@ -3405,13 +3095,13 @@ function TrustedBy(): JSX.Element {
       <Reveal delay={540}>
         <div className="sld-trust-tiles">
           {[
-            'Healthcare — 720+ practices',
-            'Home services — 480+ crews',
-            'Solar + clean energy — 320+ installers',
-            'Construction — 280+ contractors',
-            'Coaching + pro services — 200+ programs',
+            'Dental — 540+ practices',
+            'Med spa — 230+ locations',
+            'Derm — 120+ clinics',
+            'Vet — 80+ hospitals',
+            'Vision — 50+ practices',
             'All 50 US states',
-            'NMLS #4755691',
+            'NMLS #2456701',
             'SOC 2 in progress',
           ].map((l, i) => (
             <span key={i}>{tile(l)}</span>
@@ -3445,7 +3135,7 @@ function BigFinaleCTA(): JSX.Element {
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
           $10,000 to set up. $3 per smart-form lead. 4% of loans that actually settle. Live in up to
-          five business days. 2,000+ businesses already running on AI Funding.
+          five business days. 1,000+ practices already running on AI Funding.
         </p>
       </Reveal>
       <Reveal delay={360}>
@@ -3463,7 +3153,7 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#4755691 · FCRA · ECOA · TILA · 2,000+ businesses · $10k setup · $3 / lead · 4%
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $10k setup · $3 / lead · 4%
           settled
         </div>
       </Reveal>
@@ -3630,7 +3320,7 @@ function EconomicsSlide(): JSX.Element {
           <div className="sld-econ-delta">
             <span className="sld-econ-delta-tag">Delta</span>
             <span className="sld-econ-delta-val">+ {fmt(delta)} / year</span>
-            <span className="sld-econ-delta-sub">illustrative · varies by operator</span>
+            <span className="sld-econ-delta-sub">illustrative · varies by practice</span>
           </div>
         </div>
       </Reveal>
@@ -3763,8 +3453,6 @@ const CSS = `
 .sld-root {
   --af-blue: #3B82F6;
   --af-blue-2: #60A5FA;
-  --af-violet: #8B5CF6;
-  --af-violet-2: #A78BFA;
   --af-light: #EEF2FF;
   --af-deep: #0B1224;
   --af-ink: #0F172A;
@@ -3774,7 +3462,7 @@ const CSS = `
   --af-line-strong: rgba(59, 130, 246, 0.22);
 
   position: relative;
-  background: linear-gradient(180deg, #EEF2FF 0%, #FFFFFF 30%, #F5F3FF 65%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #EEF2FF 0%, #FFFFFF 30%, #F3FBFA 65%, #FFFFFF 100%);
   color: var(--af-ink);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
@@ -3791,9 +3479,9 @@ const CSS = `
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 20%, rgba(139, 92, 246, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 15% 20%, rgba(96, 165, 250, 0.16) 0%, transparent 60%),
     radial-gradient(ellipse 50% 60% at 85% 30%, rgba(59, 130, 246, 0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(139, 92, 246, 0.10) 0%, transparent 55%);
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(96, 165, 250, 0.10) 0%, transparent 55%);
   animation: sldMeshDrift 24s ease-in-out infinite;
 }
 @keyframes sldMeshDrift {
@@ -3877,7 +3565,7 @@ const CSS = `
   color: var(--af-blue);
   text-transform: uppercase;
   padding: 6px 14px;
-  background: rgba(139, 92, 246, 0.10);
+  background: rgba(96, 165, 250, 0.10);
   border: 1px solid var(--af-line);
   border-radius: 999px;
   align-self: flex-start;
@@ -3885,12 +3573,12 @@ const CSS = `
 .sld-eyebrow-dot {
   width: 6px; height: 6px; border-radius: 999px;
   background: var(--af-blue-2);
-  box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.5);
   animation: sldPulse 1.6s ease-in-out infinite;
 }
 @keyframes sldPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(96, 165, 250, 0); }
 }
 
 /* ===== Headlines — lighter editorial weight (was 800), more
@@ -3994,7 +3682,7 @@ const CSS = `
 }
 .sld-vs-med {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(139, 92, 246, 0.16), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(96, 165, 250, 0.16), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border-color: var(--af-line-strong);
   box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.30);
@@ -4024,7 +3712,7 @@ const CSS = `
   color: rgb(170, 60, 60);
 }
 .sld-vs-check {
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(96, 165, 250, 0.18);
   color: var(--af-blue);
 }
 
@@ -4038,7 +3726,7 @@ const CSS = `
 .sld-pillar {
   position: relative;
   background:
-    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(139, 92, 246, 0.10), transparent 65%),
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 253, 252, 0.97) 100%);
   border: 1px solid var(--af-line-strong);
   border-radius: 22px;
@@ -4055,7 +3743,7 @@ const CSS = `
 .sld-pillar-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 110%, rgba(139, 92, 246, 0.20), transparent 60%);
+  background: radial-gradient(circle at 50% 110%, rgba(96, 165, 250, 0.20), transparent 60%);
   opacity: 0;
   transition: opacity 0.35s ease;
   pointer-events: none;
@@ -4075,7 +3763,7 @@ const CSS = `
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--af-blue);
-  background: rgba(139, 92, 246, 0.10);
+  background: rgba(96, 165, 250, 0.10);
   border: 1px solid rgba(59, 130, 246, 0.20);
   border-radius: 6px;
 }
@@ -4109,7 +3797,7 @@ const CSS = `
   font-size: 10.5px; letter-spacing: 0.04em;
   font-weight: 600;
   color: var(--af-blue);
-  background: rgba(139, 92, 246, 0.08);
+  background: rgba(96, 165, 250, 0.08);
   border: 1px solid rgba(59, 130, 246, 0.16);
   padding: 4px 8px;
   border-radius: 6px;
@@ -4132,7 +3820,7 @@ const CSS = `
   content: '';
   position: absolute; top: -40%; right: -10%;
   width: 360px; height: 360px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.18), transparent 65%);
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.18), transparent 65%);
   pointer-events: none;
 }
 .sld-stage-metric {
@@ -4201,7 +3889,7 @@ const CSS = `
   color: var(--af-blue);
   text-transform: uppercase;
   padding: 4px 10px;
-  background: rgba(139, 92, 246, 0.12);
+  background: rgba(96, 165, 250, 0.12);
   border-radius: 999px;
 }
 .sld-mock-pill-dot {
@@ -4322,7 +4010,7 @@ const CSS = `
   position: absolute;
   border-radius: 999px;
   background: var(--af-blue-2);
-  box-shadow: 0 0 6px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 6px rgba(96, 165, 250, 0.5);
   animation: sldFloat 12s ease-in-out infinite;
   opacity: 0.4;
 }
@@ -4359,7 +4047,7 @@ const CSS = `
 .sld-mp-app-card {
   padding: 16px;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 0%, rgba(139, 92, 246, 0.10), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 70%),
     rgba(255, 255, 255, 0.96);
   border: 1px solid var(--af-line-strong);
   border-radius: 14px;
@@ -4440,9 +4128,9 @@ const CSS = `
 }
 .sld-mp-quote.is-winner {
   background:
-    radial-gradient(ellipse 80% 120% at 100% 50%, rgba(139, 92, 246, 0.28), transparent 70%),
-    linear-gradient(135deg, var(--af-deep) 0%, #1E3A8A 100%);
-  border-color: rgba(139, 92, 246, 0.45);
+    radial-gradient(ellipse 80% 120% at 100% 50%, rgba(96, 165, 250, 0.28), transparent 70%),
+    linear-gradient(135deg, var(--af-deep) 0%, #0A3B36 100%);
+  border-color: rgba(96, 165, 250, 0.45);
   color: #fff;
   box-shadow:
     0 18px 36px -20px rgba(59, 130, 246, 0.55),
@@ -4548,8 +4236,8 @@ const CSS = `
   padding: 18px 22px;
   border-radius: 14px;
   background:
-    linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(139, 92, 246, 0.06) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+    linear-gradient(90deg, rgba(96, 165, 250, 0.18) 0%, rgba(96, 165, 250, 0.06) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.35);
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
 }
 .sld-bar-delta-tag {
@@ -4558,7 +4246,7 @@ const CSS = `
   text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 6px;
-  background: rgba(139, 92, 246, 0.22);
+  background: rgba(96, 165, 250, 0.22);
 }
 .sld-bar-delta-val {
   font-size: 22px; font-weight: 800;
@@ -4630,7 +4318,7 @@ const CSS = `
 }
 .sld-econ-card.with {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(139, 92, 246, 0.18), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(96, 165, 250, 0.18), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border-color: var(--af-line-strong);
 }
@@ -4680,8 +4368,8 @@ const CSS = `
   padding: 18px 22px;
   border-radius: 14px;
   background:
-    linear-gradient(90deg, rgba(139, 92, 246, 0.18) 0%, rgba(139, 92, 246, 0.06) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+    linear-gradient(90deg, rgba(96, 165, 250, 0.18) 0%, rgba(96, 165, 250, 0.06) 100%);
+  border: 1px solid rgba(96, 165, 250, 0.35);
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
 }
 .sld-econ-delta-tag {
@@ -4690,7 +4378,7 @@ const CSS = `
   text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 6px;
-  background: rgba(139, 92, 246, 0.22);
+  background: rgba(96, 165, 250, 0.22);
 }
 .sld-econ-delta-val {
   font-size: 22px; font-weight: 800;
@@ -4810,7 +4498,7 @@ const CSS = `
   color: rgb(170, 60, 60);
 }
 .sld-vs-mark.check {
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(96, 165, 250, 0.18);
   color: var(--af-blue);
 }
 
@@ -4915,7 +4603,7 @@ const CSS = `
   box-shadow: 0 24px 50px -28px rgba(59, 130, 246, 0.30);
 }
 .sld-cta-primary {
-  background: linear-gradient(180deg, var(--af-deep) 0%, #1E3A8A 100%);
+  background: linear-gradient(180deg, var(--af-deep) 0%, #0A3B36 100%);
   color: #fff;
   border-color: transparent;
 }
@@ -5059,8 +4747,8 @@ const CSS = `
 .sld-takeaway {
   margin: 0;
   padding: 14px 18px;
-  background: rgba(139, 92, 246, 0.06);
-  border: 1px solid rgba(139, 92, 246, 0.18);
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.18);
   border-radius: 10px;
   font-size: 13px; line-height: 1.6;
   color: var(--af-ink-2);
@@ -5075,7 +4763,7 @@ const CSS = `
 }
 .sld-ipad-bezel {
   width: 380px;
-  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  background: linear-gradient(180deg, #1a1f24 0%, #0d1115 100%);
   border-radius: 28px;
   padding: 14px;
   box-shadow:
@@ -5179,7 +4867,7 @@ const CSS = `
 }
 .sld-offer-row:last-of-type { border-bottom: none; }
 .sld-offer-row.is-winner {
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.08), transparent);
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.08), transparent);
   margin: 0 -22px; padding: 16px 22px;
 }
 .sld-offer-lender {
@@ -5203,7 +4891,7 @@ const CSS = `
   margin-left: 4px;
 }
 .sld-offer-row.is-winner .sld-offer-tag {
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(96, 165, 250, 0.18);
   color: var(--af-blue);
 }
 .sld-offer-monthly {
@@ -5327,7 +5015,7 @@ const CSS = `
   width: 8px; height: 8px;
   border-radius: 999px;
   background: var(--af-blue-2);
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.20);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.20);
 }
 .sld-storyboard-track::before { left: -4px; }
 .sld-storyboard-track::after { right: -4px; }
@@ -5335,7 +5023,7 @@ const CSS = `
   position: relative;
   padding: 22px 20px 20px;
   background:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(139, 92, 246, 0.08), transparent 65%),
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(96, 165, 250, 0.08), transparent 65%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.98) 100%);
   border: 1px solid var(--af-line);
   border-radius: 18px;
@@ -5368,7 +5056,7 @@ const CSS = `
   font-size: 10.5px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--af-blue);
   padding: 3px 7px;
-  background: rgba(139, 92, 246, 0.10);
+  background: rgba(96, 165, 250, 0.10);
   border: 1px solid rgba(59, 130, 246, 0.20);
   border-radius: 6px;
   width: fit-content;
@@ -5379,8 +5067,8 @@ const CSS = `
   padding: 8px;
   border-radius: 12px;
   background:
-    radial-gradient(circle at 30% 30%, rgba(139, 92, 246, 0.30), transparent 70%),
-    linear-gradient(135deg, var(--af-deep) 0%, #1E3A8A 100%);
+    radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.30), transparent 70%),
+    linear-gradient(135deg, var(--af-deep) 0%, #0A3B36 100%);
   color: var(--af-blue-2);
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 24px -10px rgba(59, 130, 246, 0.55);
@@ -5452,7 +5140,7 @@ const CSS = `
 }
 .sld-money-row-total {
   background:
-    radial-gradient(ellipse 60% 100% at 100% 50%, rgba(139, 92, 246, 0.12), transparent 70%),
+    radial-gradient(ellipse 60% 100% at 100% 50%, rgba(96, 165, 250, 0.12), transparent 70%),
     rgba(248, 253, 252, 0.98);
   border-top: 1px solid var(--af-line-strong);
 }
@@ -5494,10 +5182,10 @@ const CSS = `
 }
 .sld-pricing-tier-hero {
   background:
-    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(139, 92, 246, 0.16), transparent 65%),
-    linear-gradient(135deg, var(--af-deep) 0%, #1E3A8A 100%);
+    radial-gradient(ellipse 70% 100% at 0% 0%, rgba(96, 165, 250, 0.16), transparent 65%),
+    linear-gradient(135deg, var(--af-deep) 0%, #0A3B36 100%);
   color: #fff;
-  border-color: rgba(139, 92, 246, 0.30);
+  border-color: rgba(96, 165, 250, 0.30);
   box-shadow:
     0 28px 60px -28px rgba(59, 130, 246, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.10);
@@ -5687,7 +5375,7 @@ const CSS = `
   border-radius: 999px;
   background: var(--af-blue-2);
   border: 3px solid #fff;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
   margin-bottom: 14px;
 }
 .sld-timeline-day {
@@ -5724,7 +5412,7 @@ const CSS = `
 .sld-check-icon {
   width: 20px; height: 20px;
   border-radius: 999px;
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(96, 165, 250, 0.18);
   color: var(--af-blue);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700;
@@ -5748,7 +5436,7 @@ const CSS = `
 .sld-roadmap-icon {
   width: 36px; height: 36px;
   border-radius: 12px;
-  background: rgba(139, 92, 246, 0.14);
+  background: rgba(96, 165, 250, 0.14);
   color: var(--af-blue);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 16px; font-weight: 700;
@@ -5789,7 +5477,7 @@ const CSS = `
   transition: background .15s ease;
 }
 .sld-agenda-row:last-child { border-bottom: none; }
-.sld-agenda-row:hover { background: rgba(139, 92, 246, 0.04); }
+.sld-agenda-row:hover { background: rgba(96, 165, 250, 0.04); }
 .sld-agenda-n {
   font-size: 22px; font-weight: 800;
   letter-spacing: -0.025em;
@@ -5873,7 +5561,7 @@ const CSS = `
   font-size: 13px; color: var(--af-ink-2); line-height: 1.5;
 }
 
-/* ===== 5 agents grid · ops-console feel ===== */
+/* ===== Six agents grid · 3x2 ops-console feel ===== */
 .sld-agents-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -5884,7 +5572,7 @@ const CSS = `
   position: relative;
   padding: 16px 18px 14px;
   background:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(139, 92, 246, 0.10), transparent 65%),
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(96, 165, 250, 0.10), transparent 65%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(248, 253, 252, 0.97) 100%);
   border: 1px solid var(--af-line);
   border-radius: 14px;
@@ -5905,7 +5593,7 @@ const CSS = `
 .sld-agent-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.20), transparent 60%);
+  background: radial-gradient(circle at 100% 0%, rgba(96, 165, 250, 0.20), transparent 60%);
   opacity: 0;
   transition: opacity .35s ease;
   pointer-events: none;
@@ -5928,8 +5616,8 @@ const CSS = `
   padding: 6px;
   border-radius: 10px;
   background:
-    radial-gradient(ellipse 80% 80% at 50% 50%, rgba(139, 92, 246, 0.18), transparent 70%),
-    rgba(139, 92, 246, 0.06);
+    radial-gradient(ellipse 80% 80% at 50% 50%, rgba(96, 165, 250, 0.18), transparent 70%),
+    rgba(96, 165, 250, 0.06);
   border: 1px solid rgba(59, 130, 246, 0.18);
   color: var(--af-blue);
   display: flex; align-items: center; justify-content: center;
@@ -5954,7 +5642,7 @@ const CSS = `
 .sld-agent-version-dot {
   width: 5px; height: 5px;
   border-radius: 999px;
-  background: #10B981;
+  background: #2DC470;
   box-shadow: 0 0 0 0 rgba(45, 196, 112, 0.5);
   animation: sldLivePulse 1.6s ease-in-out infinite;
 }
@@ -5984,7 +5672,7 @@ const CSS = `
   line-height: 1.45;
 }
 
-/* ===== BEACON pixel attribution (sld-echo-* class names retained) ===== */
+/* ===== ECHO pixel attribution ===== */
 .sld-echo-flow {
   display: grid; grid-template-columns: repeat(5, 1fr);
   gap: 12px;
@@ -6002,7 +5690,7 @@ const CSS = `
 }
 .sld-echo-node.is-fund {
   background:
-    radial-gradient(ellipse 80% 100% at 50% 100%, rgba(139, 92, 246, 0.20), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 50% 100%, rgba(96, 165, 250, 0.20), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border-color: var(--af-line-strong);
   box-shadow: 0 22px 50px -28px rgba(59, 130, 246, 0.35);
@@ -6031,14 +5719,14 @@ const CSS = `
   margin-top: 2px;
   font-size: 11px; color: var(--af-mute);
 }
-/* BEACON 3D feedback loop — funded stage signals back to ad platforms */
+/* ECHO 3D feedback loop — funded stage signals back to ad platforms */
 .sld-echo-3d {
   position: relative;
   margin-top: 16px;
   padding: 32px 28px 24px;
   border-radius: 20px;
   background:
-    radial-gradient(ellipse 70% 100% at 0% 100%, rgba(139, 92, 246, 0.16), transparent 65%),
+    radial-gradient(ellipse 70% 100% at 0% 100%, rgba(96, 165, 250, 0.16), transparent 65%),
     radial-gradient(ellipse 60% 80% at 100% 0%, rgba(59, 130, 246, 0.12), transparent 65%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 252, 250, 0.98) 100%);
   border: 1px solid var(--af-line-strong);
@@ -6057,13 +5745,13 @@ const CSS = `
   display: flex; flex-direction: column; gap: 6px;
   padding: 18px 20px;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(139, 92, 246, 0.32), transparent 70%),
-    linear-gradient(135deg, var(--af-deep) 0%, #1E3A8A 100%);
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(96, 165, 250, 0.32), transparent 70%),
+    linear-gradient(135deg, var(--af-deep) 0%, #0A3B36 100%);
   color: #fff;
   border-radius: 14px;
   box-shadow:
     0 22px 50px -22px rgba(59, 130, 246, 0.55),
-    0 0 0 1px rgba(139, 92, 246, 0.32);
+    0 0 0 1px rgba(96, 165, 250, 0.32);
   transform: rotateY(8deg) translateZ(20px);
   transform-style: preserve-3d;
 }
@@ -6127,7 +5815,7 @@ const CSS = `
   width: 8px; height: 8px;
   border-radius: 999px;
   background: var(--af-blue-2);
-  box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.55);
   animation: sldLivePulse 1.8s ease-in-out infinite;
 }
 .sld-echo-3d-caption {
@@ -6226,7 +5914,7 @@ const CSS = `
 .sld-stack-check {
   width: 16px; height: 16px;
   border-radius: 999px;
-  background: rgba(139, 92, 246, 0.18);
+  background: rgba(96, 165, 250, 0.18);
   color: var(--af-blue);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 10px; font-weight: 700;
@@ -6264,7 +5952,7 @@ const CSS = `
 .sld-stack-total-row:last-child { border-bottom: none; }
 .sld-stack-total-row.accent {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(139, 92, 246, 0.18), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(96, 165, 250, 0.18), transparent 70%),
     rgba(255, 255, 255, 0.95);
 }
 .sld-stack-total-k {
@@ -6284,8 +5972,8 @@ const CSS = `
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
-/* ===== Smart-routing funnel (slide 12 · FORGE + APEX) =====
- * Clean three-stage stack with a centered NEXUS router pill,
+/* ===== Smart-routing funnel (slide 12 · HELIX + ORACLE) =====
+ * Clean three-stage stack with a centered HELIX router pill,
  * then two flat side-by-side branches (no 3D tilt). HIGH-TICKET
  * is the winning path (deep teal outcome bar); LOW-TICKET is
  * the recapture lane (lighter outcome bar). */
@@ -6309,7 +5997,7 @@ const CSS = `
   padding: 14px 22px;
   text-align: center;
   background:
-    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(139, 92, 246, 0.12), transparent 70%),
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(96, 165, 250, 0.12), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 253, 252, 0.98) 100%);
   border: 1px solid var(--af-line-strong);
   border-radius: 14px;
@@ -6344,7 +6032,7 @@ const CSS = `
   left: 50%;
   width: 2px;
   margin-left: -1px;
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.0), rgba(59, 130, 246, 0.55));
+  background: linear-gradient(180deg, rgba(96, 165, 250, 0.0), rgba(59, 130, 246, 0.55));
   border-radius: 999px;
 }
 .sld-funnel-connector::after {
@@ -6384,7 +6072,7 @@ const CSS = `
   font-family: 'SF Mono', Menlo, 'JetBrains Mono', Consolas, monospace;
   font-size: 10px; font-weight: 600;
   color: var(--af-blue);
-  background: rgba(139, 92, 246, 0.10);
+  background: rgba(96, 165, 250, 0.10);
   border: 1px solid rgba(59, 130, 246, 0.18);
   padding: 2px 8px;
   border-radius: 999px;
@@ -6401,9 +6089,9 @@ const CSS = `
   color: #fff;
   text-transform: uppercase;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(139, 92, 246, 0.40), transparent 70%),
-    linear-gradient(135deg, var(--af-deep) 0%, #1E3A8A 100%);
-  border: 1px solid rgba(139, 92, 246, 0.45);
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(96, 165, 250, 0.40), transparent 70%),
+    linear-gradient(135deg, var(--af-deep) 0%, #0A3B36 100%);
+  border: 1px solid rgba(96, 165, 250, 0.45);
   border-radius: 999px;
   box-shadow:
     0 18px 36px -16px rgba(59, 130, 246, 0.55),
@@ -6465,7 +6153,7 @@ const CSS = `
 .sld-funnel-branch-high {
   border-color: rgba(59, 130, 246, 0.30);
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(139, 92, 246, 0.14), transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(96, 165, 250, 0.14), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 252, 250, 0.98) 100%);
   box-shadow:
     0 36px 68px -28px rgba(59, 130, 246, 0.45),
@@ -6520,8 +6208,8 @@ const CSS = `
   font-size: 13px; font-weight: 600;
   letter-spacing: -0.01em;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(139, 92, 246, 0.32), transparent 70%),
-    linear-gradient(135deg, var(--af-deep) 0%, #1E3A8A 100%);
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(96, 165, 250, 0.32), transparent 70%),
+    linear-gradient(135deg, var(--af-deep) 0%, #0A3B36 100%);
   color: #fff;
   text-align: center;
   box-shadow: 0 12px 28px -14px rgba(59, 130, 246, 0.50);
@@ -6533,11 +6221,11 @@ const CSS = `
   border: 1px dashed var(--af-line-strong);
 }
 
-/* ===== Trusted by 2,000+ businesses ===== */
+/* ===== Trusted by 1,000+ practices ===== */
 .sld-trust-hero {
   padding: 28px 24px;
   background:
-    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(139, 92, 246, 0.18), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 50%, rgba(96, 165, 250, 0.18), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border: 1px solid var(--af-line-strong);
   border-radius: 18px;
@@ -6594,8 +6282,8 @@ const CSS = `
 .sld-price-hero-row > div:first-child {
   padding: 28px 32px;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 100%, rgba(139, 92, 246, 0.16), transparent 70%),
-    linear-gradient(180deg, var(--af-deep) 0%, #1E3A8A 100%);
+    radial-gradient(ellipse 80% 100% at 0% 100%, rgba(96, 165, 250, 0.16), transparent 70%),
+    linear-gradient(180deg, var(--af-deep) 0%, #0A3B36 100%);
   color: #fff;
 }
 .sld-price-hero-eyebrow {
@@ -6645,8 +6333,8 @@ const CSS = `
   width: 18px; height: 18px;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 30% 30%, rgba(139, 92, 246, 0.45), transparent 70%),
-    linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(59, 130, 246, 0.10) 100%);
+    radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.45), transparent 70%),
+    linear-gradient(135deg, rgba(96, 165, 250, 0.18) 0%, rgba(59, 130, 246, 0.10) 100%);
   border: 1px solid rgba(59, 130, 246, 0.30);
 }
 .sld-price-hero-includes li::after {
@@ -6694,7 +6382,7 @@ const CSS = `
   color: var(--af-blue);
   text-transform: uppercase;
   padding: 7px 16px;
-  background: rgba(139, 92, 246, 0.10);
+  background: rgba(96, 165, 250, 0.10);
   border: 1px solid var(--af-line);
   border-radius: 999px;
   align-self: center;
@@ -6703,7 +6391,7 @@ const CSS = `
   color: var(--af-blue);
   display: inline-flex; align-items: center; justify-content: center;
   width: 110px; height: 110px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.10) 100%);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(59, 130, 246, 0.10) 100%);
   border: 1px solid var(--af-line-strong);
   border-radius: 28px;
   box-shadow:
@@ -6776,7 +6464,7 @@ const CSS = `
   50% { transform: translateY(4px); opacity: 1; }
 }
 
-/* ===== Smart routing (NEXUS) — slide 8 ===== */
+/* ===== Smart routing (HELIX) — slide 8 ===== */
 .sld-sr {
   display: grid; grid-template-columns: 220px 200px 1fr;
   gap: 24px; align-items: center;
@@ -6813,8 +6501,8 @@ const CSS = `
   color: var(--af-blue);
   text-transform: uppercase;
   padding: 6px 14px;
-  background: rgba(139, 92, 246, 0.14);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: rgba(96, 165, 250, 0.14);
+  border: 1px solid rgba(96, 165, 250, 0.35);
   border-radius: 999px;
   display: inline-flex; align-items: center; gap: 8px;
 }
@@ -6837,7 +6525,7 @@ const CSS = `
 .sld-sr-arrow-pulse {
   position: absolute; top: -1px; left: 0;
   width: 24px; height: 5px;
-  background: radial-gradient(ellipse, rgba(139, 92, 246, 0.95), transparent 70%);
+  background: radial-gradient(ellipse, rgba(96, 165, 250, 0.95), transparent 70%);
   border-radius: 999px;
   animation: sldWirePulse 2s ease-in-out infinite;
 }
@@ -6856,7 +6544,7 @@ const CSS = `
 .sld-sr-rep.is-match {
   opacity: 1;
   background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(139, 92, 246, 0.16), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(96, 165, 250, 0.16), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border-color: var(--af-line-strong);
   box-shadow: 0 18px 40px -22px rgba(59, 130, 246, 0.30);
@@ -6885,7 +6573,7 @@ const CSS = `
 }
 .sld-phone-bezel {
   width: 280px;
-  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  background: linear-gradient(180deg, #1a1f24 0%, #0d1115 100%);
   border-radius: 36px;
   padding: 12px;
   box-shadow:
@@ -6899,7 +6587,7 @@ const CSS = `
 .sld-phone-notch {
   position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
   width: 90px; height: 22px; border-radius: 12px;
-  background: #0F172A;
+  background: #0d1115;
   z-index: 2;
 }
 .sld-phone-screen {
@@ -6927,7 +6615,7 @@ const CSS = `
   color: var(--af-blue);
   text-transform: uppercase;
   padding: 4px 10px;
-  background: rgba(139, 92, 246, 0.14);
+  background: rgba(96, 165, 250, 0.14);
   border-radius: 999px;
   align-self: flex-start;
 }
@@ -7007,7 +6695,7 @@ const CSS = `
 }
 .sld-vert-side-row.accent {
   background:
-    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(139, 92, 246, 0.16), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 100% 0%, rgba(96, 165, 250, 0.16), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border-color: var(--af-line-strong);
 }
@@ -7081,7 +6769,7 @@ const CSS = `
 .sld-vert-quote {
   padding: 24px 28px;
   background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(139, 92, 246, 0.12), transparent 70%),
+    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(96, 165, 250, 0.12), transparent 70%),
     rgba(255, 255, 255, 0.95);
   border: 1px solid var(--af-line-strong);
   border-radius: 16px;
@@ -7257,213 +6945,5 @@ const CSS = `
   .sld-trust-grid { grid-template-columns: 1fr; }
   .sld-brand { display: none; }
   .sld-mp { transform: none; }
-}
-
-/* ===== APEX · Pre-approval result console (slide after Stage 1) =====
- * Mocked as a real product UI: status bar, 3-column readout, footer.
- * Mono numerals + monospaced spacing make it read as data, not copy. */
-.sld-apex {
-  position: relative;
-  margin: 28px 0 8px;
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.86) 100%);
-  border: 1px solid rgba(59, 130, 246, 0.22);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 30px 60px -32px rgba(59, 130, 246, 0.35),
-    0 12px 28px -16px rgba(8, 18, 40, 0.55);
-  overflow: hidden;
-}
-.sld-apex::before {
-  content: "";
-  position: absolute; inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(120% 80% at 0% 0%, rgba(59, 130, 246, 0.16) 0%, transparent 55%),
-    radial-gradient(80% 60% at 100% 0%, rgba(139, 92, 246, 0.12) 0%, transparent 55%);
-}
-.sld-apex-head {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px 14px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-}
-.sld-apex-head-l {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-.sld-apex-glyph {
-  width: 32px; height: 32px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(139, 92, 246, 0.22));
-  color: #c7d2fe;
-}
-.sld-apex-glyph svg { width: 20px; height: 20px; }
-.sld-apex-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e2e8f0;
-  letter-spacing: 0.02em;
-}
-.sld-apex-buyer {
-  margin-top: 3px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11.5px;
-  color: rgba(148, 163, 184, 0.78);
-}
-.sld-apex-buyer-k {
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 10px;
-  color: rgba(148, 163, 184, 0.55);
-}
-.sld-apex-buyer-v {
-  color: #cbd5e1;
-}
-.sld-apex-buyer-sep {
-  color: rgba(148, 163, 184, 0.4);
-}
-.sld-apex-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 10px;
-  border-radius: 999px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.32);
-}
-.sld-apex-status-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
-  animation: apexPulse 2.4s ease-in-out infinite;
-}
-@keyframes apexPulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14); }
-  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.04); }
-}
-.sld-apex-grid {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0;
-}
-.sld-apex-col {
-  padding: 18px 22px 22px;
-  border-right: 1px solid rgba(148, 163, 184, 0.10);
-}
-.sld-apex-col:last-child { border-right: 0; }
-.sld-apex-col-h {
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: rgba(148, 163, 184, 0.7);
-  margin-bottom: 14px;
-}
-.sld-apex-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 0;
-  border-bottom: 1px dashed rgba(148, 163, 184, 0.10);
-}
-.sld-apex-row:last-child { border-bottom: 0; }
-.sld-apex-row-total {
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(59, 130, 246, 0.32);
-  border-bottom: 0;
-}
-.sld-apex-k {
-  font-size: 13px;
-  color: #cbd5e1;
-}
-.sld-apex-v {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 14px;
-  color: #f1f5f9;
-  font-variant-numeric: tabular-nums;
-}
-.sld-apex-v-strong {
-  color: #93c5fd;
-  font-weight: 700;
-}
-.sld-apex-v-money {
-  color: #bfdbfe;
-  font-weight: 600;
-}
-.sld-apex-v-muted {
-  color: rgba(148, 163, 184, 0.55);
-}
-.sld-apex-v-total {
-  color: #ddd6fe;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.01em;
-}
-.sld-apex-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 10px 4px 8px;
-  border-radius: 999px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-.sld-apex-pill-yes {
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.28);
-}
-.sld-apex-pill-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #10b981;
-}
-.sld-apex-foot {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 22px;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11.5px;
-  color: rgba(148, 163, 184, 0.78);
-  border-top: 1px solid rgba(148, 163, 184, 0.10);
-  background: rgba(8, 15, 32, 0.4);
-}
-.sld-apex-foot-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #60a5fa;
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
-}
-@media (max-width: 980px) {
-  .sld-apex-grid { grid-template-columns: 1fr; }
-  .sld-apex-col { border-right: 0; border-bottom: 1px solid rgba(148, 163, 184, 0.10); }
-  .sld-apex-col:last-child { border-bottom: 0; }
-}
-@media (max-width: 640px) {
-  .sld-apex-head { flex-direction: column; align-items: flex-start; }
-  .sld-apex-status { align-self: flex-start; }
 }
 `;
