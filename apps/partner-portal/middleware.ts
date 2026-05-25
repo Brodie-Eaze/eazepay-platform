@@ -57,6 +57,13 @@ const isPublic = (pathname: string): boolean => {
   if (pathname.startsWith('/api/')) return true;
   if (pathname.startsWith('/_next/')) return true;
   if (pathname === '/favicon.ico' || pathname === '/robots.txt') return true;
+  /* Static asset extensions from /public are served by Next.js as
+   * top-level paths (e.g. /flow-screenshots/01.png). The middleware
+   * runs on every request, so without this bypass every PNG/SVG/JS
+   * loaded from /public 307-redirects to /sign-in, which silently
+   * breaks images on any public marketing page. */
+  if (/\.(png|jpg|jpeg|gif|svg|webp|avif|ico|css|js|map|woff2?|ttf|otf|mp4|webm)$/i.test(pathname))
+    return true;
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 };
 
