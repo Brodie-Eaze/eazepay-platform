@@ -53,6 +53,7 @@ import { formatTime } from '@eazepay/shared-utils/format-time';
 import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
 import { NotificationBell } from '../components/NotificationBell';
+import { PublicFooter } from '../components/PublicFooter';
 import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
 import { marketplaceLenders } from '../lib/marketplace-data';
 
@@ -405,6 +406,11 @@ const NAKED_ROUTES = [
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
+  // Sprint E — trust signals (public, no AppShell sidebar).
+  '/status',
+  '/security-overview',
+  '/changelog',
+  '/api-docs',
 ];
 
 const brandFromPath = (pathname: string): BrandCode | null => {
@@ -746,6 +752,12 @@ export function Shell({ children }: { children: ReactNode }) {
           merchants never see other tenants. */}
         {!activeBrand && <LiveActivityStrip />}
         {children}
+        {/* Sprint E — trust signals. The footer rides inside the
+          AppShell main-content area so it appears under every
+          authenticated page (master / admin / per-brand) without
+          breaking the AppShell layout. Naked routes render their own
+          footer via `PublicPageShell`. */}
+        <PublicFooter />
       </AppShell>
       {/* Global cmd-K command palette — mounted at the Shell root so
         it's available on every non-naked page. The palette manages
