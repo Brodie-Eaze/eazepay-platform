@@ -1,6 +1,8 @@
+'use client';
 import type { FC, ReactNode } from 'react';
 import { cn } from './cn';
 import { Sparkline } from './Sparkline';
+import { CountUp } from './Motion';
 
 export const KpiCard: FC<{
   label: string;
@@ -32,7 +34,7 @@ export const KpiCard: FC<{
       </div>
       <div className="flex items-baseline gap-1.5">
         <span className="text-[20px] font-semibold leading-none tabular-nums tracking-tight">
-          {value}
+          {typeof value === 'number' ? <CountUp value={value} /> : value}
         </span>
         {delta && (
           <span className={cn('text-[11px] font-medium tabular-nums', deltaColor)}>

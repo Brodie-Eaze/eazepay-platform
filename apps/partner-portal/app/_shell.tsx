@@ -35,6 +35,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  RouteTransition,
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -666,7 +667,11 @@ export function Shell({ children }: { children: ReactNode }) {
           fleet event in real-time. Hidden on per-brand surfaces so
           merchants never see other tenants. */}
         {!activeBrand && <LiveActivityStrip />}
-        {children}
+        {/* Sprint A — RouteTransition crossfades between routes
+            (180ms) so navigating doesn't pop. AnimatePresence keys on
+            the pathname; LiveActivityStrip + PublicFooter stay
+            mounted so they don't blink on every nav. */}
+        <RouteTransition routeKey={pathname}>{children}</RouteTransition>
         {/* Sprint E — trust signals. The footer rides inside the
           AppShell main-content area so it appears under every
           authenticated page (master / admin / per-brand) without

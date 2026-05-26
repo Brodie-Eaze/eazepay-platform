@@ -1,23 +1,42 @@
+'use client';
 import type { FC, ReactNode } from 'react';
+import { motion as m, useReducedMotion } from 'motion/react';
 import { cn } from './cn';
+import { motion as tokens } from './motion-tokens';
 
 export const Card: FC<{
   children: ReactNode;
   className?: string;
   padded?: boolean;
   elevated?: boolean;
-}> = ({ children, className, padded = false, elevated = false }) => (
-  <div
-    className={cn(
-      'rounded-lg border border-border bg-bg-elevated',
-      elevated ? 'shadow-md' : 'shadow-sm',
-      padded && 'p-6',
-      className,
-    )}
-  >
-    {children}
-  </div>
-);
+  /**
+   * When true, the card lifts on hover (translateY: -2px + softer
+   * shadow). Opt-in so the thousands of existing static cards across
+   * the platform keep their flat presentation; only consumers that
+   * mean "this is clickable" reach for it.
+   */
+  interactive?: boolean;
+}> = ({ children, className, padded = false, elevated = false, interactive = false }) => {
+  const reduced = useReducedMotion();
+  const classes = cn(
+    'rounded-lg border border-border bg-bg-elevated',
+    elevated ? 'shadow-md' : 'shadow-sm',
+    padded && 'p-6',
+    className,
+  );
+  if (!interactive) {
+    return <div className={classes}>{children}</div>;
+  }
+  return (
+    <m.div
+      className={classes}
+      whileHover={reduced ? undefined : { y: -2, boxShadow: '0 6px 20px -8px rgba(0,0,0,0.2)' }}
+      transition={{ duration: tokens.duration.fast, ease: tokens.ease.out }}
+    >
+      {children}
+    </m.div>
+  );
+};
 
 export const CardHeader: FC<{
   title: ReactNode;
