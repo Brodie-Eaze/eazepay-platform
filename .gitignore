@@ -81,3 +81,13 @@ tmp/
 test-results/
 playwright-report/
 .last-run.json
+
+# Local capture artifacts (flow-doc / lender-demo screenshots + helper scripts)
+# These are operator-only — produced locally for docs/demos, not committed.
+apps/partner-portal/public/flow-screenshots/
+apps/partner-portal/scripts/capture-*.mjs
+flow-chart.html
+/scripts/
+
+# git worktrees
+.worktrees/
