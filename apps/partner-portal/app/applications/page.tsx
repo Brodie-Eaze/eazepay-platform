@@ -10,6 +10,7 @@ import {
   ClockIcon,
   SearchIcon,
 } from '@eazepay/ui/web';
+import { SavedViewsMenu } from '../../components/SavedViewsMenu';
 import { partners as MASTER_PARTNERS, applicationsForPartner } from '../../lib/master-data';
 import { type SubmittedApp } from '../../lib/submitted-applications';
 import { fetchAdminSubmittedApps } from '../../lib/applications-client';
@@ -127,6 +128,7 @@ export default function FinanceApplicationsPage() {
         breadcrumbs={[{ label: 'Master' }]}
         title="Finance Applications"
         description="View each referral partner's client finance applications and outcomes"
+        actions={<SavedViewsMenu surface="/applications" />}
       />
       <PageBody>
         {/* Tab strip — Settlements lives under here instead of its own

@@ -44,6 +44,7 @@ import {
   type StatusTone,
   type TimeRange,
 } from '@eazepay/ui/web';
+import { SavedViewsMenu } from '../../../components/SavedViewsMenu';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -157,6 +158,7 @@ export default function ObservabilityPage(): JSX.Element {
             >
               SLO board <ArrowRightIcon size={12} />
             </Link>
+            <SavedViewsMenu surface="/admin/observability" />
           </div>
         }
       />

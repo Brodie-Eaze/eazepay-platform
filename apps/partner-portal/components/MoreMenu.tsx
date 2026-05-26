@@ -27,6 +27,8 @@ import {
   ChartIcon,
   DocIcon,
   GaugeIcon,
+  SparkIcon,
+  KeyIcon,
   ChevronDownIcon,
 } from '@eazepay/ui/web';
 
@@ -46,6 +48,26 @@ export function MoreMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
+        {/* Sprint G additions — power-user shortcuts. Kept at the
+          top of the menu so they're one click from the topbar. */}
+        <DropdownMenuLabel>Power user</DropdownMenuLabel>
+        <DropdownMenuItem
+          onSelect={() => {
+            // Fire a CustomEvent so the listener inside
+            // <KeyboardShortcuts> opens the dialog without prop
+            // drilling through the shell.
+            window.dispatchEvent(new CustomEvent('eazepay:open-shortcuts-help'));
+          }}
+        >
+          <KeyIcon size={14} /> Help & shortcuts
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => router.push('/settings/notifications')}>
+          <SettingsIcon size={14} /> Notification settings
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => router.push('/applications')}>
+          <SparkIcon size={14} /> Saved views
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Operator tools</DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => router.push('/control-panel')}>
           <SettingsIcon size={14} /> Control Panel
