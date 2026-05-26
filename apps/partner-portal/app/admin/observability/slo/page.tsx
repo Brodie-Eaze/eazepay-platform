@@ -21,6 +21,17 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardHeader,
+  CardBody,
+  Banner,
+  StatusPill,
+  Skeleton,
+  type StatusTone,
+} from '@eazepay/ui/web';
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -61,10 +72,10 @@ interface BoardResponse {
   rows: BoardRow[];
 }
 
-const ALERT_COLOR: Record<AlertLevel, string> = {
-  green: '#86efac',
-  yellow: '#fcd34d',
-  red: '#fca5a5',
+const ALERT_TONE: Record<AlertLevel, StatusTone> = {
+  green: 'success',
+  yellow: 'warning',
+  red: 'danger',
 };
 
 const ALERT_LABEL: Record<AlertLevel, string> = {
@@ -115,202 +126,135 @@ export default function SloBoardPage(): JSX.Element {
   const stale = lastSuccessAt != null && Date.now() - lastSuccessAt > POLL_INTERVAL_MS * 3;
 
   return (
-    <div style={{ padding: 32, maxWidth: 1240, margin: '0 auto', color: '#e2e8f0' }}>
-      <Link
-        href="/admin/observability"
-        style={{ color: '#7dd3fc', fontSize: 13, textDecoration: 'none' }}
-      >
-        ← Observability
-      </Link>
-
-      <header style={{ marginTop: 16, marginBottom: 24 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#7dd3fc', fontWeight: 700 }}>
-          OBSERVABILITY / SLO
-        </div>
-        <h1 style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700 }}>
-          Service-level objectives
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 720 }}>
-          Targets the platform commits to. Each card shows the SLO target, observed failure rate,
-          remaining error budget, and the runbook to follow on breach. Polled every{' '}
-          {POLL_INTERVAL_MS / 1000}s.
-        </p>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Observability', href: '/admin/observability' },
+          { label: 'SLO' },
+        ]}
+        title="Service Level Objectives"
+        description={`Targets the platform commits to. Each card shows target, observed failure rate, remaining error budget, and runbook link. Polled every ${POLL_INTERVAL_MS / 1000}s.`}
+      />
+      <PageBody>
         {board?.observabilityNote ? (
-          <div
-            style={{
-              marginTop: 12,
-              padding: '10px 14px',
-              borderRadius: 8,
-              background: '#1e293b',
-              border: '1px solid #334155',
-              fontSize: 12,
-              color: '#cbd5e1',
-            }}
-          >
-            <strong style={{ color: '#7dd3fc' }}>Note:</strong> {board.observabilityNote}
+          <div className="mb-4">
+            <Banner intent="info" title="Note">
+              {board.observabilityNote}
+            </Banner>
           </div>
         ) : null}
         {error ? (
-          <div style={{ marginTop: 8, color: '#fca5a5', fontSize: 12 }}>
-            ! {error} (showing last good snapshot)
+          <div className="mb-4">
+            <Banner intent="danger" title="SLO fetch failed">
+              {error} (showing last good snapshot)
+            </Banner>
           </div>
         ) : null}
         {stale ? (
-          <div style={{ marginTop: 8, color: '#fcd34d', fontSize: 12 }}>
-            ! Board is stale — last update{' '}
-            {lastSuccessAt ? new Date(lastSuccessAt).toLocaleTimeString() : '—'}
+          <div className="mb-4">
+            <Banner intent="warning" title="Board is stale">
+              Last update {lastSuccessAt ? new Date(lastSuccessAt).toLocaleTimeString() : '—'}
+            </Banner>
           </div>
         ) : null}
-      </header>
 
-      {!board ? (
-        <div style={{ color: '#94a3b8', fontSize: 14 }}>Loading SLO board…</div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-            gap: 14,
-          }}
-        >
-          {board.rows.map((row) => (
-            <SloCard key={row.slo.id} row={row} />
-          ))}
-        </div>
-      )}
-    </div>
+        {!board ? (
+          <Card>
+            <CardBody>
+              <Skeleton rows={4} label="Loading SLO board" />
+            </CardBody>
+          </Card>
+        ) : (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            {board.rows.map((row) => (
+              <SloCard key={row.slo.id} row={row} />
+            ))}
+          </div>
+        )}
+      </PageBody>
+    </>
   );
 }
 
 function SloCard({ row }: { row: BoardRow }): JSX.Element {
   const targetPct = (row.slo.target * 100).toFixed(row.slo.target >= 0.999 ? 3 : 2);
   const isObservable = row.observation.failureRate !== null && row.budget !== null;
-  const tone: AlertLevel = row.budget?.alertLevel ?? 'green';
-  const borderColor = isObservable ? ALERT_COLOR[tone] : '#334155';
+  const alertLevel: AlertLevel = row.budget?.alertLevel ?? 'green';
+  const tone: StatusTone = isObservable ? ALERT_TONE[alertLevel] : 'neutral';
 
   return (
-    <div
-      style={{
-        padding: 22,
-        border: `1px solid ${borderColor}`,
-        borderRadius: 12,
-        background: '#0f172a',
-        display: 'grid',
-        gap: 14,
-      }}
-    >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-        <div>
-          <div
-            style={{
-              fontSize: 10.5,
-              letterSpacing: '0.12em',
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-            }}
-          >
-            {row.slo.service} · {row.slo.sli.category}
+    <Card>
+      <CardHeader
+        title={row.slo.name}
+        description={`${row.slo.service} · ${row.slo.sli.category}`}
+        action={
+          <StatusPill tone={tone} dot>
+            {isObservable ? ALERT_LABEL[alertLevel] : 'NO DATA'}
+          </StatusPill>
+        }
+      />
+      <CardBody>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Target" value={`${targetPct}%`} sub={`over ${row.slo.window}`} />
+          <Field
+            label="Observed failure"
+            value={
+              row.observation.failureRate === null
+                ? '—'
+                : `${(row.observation.failureRate * 100).toFixed(3)}%`
+            }
+            sub={
+              row.observation.failureRate === null
+                ? 'no data yet'
+                : `n=${row.observation.sampleSize.toLocaleString()} (${row.observation.window})`
+            }
+          />
+          <Field
+            label="Budget remaining"
+            value={
+              row.budget === null
+                ? '—'
+                : `${row.budget.remainingMinutes >= 0 ? '' : '−'}${Math.abs(row.budget.remainingMinutes)} min`
+            }
+            sub={`of ${row.slo.errorBudgetMinutes} min total`}
+            tone={isObservable ? tone : undefined}
+          />
+          <Field
+            label="Burn"
+            value={
+              row.budget === null
+                ? '—'
+                : Number.isFinite(row.budget.percentBurned)
+                  ? `${(row.budget.percentBurned * 100).toFixed(1)}%`
+                  : '> 100%'
+            }
+            sub={row.budget === null ? '' : 'of error budget'}
+            tone={isObservable ? tone : undefined}
+          />
+        </div>
+
+        {row.observation.notObservableReason ? (
+          <div className="mt-3 px-3 py-2 rounded-md border border-dashed border-border bg-bg-muted/30 text-[12px] text-fg-muted">
+            {row.observation.notObservableReason}
           </div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>{row.slo.name}</div>
-        </div>
-        {isObservable ? (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              padding: '4px 8px',
-              borderRadius: 999,
-              background: '#020617',
-              color: ALERT_COLOR[tone],
-              border: `1px solid ${ALERT_COLOR[tone]}`,
-            }}
+        ) : null}
+
+        <div className="mt-4 flex items-center gap-2 text-[12px] pt-3 border-t border-border">
+          <span className="text-fg-muted">Runbook:</span>
+          {/* External-relative path — the runbook docs live in the repo,
+              not under the app. We surface the path so an operator opens
+              it in their editor; the link target is the GitHub blob URL
+              when REPO_URL is wired (future). */}
+          <Link
+            href={`/${row.slo.runbookLink}`}
+            className="text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-sm"
           >
-            {ALERT_LABEL[tone]}
-          </span>
-        ) : (
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              padding: '4px 8px',
-              borderRadius: 999,
-              background: '#020617',
-              color: '#94a3b8',
-              border: '1px solid #334155',
-            }}
-          >
-            NO DATA
-          </span>
-        )}
-      </header>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <Field label="Target" value={`${targetPct}%`} sub={`over ${row.slo.window}`} />
-        <Field
-          label="Observed failure"
-          value={
-            row.observation.failureRate === null
-              ? '—'
-              : `${(row.observation.failureRate * 100).toFixed(3)}%`
-          }
-          sub={
-            row.observation.failureRate === null
-              ? 'no data yet'
-              : `n=${row.observation.sampleSize.toLocaleString()} (${row.observation.window})`
-          }
-        />
-        <Field
-          label="Budget remaining"
-          value={
-            row.budget === null
-              ? '—'
-              : `${row.budget.remainingMinutes >= 0 ? '' : '−'}${Math.abs(row.budget.remainingMinutes)} min`
-          }
-          sub={`of ${row.slo.errorBudgetMinutes} min total`}
-          tone={tone}
-        />
-        <Field
-          label="Burn"
-          value={
-            row.budget === null
-              ? '—'
-              : Number.isFinite(row.budget.percentBurned)
-                ? `${(row.budget.percentBurned * 100).toFixed(1)}%`
-                : '> 100%'
-          }
-          sub={row.budget === null ? '' : 'of error budget'}
-          tone={tone}
-        />
-      </div>
-
-      {row.observation.notObservableReason ? (
-        <div
-          style={{
-            padding: '8px 10px',
-            borderRadius: 6,
-            background: '#020617',
-            border: '1px dashed #334155',
-            fontSize: 12,
-            color: '#94a3b8',
-          }}
-        >
-          {row.observation.notObservableReason}
+            {row.slo.runbookLink.replace('docs/runbooks/', '')}
+          </Link>
         </div>
-      ) : null}
-
-      <footer style={{ display: 'flex', gap: 10, fontSize: 12 }}>
-        <span style={{ color: '#64748b' }}>Runbook:</span>
-        {/* External-relative path — the runbook docs live in the repo,
-            not under the app. We surface the path so an operator opens
-            it in their editor; the link target is the GitHub blob URL
-            when REPO_URL is wired (future). */}
-        <Link href={`/${row.slo.runbookLink}`} style={{ color: '#7dd3fc', textDecoration: 'none' }}>
-          {row.slo.runbookLink.replace('docs/runbooks/', '')}
-        </Link>
-      </footer>
-    </div>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -323,31 +267,28 @@ function Field({
   label: string;
   value: string;
   sub: string;
-  tone?: AlertLevel;
+  tone?: StatusTone;
 }): JSX.Element {
+  // Tone-coloured value uses the same token classes the StatusPill uses
+  // (text-success / text-warning / text-danger) so the SLO numbers
+  // pop without inventing palette.
+  const valueColor =
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'warning'
+        ? 'text-warning'
+        : tone === 'danger'
+          ? 'text-danger'
+          : 'text-fg';
   return (
     <div>
-      <div
-        style={{
-          fontSize: 10.5,
-          color: '#64748b',
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-        }}
-      >
+      <div className="text-[10px] uppercase tracking-[0.08em] text-fg-muted font-semibold">
         {label}
       </div>
-      <div
-        style={{
-          fontSize: 18,
-          fontWeight: 700,
-          marginTop: 4,
-          color: tone ? ALERT_COLOR[tone] : '#e2e8f0',
-        }}
-      >
+      <div className={`mt-1 text-[18px] font-bold tabular-nums leading-tight ${valueColor}`}>
         {value}
       </div>
-      {sub ? <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{sub}</div> : null}
+      {sub ? <div className="text-[11px] text-fg-muted mt-0.5">{sub}</div> : null}
     </div>
   );
 }

@@ -15,6 +15,31 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardHeader,
+  CardBody,
+  Input,
+  Textarea,
+  Select,
+  Banner,
+  Button as _Button,
+  type ButtonVariant,
+  type ButtonSize,
+} from '@eazepay/ui/web';
+
+type ButtonProps = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  type?: 'button' | 'submit' | 'reset';
+  onClick?: () => void;
+  disabled?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+};
+const Button: React.FC<ButtonProps> = (props) => <_Button {...(props as any)} />;
 
 type FormState = {
   partnerId: string;
@@ -50,26 +75,6 @@ const INITIAL: FormState = {
   estimatedTicket: '4500',
   mccCode: '8099',
   funnelUrls: '',
-};
-
-const fieldStyle: React.CSSProperties = {
-  background: 'rgba(2, 6, 23, 0.7)',
-  border: '1px solid #1f2937',
-  borderRadius: 8,
-  color: '#e2e8f0',
-  fontSize: 14,
-  padding: '10px 12px',
-  width: '100%',
-};
-
-const labelStyle: React.CSSProperties = {
-  fontSize: 11.5,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: '#94a3b8',
-  fontWeight: 600,
-  marginBottom: 6,
-  display: 'block',
 };
 
 export default function NewProvisionRunPage(): JSX.Element {
@@ -124,259 +129,198 @@ export default function NewProvisionRunPage(): JSX.Element {
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 920, margin: '0 auto', color: '#e2e8f0' }}>
-      <Link
-        href="/admin/provisioning"
-        style={{ color: '#7dd3fc', fontSize: 13, textDecoration: 'none' }}
-      >
-        ← Provisioning queue
-      </Link>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Provisioning', href: '/admin/provisioning' },
+          { label: 'New run' },
+        ]}
+        title="New provisioning run"
+        description="Submitting this form auto-provisions HighSale (sub-account) → Lender Marketplace defaults → MiCamp (MID pre-underwriting) → Partner-portal seed in a single sequence."
+      />
+      <PageBody>
+        <form onSubmit={submit} className="grid gap-5 max-w-5xl" aria-busy={submitting}>
+          <Card>
+            <CardHeader title="Business" />
+            <CardBody>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Partner ID"
+                  value={form.partnerId}
+                  onChange={(e) => patch('partnerId', e.target.value)}
+                  placeholder="acme-medspa"
+                  required
+                />
+                <Input
+                  label="Legal name"
+                  value={form.legalName}
+                  onChange={(e) => patch('legalName', e.target.value)}
+                  placeholder="Acme MedSpa, LLC"
+                  required
+                />
+                <Input
+                  label="DBA (optional)"
+                  value={form.dba}
+                  onChange={(e) => patch('dba', e.target.value)}
+                  placeholder="Acme MedSpa"
+                />
+                <Input
+                  label="EIN"
+                  value={form.ein}
+                  onChange={(e) => patch('ein', e.target.value)}
+                  placeholder="12-3456789"
+                  required
+                />
+              </div>
+            </CardBody>
+          </Card>
 
-      <header style={{ marginTop: 16, marginBottom: 28 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#7dd3fc', fontWeight: 700 }}>
-          ONE-CONFIG ONBOARDING
-        </div>
-        <h1 style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700 }}>New provisioning run</h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 620 }}>
-          Submitting this form auto-provisions HighSale (sub-account) → Lender Marketplace defaults
-          → MiCamp (MID pre-underwriting) → Partner-portal seed in a single sequence.
-        </p>
-      </header>
+          <Card>
+            <CardHeader title="Primary contact" />
+            <CardBody>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  label="Name"
+                  value={form.primaryContactName}
+                  onChange={(e) => patch('primaryContactName', e.target.value)}
+                  required
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  value={form.primaryContactEmail}
+                  onChange={(e) => patch('primaryContactEmail', e.target.value)}
+                  required
+                />
+                <Input
+                  label="Phone"
+                  value={form.primaryContactPhone}
+                  onChange={(e) => patch('primaryContactPhone', e.target.value)}
+                  required
+                />
+              </div>
+            </CardBody>
+          </Card>
 
-      <form onSubmit={submit} style={{ display: 'grid', gap: 22 }}>
-        <section>
-          <h2 style={{ fontSize: 15, margin: '0 0 12px', color: '#cbd5e1' }}>Business</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Partner ID</label>
-              <input
-                style={fieldStyle}
-                value={form.partnerId}
-                onChange={(e) => patch('partnerId', e.target.value)}
-                placeholder="acme-medspa"
-                required
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Legal name</label>
-              <input
-                style={fieldStyle}
-                value={form.legalName}
-                onChange={(e) => patch('legalName', e.target.value)}
-                placeholder="Acme MedSpa, LLC"
-                required
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>DBA (optional)</label>
-              <input
-                style={fieldStyle}
-                value={form.dba}
-                onChange={(e) => patch('dba', e.target.value)}
-                placeholder="Acme MedSpa"
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>EIN</label>
-              <input
-                style={fieldStyle}
-                value={form.ein}
-                onChange={(e) => patch('ein', e.target.value)}
-                placeholder="12-3456789"
-                required
-              />
-            </div>
+          <Card>
+            <CardHeader title="Platform setup" />
+            <CardBody>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Select
+                  label="Brand"
+                  value={form.brand}
+                  onChange={(e) =>
+                    patch('brand', (e.target as HTMLSelectElement).value as FormState['brand'])
+                  }
+                  options={[
+                    { value: 'medpay', label: 'MedPay' },
+                    { value: 'tradepay', label: 'TradePay' },
+                    { value: 'coachpay', label: 'CoachPay' },
+                    { value: 'ai_funding', label: 'AI Funding' },
+                  ]}
+                />
+                <Select
+                  label="Bureau"
+                  value={form.bureau}
+                  onChange={(e) =>
+                    patch('bureau', (e.target as HTMLSelectElement).value as FormState['bureau'])
+                  }
+                  options={[
+                    { value: 'fico8', label: 'FICO8' },
+                    { value: 'vantage', label: 'Vantage' },
+                  ]}
+                />
+                <Input
+                  label="Monthly pull cap"
+                  type="number"
+                  min={0}
+                  value={form.monthlyPullCap}
+                  onChange={(e) => patch('monthlyPullCap', e.target.value)}
+                />
+                <Select
+                  label="Billing cadence"
+                  value={form.billingCadence}
+                  onChange={(e) =>
+                    patch(
+                      'billingCadence',
+                      (e.target as HTMLSelectElement).value as FormState['billingCadence'],
+                    )
+                  }
+                  options={[
+                    { value: 'weekly', label: 'Weekly (probation)' },
+                    { value: 'biweekly', label: 'Bi-weekly' },
+                    { value: 'monthly', label: 'Monthly' },
+                  ]}
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader title="MiCamp risk profile" />
+            <CardBody>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input
+                  label="Estimated annual volume (USD)"
+                  type="number"
+                  min={0}
+                  value={form.estimatedAnnualVolume}
+                  onChange={(e) => patch('estimatedAnnualVolume', e.target.value)}
+                  required
+                />
+                <Input
+                  label="Average ticket (USD)"
+                  type="number"
+                  min={0}
+                  value={form.estimatedTicket}
+                  onChange={(e) => patch('estimatedTicket', e.target.value)}
+                  required
+                />
+                <Input
+                  label="MCC code"
+                  value={form.mccCode}
+                  onChange={(e) => patch('mccCode', e.target.value)}
+                  maxLength={4}
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <Textarea
+                  label="Funnel URLs (one per line)"
+                  value={form.funnelUrls}
+                  onChange={(e) => patch('funnelUrls', e.target.value)}
+                  placeholder={
+                    'https://acme-medspa.com/financing\nhttps://acme-medspa.com/treatments'
+                  }
+                  className="font-mono text-[13px]"
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          {error && (
+            <Banner intent="danger" title="Provisioning failed" onDismiss={() => setError(null)}>
+              {error}
+            </Banner>
+          )}
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button type="submit" variant="primary" disabled={submitting}>
+              {submitting ? 'Provisioning…' : 'Kick off provisioning'}
+            </Button>
+            <Link
+              href="/admin/provisioning"
+              className="inline-flex"
+              aria-label="Cancel and return to provisioning queue"
+            >
+              <Button type="button" variant="ghost">
+                Cancel
+              </Button>
+            </Link>
           </div>
-        </section>
-
-        <section>
-          <h2 style={{ fontSize: 15, margin: '0 0 12px', color: '#cbd5e1' }}>Primary contact</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Name</label>
-              <input
-                style={fieldStyle}
-                value={form.primaryContactName}
-                onChange={(e) => patch('primaryContactName', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Email</label>
-              <input
-                style={fieldStyle}
-                type="email"
-                value={form.primaryContactEmail}
-                onChange={(e) => patch('primaryContactEmail', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Phone</label>
-              <input
-                style={fieldStyle}
-                value={form.primaryContactPhone}
-                onChange={(e) => patch('primaryContactPhone', e.target.value)}
-                required
-              />
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h2 style={{ fontSize: 15, margin: '0 0 12px', color: '#cbd5e1' }}>Platform setup</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Brand</label>
-              <select
-                style={fieldStyle}
-                value={form.brand}
-                onChange={(e) => patch('brand', e.target.value as FormState['brand'])}
-              >
-                <option value="medpay">MedPay</option>
-                <option value="tradepay">TradePay</option>
-                <option value="coachpay">CoachPay</option>
-                <option value="ai_funding">AI Funding</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Bureau</label>
-              <select
-                style={fieldStyle}
-                value={form.bureau}
-                onChange={(e) => patch('bureau', e.target.value as FormState['bureau'])}
-              >
-                <option value="fico8">FICO8</option>
-                <option value="vantage">Vantage</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Monthly pull cap</label>
-              <input
-                style={fieldStyle}
-                type="number"
-                min={0}
-                value={form.monthlyPullCap}
-                onChange={(e) => patch('monthlyPullCap', e.target.value)}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Billing cadence</label>
-              <select
-                style={fieldStyle}
-                value={form.billingCadence}
-                onChange={(e) =>
-                  patch('billingCadence', e.target.value as FormState['billingCadence'])
-                }
-              >
-                <option value="weekly">Weekly (probation)</option>
-                <option value="biweekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h2 style={{ fontSize: 15, margin: '0 0 12px', color: '#cbd5e1' }}>
-            MiCamp risk profile
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-            <div>
-              <label style={labelStyle}>Estimated annual volume (USD)</label>
-              <input
-                style={fieldStyle}
-                type="number"
-                min={0}
-                value={form.estimatedAnnualVolume}
-                onChange={(e) => patch('estimatedAnnualVolume', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Average ticket (USD)</label>
-              <input
-                style={fieldStyle}
-                type="number"
-                min={0}
-                value={form.estimatedTicket}
-                onChange={(e) => patch('estimatedTicket', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>MCC code</label>
-              <input
-                style={fieldStyle}
-                value={form.mccCode}
-                onChange={(e) => patch('mccCode', e.target.value)}
-                maxLength={4}
-                required
-              />
-            </div>
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <label style={labelStyle}>Funnel URLs (one per line)</label>
-            <textarea
-              style={{ ...fieldStyle, fontFamily: 'monospace', fontSize: 13, minHeight: 80 }}
-              value={form.funnelUrls}
-              onChange={(e) => patch('funnelUrls', e.target.value)}
-              placeholder={'https://acme-medspa.com/financing\nhttps://acme-medspa.com/treatments'}
-            />
-          </div>
-        </section>
-
-        {error && (
-          <div
-            style={{
-              padding: 12,
-              border: '1px solid #5b1e1e',
-              borderRadius: 8,
-              background: 'rgba(91, 30, 30, 0.20)',
-              color: '#fca5a5',
-              fontSize: 13.5,
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 12, paddingTop: 8 }}>
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              padding: '12px 22px',
-              borderRadius: 8,
-              border: '1px solid #7dd3fc',
-              background: 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
-              color: '#0c1a2e',
-              fontSize: 13.5,
-              fontWeight: 700,
-              cursor: submitting ? 'wait' : 'pointer',
-              opacity: submitting ? 0.6 : 1,
-            }}
-          >
-            {submitting ? 'Provisioning…' : 'Kick off provisioning'}
-          </button>
-          <Link
-            href="/admin/provisioning"
-            style={{
-              padding: '12px 22px',
-              borderRadius: 8,
-              border: '1px solid #334155',
-              color: '#cbd5e1',
-              fontSize: 13.5,
-              fontWeight: 600,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
-          >
-            Cancel
-          </Link>
-        </div>
-      </form>
-    </div>
+        </form>
+      </PageBody>
+    </>
   );
 }

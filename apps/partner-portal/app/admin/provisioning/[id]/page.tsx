@@ -15,23 +15,49 @@
  */
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardHeader,
+  CardBody,
+  StatusPill,
+  Banner,
+  ClockIcon,
+  CheckIcon,
+  type StatusTone,
+} from '@eazepay/ui/web';
 import type { ProvisionRun, StepStatus } from '@/lib/orchestrator/provision';
 
-const STATUS_BADGE: Record<ProvisionRun['status'], { label: string; bg: string; fg: string }> = {
-  queued: { label: 'Queued', bg: '#1f2937', fg: '#a3b8d4' },
-  running: { label: 'Running', bg: '#1e3a5f', fg: '#7dd3fc' },
-  completed: { label: 'Completed', bg: '#14532d', fg: '#86efac' },
-  failed: { label: 'Failed', bg: '#5b1e1e', fg: '#fca5a5' },
+const STATUS_TONE: Record<ProvisionRun['status'], StatusTone> = {
+  queued: 'neutral',
+  running: 'info',
+  completed: 'success',
+  failed: 'danger',
 };
 
-const STEP_TONE: Record<StepStatus, { label: string; color: string }> = {
-  pending: { label: 'Pending', color: '#64748b' },
-  in_progress: { label: 'In progress', color: '#0ea5e9' },
-  done: { label: 'Done', color: '#10b981' },
-  failed: { label: 'Failed', color: '#ef4444' },
-  skipped: { label: 'Skipped', color: '#94a3b8' },
+const STATUS_LABEL: Record<ProvisionRun['status'], string> = {
+  queued: 'Queued',
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+};
+
+const STEP_TONE: Record<StepStatus, StatusTone> = {
+  pending: 'neutral',
+  in_progress: 'info',
+  done: 'success',
+  failed: 'danger',
+  skipped: 'neutral',
+};
+
+const STEP_LABEL_STATUS: Record<StepStatus, string> = {
+  pending: 'Pending',
+  in_progress: 'In progress',
+  done: 'Done',
+  failed: 'Failed',
+  skipped: 'Skipped',
 };
 
 const STEP_LABEL: Record<string, string> = {
@@ -81,172 +107,141 @@ export default function ProvisioningRunPage(): JSX.Element {
 
   if (error) {
     return (
-      <div style={{ padding: 32, color: '#fca5a5' }}>
-        <Link href="/admin/provisioning" style={{ color: '#7dd3fc' }}>
-          ← Back to queue
-        </Link>
-        <p style={{ marginTop: 16 }}>{error}</p>
-      </div>
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { label: 'Admin', href: '/admin' },
+            { label: 'Provisioning', href: '/admin/provisioning' },
+            { label: id ?? 'Run' },
+          ]}
+          title="Run not found"
+        />
+        <PageBody>
+          <Banner intent="danger" title="Provisioning run not found">
+            {error}
+          </Banner>
+        </PageBody>
+      </>
     );
   }
 
   if (!run) {
-    return <div style={{ padding: 32, color: '#64748b' }}>Loading run…</div>;
+    return (
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { label: 'Admin', href: '/admin' },
+            { label: 'Provisioning', href: '/admin/provisioning' },
+            { label: id ?? '…' },
+          ]}
+          title="Loading run…"
+        />
+        <PageBody>
+          <div
+            role="status"
+            aria-live="polite"
+            className="py-12 text-center text-[13px] text-fg-muted"
+          >
+            Loading run…
+          </div>
+        </PageBody>
+      </>
+    );
   }
 
   return (
-    <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto', color: '#e2e8f0' }}>
-      <Link
-        href="/admin/provisioning"
-        style={{ color: '#7dd3fc', fontSize: 13, textDecoration: 'none' }}
-      >
-        ← Provisioning queue
-      </Link>
-
-      <header style={{ marginTop: 16, marginBottom: 24 }}>
-        <div
-          style={{
-            fontSize: 12,
-            letterSpacing: '0.18em',
-            color: '#7dd3fc',
-            fontWeight: 700,
-          }}
-        >
-          PROVISIONING RUN
-        </div>
-        <h1 style={{ margin: '6px 0 10px', fontSize: 26, fontWeight: 700 }}>{run.id}</h1>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span
-            style={{
-              padding: '4px 10px',
-              borderRadius: 999,
-              fontSize: 11,
-              fontWeight: 700,
-              background: STATUS_BADGE[run.status].bg,
-              color: STATUS_BADGE[run.status].fg,
-            }}
-          >
-            {STATUS_BADGE[run.status].label}
-          </span>
-          <span style={{ color: '#94a3b8', fontSize: 13 }}>
-            Partner <strong style={{ color: '#e2e8f0' }}>{run.partnerId}</strong>
-          </span>
-          <span style={{ color: '#94a3b8', fontSize: 13 }}>
-            Brand <strong style={{ color: '#e2e8f0' }}>{run.brand}</strong>
-          </span>
-          <span style={{ color: '#94a3b8', fontSize: 13 }}>
-            Started {new Date(run.startedAt).toLocaleString()}
-          </span>
-          {run.completedAt && (
-            <span style={{ color: '#94a3b8', fontSize: 13 }}>
-              · Completed {new Date(run.completedAt).toLocaleString()}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Provisioning', href: '/admin/provisioning' },
+          { label: run.id },
+        ]}
+        title={run.id}
+        description={`Partner ${run.partnerId} · Brand ${run.brand}`}
+        meta={
+          <>
+            <StatusPill tone={STATUS_TONE[run.status]} dot>
+              {STATUS_LABEL[run.status]}
+            </StatusPill>
+            <span className="text-fg-muted text-[12px]">
+              Started {new Date(run.startedAt).toLocaleString()}
             </span>
-          )}
-        </div>
+            {run.completedAt && (
+              <span className="text-fg-muted text-[12px]">
+                · Completed {new Date(run.completedAt).toLocaleString()}
+              </span>
+            )}
+          </>
+        }
+      />
+      <PageBody>
         {run.failureReason && (
-          <div
-            style={{
-              marginTop: 12,
-              padding: 12,
-              border: '1px solid #5b1e1e',
-              borderRadius: 8,
-              background: 'rgba(91, 30, 30, 0.20)',
-              color: '#fca5a5',
-              fontSize: 13,
-            }}
-          >
-            <strong>Failure:</strong> {run.failureReason}
-          </div>
+          <Banner intent="danger" title="Failure" className="mb-5">
+            {run.failureReason}
+          </Banner>
         )}
-      </header>
 
-      <div style={{ display: 'grid', gap: 14 }}>
-        {run.steps.map((step, idx) => {
-          const tone = STEP_TONE[step.status];
-          return (
-            <div
-              key={step.name}
-              style={{
-                padding: 20,
-                border: `1px solid ${tone.color}33`,
-                borderRadius: 12,
-                background: '#0f172a',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: 10,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      letterSpacing: '0.18em',
-                      color: tone.color,
-                      fontWeight: 700,
-                    }}
-                  >
-                    STEP {idx + 1} · {tone.label.toUpperCase()}
-                  </div>
-                  <h3
-                    style={{
-                      margin: '4px 0 0',
-                      fontSize: 16,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {STEP_LABEL[step.name] ?? step.name}
-                  </h3>
-                </div>
-                <div style={{ fontSize: 11.5, color: '#64748b', textAlign: 'right' }}>
-                  {step.startedAt && <div>↗ {new Date(step.startedAt).toLocaleTimeString()}</div>}
-                  {step.completedAt && (
-                    <div>✓ {new Date(step.completedAt).toLocaleTimeString()}</div>
-                  )}
-                </div>
-              </div>
-
-              {step.note && (
-                <div style={{ color: '#cbd5e1', fontSize: 13.5, marginBottom: 10 }}>
-                  {step.note}
-                </div>
-              )}
-
-              {step.result && (
-                <details>
-                  <summary
-                    style={{
-                      cursor: 'pointer',
-                      color: '#7dd3fc',
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
-                  >
-                    Result payload
-                  </summary>
-                  <pre
-                    style={{
-                      marginTop: 10,
-                      padding: 12,
-                      background: '#020617',
-                      borderRadius: 8,
-                      fontSize: 11.5,
-                      color: '#cbd5e1',
-                      overflowX: 'auto',
-                    }}
-                  >
-                    {JSON.stringify(step.result, null, 2)}
-                  </pre>
-                </details>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+        <div className="grid gap-3.5">
+          {run.steps.map((step, idx) => {
+            const tone = STEP_TONE[step.status];
+            return (
+              <Card key={step.name}>
+                <CardHeader
+                  title={
+                    <div className="flex flex-col gap-1">
+                      <div className="text-[11px] uppercase tracking-[0.16em] font-bold text-fg-muted">
+                        Step {idx + 1}
+                      </div>
+                      <div className="text-[16px] font-semibold text-fg">
+                        {STEP_LABEL[step.name] ?? step.name}
+                      </div>
+                    </div>
+                  }
+                  action={
+                    <div className="flex flex-col items-end gap-1.5">
+                      <StatusPill tone={tone} dot>
+                        {STEP_LABEL_STATUS[step.status]}
+                      </StatusPill>
+                      <div className="text-[11.5px] text-fg-muted text-right space-y-0.5">
+                        {step.startedAt && (
+                          <div className="inline-flex items-center gap-1">
+                            <ClockIcon size={11} aria-hidden />
+                            {new Date(step.startedAt).toLocaleTimeString()}
+                          </div>
+                        )}
+                        {step.completedAt && (
+                          <div className="inline-flex items-center gap-1">
+                            <CheckIcon size={11} aria-hidden />
+                            {new Date(step.completedAt).toLocaleTimeString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  }
+                />
+                {(step.note || step.result) && (
+                  <CardBody>
+                    {step.note && (
+                      <div className="text-[13.5px] text-fg-secondary mb-3">{step.note}</div>
+                    )}
+                    {step.result && (
+                      <details className="group">
+                        <summary className="cursor-pointer text-[12px] font-semibold text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded">
+                          Result payload
+                        </summary>
+                        <pre className="mt-2.5 p-3 bg-bg-muted text-fg-secondary rounded-md text-[11.5px] overflow-x-auto font-mono">
+                          {JSON.stringify(step.result, null, 2)}
+                        </pre>
+                      </details>
+                    )}
+                  </CardBody>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      </PageBody>
+    </>
   );
 }
