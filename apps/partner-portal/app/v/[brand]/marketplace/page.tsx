@@ -26,6 +26,7 @@ import {
   type MarketplaceLenderRow,
 } from '../../../../lib/marketplace-data';
 import { BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
+import { EmptyState, BankIcon, PageBody } from '@eazepay/ui/web';
 
 const slugToBrand = (slug: string): BrandCode | null =>
   BRAND_ORDER.find((b) => b === slug || `${b}-pay` === slug) ?? null;
@@ -54,6 +55,27 @@ export default function PartnerMarketplacePage(): JSX.Element {
 
   const enabledLenders = visibleLenders.filter((l) => lenderEnabled(l));
   const disabledLenders = visibleLenders.filter((l) => !lenderEnabled(l));
+
+  if (enabledLenders.length === 0 && disabledLenders.length === 0) {
+    const brandLabel = brand ? brand.toUpperCase() : 'your vertical';
+    return (
+      <PageBody>
+        <EmptyState
+          icon={<BankIcon size={20} />}
+          title={`No lenders enabled for ${brandLabel} yet`}
+          description="An admin needs to toggle at least one lender for your vertical before applications can route."
+          secondaryAction={
+            <Link
+              href="/help"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-sm"
+            >
+              Contact your launch engineer ↗
+            </Link>
+          }
+        />
+      </PageBody>
+    );
+  }
 
   return (
     <div style={{ padding: 32, maxWidth: 1080, margin: '0 auto', color: '#0f172a' }}>

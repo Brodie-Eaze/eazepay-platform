@@ -34,6 +34,8 @@ import {
   LiveIndicator,
   TimeRangeSelector,
   TIME_RANGES,
+  EmptyState,
+  GaugeIcon,
   type StatusTone,
   type TimeRange,
 } from '@eazepay/ui/web';
@@ -195,6 +197,20 @@ export default function SloBoardPage(): JSX.Element {
               <Skeleton rows={4} label="Loading SLO board" />
             </CardBody>
           </Card>
+        ) : board.rows.length > 0 && board.rows.every((r) => r.observation.failureRate === null) ? (
+          <EmptyState
+            icon={<GaugeIcon size={20} />}
+            title="No SLO data yet"
+            description="The observability pipeline isn't wired to OpenTelemetry. SLOs will populate automatically once metrics start landing."
+            secondaryAction={
+              <Link
+                href="/docs/observability-setup"
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-sm"
+              >
+                Setup guide ↗
+              </Link>
+            }
+          />
         ) : (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {board.rows.map((row) => (

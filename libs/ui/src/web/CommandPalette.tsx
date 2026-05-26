@@ -23,6 +23,8 @@ import type { FC, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Command } from 'cmdk';
 import { cn } from './cn';
+import { EmptyState } from './EmptyState.js';
+import { SearchIcon } from './Icon.js';
 
 export interface CommandPaletteCommand {
   /** Stable id — used as React key + cmdk value seed. */
@@ -198,8 +200,13 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
             </kbd>
           </div>
           <Command.List className="max-h-[60vh] overflow-y-auto py-2">
-            <Command.Empty className="px-4 py-8 text-center text-[13px] text-fg-muted">
-              No results.
+            <Command.Empty className="p-3">
+              <EmptyState
+                variant="inline"
+                icon={<SearchIcon size={18} />}
+                title="No matching commands"
+                description="Try a partner name, page, or lender slug."
+              />
             </Command.Empty>
             {grouped.map(({ section, items }) => (
               <Command.Group

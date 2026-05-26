@@ -29,6 +29,7 @@ import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../lib/master-data';
 import { expandedApplications } from '../../../lib/seeded-applications';
 import { currentPartnerForBrand, partnerShareOfBrand } from '../../../lib/partner-profile';
+import { PartnerTour } from '../../../components/PartnerTour';
 import {
   applicationsByMonth,
   applicationsByStatus,
@@ -941,6 +942,7 @@ export default function BrandHomePage() {
 
   return (
     <>
+      {partner && <PartnerTour partnerId={partner.id} />}
       <PageHeader
         breadcrumbs={[{ label: 'Overview' }]}
         title={partner ? `${partner.legalName} · Dashboard` : 'Dashboard'}

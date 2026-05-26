@@ -22,6 +22,7 @@ import {
   StatusPill,
   Skeleton,
   EmptyState,
+  SearchIcon,
   type StatusTone,
 } from '@eazepay/ui/web';
 
@@ -160,14 +161,31 @@ export default function AuditLogPage(): JSX.Element {
             </CardBody>
           </Card>
         ) : entries.length === 0 ? (
-          <EmptyState
-            title="No audit entries"
-            description={
-              hasFilter
-                ? 'No entries match these filters. Clear filters to see all activity.'
-                : 'No admin actions have been recorded yet.'
-            }
-          />
+          hasFilter ? (
+            <EmptyState
+              variant="inline"
+              icon={<SearchIcon size={18} />}
+              title="No entries match these filters"
+              action={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilterActor('');
+                    setFilterAction('');
+                    setFilterTargetType('');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              title="No audit entries"
+              description="No admin actions have been recorded yet."
+            />
+          )
         ) : (
           <Card>
             <CardBody padded={false}>

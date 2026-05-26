@@ -245,7 +245,12 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       // surfaces sit together.
       label: 'Submit Application',
       items: [
-        { href: `${base}/applications`, label: 'Applications', icon: <DocIcon /> },
+        {
+          href: `${base}/applications`,
+          label: 'Applications',
+          icon: <DocIcon />,
+          tourId: 'nav-applications',
+        },
         { href: `${base}/submit`, label: brandSubmitLabel, icon: brandSubmitIcon },
         { href: `${base}/send-link`, label: 'Send Application Link', icon: <LinkIcon /> },
       ],
@@ -292,8 +297,18 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       // /api-keys.
       label: 'Account',
       items: [
-        { href: `${base}/services/marketplace`, label: 'Marketplace', icon: <StoreIcon /> },
-        { href: `${base}/team`, label: 'Team & Roles', icon: <UsersIcon /> },
+        {
+          href: `${base}/services/marketplace`,
+          label: 'Marketplace',
+          icon: <StoreIcon />,
+          tourId: 'nav-marketplace',
+        },
+        {
+          href: `${base}/team`,
+          label: 'Team & Roles',
+          icon: <UsersIcon />,
+          tourId: 'nav-team',
+        },
         { href: `${base}/settings`, label: 'Settings', icon: <SettingsIcon /> },
       ],
     },
@@ -640,9 +655,11 @@ export function Shell({ children }: { children: ReactNode }) {
               Marketplace, Sandbox, API Keys, Admin shortcuts). Master
               surface only; hidden inside per-brand portals. */}
             {!activeBrand && <MoreMenu />}
-            <Button size="sm" variant="ghost">
-              Help
-            </Button>
+            <span data-tour-id="nav-help" className="inline-flex">
+              <Button size="sm" variant="ghost">
+                Help
+              </Button>
+            </span>
             <UserMenu activeBrand={activeBrand} />
           </div>
         }

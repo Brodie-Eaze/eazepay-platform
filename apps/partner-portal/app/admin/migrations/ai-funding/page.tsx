@@ -26,6 +26,7 @@ import {
   EmptyState,
   Button as _Button,
   QueueIcon,
+  ArrowRightIcon,
   LiveIndicator,
   type ButtonVariant,
   type ButtonSize,
@@ -254,9 +255,9 @@ export default function AiFundingMigrationPage(): JSX.Element {
           if (migrations.length === 0) {
             return (
               <EmptyState
-                icon={<QueueIcon size={20} />}
-                title="No migrations yet"
-                description="Seed the queue above with AI Funding customer ids to get started."
+                icon={<ArrowRightIcon size={20} />}
+                title="No migrations queued yet"
+                description="Paste AI Funding customer IDs above to seed the cutover queue."
               />
             );
           }
