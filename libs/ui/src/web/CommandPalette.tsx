@@ -130,6 +130,11 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       // Defer navigation/action one tick so the dialog finishes its
       // close transition before the route changes (avoids a flash of
       // the palette overlapping the destination page).
+      //
+      // nosemgrep: javascript.lang.security.detect-eval-with-expression.detect-eval-with-expression
+      // ^ setTimeout receives an inline arrow function (not a string),
+      //   so there is no dynamic JS execution / XSS surface. The rule
+      //   is a false positive on the function-callback form.
       setTimeout(() => {
         if (cmd.onSelect) {
           cmd.onSelect();
