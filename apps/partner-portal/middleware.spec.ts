@@ -92,6 +92,16 @@ describe('partner-portal middleware', () => {
     expect(apply.headers.get('location')).toBeNull();
   });
 
+  // Sprint E — trust signals. All four trust pages must reach the
+  // handler without a session cookie. A regression here would land a
+  // /status link in a lender's pitch deck that 302s to /sign-in.
+  it('Sprint E — trust pages are public (status / security-overview / changelog / api-docs)', async () => {
+    for (const path of ['/status', '/security-overview', '/changelog', '/api-docs']) {
+      const res = await middleware(unauthedRequest(`http://localhost:3004${path}`));
+      expect(res.headers.get('location'), `${path} should not redirect`).toBeNull();
+    }
+  });
+
   it('/_next/* is public', async () => {
     const nextAsset = await middleware(
       unauthedRequest('http://localhost:3004/_next/static/chunk.js'),

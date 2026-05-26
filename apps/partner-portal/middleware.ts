@@ -51,6 +51,14 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
+  // Sprint E — trust signals. Four naked public surfaces that prospective
+  // lenders / GMs land on before the demo. Status polls observability,
+  // security spells out compliance posture, changelog proves shipping
+  // cadence, api-docs renders integration surface. None require a cookie.
+  '/status',
+  '/security-overview', // public compliance posture (the authed /security 2FA page is unchanged)
+  '/changelog',
+  '/api-docs',
 ];
 
 /**
