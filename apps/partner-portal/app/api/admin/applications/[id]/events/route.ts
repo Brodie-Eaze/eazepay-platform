@@ -26,7 +26,7 @@ import { z } from 'zod';
 import { and, asc, eq, gt, type SQL } from 'drizzle-orm';
 import { getDb, hasDb } from '../../../../../../lib/db';
 import { applicationEvents, applications } from '../../../../../../lib/db/schema';
-import { getSessionContext } from '../../../../../../lib/session';
+import { requireAdmin } from '../../../../../../lib/server-guards';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,15 +41,12 @@ function problem(status: number, code: string, detail: string) {
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // SEC-001: admin-only — same gate as /api/admin/applications.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   if (!hasDb()) {
     return problem(503, 'db_unavailable', 'Application database is not yet provisioned.');
-  }
-
-  // Operator-only — same gate as /api/admin/applications.
-  const session = await getSessionContext(req);
-  const isOperator = session.mode === 'demo' && session.isOperator;
-  if (!isOperator) {
-    return problem(403, 'forbidden', 'Audit-chain view requires an operator session.');
   }
 
   const { id } = await params;

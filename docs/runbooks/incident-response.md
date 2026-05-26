@@ -1,110 +1,230 @@
-# Incident Response Runbook
+# Incident Response — Master Runbook
 
-Severity classification, on-call paths, communication, and the four
-playbooks that cover ~85% of fintech incidents at our scale.
+> **TL;DR (60s):** Something looks wrong in production. Classify severity in the first 5 minutes (matrix below), open `#incident-YYYY-MM-DD`, take a state snapshot, then open the matching specialized runbook. As a solo founder you hold all three incident roles — Incident Commander, Tech Lead, and Comms Lead — so write everything down. The default order is **stop the bleeding, restore service, then root-cause**.
 
-## Severity matrix
+## When this fires
 
-| Sev  | Symptom                                                               | Response SLA                       | Comms                                                                     |
-| ---- | --------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
-| SEV1 | Production down OR consumer money at risk OR PII breach               | 15 min ack, 4 hr resolution target | StatusPage open, partner banks notified within 2 hr per service agreement |
-| SEV2 | Major feature broken (orchestration / disbursement / collection cron) | 30 min ack, 24 hr                  | StatusPage open, internal Slack thread                                    |
-| SEV3 | Single-customer or non-money-path issue                               | 4 hr ack, 5 day                    | Internal only                                                             |
-| SEV4 | Cosmetic / known-issue                                                | Next sprint                        | Triage queue                                                              |
+- Synthetic probe of `/api/health` or `/api/admin/webhook-processor/tick` returns non-2xx twice in 5 minutes
+- A consumer or partner reports a production-impacting bug
+- Any unexplained spike in 5xx, decline rate, or `webhook_inbox.processing_status='failed'` depth
+- A partner-bank (MiCamp) or lender (HighSale, Trutopia) API returns 5xx for more than 5 minutes
+- A SEV-X label appears in a customer-support ticket
+- Suspected PII exposure, suspected fraud, or any regulator inbound
 
-## Common playbooks
+Customer-visible impact ranges from "consumer cannot complete `/apply/<brand>`" (Sev1/Sev2) to "partner dashboard chart misaligned" (Sev3).
 
-### 1. Disbursement cron broke
+## Severity
 
-Symptoms: Stripe/Modern Treasury return-rate spike, or `Loan.status`
-stuck at `funding_pending` for >2h.
+| Sev      | Definition                                                                                       | Pager              | Comms cadence      | Resolve target |
+| -------- | ------------------------------------------------------------------------------------------------ | ------------------ | ------------------ | -------------- |
+| **Sev1** | Data loss / PII exposure / regulatory inbound / payment processing down / >25% of users impacted | 5 min              | every 30 min       | 4 hr           |
+| **Sev2** | Service degradation / 5–25% users impacted / single brand down / webhook DLQ growing for >15 min | next business hour | hourly             | 24 hr          |
+| **Sev3** | Minor — single partner issue, cosmetic on core UI, known issue with workaround                   | next business day  | end-of-day summary | 5 day          |
 
-1. Check `apps/workers` health (ECS service events).
-2. Query `loans` for stuck rows: `WHERE status='funding_pending' AND updatedAt < now() - interval '2 hours'`.
-3. Check the `Transaction` table for matching disbursement attempts. If
-   none exist, the dispatcher never ran — restart the workers service.
-4. If they exist with `status='failed'`, look at `failure_reason`.
-   Provider outage → wait + retry; consumer-bank closure → contact CS;
-   our error → fix + retry idempotency-keyed by loanId.
-5. **Do not manually move state.** All transitions go through
-   `PaymentService.disburseAndSchedule`.
+Err one tier high. Downgrading is cheap; upgrading mid-incident loses minutes.
 
-### 2. Webhook deliveries dead-lettering
+## Diagnosis (5 min)
 
-Symptoms: merchant reports they're not receiving events, or
-`webhook_deliveries.status='dead_letter'` count climbs.
+### 1. Classify and announce
 
-1. Check the endpoint URL is reachable from outside (curl from a
-   bastion). Customer-side firewall changes are a common cause.
-2. Look at recent attempts: `SELECT lastStatusCode, lastError FROM
-webhook_deliveries WHERE endpointId=? ORDER BY updatedAt DESC LIMIT 20`.
-3. If consecutive failures hit 20, the endpoint auto-paused. Tell the
-   merchant; they unpause via the dashboard after fixing.
-4. Bulk-replay via the merchant dashboard's retry CTA, OR
-   `service-webhook` admin endpoint for ops-side replay.
+```
+# Open the channel
+/channel-create #incident-2026-05-26
 
-### 3. Risk gate over-declining
+# Pin to channel
+Sev: SEV-{1|2|3}
+Commander: Brodie (sole role-holder)
+Started: {HH:MM UTC}
+Symptom: {one line}
+Customer impact: {scope}
+```
 
-Symptoms: approval rate drops; manual review queue empties; consumer
-complaints about "instant decline".
+Healthy: channel exists, severity is set, start time recorded.
+Sick: incident running for 10+ min without a channel — stop and create it.
 
-1. Check policy version on recent declines: `SELECT policyVersion,
-recommendation, COUNT(*) FROM risk_assessments WHERE createdAt >
-now() - interval '24 hours' GROUP BY 1,2`.
-2. If the version changed recently, suspect a recent deploy. Roll back
-   `RISK_*_THRESHOLD` env vars and observe.
-3. Check upstream risk providers for outage (Sift / Plaid Signal
-   status pages).
-4. Risk service fail-OPEN by design — provider degradation should not
-   cause spike. If it does, look for code-path divergence.
+### 2. Snapshot before you touch anything
 
-### 4. Audit chain mismatch
+```bash
+# Logs from each Railway service
+railway logs --service partner-portal --tail 1000 > /tmp/incident-portal.log
+railway logs --service eazepay-api    --tail 1000 > /tmp/incident-api.log
+railway logs --service workers        --tail 1000 > /tmp/incident-workers.log
 
-Symptoms: an admin-side verify-chain run reports `expected hash X,
-got Y` for a date range. Treat as SEV1.
+# Webhook inbox state (last 2 hours)
+psql "$DATABASE_URL" -c "\copy (
+  SELECT id, provider, event_type, processing_status, attempts, failure_reason, received_at
+  FROM webhook_inbox
+  WHERE received_at > now() - interval '2 hours'
+  ORDER BY received_at DESC
+) TO '/tmp/webhook-inbox-snapshot.csv' CSV HEADER"
 
-1. **Stop the audit drain immediately.**
-2. Snapshot the affected `audit_outbox` rows + the sink JSONL files.
-3. Compare canonicalJson(row) hashes between Postgres and sink. The
-   first divergence point identifies whether tampering is in
-   Postgres (live row mutated post-drain) or in the sink (file
-   modified). Either is a SEV1 incident.
-4. Notify CCO. The chain mismatch itself is a reportable matter
-   under bank-partner agreements.
+# In-flight provisioning runs
+psql "$DATABASE_URL" -c "\copy (
+  SELECT id, partner_id, brand, status, started_at, failure_reason
+  FROM provisioning_runs
+  WHERE started_at > now() - interval '4 hours'
+) TO '/tmp/provisioning-snapshot.csv' CSV HEADER"
+```
 
-## Communication
+Upload all four to the incident channel — they survive any service restart.
 
-- **Internal:** Slack `#incident` channel, severity prefix in the
-  topic, IC named explicitly.
-- **External (consumer):** StatusPage. Templates in
-  `docs/runbooks/communication-templates.md`.
-- **Partner banks:** per service agreement, typically within 2 hours
-  for SEV1 affecting money flow.
-- **CFPB / state AG / NYDFS:** legal counsel decision; default
-  posture is the relevant statutory window (NYDFS 72-hour, GLBA
-  notification thresholds).
+### 3. Health probe
 
-## Observability quick-reference
+```bash
+curl -fsS https://partner-portal.up.railway.app/api/health | jq .
+```
 
-When triaging, this is where to look. Filter every backend on
-`service.name=eazepay-api`.
+Healthy: `{"ok": true, "db": "ok", "redis": "ok"}`.
+Sick: any field `"error"` or non-200 — go directly to mitigation.
 
-| Signal                | Where it lives                                                                                                               | How to find the trace / row                                                                                                                                                             |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Structured logs       | stdout → Railway log drain (30 d hot, 1 yr cold via drain target)                                                            | Railway dashboard → Service → Logs. Filter by `traceId` when correlating with a trace                                                                                                   |
-| Traces                | OTLP exporter — backend per `OTEL_EXPORTER_OTLP_ENDPOINT` (Honeycomb / Tempo / SigNoz). See `docs/runbooks/observability.md` | Filter `service.name=eazepay-api`, then by span name (`auth.login`, `application.submit`, `orchestration.evaluate`, `webhook.dispatch`, `webhook.receive`, `audit.drain`, `pii.reveal`) |
-| Metrics               | Not wired today — documented gap                                                                                             | Use Postgres ad-hoc SQL on `webhook_deliveries`, `audit_outbox`, `risk_assessments` for counters until OTEL Metrics SDK lands                                                           |
-| Audit chain           | `audit_outbox` table + sink (local-fs dev, DynamoDB planned)                                                                 | `SELECT * FROM audit_outbox WHERE actorId=? OR subjectId=? ORDER BY createdAt DESC LIMIT 50`                                                                                            |
-| Provider HTTP latency | Inside spans `webhook.dispatch` and lender adapters                                                                          | Span attribute `http.url` + `http.status_code`                                                                                                                                          |
+## Mitigation (do in order)
 
-Key span names to learn for the on-call rotation:
+1. **Roll back to the last known good deploy.** Do not try to fix the underlying bug while the site is on fire.
 
-- `auth.login` — login attempts, MFA outcomes
-- `application.submit` — root span for the submit-application route
-- `orchestration.evaluate` — policy version + lender shortlist
-- `webhook.dispatch` — outbound deliveries, attempt count, outcome
-- `webhook.receive` — inbound webhooks, HMAC validity, replay-window check
-- `audit.drain` — drain tick, batch size, chain head hash
-- `pii.reveal` — dual-control reveal events
+   ```bash
+   railway rollback --service partner-portal
+   railway rollback --service eazepay-api
+   railway rollback --service workers
+   ```
 
-Full span attribute list: `docs/runbooks/observability.md`.
+   _Why:_ a bad deploy is the most common Sev1 cause; rollback restores service in <2 min. _Verify:_ health probe green for 3 consecutive minutes.
+
+2. **Open the specialized runbook** matching the symptom and execute its Mitigation block.
+
+   | Symptom                                               | Runbook                                                    |
+   | ----------------------------------------------------- | ---------------------------------------------------------- |
+   | Webhook DLQ depth climbing / processing stuck         | [`webhook-dlq.md`](webhook-dlq.md)                         |
+   | Provisioning stuck mid-flow / partner half-onboarded  | [`provisioning-rollback.md`](provisioning-rollback.md)     |
+   | Partner doing harm / suspected fraud / regulator hold | [`partner-suspension.md`](partner-suspension.md)           |
+   | Secret compromise / quarterly rotation                | [`key-rotation.md`](key-rotation.md)                       |
+   | DR / full region loss                                 | [`disaster-recovery-drill.md`](disaster-recovery-drill.md) |
+
+3. **If symptom does not fit a runbook:** declare Sev1, escalate (see tree below), and document the manual mitigation in the incident channel as you go.
+
+4. **Verify exit conditions** (see Verification below). Do not close the incident until all are met.
+
+## Root cause categories
+
+| Category                    | Disambiguation test                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| Bad deploy                  | `git log --oneline -10` shows a deploy in the last hour; rollback fixed it                  |
+| Upstream provider outage    | MiCamp / HighSale / Trutopia status page red; their support confirms                        |
+| DB capacity / lock          | `pg_stat_activity` shows >20 `idle in transaction` rows; `pg_locks` shows waits             |
+| Webhook backlog             | `SELECT count(*) FROM webhook_inbox WHERE processing_status='pending'` > 500                |
+| Secret rotation gone wrong  | 401s from upstream right after a rotation window — see [`key-rotation.md`](key-rotation.md) |
+| Misconfigured tenant cutoff | `partners.status='suspended'` flipped unexpectedly; check `audit_log`                       |
+| Cron / orchestrator wedge   | `provisioning_runs.status='running'` with `started_at > 30 min ago`                         |
+
+## Communication template
+
+### Internal Slack (initial post)
+
+```
+SEV-{N} | {one-line symptom}
+Commander: Brodie
+Channel: #incident-{date}
+Status: investigating | mitigating | monitoring | resolved
+Customer impact: {all partners | one brand | one partner | internal-only}
+Started: {HH:MM UTC}
+Next update: {HH:MM UTC} ({30 min for Sev1 | 60 min for Sev2})
+```
+
+### Status page (Statuspage.io — wire-up pending)
+
+```
+Investigating — We are investigating reports of {symptom} affecting {scope}.
+We will provide an update by {HH:MM UTC}. No action required from you.
+```
+
+### Customer email (Sev1 with named impact)
+
+```
+Subject: EazePay incident — {brand} — {date}
+
+Hi {first name},
+
+We had a production incident affecting {scope} from {start UTC} to {end UTC}.
+Impact: {one sentence on what stopped working, what kept working}.
+Mitigation: {one sentence on what we did}.
+Root cause: {one sentence; "still under investigation" is acceptable for Sev2+}.
+Next steps: full postmortem within 72 hours, shared directly.
+
+If you saw downstream impact we have not yet noticed, please reply so we
+capture it in the postmortem.
+
+— EazePay Engineering
+```
+
+### Partner Slack (when partner-specific)
+
+```
+Heads up — we paused {capability} for {partner / brand} from {start} to {end}
+while we resolved {symptom}. No customer money moved in error. Full
+postmortem to follow within 72 hours.
+```
+
+## Post-incident
+
+| Item                                                               | Owner     | Due                                |
+| ------------------------------------------------------------------ | --------- | ---------------------------------- |
+| Resolved status on status page                                     | Commander | At resolution                      |
+| Postmortem doc stub created at `docs/postmortems/{date}-{slug}.md` | Commander | Within 24 hr                       |
+| Full postmortem (timeline, RCA, action items table)                | Commander | Within 48 hr (Sev1) / 72 hr (Sev2) |
+| Action items filed as GH issues with owners + due dates            | Commander | Within 7 d                         |
+| 7-day follow-up: have action items shipped?                        | Commander | Day 7                              |
+
+Use this postmortem skeleton:
+
+```
+# Postmortem — {short title}
+
+Date: {YYYY-MM-DD}     Severity: SEV-{N}
+Duration: {HH:MM UTC} → {HH:MM UTC} ({minutes} min)
+Commander: Brodie
+
+## Summary
+{Two sentences: what happened, what the impact was.}
+
+## Timeline (UTC)
+- HH:MM — {event}
+
+## Impact
+- Customers affected: {count or scope}
+- Partners affected: {list}
+- Money at risk / moved in error: {USD or "none"}
+- Data exposed: {none / list}
+
+## Root cause
+{Why. Avoid "human error" — ask "what allowed the human error to reach prod?"}
+
+## What went well / What went poorly
+- {bullets}
+
+## Action items
+| Owner | Action | Due | Ticket |
+| --- | --- | --- | --- |
+| @brodie | {specific, dated, owned} | YYYY-MM-DD | EAZ-### |
+```
+
+## Escalation tree
+
+Solo-founder reality: you are the entire on-call rotation. The tree below is who you _call out to_ — not internal staff.
+
+1. **Engineering lead (yourself):** classify, command, scribe, comms. Set timers on phone for next-update cadence.
+2. **Legal counsel:** wake immediately on any _suspected_ PII breach or regulator inbound. Do not wait for confirmation. (Contact card: 1Password → Legal contacts.)
+3. **MiCamp** (Steven, ISO sponsor): money-flow incidents within 30 min. (1Password → Vendor contacts.)
+4. **HighSale** (Tim): pre-qual / soft-pull incidents within 30 min.
+5. **Bank partner notification:** required within 2 hr for Sev1 affecting money flow per ISO sponsor agreement.
+6. **Regulator notification:** legal-counsel decision. Default to statutory clock — NYDFS 23 NYCRR 500 = 72 hr; GLBA notification thresholds; state DFI per-state. Do not self-disclose without counsel.
+
+## Related runbooks
+
+- [`webhook-dlq.md`](webhook-dlq.md) — webhook inbox stuck
+- [`provisioning-rollback.md`](provisioning-rollback.md) — half-onboarded partner
+- [`partner-suspension.md`](partner-suspension.md) — partner doing harm / regulator hold
+- [`key-rotation.md`](key-rotation.md) — secret compromise / quarterly rotation
+- [`disaster-recovery-drill.md`](disaster-recovery-drill.md) — region loss / DB corruption
+
+---
+
+_Last reviewed: 2026-05-26 — Owner: Brodie_

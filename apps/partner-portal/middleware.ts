@@ -53,8 +53,55 @@ const PUBLIC_PATHS: ReadonlyArray<string> = [
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
 ];
 
+/**
+ * `/api/*` allowlist — every other `/api/*` path flows through the
+ * auth fence below. Task #41 / SEC-001: pre-fix this function returned
+ * `true` for ALL `/api/*` paths, which let an anonymous attacker GET
+ * `/api/admin/audit` and read the full platform audit log. The narrow
+ * allowlist captures exactly the routes that legitimately must be
+ * cookie-less:
+ *
+ *   - `/api/health` — Railway / load-balancer health probe; no cookies
+ *   - `/api/integrations/<provider>/webhook` — partner-pushed events,
+ *     authenticated via HMAC signature on the request body, not cookies
+ *   - `/api/v1/applications` (POST only, root path) — public consumer
+ *     intake; the BFF rate-limits + idempotency-keys this surface
+ *   - `/api/auth/*` and `/api/account/*` — sign-in / sign-up endpoints;
+ *     these need to work without an existing session by definition
+ *   - `/api/onboarding/invite/[token]` — token IS the credential
+ *   - `/api/onboarding/submit` — public new-business signup landing
+ *   - `/api/applications/consent` — consumer FCRA consent capture
+ *   - `/api/v/<brand>/consumer-invites/[token]` — token IS the credential
+ *
+ * Anything not on this list and starting with `/api/` falls through to
+ * the session-required branch — same fence the page routes use.
+ */
+const API_PUBLIC_PREFIXES: ReadonlyArray<string> = [
+  '/api/health',
+  '/api/auth/',
+  '/api/account/',
+  '/api/applications/consent',
+  '/api/onboarding/invite/',
+  '/api/onboarding/submit',
+];
+
+function isPublicApi(pathname: string): boolean {
+  if (API_PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))) return true;
+  // Webhook routes — `/api/integrations/<provider>/webhook` (HMAC-auth'd
+  // on the body, not the cookie). Match exactly that shape, not any
+  // path that happens to contain 'webhook'.
+  if (/^\/api\/integrations\/[^/]+\/webhook(\/.*)?$/.test(pathname)) return true;
+  // Public consumer intake — `POST /api/v1/applications` (no sub-paths).
+  // The submit + offers sub-routes go through partner-session checks
+  // in their own handlers.
+  if (pathname === '/api/v1/applications') return true;
+  // Brand consumer-invite token redemption — `/api/v/<brand>/consumer-invites/<token>`
+  if (/^\/api\/v\/[^/]+\/consumer-invites\/[^/]+/.test(pathname)) return true;
+  return false;
+}
+
 const isPublic = (pathname: string): boolean => {
-  if (pathname.startsWith('/api/')) return true;
+  if (pathname.startsWith('/api/')) return isPublicApi(pathname);
   if (pathname.startsWith('/_next/')) return true;
   if (pathname === '/favicon.ico' || pathname === '/robots.txt') return true;
   /* Static asset extensions from /public are served by Next.js as
@@ -108,6 +155,21 @@ export async function middleware(req: NextRequest) {
   const hasSession = hasRealSession || hasDemoSession || hasAccountSession;
 
   if (!hasSession && !isPublic(pathname)) {
+    // API callers want a JSON 401, not an HTML redirect. SEC-001:
+    // anonymous hits on `/api/admin/*` previously returned 200 with the
+    // full audit log; they now return a problem-details 401 here at
+    // the edge so the route handler never runs.
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        {
+          type: 'about:blank',
+          title: 'Unauthorized',
+          status: 401,
+          code: 'not_signed_in',
+        },
+        { status: 401 },
+      );
+    }
     const url = req.nextUrl.clone();
     url.pathname = '/sign-in';
     // Only round-trip relative paths through `from`. An absolute URL or

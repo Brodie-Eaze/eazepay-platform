@@ -92,13 +92,58 @@ describe('partner-portal middleware', () => {
     expect(apply.headers.get('location')).toBeNull();
   });
 
-  it('/api/* and /_next/* are public (cookie-less RPC works)', async () => {
-    const api = await middleware(unauthedRequest('http://localhost:3004/api/onboarding/invite'));
-    expect(api.headers.get('location')).toBeNull();
+  it('/_next/* is public', async () => {
     const nextAsset = await middleware(
       unauthedRequest('http://localhost:3004/_next/static/chunk.js'),
     );
     expect(nextAsset.headers.get('location')).toBeNull();
+  });
+
+  // SEC-001 / Task #41 — `/api/*` is NOT blanket-public anymore. The
+  // allowlist captures webhooks, health, public consumer submit, and
+  // auth/onboarding flows; everything else flows through the fence.
+  describe('SEC-001 — /api/* auth fence', () => {
+    it('/api/health is allowlisted (Railway probe must work without cookies)', async () => {
+      const res = await middleware(unauthedRequest('http://localhost:3004/api/health'));
+      expect(res.status).not.toBe(401);
+      expect(res.headers.get('location')).toBeNull();
+    });
+
+    it('webhook ingestion routes are allowlisted (HMAC-auth at handler)', async () => {
+      const hs = await middleware(
+        unauthedRequest('http://localhost:3004/api/integrations/highsale/webhook'),
+      );
+      expect(hs.status).not.toBe(401);
+      const mc = await middleware(
+        unauthedRequest('http://localhost:3004/api/integrations/micamp/webhook'),
+      );
+      expect(mc.status).not.toBe(401);
+    });
+
+    it('public consumer apply submit is allowlisted', async () => {
+      const res = await middleware(unauthedRequest('http://localhost:3004/api/v1/applications'));
+      expect(res.status).not.toBe(401);
+    });
+
+    it('/api/admin/audit is fenced — anonymous request returns 401 JSON', async () => {
+      const res = await middleware(unauthedRequest('http://localhost:3004/api/admin/audit'));
+      expect(res.status).toBe(401);
+      expect(res.headers.get('location')).toBeNull();
+      expect(res.headers.get('content-type')).toContain('application/json');
+    });
+
+    it('/api/onboarding/provision is fenced — anonymous request returns 401 JSON', async () => {
+      const res = await middleware(
+        unauthedRequest('http://localhost:3004/api/onboarding/provision'),
+      );
+      expect(res.status).toBe(401);
+    });
+
+    it('authed admin request to /api/admin/audit passes through fence', async () => {
+      const req = await demoAuthedRequest('http://localhost:3004/api/admin/audit', 'master');
+      const res = await middleware(req);
+      expect(res.status).not.toBe(401);
+    });
   });
 
   describe('SEC-103 — signed demo cookie enforcement', () => {

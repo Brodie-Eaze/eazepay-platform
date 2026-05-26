@@ -93,6 +93,54 @@ const REQUIRED: ReadonlyArray<RequiredVar> = [
     validate: (v) =>
       /^https?:\/\//.test(v) ? null : 'must include the scheme (e.g. https://app.eazepay.com)',
   },
+  {
+    // SEC-002: without this, verifyWebhookSignature() in lib/micamp/client.ts
+    // historically returned `true` for unsigned payloads — forged events
+    // could flip MIDs active, credit volume, mark settlements paid.
+    name: 'MICAMP_WEBHOOK_SECRET',
+    failureMode:
+      'inbound MiCamp webhooks accept ANY signature — forged events can flip MIDs active, credit volume, mark settlements paid (wire-fraud surface)',
+    validate: (v) =>
+      v.length < MIN_SECRET_BYTES
+        ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
+        : null,
+  },
+  {
+    // SEC-002: same hole as MICAMP; forged HighSale + Milly events can
+    // mark invoices paid, flag partners suspended, write fake decisions.
+    name: 'HIGHSALE_WEBHOOK_SECRET',
+    failureMode:
+      'inbound HighSale/Milly webhooks accept ANY signature — forged events can mark invoices paid, suspend partners, write fake decisions',
+    validate: (v) =>
+      v.length < MIN_SECRET_BYTES
+        ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
+        : null,
+  },
+  {
+    // SEC-010: without an explicit allowlist, the origin-guard on
+    // /api/admin/* + /api/integrations/* state-changing routes falls
+    // open to any origin in production. SameSite=Lax + the CSRF cookie
+    // still block the obvious cases, but defence-in-depth requires an
+    // explicit list. CSV of `https://host[:port]` entries.
+    name: 'ALLOWED_ORIGINS',
+    failureMode:
+      'origin-guard on state-changing admin/integration routes falls open — any cross-origin POST with stolen credentials succeeds',
+    validate: (v) => {
+      const entries = v
+        .split(',')
+        .map((e) => e.trim())
+        .filter(Boolean);
+      if (entries.length === 0) {
+        return 'must list at least one origin (e.g. https://app.eazepay.com)';
+      }
+      for (const entry of entries) {
+        if (!/^https?:\/\/[^/]+$/.test(entry)) {
+          return `invalid origin "${entry}" — must be scheme + host[:port] with no path (e.g. https://app.eazepay.com)`;
+        }
+      }
+      return null;
+    },
+  },
 ];
 
 /**
@@ -180,6 +228,11 @@ export function assertProdEnv(): EnvAssertionResult {
   }
 
   const isProd = process.env.NODE_ENV === 'production';
+  // `next build` evaluates middleware at build time without secrets set in
+  // CI. We log everything as warnings during build but skip the throw —
+  // the throw still fires on the first worker boot at runtime (which is
+  // when REQUIRED env vars actually need to exist).
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
 
   if (errors.length > 0) {
     const banner = isProd
@@ -201,11 +254,15 @@ export function assertProdEnv(): EnvAssertionResult {
         console.warn(`  • ${w}`);
       }
     }
-    if (isProd) {
+    if (isProd && !isBuildTime) {
       // Throwing here aborts module evaluation, which aborts middleware
       // initialisation, which fails the Next.js worker boot. Railway's
       // healthcheck never goes green and the rotation stays on the
       // previous revision — a half-configured deploy never serves.
+      //
+      // Skipped during `next build` (NEXT_PHASE === 'phase-production-build')
+      // so CI can produce a build artifact without holding the prod
+      // secrets — the throw still fires at runtime on first request.
       throw new Error(
         `partner-portal refusing to boot: ${errors.length} required env var(s) invalid. ` +
           `See stderr above for details.`,

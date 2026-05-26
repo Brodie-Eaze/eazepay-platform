@@ -2,5 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { margin: 0; padding: 0; }
-body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; }
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}
