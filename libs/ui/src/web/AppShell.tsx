@@ -13,6 +13,12 @@ export interface NavItem {
   badge?: ReactNode;
   /** Optional secondary children rendered under a collapsed group */
   children?: NavItem[];
+  /**
+   * Optional data-attribute marker used by the first-run partner tour
+   * (PartnerTour) to anchor each step. Stays purely descriptive — no
+   * runtime behaviour change when the tour isn't active.
+   */
+  tourId?: string;
 }
 
 export interface NavGroup {
@@ -405,7 +411,11 @@ const NavRow: FC<{
     );
   }
 
-  return (
+  /* When `tourId` is set we wrap the Link in a tiny anchor span so the
+   * first-run partner tour can call `document.querySelector` against a
+   * stable selector without having to thread the attribute into every
+   * caller-supplied Link implementation. */
+  const linkEl = (
     <Link
       href={item.href}
       className={cn(
@@ -433,6 +443,14 @@ const NavRow: FC<{
       )}
     </Link>
   );
+  if (item.tourId) {
+    return (
+      <span data-tour-id={item.tourId} className="block">
+        {linkEl}
+      </span>
+    );
+  }
+  return linkEl;
 };
 
 /** Standard page header used inside main content. */

@@ -38,7 +38,15 @@ export { DataTable } from './DataTable.js';
 export type { Column } from './DataTable.js';
 export { AppShell, PageHeader, PageBody } from './AppShell.js';
 export type { NavItem, NavGroup } from './AppShell.js';
-export { EmptyState } from './EmptyState.js';
+export {
+  EmptyState,
+  emptyStateContainerClasses,
+  emptyStateIconWrapClasses,
+  emptyStateTitleClasses,
+  emptyStateDescriptionClasses,
+  emptyStateActionsRowClasses,
+} from './EmptyState.js';
+export type { EmptyStateProps, EmptyStateVariant } from './EmptyState.js';
 export { Skeleton } from './Skeleton.js';
 export { Tabs } from './Tabs.js';
 export { Filter, flattenOptions, isGroupedOptions, nextIndex, findIndexByValue } from './Filter.js';

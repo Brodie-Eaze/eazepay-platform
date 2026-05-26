@@ -16,8 +16,12 @@ import {
   Filter,
   type Column,
   type FilterOption,
+  EmptyState,
   SearchIcon,
+  QueueIcon,
+  ExternalIcon,
 } from '@eazepay/ui/web';
+import Link from 'next/link';
 import {
   BRANDS,
   BRAND_ORDER,
@@ -589,16 +593,47 @@ export default function VerticalApplicationsPage() {
           allLabel={`All (${rows.length})`}
           className="mb-3"
         />
-        <Card>
-          <DataTable
-            columns={columns}
-            rows={filtered}
-            rowKey={(a) => a.id}
-            dense
-            empty={`No ${spec.name} applications match.`}
-            onRowClick={(a) => router.push(`/v/${spec.slug}/applications/${a.id}`)}
+        {filtered.length === 0 && rows.length === 0 ? (
+          <EmptyState
+            icon={<QueueIcon size={20} />}
+            title="No applications yet"
+            description="Send your first applicant a link, or share your branded apply form."
+            action={
+              <Link
+                href={`/v/${spec.slug}/send-link`}
+                className="inline-flex items-center gap-1.5 rounded-md bg-accent text-white px-3 py-2 text-[13px] font-medium hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+              >
+                Send invite link
+              </Link>
+            }
+            secondaryAction={
+              <Link
+                href={`/v/${spec.slug}/submit`}
+                className="inline-flex items-center gap-1.5 text-[13px] font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-sm"
+              >
+                Open apply form <ExternalIcon size={12} />
+              </Link>
+            }
           />
-        </Card>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            variant="inline"
+            icon={<SearchIcon size={18} />}
+            title="No applications match the current filters"
+            description={`There are ${rows.length} total ${spec.name} applications — adjust the status tab or search to see them.`}
+          />
+        ) : (
+          <Card>
+            <DataTable
+              columns={columns}
+              rows={filtered}
+              rowKey={(a) => a.id}
+              dense
+              empty={`No ${spec.name} applications match.`}
+              onRowClick={(a) => router.push(`/v/${spec.slug}/applications/${a.id}`)}
+            />
+          </Card>
+        )}
       </PageBody>
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-fg text-white px-4 py-2 text-[12px] shadow-lg">

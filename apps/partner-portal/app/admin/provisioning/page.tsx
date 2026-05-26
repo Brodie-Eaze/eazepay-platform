@@ -237,9 +237,23 @@ export default function ProvisioningQueuePage(): JSX.Element {
           >
             Loading runs…
           </div>
-        ) : filtered.length === 0 ? (
+        ) : runs.length === 0 ? (
           <EmptyState
             icon={<QueueIcon size={20} />}
+            title="No merchant onboardings yet"
+            description="Kick off the first one-config provisioning run when you onboard your first paying merchant."
+            action={
+              <Link href="/admin/provisioning/new" aria-label="New provisioning run">
+                <Button size="sm" variant="primary">
+                  New provisioning run
+                </Button>
+              </Link>
+            }
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            variant="inline"
+            icon={<QueueIcon size={18} />}
             title="No runs match this filter"
             description={
               <>
