@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { requireAdmin } from '@/lib/server-guards';
 
 /**
  * Per-member update / remove. Proxies to backend.
@@ -52,6 +53,10 @@ function backendUnreachable(): NextResponse {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  // SEC-001: admin-only.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   const token = req.cookies.get('eazepay_at')?.value;
   const raw = await req.json().catch(() => null);
   const parsed = PatchSchema.safeParse(raw);
@@ -86,6 +91,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  // SEC-001: admin-only.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   const token = req.cookies.get('eazepay_at')?.value;
   if (!token) {
     if (optimisticBffAllowed()) return NextResponse.json({ ok: true });

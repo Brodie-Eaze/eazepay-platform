@@ -20,6 +20,7 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { safeLog } from '../safe-log';
 
 /* ---------- types ---------- */
 
@@ -116,6 +117,31 @@ export interface SettlementReport {
 const MICAMP_API_URL = process.env.MICAMP_API_URL ?? '';
 const MICAMP_API_KEY = process.env.MICAMP_API_KEY ?? '';
 const MICAMP_WEBHOOK_SECRET = process.env.MICAMP_WEBHOOK_SECRET ?? '';
+
+/**
+ * SEC-002 — webhook signature freshness window. Anything older than 5
+ * minutes is rejected to defeat replay of a captured-and-stored
+ * signature. Mirrors the Stripe `tolerance` default.
+ */
+const WEBHOOK_FRESHNESS_SECONDS = 300;
+
+/**
+ * SEC-002 — module-load assertion. In production a missing
+ * MICAMP_WEBHOOK_SECRET means `verifyWebhookSignature()` would have
+ * historically returned `true` for ANY payload. We refuse to even load
+ * this module so the Next.js worker boot fails and Railway's rotation
+ * stays on the previous (signed) revision.
+ *
+ * `lib/env.ts:assertProdEnv()` also asserts this at boot — this is a
+ * belt-and-braces second line in case anything imports this module
+ * before middleware evaluates.
+ */
+if (process.env.NODE_ENV === 'production' && !MICAMP_WEBHOOK_SECRET) {
+  throw new Error(
+    '[micamp/client] MICAMP_WEBHOOK_SECRET is unset in production — refusing to load. ' +
+      'Without it, verifyWebhookSignature() cannot fail-closed and forged webhooks would be accepted (SEC-002).',
+  );
+}
 
 /** Real-wiring detection. When false every call returns a synthetic
  * response — used during demo + while Steven + Frank's team finishes
@@ -258,17 +284,63 @@ export async function settlementReport(
 /* ---------- webhooks ---------- */
 
 /**
- * Constant-time HMAC verification on inbound MiCamp webhooks.
- * MiCamp signs with sha256 over the raw body; the signature header
- * format is `t=<unix>,v1=<hex>` (matching Stripe's convention, which
- * the real provider also uses).
+ * SEC-002 — structured verification result. Callers log the `reason`
+ * to safe-log so we have an audit trail of WHY a signature was
+ * rejected (replayed timestamp vs. tampered body vs. unsigned).
  */
-export function verifyWebhookSignature(rawBody: string, signatureHeader: string): boolean {
+export type WebhookVerificationReason =
+  | 'missing_secret'
+  | 'missing_signature'
+  | 'bad_signature'
+  | 'stale_timestamp'
+  | 'malformed';
+
+export type WebhookVerificationResult =
+  | { valid: true }
+  | { valid: false; reason: WebhookVerificationReason };
+
+/**
+ * Constant-time HMAC verification on inbound MiCamp webhooks.
+ *
+ * MiCamp signs with sha256 over `${unix_ts}.${raw_body}`; the signature
+ * header format is `t=<unix>,v1=<hex>` (matching Stripe's convention,
+ * which the real provider also uses).
+ *
+ * SEC-002 — fail-closed behaviour:
+ *   • Production with no MICAMP_WEBHOOK_SECRET → impossible (module
+ *     load threw above). This branch only fires in non-production.
+ *   • Non-prod with no secret → `valid: false` (was: `true`) UNLESS the
+ *     operator explicitly opts in via MICAMP_WEBHOOK_INSECURE_ALLOW=true,
+ *     in which case we STILL return invalid but log a warning every
+ *     time so it's visible in the dev console.
+ *   • Stale timestamp (> 5 min) → reject. Defeats replay of a captured
+ *     signature.
+ *   • Bad / missing fields → reject with a specific reason so the
+ *     route handler can audit-log it.
+ */
+export function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string,
+): WebhookVerificationResult {
   if (!MICAMP_WEBHOOK_SECRET) {
-    // In dev with no secret configured, accept everything so the
-    // platform demo loop closes without secret-management overhead.
-    return true;
+    // In production we already threw at module load. This branch is
+    // reachable only in non-production. Default-deny; opt-in is via
+    // MICAMP_WEBHOOK_INSECURE_ALLOW=true.
+    const insecureAllow = process.env.MICAMP_WEBHOOK_INSECURE_ALLOW === 'true';
+    if (insecureAllow) {
+      safeLog.warn({
+        event: 'micamp.webhook.insecure_allow',
+        message:
+          'MICAMP_WEBHOOK_SECRET unset and MICAMP_WEBHOOK_INSECURE_ALLOW=true — accepting unsigned webhook is NEVER safe in prod',
+      });
+    }
+    return { valid: false, reason: 'missing_secret' };
   }
+
+  if (!signatureHeader) {
+    return { valid: false, reason: 'missing_signature' };
+  }
+
   const parts = Object.fromEntries(
     signatureHeader.split(',').map((kv) => {
       const [k, v] = kv.split('=');
@@ -277,12 +349,38 @@ export function verifyWebhookSignature(rawBody: string, signatureHeader: string)
   );
   const timestamp = parts.t;
   const signature = parts.v1;
-  if (!timestamp || !signature) return false;
+  if (!timestamp || !signature) {
+    return { valid: false, reason: 'malformed' };
+  }
+
+  const tsNum = Number(timestamp);
+  if (!Number.isFinite(tsNum)) {
+    return { valid: false, reason: 'malformed' };
+  }
+  // Freshness window — 5 minutes either direction (clock skew tolerant).
+  if (Math.abs(Date.now() / 1000 - tsNum) > WEBHOOK_FRESHNESS_SECONDS) {
+    return { valid: false, reason: 'stale_timestamp' };
+  }
 
   const payload = `${timestamp}.${rawBody}`;
   const expected = createHmac('sha256', MICAMP_WEBHOOK_SECRET).update(payload).digest('hex');
-  if (expected.length !== signature.length) return false;
-  return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
+  if (expected.length !== signature.length) {
+    return { valid: false, reason: 'bad_signature' };
+  }
+  let expectedBuf: Buffer;
+  let sigBuf: Buffer;
+  try {
+    expectedBuf = Buffer.from(expected, 'hex');
+    sigBuf = Buffer.from(signature, 'hex');
+  } catch {
+    return { valid: false, reason: 'malformed' };
+  }
+  if (expectedBuf.length !== sigBuf.length) {
+    return { valid: false, reason: 'bad_signature' };
+  }
+  return timingSafeEqual(expectedBuf, sigBuf)
+    ? { valid: true }
+    : { valid: false, reason: 'bad_signature' };
 }
 
 export type MicampWebhookEvent =

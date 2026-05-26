@@ -23,6 +23,7 @@
 
 import {
   bigint,
+  boolean,
   index,
   integer,
   pgEnum,
@@ -438,6 +439,11 @@ export const decisions = pgTable(
     engine: text('engine').notNull(),
     /** Engine version / model identifier for replay. */
     engineVersion: text('engine_version').notNull().default('v1'),
+    /** True when the persisted `engine` reflects a fallback path (e.g.
+     * Trutopia upstream failed and the internal scorer produced the
+     * decision). Required for audit integrity — without it, replays
+     * cannot distinguish a clean Trutopia run from a fallback. */
+    engineFallback: boolean('engine_fallback').notNull().default(false),
     inputsJson: text('inputs_json'),
     rankedLendersJson: text('ranked_lenders_json'),
     /** Top-line stats for fast dashboard reads without parsing JSON. */
@@ -534,3 +540,157 @@ export const customerMigrations = pgTable(
 
 export type CustomerMigration = typeof customerMigrations.$inferSelect;
 export type NewCustomerMigration = typeof customerMigrations.$inferInsert;
+
+/* ---------- provisioning_runs ----------
+ *
+ * One row per partner provisioning attempt initiated through the
+ * orchestrator (`POST /api/onboarding/provision`). Distinct from `mids`
+ * (which is keyed on the issued MiCamp MID and only captures one of
+ * the four steps) because we want full audit history of every attempt,
+ * including failed ones, retries, and cross-brand variants of the same
+ * partner.
+ *
+ * `steps_json` is the full ProvisionStep[] array dumped at every
+ * setStep() call. The orchestrator owns the shape — see
+ * `lib/orchestrator/provision.ts`. Storing the whole array vs.
+ * one-row-per-step is intentional: at four steps per run the JSON blob
+ * stays tiny, queries are single-row, and the schema doesn't have to
+ * evolve as we add/remove steps in the playbook.
+ */
+export const provisioningRuns = pgTable(
+  'provisioning_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: text('partner_id').notNull(),
+    /** Allows 'ai_funding' alongside the brand enum since migrated
+     * runs carry the source product for audit; stored as text so the
+     * brand enum doesn't have to gain a vestigial value. */
+    brand: text('brand').notNull(),
+    /** queued | running | completed | failed */
+    status: text('status').notNull().default('queued'),
+    /** JSON-encoded ProvisionStep[]. Rewritten on every step transition. */
+    stepsJson: text('steps_json'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    failureReason: text('failure_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    partnerIdx: index('provisioning_runs_partner_idx').on(t.partnerId),
+    statusIdx: index('provisioning_runs_status_idx').on(t.status),
+    startedAtIdx: index('provisioning_runs_started_at_idx').on(t.startedAt),
+  }),
+);
+
+export type ProvisioningRun = typeof provisioningRuns.$inferSelect;
+export type NewProvisioningRun = typeof provisioningRuns.$inferInsert;
+
+/* ---------- webhook_inbox ----------
+ *
+ * Write-then-200 inbox for inbound provider webhooks. Every signed +
+ * verified delivery lands here BEFORE we ack — async processing then
+ * drains the inbox.
+ *
+ * Why: upstream providers treat 200 as "delivered, never retry". If we
+ * ack 200 and process inline, a crash mid-handler silently drops the
+ * event. Conversely, if we ack 5xx after partial processing, upstream
+ * retries and we double-apply state changes. The fix is the inbox
+ * pattern: persist atomically, ack 200 immediately, process from the
+ * inbox in a worker that owns its own retry/backoff.
+ *
+ * Idempotency: the unique index on (provider, event_id) means a
+ * provider replay (which DOES happen — MiCamp, Stripe, every webhook
+ * source resends on missed acks) collides at INSERT time and we no-op.
+ * The provider's own event id is the dedupe key — never our own clock.
+ *
+ * `processing_status` walks: pending → processing → done | failed.
+ * Failed rows with attempts < 5 are picked up by the next poll;
+ * attempts >= 5 are left for ops review (eventual DLQ table).
+ *
+ * `raw_body` is the verbatim wire bytes so we can replay the handler
+ * after a bugfix without re-asking the provider for the event.
+ */
+export const webhookInbox = pgTable(
+  'webhook_inbox',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** 'micamp' | 'highsale' | 'trutopia' — extend as providers land. */
+    provider: text('provider').notNull(),
+    /** Provider's external event id. Defensive extraction at write
+     * time (MiCamp uses `id`, HighSale uses `event_id`, etc.). */
+    eventId: text('event_id').notNull(),
+    eventType: text('event_type').notNull(),
+    /** Verbatim JSON payload from the wire. Used by the worker to
+     * reconstruct the typed event, and kept indefinitely for audit. */
+    rawBody: text('raw_body').notNull(),
+    signatureHeader: text('signature_header'),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+    /** 'pending' | 'processing' | 'done' | 'failed' */
+    processingStatus: text('processing_status').notNull().default('pending'),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    failureReason: text('failure_reason'),
+    attempts: integer('attempts').notNull().default(0),
+  },
+  (t) => ({
+    /** Composite unique = idempotency key. Provider replays collide here. */
+    providerEventUnique: uniqueIndex('webhook_inbox_provider_event_unique').on(
+      t.provider,
+      t.eventId,
+    ),
+    /** Worker poll: status='pending' ORDER BY received_at ASC. */
+    statusReceivedIdx: index('webhook_inbox_status_received_idx').on(
+      t.processingStatus,
+      t.receivedAt,
+    ),
+    providerReceivedIdx: index('webhook_inbox_provider_received_idx').on(t.provider, t.receivedAt),
+  }),
+);
+
+export type WebhookInboxRow = typeof webhookInbox.$inferSelect;
+export type NewWebhookInboxRow = typeof webhookInbox.$inferInsert;
+
+/* ---------- idempotency_keys ----------
+ *
+ * Caller-supplied idempotency keys for state-changing routes. Use
+ * pattern (future routes):
+ *   1. Caller sends `Idempotency-Key: <uuid>` on a POST.
+ *   2. Route looks up (scope, key). On hit, return stored response
+ *      verbatim. On miss, run the operation + write the response.
+ *
+ * `scope` is a route-specific namespace (e.g. 'application_create',
+ * 'mid_provision') so the same key from two different routes does NOT
+ * collide. `response_hash` is sha256 of the canonical response body —
+ * lets us detect when a caller reuses a key with a different request
+ * shape (which is a caller bug, return 422).
+ *
+ * `expires_at` is set per-scope. After expiry the row is reclaimed by
+ * a sweeper; the unique index lets the same key be reused thereafter.
+ *
+ * This migration only establishes the table — concrete usage lands
+ * in a follow-up that wires the application_create + mid_provision
+ * routes through it.
+ */
+export const idempotencyKeys = pgTable(
+  'idempotency_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Route-scoped namespace, e.g. 'application_create'. */
+    scope: text('scope').notNull(),
+    /** Caller-provided idempotency key — verbatim. */
+    key: text('key').notNull(),
+    /** sha256 of canonical response body. Detects key reuse with
+     * different request shape (caller bug → 422). */
+    responseHash: text('response_hash').notNull(),
+    statusCode: integer('status_code').notNull(),
+    responseBody: text('response_body').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => ({
+    scopeKeyUnique: uniqueIndex('idempotency_keys_scope_key_unique').on(t.scope, t.key),
+    expiresIdx: index('idempotency_keys_expires_idx').on(t.expiresAt),
+  }),
+);
+
+export type IdempotencyKeyRow = typeof idempotencyKeys.$inferSelect;
+export type NewIdempotencyKeyRow = typeof idempotencyKeys.$inferInsert;

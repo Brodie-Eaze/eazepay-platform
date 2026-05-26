@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { provisionMid, type ProvisionMidRequest } from '@/lib/micamp/client';
+import { assertPartnerOwnership, requirePartnerSession } from '@/lib/server-guards';
 
 /**
  * POST /api/integrations/micamp/provision-mid
@@ -29,6 +30,10 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-001: partner session required + partnerId ownership.
+  const guard = await requirePartnerSession(req);
+  if (guard instanceof NextResponse) return guard;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -43,6 +48,9 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  const ownership = assertPartnerOwnership(guard, parsed.data.partnerId);
+  if (ownership) return ownership;
 
   try {
     const result = await provisionMid(parsed.data as ProvisionMidRequest);

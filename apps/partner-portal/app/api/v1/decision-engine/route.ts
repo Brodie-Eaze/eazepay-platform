@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { evaluateDecision } from '@/lib/decision-engine';
 import type { Brand } from '@/lib/api-v1/shared';
+import { assertResourceOwnershipStub, requirePartnerSession } from '@/lib/server-guards';
 
 /**
  * POST /api/v1/decision-engine
@@ -34,6 +35,14 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-001: partner session required. Decision engine results
+  // include applicant tier + propensity-ranked lender list — sensitive
+  // both for the consumer (PII-adjacent decisioning trail) and the
+  // platform (lender ranking is the product). Pre-fix the route was
+  // open to anyone.
+  const guard = await requirePartnerSession(req);
+  if (guard instanceof NextResponse) return guard;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -48,6 +57,11 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // applicationId → partner ownership lookup is stubbed until the
+  // application_partner_map table lands. See server-guards doc.
+  const ownership = assertResourceOwnershipStub(guard, parsed.data.applicationId, 'application');
+  if (ownership) return ownership;
 
   const result = await evaluateDecision({
     applicationId: parsed.data.applicationId,

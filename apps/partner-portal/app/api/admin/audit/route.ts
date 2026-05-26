@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { desc, sql, and, eq, gt } from 'drizzle-orm';
 import { hasDb, getDb, schema } from '@/lib/db';
+import { requireAdmin } from '@/lib/server-guards';
 
 /**
  * GET /api/admin/audit?actor=&action=&targetType=&since=
@@ -75,6 +76,13 @@ const SYNTHETIC_LOG = [
 ];
 
 export async function GET(req: NextRequest) {
+  // SEC-001: admin-only. Pre-fix this route returned the full audit
+  // log to anonymous callers — including strings like "pending NDA
+  // execution" against `ml_in_us_bank` that leak partner relationships.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+  const { actor: viewerActor, role: viewerRole } = guard;
+
   const search = req.nextUrl.searchParams;
   const actor = search.get('actor');
   const action = search.get('action');
@@ -87,7 +95,11 @@ export async function GET(req: NextRequest) {
     if (action) entries = entries.filter((e) => e.action === action);
     if (targetType) entries = entries.filter((e) => e.targetType === targetType);
     if (sinceIso) entries = entries.filter((e) => e.createdAt >= sinceIso);
-    return NextResponse.json({ source: 'synthetic', entries });
+    return NextResponse.json({
+      source: 'synthetic',
+      viewer: { actor: viewerActor, role: viewerRole },
+      entries,
+    });
   }
 
   try {
@@ -106,7 +118,11 @@ export async function GET(req: NextRequest) {
       .orderBy(desc(schema.auditLog.createdAt))
       .limit(200);
 
-    return NextResponse.json({ source: 'db', entries: rows });
+    return NextResponse.json({
+      source: 'db',
+      viewer: { actor: viewerActor, role: viewerRole },
+      entries: rows,
+    });
   } catch (err) {
     return NextResponse.json(
       {

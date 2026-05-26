@@ -93,6 +93,29 @@ const REQUIRED: ReadonlyArray<RequiredVar> = [
     validate: (v) =>
       /^https?:\/\//.test(v) ? null : 'must include the scheme (e.g. https://app.eazepay.com)',
   },
+  {
+    // SEC-002: without this, verifyWebhookSignature() in lib/micamp/client.ts
+    // historically returned `true` for unsigned payloads — forged events
+    // could flip MIDs active, credit volume, mark settlements paid.
+    name: 'MICAMP_WEBHOOK_SECRET',
+    failureMode:
+      'inbound MiCamp webhooks accept ANY signature — forged events can flip MIDs active, credit volume, mark settlements paid (wire-fraud surface)',
+    validate: (v) =>
+      v.length < MIN_SECRET_BYTES
+        ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
+        : null,
+  },
+  {
+    // SEC-002: same hole as MICAMP; forged HighSale + Milly events can
+    // mark invoices paid, flag partners suspended, write fake decisions.
+    name: 'HIGHSALE_WEBHOOK_SECRET',
+    failureMode:
+      'inbound HighSale/Milly webhooks accept ANY signature — forged events can mark invoices paid, suspend partners, write fake decisions',
+    validate: (v) =>
+      v.length < MIN_SECRET_BYTES
+        ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
+        : null,
+  },
 ];
 
 /**

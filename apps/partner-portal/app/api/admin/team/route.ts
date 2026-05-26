@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { requireAdmin } from '@/lib/server-guards';
 
 /**
  * Internal-team list + invite. Proxies to backend `/v1/admin/team`
@@ -47,6 +48,12 @@ function unauthorized(): NextResponse {
 }
 
 export async function GET(req: NextRequest) {
+  // SEC-001: admin-only. The optimistic-BFF dev fallback below stays
+  // for explicit `ALLOW_OPTIMISTIC_BFF=true` opt-in, but it now runs
+  // only AFTER the admin gate — no anonymous reads of the team list.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   const token = req.cookies.get('eazepay_at')?.value;
   if (!token) {
     if (optimisticBffAllowed()) return NextResponse.json({ members: [] });
@@ -64,6 +71,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC-001: admin-only.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   const token = req.cookies.get('eazepay_at')?.value;
   const raw = await req.json().catch(() => null);
   const parsed = InviteSchema.safeParse(raw);

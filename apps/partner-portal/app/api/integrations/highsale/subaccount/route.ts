@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createSubAccount, type CreateSubAccountRequest } from '@/lib/highsale/client';
+import { assertPartnerOwnership, requirePartnerSession } from '@/lib/server-guards';
 
 /**
  * POST /api/integrations/highsale/subaccount
@@ -30,6 +31,12 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-001: partner session required. The body carries `partnerId`,
+  // which pre-fix the route trusted unconditionally — letting any
+  // caller mint a HighSale sub-account under any partner id.
+  const guard = await requirePartnerSession(req);
+  if (guard instanceof NextResponse) return guard;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -44,6 +51,12 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // Caller can only create a sub-account under their own partnerId.
+  // Admin override (operator preset) bypasses the check — that's the
+  // path the provisioning orchestrator demo uses.
+  const ownership = assertPartnerOwnership(guard, parsed.data.partnerId);
+  if (ownership) return ownership;
 
   try {
     const result = await createSubAccount(parsed.data as CreateSubAccountRequest);

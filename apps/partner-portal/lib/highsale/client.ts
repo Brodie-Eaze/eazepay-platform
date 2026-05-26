@@ -21,6 +21,8 @@
  */
 
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { safeLog } from '../safe-log';
+import type { WebhookVerificationResult } from '../micamp/client';
 
 /* ---------- types ---------- */
 
@@ -73,6 +75,13 @@ export interface PrequalRequest {
   requestedAmountCents: number;
   /** Idempotency key from the consumer apply form. */
   requestId: string;
+  /** SEC-006 / Task #45: opaque FCRA consent receipt id verified by the
+   * BFF before this request was assembled. Forwarded to HighSale so the
+   * wholesale pull row carries our consent-chain pointer in their audit
+   * tooling — useful during a downstream regulator subpoena. Optional
+   * because HighSale's existing sub-account flow accepts the request
+   * without it; the BFF route is the gate that enforces presence. */
+  clientReference?: string;
 }
 
 export interface PrequalResponse {
@@ -103,6 +112,16 @@ export interface PrequalResponse {
 const HIGHSALE_API_URL = process.env.HIGHSALE_API_URL ?? '';
 const HIGHSALE_AGENCY_KEY = process.env.HIGHSALE_AGENCY_KEY ?? '';
 const HIGHSALE_WEBHOOK_SECRET = process.env.HIGHSALE_WEBHOOK_SECRET ?? '';
+
+/** SEC-002 — see micamp/client.ts for rationale. */
+const WEBHOOK_FRESHNESS_SECONDS = 300;
+
+if (process.env.NODE_ENV === 'production' && !HIGHSALE_WEBHOOK_SECRET) {
+  throw new Error(
+    '[highsale/client] HIGHSALE_WEBHOOK_SECRET is unset in production — refusing to load. ' +
+      'Without it, verifyHighsaleSignature() cannot fail-closed and forged webhooks would be accepted (SEC-002).',
+  );
+}
 
 export function isHighsaleLive(): boolean {
   return Boolean(HIGHSALE_API_URL) && Boolean(HIGHSALE_AGENCY_KEY);
@@ -209,8 +228,33 @@ export async function runPrequal(req: PrequalRequest): Promise<PrequalResponse> 
 
 /* ---------- webhook verification ---------- */
 
-export function verifyHighsaleSignature(rawBody: string, signatureHeader: string): boolean {
-  if (!HIGHSALE_WEBHOOK_SECRET) return true; // dev mode
+/**
+ * SEC-002 — fail-closed signature verification for inbound HighSale +
+ * Milly webhooks. Mirrors `verifyWebhookSignature` in lib/micamp/client.ts;
+ * see that module for the full contract. Returns a structured result so
+ * the route handler can audit-log the failure reason.
+ */
+export function verifyHighsaleSignature(
+  rawBody: string,
+  signatureHeader: string,
+): WebhookVerificationResult {
+  if (!HIGHSALE_WEBHOOK_SECRET) {
+    // Production: unreachable (module load threw above). Non-prod only.
+    const insecureAllow = process.env.HIGHSALE_WEBHOOK_INSECURE_ALLOW === 'true';
+    if (insecureAllow) {
+      safeLog.warn({
+        event: 'highsale.webhook.insecure_allow',
+        message:
+          'HIGHSALE_WEBHOOK_SECRET unset and HIGHSALE_WEBHOOK_INSECURE_ALLOW=true — accepting unsigned webhook is NEVER safe in prod',
+      });
+    }
+    return { valid: false, reason: 'missing_secret' };
+  }
+
+  if (!signatureHeader) {
+    return { valid: false, reason: 'missing_signature' };
+  }
+
   const parts = Object.fromEntries(
     signatureHeader.split(',').map((kv) => {
       const [k, v] = kv.split('=');
@@ -219,12 +263,37 @@ export function verifyHighsaleSignature(rawBody: string, signatureHeader: string
   );
   const timestamp = parts.t;
   const signature = parts.v1;
-  if (!timestamp || !signature) return false;
+  if (!timestamp || !signature) {
+    return { valid: false, reason: 'malformed' };
+  }
+
+  const tsNum = Number(timestamp);
+  if (!Number.isFinite(tsNum)) {
+    return { valid: false, reason: 'malformed' };
+  }
+  if (Math.abs(Date.now() / 1000 - tsNum) > WEBHOOK_FRESHNESS_SECONDS) {
+    return { valid: false, reason: 'stale_timestamp' };
+  }
 
   const payload = `${timestamp}.${rawBody}`;
   const expected = createHmac('sha256', HIGHSALE_WEBHOOK_SECRET).update(payload).digest('hex');
-  if (expected.length !== signature.length) return false;
-  return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
+  if (expected.length !== signature.length) {
+    return { valid: false, reason: 'bad_signature' };
+  }
+  let expectedBuf: Buffer;
+  let sigBuf: Buffer;
+  try {
+    expectedBuf = Buffer.from(expected, 'hex');
+    sigBuf = Buffer.from(signature, 'hex');
+  } catch {
+    return { valid: false, reason: 'malformed' };
+  }
+  if (expectedBuf.length !== sigBuf.length) {
+    return { valid: false, reason: 'bad_signature' };
+  }
+  return timingSafeEqual(expectedBuf, sigBuf)
+    ? { valid: true }
+    : { valid: false, reason: 'bad_signature' };
 }
 
 export type HighsaleWebhookEvent =

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { settlementReport } from '@/lib/micamp/client';
+import { requirePartnerSession } from '@/lib/server-guards';
 
 /**
  * GET /api/integrations/micamp/settlement?midId=...&start=...&end=...
@@ -29,6 +30,14 @@ const QuerySchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  // SEC-001: partner session required. Settlement reports include
+  // cents-level revenue + per-MID payout history — pre-fix anyone
+  // could pull another partner's report by guessing their midId.
+  // mid → partner ownership lookup is deferred (no mapping table on
+  // this branch yet); the session-gate stops anonymous reads.
+  const guard = await requirePartnerSession(req);
+  if (guard instanceof NextResponse) return guard;
+
   const search = req.nextUrl.searchParams;
   const parsed = QuerySchema.safeParse({
     midId: search.get('midId'),

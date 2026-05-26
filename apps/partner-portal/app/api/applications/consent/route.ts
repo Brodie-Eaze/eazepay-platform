@@ -2,6 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
 import { getSessionContext } from '../../../../lib/session';
 import { enforceCsrf } from '../../../../lib/csrf.js';
+import {
+  storeConsentReceipt,
+  listConsentReceiptsForApplication,
+} from '../../../../lib/consumer-consent';
 
 /**
  * POST /api/applications/consent — consumer soft-pull consent receipt.
@@ -29,54 +33,9 @@ import { enforceCsrf } from '../../../../lib/csrf.js';
  * (FCRA §611 dispute path).
  */
 
-// In-memory store. Replace with Prisma `consentReceipt.create({...})`
-// when the schema lands. Keyed by `${applicationId}:${sessionId}` so a
-// retry from the same session is idempotent but two separate sessions
-// agreeing on behalf of the same applicationId are both captured (a red
-// flag that gets routed to fraud review).
-//
-// SEC-105: two caps prevent unbounded memory growth.
-//   * MAX_RECEIPTS_TOTAL — global FIFO cap; oldest evicted on insert
-//   * MAX_RECEIPTS_PER_APPLICATION — defends against single-applicationId
-//     amplification (an attacker forging session IDs in a loop). Five
-//     receipts per app is enough for legit retry/refresh; anything
-//     beyond is fraud-signal anyway.
-const MAX_RECEIPTS_TOTAL = 5_000;
-const MAX_RECEIPTS_PER_APPLICATION = 5;
-
-const RECEIPTS = new Map<
-  string,
-  {
-    applicationId: string;
-    sessionId: string;
-    disclosureVersion: string;
-    consentText: string;
-    timestamp: string;
-    ip: string;
-    userAgent: string;
-  }
->();
-
-function pruneReceiptsForApplication(applicationId: string): void {
-  // Map iteration order = insertion order. Oldest matching entry is
-  // the first one encountered when iterating.
-  const matching: string[] = [];
-  for (const [key, rec] of RECEIPTS) {
-    if (rec.applicationId === applicationId) matching.push(key);
-  }
-  while (matching.length >= MAX_RECEIPTS_PER_APPLICATION) {
-    const oldest = matching.shift();
-    if (oldest) RECEIPTS.delete(oldest);
-  }
-}
-
-function pruneReceiptsGlobal(): void {
-  while (RECEIPTS.size >= MAX_RECEIPTS_TOTAL) {
-    const oldest = RECEIPTS.keys().next().value;
-    if (!oldest) return;
-    RECEIPTS.delete(oldest);
-  }
-}
+// The receipt store + SEC-105 eviction caps live in `lib/consumer-consent.ts`
+// alongside the FCRA verifier — single source of truth for the audit
+// chain. This route is the wire-protocol handler only.
 
 interface ConsentBody {
   applicationId: string;
@@ -145,30 +104,25 @@ export async function POST(req: NextRequest) {
   const ip = clientIp;
   const userAgent = req.headers.get('user-agent') ?? 'unknown';
 
-  const receipt = {
+  const receipt = storeConsentReceipt({
     applicationId: body.applicationId,
     sessionId: body.sessionId,
     disclosureVersion: body.disclosureVersion,
     consentText: body.consentText,
-    timestamp: new Date().toISOString(),
     ip,
     userAgent,
-  };
+  });
 
-  // SEC-105: enforce caps before insert. Retries with the same
-  // composite key overwrite in place and don't grow the map, so the
-  // per-application prune only fires for genuinely new sessions.
-  const key = `${body.applicationId}:${body.sessionId}`;
-  if (!RECEIPTS.has(key)) {
-    pruneReceiptsForApplication(body.applicationId);
-    pruneReceiptsGlobal();
-  }
-  RECEIPTS.set(key, receipt);
-
+  // SEC-006 (Task #45): the receipt id is the audit-chain pointer the
+  // consumer apply flow MUST carry forward into the prequal soft-pull
+  // call. Returning it here means the client can stash it alongside
+  // the existing localStorage mirror and echo it back on the next
+  // state-changing call.
   return NextResponse.json(
     {
       ok: true,
       receipt: {
+        id: receipt.id,
         applicationId: receipt.applicationId,
         sessionId: receipt.sessionId,
         timestamp: receipt.timestamp,
@@ -228,6 +182,6 @@ export async function GET(req: NextRequest) {
   if (!applicationId) {
     return NextResponse.json({ ok: false, error: 'applicationId_required' }, { status: 400 });
   }
-  const matches = Array.from(RECEIPTS.values()).filter((r) => r.applicationId === applicationId);
+  const matches = listConsentReceiptsForApplication(applicationId);
   return NextResponse.json({ ok: true, receipts: matches });
 }

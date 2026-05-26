@@ -22,6 +22,27 @@
       "when": 1779765347599,
       "tag": "0003_platform_scaffolding",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779800000000,
+      "tag": "0004_orchestrator_persistence",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779810000000,
+      "tag": "0006_decision_engine_fallback",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779820000000,
+      "tag": "0007_webhook_inbox",
+      "breakpoints": true
     }
   ]
 }

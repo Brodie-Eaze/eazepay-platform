@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { charge, type ChargeRequest } from '@/lib/micamp/client';
+import { assertResourceOwnershipStub, requirePartnerSession } from '@/lib/server-guards';
 
 /**
  * POST /api/integrations/micamp/payments
@@ -27,6 +28,11 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-001: partner session required. Pre-fix any anonymous caller
+  // could trigger a MID charge against any midId + applicationId.
+  const guard = await requirePartnerSession(req);
+  if (guard instanceof NextResponse) return guard;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -41,6 +47,11 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // applicationId → partner ownership is stubbed (see helper docs).
+  // The session-gate above blocks anonymous abuse in the meantime.
+  const ownership = assertResourceOwnershipStub(guard, parsed.data.applicationId, 'application');
+  if (ownership) return ownership;
 
   try {
     const result = await charge(parsed.data as ChargeRequest);

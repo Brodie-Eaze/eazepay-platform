@@ -29,6 +29,8 @@ describe('lib/env — assertProdEnv', () => {
     delete process.env.DEMO_COOKIE_SECRET;
     delete process.env.ACCOUNT_COOKIE_SECRET;
     delete process.env.NEXT_PUBLIC_APP_ORIGIN;
+    delete process.env.MICAMP_WEBHOOK_SECRET;
+    delete process.env.HIGHSALE_WEBHOOK_SECRET;
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'info').mockImplementation(() => {});
@@ -47,12 +49,32 @@ describe('lib/env — assertProdEnv', () => {
     it('throws when DEMO_COOKIE_SECRET is missing', () => {
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
     it('throws when ACCOUNT_COOKIE_SECRET is missing', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
+      expect(() => assertProdEnv()).toThrow(/refusing to boot/);
+    });
+
+    it('throws when MICAMP_WEBHOOK_SECRET is missing (SEC-002)', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
+      expect(() => assertProdEnv()).toThrow(/refusing to boot/);
+    });
+
+    it('throws when HIGHSALE_WEBHOOK_SECRET is missing (SEC-002)', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
@@ -60,6 +82,8 @@ describe('lib/env — assertProdEnv', () => {
       process.env.DEMO_COOKIE_SECRET = 'too-short';
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
@@ -67,6 +91,8 @@ describe('lib/env — assertProdEnv', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = 'app.eazepay.com'; // missing https://
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
@@ -74,12 +100,14 @@ describe('lib/env — assertProdEnv', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
       const result = assertProdEnv();
       expect(result.ok).toBe(true);
     });
 
     it('aggregates multiple failures into one error message', () => {
-      // All three required vars missing → one throw with all three named.
+      // All five required vars missing → one throw with all five counted.
       let caught: Error | null = null;
       try {
         assertProdEnv();
@@ -88,7 +116,7 @@ describe('lib/env — assertProdEnv', () => {
       }
       expect(caught).not.toBeNull();
       // The thrown message references the count; per-var detail goes to stderr.
-      expect(caught?.message).toMatch(/3 required env var/);
+      expect(caught?.message).toMatch(/5 required env var/);
     });
   });
 
@@ -113,6 +141,8 @@ describe('lib/env — assertProdEnv', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
+      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
       const result = assertProdEnv();
       expect(result.ok).toBe(true);
     });

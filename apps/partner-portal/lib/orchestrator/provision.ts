@@ -19,10 +19,25 @@
  * failing step, persists the partial state, and stops. Retry resumes
  * from the failing step (steps are idempotent on the integration
  * side — HighSale + MiCamp dedupe on the partnerId we send).
+ *
+ * Persistence
+ * -----------
+ * State is persisted to Postgres in `provisioning_runs` (Tasks #40 +
+ * #46). The `steps_json` column carries the full ProvisionStep[]
+ * array, rewritten on every step transition so polls hitting any
+ * worker get the same answer. Run completion / failure / per-step
+ * transitions also emit audit_log rows for SOC 2 CC8.1 replay.
+ *
+ * If `hasDb()` is false (local dev without DATABASE_URL) we fall
+ * back to a module-scoped Map. That fallback is dev-only and the
+ * route handler will surface a 503 once a hard DB requirement lands.
  */
 
-import { createSubAccount } from '@/lib/highsale/client';
-import { provisionMid } from '@/lib/micamp/client';
+import { eq, desc } from 'drizzle-orm';
+import { createSubAccount } from '../highsale/client';
+import { provisionMid } from '../micamp/client';
+import { getDb, hasDb, schema } from '../db';
+import { safeLog } from '../safe-log';
 
 export type ProvisionStepName =
   | 'highsale_subaccount'
@@ -78,16 +93,15 @@ const INITIAL_STEPS: ProvisionStepName[] = [
   'partner_portal_seed',
 ];
 
+const ORCHESTRATOR_ACTOR = 'system:orchestrator';
+
 /**
- * In-memory run registry — for demo purposes. Production swaps this
- * for a Postgres-backed table (the `partners` row would carry the
- * step state, or a separate `provisioning_runs` table if we want to
- * keep audit history of every attempt).
- *
- * Kept module-scoped so the same Node process can serve status
- * lookups against in-flight runs from the orchestrator endpoint.
+ * In-memory fallback registry — used ONLY when DATABASE_URL is
+ * unset. Local dev without Postgres still needs to be able to walk
+ * the wizard end-to-end. In every other environment the source of
+ * truth is the `provisioning_runs` table.
  */
-const RUNS = new Map<string, ProvisionRun>();
+const MEMORY_RUNS = new Map<string, ProvisionRun>();
 
 function newSteps(): ProvisionStep[] {
   return INITIAL_STEPS.map((name) => ({
@@ -110,33 +124,198 @@ function setStep(run: ProvisionRun, name: ProvisionStepName, patch: Partial<Prov
   Object.assign(step, patch);
 }
 
-export function getRun(id: string): ProvisionRun | undefined {
-  return RUNS.get(id);
+/* ---------- row <-> domain mapping ---------- */
+
+function rowToRun(row: schema.ProvisioningRun): ProvisionRun {
+  return {
+    id: row.id,
+    partnerId: row.partnerId,
+    brand: row.brand as ProvisionRun['brand'],
+    status: row.status as ProvisionRun['status'],
+    steps: parseSteps(row.stepsJson),
+    startedAt: row.startedAt.toISOString(),
+    completedAt: row.completedAt ? row.completedAt.toISOString() : null,
+    failureReason: row.failureReason,
+  };
 }
 
-export function listRuns(): ProvisionRun[] {
-  return Array.from(RUNS.values()).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+function parseSteps(json: string | null): ProvisionStep[] {
+  if (!json) return newSteps();
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!Array.isArray(parsed)) return newSteps();
+    // Trust the shape — we wrote it. A future schema migration would
+    // ship a transform here.
+    return parsed as ProvisionStep[];
+  } catch {
+    return newSteps();
+  }
+}
+
+/* ---------- persistence helpers ---------- */
+
+/**
+ * Write the run's mutable state (status, steps, completion) back to
+ * the DB. Best-effort: a write failure is logged but does not abort
+ * the run — the source-of-truth fallback is the in-memory copy the
+ * orchestrator is mutating live.
+ */
+async function persistRun(run: ProvisionRun): Promise<void> {
+  if (!hasDb()) return;
+  try {
+    const db = getDb();
+    await db
+      .update(schema.provisioningRuns)
+      .set({
+        status: run.status,
+        stepsJson: JSON.stringify(run.steps),
+        completedAt: run.completedAt ? new Date(run.completedAt) : null,
+        failureReason: run.failureReason,
+      })
+      .where(eq(schema.provisioningRuns.id, run.id));
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.persist_failed',
+      runId: run.id,
+      partnerId: run.partnerId,
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+  }
 }
 
 /**
- * Kick off a provisioning run. Returns immediately with the run id
- * so the caller can poll for status. The work itself happens in the
- * background via setImmediate so the HTTP response isn't blocked on
- * upstream integrations.
+ * Append an audit_log row. Best-effort: failures don't abort the
+ * orchestrator. The orchestrator's in-memory step state is the
+ * fallback observability surface if audit writes are unhealthy.
  */
-export function startProvision(config: ProvisionConfig): ProvisionRun {
-  const id = `prov_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+async function writeAudit(
+  run: ProvisionRun,
+  action: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  if (!hasDb()) return;
+  try {
+    const db = getDb();
+    await db.insert(schema.auditLog).values({
+      actor: ORCHESTRATOR_ACTOR,
+      action,
+      targetType: 'provisioning_run',
+      targetId: run.id,
+      payloadJson: JSON.stringify({
+        partnerId: run.partnerId,
+        brand: run.brand,
+        ...payload,
+      }),
+    });
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.audit_write_failed',
+      runId: run.id,
+      action,
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+  }
+}
+
+/* ---------- public read API ---------- */
+
+export async function getRun(id: string): Promise<ProvisionRun | undefined> {
+  if (!hasDb()) return MEMORY_RUNS.get(id);
+  try {
+    const db = getDb();
+    const rows = await db
+      .select()
+      .from(schema.provisioningRuns)
+      .where(eq(schema.provisioningRuns.id, id))
+      .limit(1);
+    return rows[0] ? rowToRun(rows[0]) : undefined;
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.get_run_failed',
+      runId: id,
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+    return undefined;
+  }
+}
+
+export async function listRuns(): Promise<ProvisionRun[]> {
+  if (!hasDb()) {
+    return Array.from(MEMORY_RUNS.values()).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  }
+  try {
+    const db = getDb();
+    const rows = await db
+      .select()
+      .from(schema.provisioningRuns)
+      .orderBy(desc(schema.provisioningRuns.startedAt))
+      .limit(100);
+    return rows.map(rowToRun);
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.list_runs_failed',
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+    return [];
+  }
+}
+
+/* ---------- run lifecycle ---------- */
+
+/**
+ * Kick off a provisioning run. Returns immediately with the run
+ * record so the caller can poll for status. The work itself happens
+ * in the background via setImmediate so the HTTP response isn't
+ * blocked on upstream integrations.
+ */
+export async function startProvision(config: ProvisionConfig): Promise<ProvisionRun> {
+  const id = crypto.randomUUID();
+  const startedAt = nowIso();
   const run: ProvisionRun = {
     id,
     partnerId: config.partnerId,
     brand: config.brand,
     status: 'queued',
     steps: newSteps(),
-    startedAt: nowIso(),
+    startedAt,
     completedAt: null,
     failureReason: null,
   };
-  RUNS.set(id, run);
+
+  if (hasDb()) {
+    try {
+      const db = getDb();
+      await db.insert(schema.provisioningRuns).values({
+        id: run.id,
+        partnerId: run.partnerId,
+        brand: run.brand,
+        status: run.status,
+        stepsJson: JSON.stringify(run.steps),
+        startedAt: new Date(startedAt),
+      });
+    } catch (err) {
+      // Fall back to in-memory so the demo path stays alive, but
+      // surface the failure loudly — this means the DB is misconfigured
+      // and the operator needs to know.
+      safeLog.error({
+        event: 'orchestrator.provision.insert_failed',
+        runId: run.id,
+        partnerId: run.partnerId,
+        err: err instanceof Error ? err.message : 'unknown',
+      });
+      MEMORY_RUNS.set(id, run);
+    }
+  } else {
+    MEMORY_RUNS.set(id, run);
+  }
+
+  safeLog.info({
+    event: 'orchestrator.provision.started',
+    runId: run.id,
+    partnerId: run.partnerId,
+    brand: run.brand,
+  });
+  await writeAudit(run, 'provision.start', { startedAt });
 
   // Defer execution so the caller gets a fast 202 + can poll.
   setImmediate(() => {
@@ -148,10 +327,12 @@ export function startProvision(config: ProvisionConfig): ProvisionRun {
 
 async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<void> {
   run.status = 'running';
+  await persistRun(run);
 
   // Step 1: HighSale sub-account
   try {
     setStep(run, 'highsale_subaccount', { status: 'in_progress', startedAt: nowIso() });
+    await persistRun(run);
     const subAccount = await createSubAccount({
       partnerId: config.partnerId,
       legalName: config.legalName,
@@ -167,6 +348,11 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
       result: subAccount as unknown as Record<string, unknown>,
       note: `HighSale sub-account ${subAccount.subAccountId} provisioned (bureau: ${subAccount.configuredBureau}).`,
     });
+    await persistRun(run);
+    await writeAudit(run, 'provision.step.complete', {
+      step: 'highsale_subaccount',
+      subAccountId: subAccount.subAccountId,
+    });
   } catch (err) {
     return failRun(run, 'highsale_subaccount', err);
   }
@@ -175,6 +361,7 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
   // vertical allowlist; per-partner overrides come later via admin.
   try {
     setStep(run, 'marketplace_defaults', { status: 'in_progress', startedAt: nowIso() });
+    await persistRun(run);
     // TODO(db): when vertical_configs is seeded, copy enabled_lender_ids → partner_marketplaces.
     // For now, just acknowledge.
     setStep(run, 'marketplace_defaults', {
@@ -183,6 +370,11 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
       result: { inheritedFromBrand: config.brand },
       note: `Inherited ${config.brand} lender allowlist. Per-partner overrides available in admin.`,
     });
+    await persistRun(run);
+    await writeAudit(run, 'provision.step.complete', {
+      step: 'marketplace_defaults',
+      inheritedFromBrand: config.brand,
+    });
   } catch (err) {
     return failRun(run, 'marketplace_defaults', err);
   }
@@ -190,6 +382,7 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
   // Step 3: MiCamp MID
   try {
     setStep(run, 'micamp_mid', { status: 'in_progress', startedAt: nowIso() });
+    await persistRun(run);
     const mid = await provisionMid({
       partnerId: config.partnerId,
       legalName: config.legalName,
@@ -209,6 +402,12 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
       result: mid as unknown as Record<string, unknown>,
       note: `MID ${mid.midId} requested. Status: ${mid.status}. ETA: ${mid.etaHours ?? '—'}h.`,
     });
+    await persistRun(run);
+    await writeAudit(run, 'provision.step.complete', {
+      step: 'micamp_mid',
+      midId: mid.midId,
+      midStatus: mid.status,
+    });
   } catch (err) {
     return failRun(run, 'micamp_mid', err);
   }
@@ -217,6 +416,7 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
   // team owner invite. All local DB writes, no upstream calls.
   try {
     setStep(run, 'partner_portal_seed', { status: 'in_progress', startedAt: nowIso() });
+    await persistRun(run);
     // TODO(db): INSERT into partners row + seed branding_json defaults +
     // dispatch primary-contact invite via team-invites-store.
     setStep(run, 'partner_portal_seed', {
@@ -225,15 +425,27 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
       result: { invitedContact: config.primaryContactEmail },
       note: `Owner invite dispatched to ${config.primaryContactEmail}.`,
     });
+    await persistRun(run);
+    await writeAudit(run, 'provision.step.complete', {
+      step: 'partner_portal_seed',
+    });
   } catch (err) {
     return failRun(run, 'partner_portal_seed', err);
   }
 
   run.status = 'completed';
   run.completedAt = nowIso();
+  await persistRun(run);
+  safeLog.info({
+    event: 'orchestrator.provision.completed',
+    runId: run.id,
+    partnerId: run.partnerId,
+    brand: run.brand,
+  });
+  await writeAudit(run, 'provision.complete', { completedAt: run.completedAt });
 }
 
-function failRun(run: ProvisionRun, stepName: ProvisionStepName, err: unknown): void {
+function failRun(run: ProvisionRun, stepName: ProvisionStepName, err: unknown): Promise<void> {
   const reason = err instanceof Error ? err.message : 'Unknown error';
   setStep(run, stepName, {
     status: 'failed',
@@ -243,4 +455,15 @@ function failRun(run: ProvisionRun, stepName: ProvisionStepName, err: unknown): 
   run.status = 'failed';
   run.failureReason = `${stepName}: ${reason}`;
   run.completedAt = nowIso();
+  safeLog.error({
+    event: 'orchestrator.provision.failed',
+    runId: run.id,
+    partnerId: run.partnerId,
+    step: stepName,
+    reason,
+  });
+  return (async () => {
+    await persistRun(run);
+    await writeAudit(run, 'provision.failed', { step: stepName, reason });
+  })();
 }

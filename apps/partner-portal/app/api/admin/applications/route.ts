@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { and, desc, eq, lt, type SQL } from 'drizzle-orm';
 import { getDb, hasDb } from '../../../../lib/db';
 import { applications } from '../../../../lib/db/schema';
-import { getSessionContext } from '../../../../lib/session';
+import { requireAdmin } from '../../../../lib/server-guards';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 const StatusEnum = z.enum(['submitted', 'in_review', 'approved', 'funded', 'declined']);
@@ -35,14 +35,14 @@ function problem(status: number, code: string, detail: string) {
 }
 
 export async function GET(req: NextRequest) {
+  // SEC-001: admin-only. Unified on requireAdmin so the auth surface
+  // is one helper; pre-fix this route ran its own inline isOperator
+  // check that diverged from the rest of /api/admin/*.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   if (!hasDb()) {
     return problem(503, 'db_unavailable', 'Application database is not yet provisioned.');
-  }
-
-  const session = await getSessionContext(req);
-  const isOperator = session.mode === 'demo' && session.isOperator;
-  if (!isOperator) {
-    return problem(403, 'forbidden', 'Master view requires an operator session.');
   }
 
   const parsed = Query.safeParse({

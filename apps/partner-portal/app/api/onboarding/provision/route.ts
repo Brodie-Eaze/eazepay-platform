@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { listRuns, startProvision, type ProvisionConfig } from '@/lib/orchestrator/provision';
+import { requireAdmin } from '@/lib/server-guards';
 
 /**
  * POST /api/onboarding/provision
@@ -38,6 +39,11 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-001: admin-only. Provisioning kicks off real upstream calls
+  // (HighSale sub-account, MiCamp MID); anonymous access was the bug.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -71,10 +77,14 @@ export async function POST(req: NextRequest) {
     funnelUrls: parsed.data.funnelUrls,
   };
 
-  const run = startProvision(config);
+  const run = await startProvision(config);
   return NextResponse.json(run, { status: 202 });
 }
 
-export async function GET() {
-  return NextResponse.json({ runs: listRuns() });
+export async function GET(req: NextRequest) {
+  // SEC-001: admin-only. The list contains partner contact info +
+  // step output, which leaks the active onboarding pipeline.
+  const guard = await requireAdmin(req);
+  if (guard instanceof NextResponse) return guard;
+  return NextResponse.json({ runs: await listRuns() });
 }

@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { verifyWebhookSignature, type MicampWebhookEvent } from '@/lib/micamp/client';
+import { verifyWebhookSignature } from '@/lib/micamp/client';
+import { getDb, hasDb, schema } from '@/lib/db';
+import { extractProviderEventId } from '@/lib/workers/webhook-processor';
+import { safeLog } from '@/lib/safe-log';
 
 /**
  * POST /api/integrations/micamp/webhook
@@ -13,35 +16,58 @@ import { verifyWebhookSignature, type MicampWebhookEvent } from '@/lib/micamp/cl
  *   • payment.refunded             → reverse volume
  *   • settlement.paid              → update last_settled_at on the mid row
  *
- * Signature verification is HMAC-SHA256 with constant-time compare.
- * Without MICAMP_WEBHOOK_SECRET configured the route accepts every
- * event (dev mode) — production deployments must set the secret.
+ * Signature verification is HMAC-SHA256 with constant-time compare,
+ * fail-closed (SEC-002): a missing secret in production aborts module
+ * load, and a missing/stale/forged signature is rejected with a 401
+ * carrying a machine-readable `code`. The rejection reason is logged to
+ * safeLog for audit.
  *
- * Idempotency: every persisted event uses the MiCamp event id as the
- * dedupe key. Replay-safe by design.
+ * Inbox pattern (Task #43): verified events are durably persisted in
+ * `webhook_inbox` keyed by (provider, event_id) BEFORE we ack 200. The
+ * actual handler dispatch runs async in `lib/workers/webhook-processor.ts`
+ * so a crash mid-handler can't silently drop an event — upstream sees
+ * 200 because the row is on disk; the worker keeps retrying until the
+ * handler succeeds.
+ *
+ * Failure semantics:
+ *   • bad signature           → 401 (no retry storm)
+ *   • malformed JSON / no id   → 400 (no retry — sender bug)
+ *   • DB write failed          → 503 (upstream retries)
+ *   • duplicate event id       → 200 with `{ duplicate: true }`
+ *   • DB write succeeded       → 200 with `{ queued: true }`
  */
 
 export const runtime = 'nodejs';
+
+const PROVIDER = 'micamp' as const;
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signatureHeader = req.headers.get('micamp-signature') ?? '';
 
-  if (!verifyWebhookSignature(rawBody, signatureHeader)) {
+  const verification = verifyWebhookSignature(rawBody, signatureHeader);
+  if (!verification.valid) {
+    safeLog.warn({
+      event: 'micamp.webhook.rejected',
+      reason: verification.reason,
+      hasSignatureHeader: signatureHeader.length > 0,
+      bodyBytes: rawBody.length,
+    });
     return NextResponse.json(
       {
         type: 'about:blank',
         title: 'Unauthorized',
         status: 401,
         code: 'invalid_signature',
+        reason: verification.reason,
       },
       { status: 401 },
     );
   }
 
-  let event: MicampWebhookEvent;
+  let event: Record<string, unknown>;
   try {
-    event = JSON.parse(rawBody) as MicampWebhookEvent;
+    event = JSON.parse(rawBody) as Record<string, unknown>;
   } catch {
     return NextResponse.json(
       {
@@ -54,29 +80,107 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Route the event to its handler. Each branch is intentionally
-  // small: the persistence layer is the boundary, not this file.
-  // Wire DB writes here once the mids + audit_log tables are seeded.
-  switch (event.type) {
-    case 'mid.underwriting.approved':
-      // TODO(orchestrator): UPDATE mids SET status='active', micamp_mid=$1, rate_card_json=$2 WHERE id=$3
-      break;
-    case 'mid.underwriting.rejected':
-      // TODO(orchestrator): UPDATE mids SET status='rejected' WHERE id=$1; INSERT INTO audit_log ...
-      break;
-    case 'mid.post_underwriting':
-      // TODO(orchestrator): UPDATE mids SET status='underwriting_post', post_underwriting_at=now() WHERE id=$1
-      break;
-    case 'payment.captured':
-      // TODO(orchestrator): UPDATE mids SET volume_cents_to_date = volume_cents_to_date + $1 WHERE id=$2
-      break;
-    case 'payment.refunded':
-      // TODO(orchestrator): UPDATE mids SET volume_cents_to_date = GREATEST(0, volume_cents_to_date - $1) WHERE id=$2
-      break;
-    case 'settlement.paid':
-      // TODO(orchestrator): UPDATE mids SET last_settled_at=$1 WHERE id=$2
-      break;
+  const eventType = typeof event.type === 'string' ? event.type : null;
+  if (!eventType) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Bad Request',
+        status: 400,
+        code: 'missing_event_type',
+      },
+      { status: 400 },
+    );
   }
 
-  return NextResponse.json({ ok: true, received: event.type });
+  const eventId = extractProviderEventId(event);
+  if (!eventId) {
+    // No upstream id => upstream bug. Refuse rather than coin an id
+    // ourselves; a coined id defeats dedupe on the upstream's retry.
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Bad Request',
+        status: 400,
+        code: 'missing_event_id',
+        detail: 'MiCamp event payload is missing both `id` and `event_id`.',
+      },
+      { status: 400 },
+    );
+  }
+
+  if (!hasDb()) {
+    // Without a DB we cannot dedupe — refuse with 503 so upstream
+    // retries until the DB is wired. Never silently ack.
+    safeLog.error({
+      event: 'webhook.inbox.db_unavailable',
+      provider: PROVIDER,
+      eventType,
+      eventId,
+    });
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'db_unavailable',
+      },
+      { status: 503 },
+    );
+  }
+
+  try {
+    const db = getDb();
+    const inserted = await db
+      .insert(schema.webhookInbox)
+      .values({
+        provider: PROVIDER,
+        eventId,
+        eventType,
+        rawBody,
+        signatureHeader,
+      })
+      .onConflictDoNothing({
+        target: [schema.webhookInbox.provider, schema.webhookInbox.eventId],
+      })
+      .returning({ id: schema.webhookInbox.id });
+
+    if (inserted.length === 0) {
+      // Replay — already in the inbox. Do NOT enqueue again; the
+      // worker handled (or will handle) the original row.
+      safeLog.info({
+        event: 'webhook.inbox.duplicate',
+        provider: PROVIDER,
+        eventType,
+        eventId,
+      });
+      return NextResponse.json({ ok: true, duplicate: true });
+    }
+
+    safeLog.info({
+      event: 'webhook.inbox.queued',
+      provider: PROVIDER,
+      eventType,
+      eventId,
+      inboxId: inserted[0]!.id,
+    });
+    return NextResponse.json({ ok: true, queued: true });
+  } catch (err) {
+    safeLog.error({
+      event: 'webhook.inbox.write_failed',
+      provider: PROVIDER,
+      eventType,
+      eventId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'inbox_write_failed',
+      },
+      { status: 503 },
+    );
+  }
 }
