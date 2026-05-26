@@ -436,6 +436,9 @@ importers:
       '@eazepay/shared-types':
         specifier: workspace:*
         version: link:../../libs/shared-types
+      '@eazepay/shared-utils':
+        specifier: workspace:*
+        version: link:../../libs/shared-utils
       '@eazepay/ui':
         specifier: workspace:*
         version: link:../../libs/ui
