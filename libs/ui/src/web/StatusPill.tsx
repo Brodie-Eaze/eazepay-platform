@@ -21,7 +21,12 @@ export const StatusPill: FC<{
 }> = ({ tone = 'neutral', dot, icon, children, className }) => (
   <span
     className={cn(
-      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium leading-5',
+      // Sprint A — color crossfade. Tailwind's `transition-colors`
+      // already animates background/border/text-color on class swap.
+      // 180ms matches motion-tokens `duration.fast`. The
+      // `motion-reduce:` variant short-circuits the transition for
+      // users with `prefers-reduced-motion: reduce`.
+      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium leading-5 transition-colors duration-[180ms] ease-out motion-reduce:transition-none',
       toneClasses[tone],
       className,
     )}

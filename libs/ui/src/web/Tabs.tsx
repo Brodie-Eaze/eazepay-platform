@@ -1,6 +1,14 @@
 'use client';
-import type { FC, KeyboardEvent, ReactNode } from 'react';
+import { useId, type FC, type KeyboardEvent, type ReactNode } from 'react';
+import { motion as m, useReducedMotion } from 'motion/react';
 import { cn } from './cn';
+import { motion as tokens } from './motion-tokens';
+
+/** Stable per-instance layoutId. */
+function useTabsLayoutId(): string {
+  const id = useId();
+  return `tabs-underline-${id}`;
+}
 
 /**
  * Underline-style tab strip. ARIA-compliant — uses the WAI-ARIA Tabs
@@ -20,6 +28,12 @@ export const Tabs: FC<{
   /** ARIA label for the tablist. Defaults to "Tabs". */
   label?: string;
 }> = ({ items, active, onChange, className, label = 'Tabs' }) => {
+  const reduced = useReducedMotion();
+  // Unique layoutId per Tabs instance so multiple Tabs on the same
+  // page don't share an underline animation (would cause the underline
+  // to fly across tablists). useRef + Math.random keeps it stable for
+  // this instance without needing an extra prop.
+  const layoutId = useTabsLayoutId();
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, idx: number) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End')
       return;
@@ -75,12 +89,20 @@ export const Tabs: FC<{
                 </span>
               )}
             </span>
-            {isActive && (
-              <span
-                className="absolute inset-x-0 bottom-0 h-0.5 bg-accent rounded-full"
-                aria-hidden
-              />
-            )}
+            {isActive &&
+              (reduced ? (
+                <span
+                  className="absolute inset-x-0 bottom-0 h-0.5 bg-accent rounded-full"
+                  aria-hidden
+                />
+              ) : (
+                <m.span
+                  layoutId={layoutId}
+                  className="absolute inset-x-0 bottom-0 h-0.5 bg-accent rounded-full"
+                  aria-hidden
+                  transition={{ duration: tokens.duration.default, ease: tokens.ease.out }}
+                />
+              ))}
           </button>
         );
       })}

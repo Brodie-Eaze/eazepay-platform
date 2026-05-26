@@ -1,4 +1,17 @@
 export { cn } from './cn.js';
+/* Motion — Sprint A */
+export { motion as motionTokens } from './motion-tokens.js';
+export type { MotionDuration, MotionEase, MotionSpring } from './motion-tokens.js';
+export {
+  MotionFade,
+  MotionSlide,
+  MotionStagger,
+  MotionPulse,
+  CountUp,
+  RouteTransition,
+  AnimatePresence,
+  useReducedMotion,
+} from './Motion.js';
 export { Logo } from './Logo.js';
 export * from './Icon.js';
 export { Button } from './Button.js';

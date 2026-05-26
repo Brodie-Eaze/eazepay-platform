@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { cn } from './cn';
 import { Logo } from './Logo';
 import { ChevronDownIcon, SearchIcon, MenuIcon, XIcon } from './Icon';
+import { MotionStagger } from './Motion';
 
 export interface NavItem {
   href: string;
@@ -514,4 +515,12 @@ export const PageHeader: FC<{
 export const PageBody: FC<{ children: ReactNode; className?: string }> = ({
   children,
   className,
-}) => <div className={cn('px-4 sm:px-7 pb-8', className)}>{children}</div>;
+}) => (
+  // Sprint A — every page gets a subtle stagger on mount. Header lands
+  // first (delayChildren), then each top-level body section follows
+  // ~50ms apart. Reduced-motion users see the same final layout
+  // instantly. Backwards-compatible: API unchanged.
+  <MotionStagger delay={0.04} stagger={0.05} y={6} className={cn('px-4 sm:px-7 pb-8', className)}>
+    {children}
+  </MotionStagger>
+);
