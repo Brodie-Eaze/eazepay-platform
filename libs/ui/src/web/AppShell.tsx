@@ -41,6 +41,11 @@ export const AppShell: FC<{
   envLabel?: { label: string; tone?: 'live' | 'sandbox' | 'staging' };
   /** Optional `Link` component (Next.js or plain anchor). Defaults to plain `<a>`. */
   LinkComponent?: FC<{ href: string; className?: string; children: ReactNode }>;
+  /** When provided, the topbar search input becomes a launcher button
+   *  for the command palette: clicks AND focus calls this handler and
+   *  the native input is suppressed (no typing into the topbar — the
+   *  palette captures keystrokes once it opens). */
+  onSearchClick?: () => void;
 }> = ({
   children,
   product,
@@ -52,6 +57,7 @@ export const AppShell: FC<{
   sidebarFooter,
   envLabel,
   LinkComponent,
+  onSearchClick,
 }) => {
   const Link =
     LinkComponent ??
@@ -197,8 +203,22 @@ export const AppShell: FC<{
                 <span className="sr-only">Search</span>
                 <input
                   placeholder={searchPlaceholder}
-                  className="bg-transparent outline-none w-full placeholder:text-fg-muted text-fg"
+                  readOnly={!!onSearchClick}
+                  onClick={onSearchClick}
+                  onFocus={
+                    onSearchClick
+                      ? (e) => {
+                          // Suppress the native focus + caret; the palette takes
+                          // over keyboard input. Blur immediately so the topbar
+                          // input never holds focus when the palette is open.
+                          e.currentTarget.blur();
+                          onSearchClick();
+                        }
+                      : undefined
+                  }
+                  className="bg-transparent outline-none w-full placeholder:text-fg-muted text-fg cursor-pointer"
                   aria-label={typeof searchPlaceholder === 'string' ? searchPlaceholder : 'Search'}
+                  aria-haspopup={onSearchClick ? 'dialog' : undefined}
                 />
                 <kbd className="text-[10px] font-mono text-fg-muted border border-border rounded px-1.5 py-0.5 bg-white hidden sm:inline">
                   ⌘K

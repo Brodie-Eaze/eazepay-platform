@@ -1,11 +1,13 @@
 'use client';
 import type { ReactNode } from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   AppShell,
   Button,
+  CommandPalette,
+  type CommandPaletteCommand,
   StatusPill,
   HomeIcon,
   QueueIcon,
@@ -51,6 +53,7 @@ import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
 import { NotificationBell } from '../components/NotificationBell';
 import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
+import { marketplaceLenders } from '../lib/marketplace-data';
 
 /**
  * Map a per-brand portal to the notification recipient key — the
@@ -596,6 +599,59 @@ function assertNoMasterLeaks(groups: NavGroup[], brandSlug: string): void {
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/';
+  const router = useRouter();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  // Build the command palette source — every nav target across the
+  // three sidebar arrangements + the live lender + partner roster.
+  // Hoisted above the NAKED_ROUTES early-return so React Hook order
+  // stays stable across renders.
+  const paletteCommands = useMemo<CommandPaletteCommand[]>(() => {
+    const out: CommandPaletteCommand[] = [];
+    const pushGroup = (section: string, gs: NavGroup[]) => {
+      for (const g of gs) {
+        for (const it of g.items) {
+          if (!it.href || /^https?:/.test(it.href)) continue;
+          out.push({
+            id: `${section}:${it.href}`,
+            section,
+            label: it.label,
+            description: g.label,
+            href: it.href,
+            icon: it.icon,
+          });
+        }
+      }
+    };
+    pushGroup('Master', masterGroups);
+    pushGroup('Admin', adminGroups);
+    pushGroup('MedPay', verticalGroups('medpay'));
+    pushGroup('TradePay', verticalGroups('tradepay'));
+    pushGroup('CoachPay', verticalGroups('coachpay'));
+    for (const l of marketplaceLenders) {
+      out.push({
+        id: `lender:${l.id}`,
+        section: 'Lenders',
+        label: l.displayName,
+        description: l.legalName,
+        href: `/lender-marketplace/${l.id}`,
+        icon: <BankIcon size={14} />,
+        keywords: [l.legalName, l.externalLenderId],
+      });
+    }
+    for (const p of MASTER_PARTNERS_ROSTER) {
+      out.push({
+        id: `partner:${p.id}`,
+        section: 'Partners',
+        label: p.legalName,
+        description: `${p.product} · ${p.email}`,
+        href: `/control-panel/${p.id}`,
+        icon: <UsersIcon size={14} />,
+        keywords: [p.email, p.initials],
+      });
+    }
+    return out;
+  }, []);
+
   if (NAKED_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {
     return <>{children}</>;
   }
@@ -628,69 +684,83 @@ export function Shell({ children }: { children: ReactNode }) {
       : { label: 'Live · Master', tone: 'live' };
 
   return (
-    <AppShell
-      wordmark={wordmark}
-      product={product}
-      activePath={pathname}
-      groups={groups}
-      envLabel={envLabel}
-      LinkComponent={NextLink}
-      searchPlaceholder={
-        activeBrand
-          ? `Search ${BRANDS[activeBrand].name} applications, partners…`
-          : 'Search partners, applications, merchants…'
-      }
-      topRight={
-        <div className="flex items-center gap-3">
-          {/* Master-operator chrome — only shown on the master surface (no activeBrand).
+    <>
+      <AppShell
+        wordmark={wordmark}
+        product={product}
+        activePath={pathname}
+        groups={groups}
+        envLabel={envLabel}
+        LinkComponent={NextLink}
+        onSearchClick={() => setPaletteOpen(true)}
+        searchPlaceholder={
+          activeBrand
+            ? `Search ${BRANDS[activeBrand].name} applications, partners…`
+            : 'Search partners, applications, merchants…'
+        }
+        topRight={
+          <div className="flex items-center gap-3">
+            {/* Master-operator chrome — only shown on the master surface (no activeBrand).
               When a merchant is signed in under a specific brand they see a clean
               brand-scoped portal: no cross-brand switcher, no "Vertical view" badge. */}
-          {!activeBrand && (
-            <>
-              <BrandSwitcher activeBrand={activeBrand} />
-              <StatusPill tone="success" dot>
-                3 partners awaiting approval
-              </StatusPill>
-            </>
-          )}
-          {/* Notification bell — scope = 'master' on operator
+            {!activeBrand && (
+              <>
+                <BrandSwitcher activeBrand={activeBrand} />
+                <StatusPill tone="success" dot>
+                  3 partners awaiting approval
+                </StatusPill>
+              </>
+            )}
+            {/* Notification bell — scope = 'master' on operator
               surfaces, partner merchantId on per-brand. Master sees
               a mirror of every notification dispatched from the
               billing send composer; partner sees only their own. */}
-          <NotificationBell
-            recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
-          />
-          <Button size="sm" variant="ghost">
-            Help
-          </Button>
-          <UserMenu activeBrand={activeBrand} />
-        </div>
-      }
-      sidebarFooter={
-        <div className="space-y-2">
-          <div className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wider">
-            {partnerOrg.displayName}
+            <NotificationBell
+              recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
+            />
+            <Button size="sm" variant="ghost">
+              Help
+            </Button>
+            <UserMenu activeBrand={activeBrand} />
           </div>
-          <div className="leading-snug">
-            {activeBrand
-              ? `${BRANDS[activeBrand].name} merchant · ${partnerOrg.liveStates} live states`
-              : `${partnerOrg.tier} · ${partnerOrg.liveStates} live states`}
+        }
+        sidebarFooter={
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wider">
+              {partnerOrg.displayName}
+            </div>
+            <div className="leading-snug">
+              {activeBrand
+                ? `${BRANDS[activeBrand].name} merchant · ${partnerOrg.liveStates} live states`
+                : `${partnerOrg.tier} · ${partnerOrg.liveStates} live states`}
+            </div>
+            <div className="text-[11px] text-fg-muted">
+              Member since{' '}
+              {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', {
+                month: 'short',
+                year: 'numeric',
+              })}
+            </div>
           </div>
-          <div className="text-[11px] text-fg-muted">
-            Member since{' '}
-            {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric',
-            })}
-          </div>
-        </div>
-      }
-    >
-      {/* Live Activity strip — master operator only. Streams every
+        }
+      >
+        {/* Live Activity strip — master operator only. Streams every
           fleet event in real-time. Hidden on per-brand surfaces so
           merchants never see other tenants. */}
-      {!activeBrand && <LiveActivityStrip />}
-      {children}
-    </AppShell>
+        {!activeBrand && <LiveActivityStrip />}
+        {children}
+      </AppShell>
+      {/* Global cmd-K command palette — mounted at the Shell root so
+        it's available on every non-naked page. The palette manages
+        its own ⌘K hotkey; we pass `open`/`onOpenChange` so the topbar
+        search input can also trigger it. */}
+      <CommandPalette
+        commands={paletteCommands}
+        LinkComponent={NextLink}
+        onNavigate={(href) => router.push(href)}
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+      />
+    </>
   );
 }
