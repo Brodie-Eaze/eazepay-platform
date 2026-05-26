@@ -20,7 +20,8 @@
  * auth fence, so the fetch carries the session cookie automatically.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -37,7 +38,11 @@ import {
   WebhookIcon,
   HeartPulseIcon,
   ArrowRightIcon,
+  LiveIndicator,
+  TimeRangeSelector,
+  TIME_RANGES,
   type StatusTone,
+  type TimeRange,
 } from '@eazepay/ui/web';
 
 const POLL_INTERVAL_MS = 5000;

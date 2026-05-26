@@ -11,6 +11,16 @@ export { Banner } from './Banner.js';
 export type { BannerIntent } from './Banner.js';
 export { KpiCard } from './KpiCard.js';
 export { Sparkline, BarChart } from './Sparkline.js';
+export { TimeRangeSelector, TIME_RANGES } from './TimeRangeSelector.js';
+export type { TimeRange } from './TimeRangeSelector.js';
+export { LiveIndicator } from './LiveIndicator.js';
+export { InteractiveBarChart, InteractiveDonut } from './InteractiveCharts.js';
+export type {
+  InteractiveDatum,
+  InteractiveBarChartProps,
+  InteractiveDonutSegment,
+  InteractiveDonutProps,
+} from './InteractiveCharts.js';
 export { DataTable } from './DataTable.js';
 export type { Column } from './DataTable.js';
 export { AppShell, PageHeader, PageBody } from './AppShell.js';
