@@ -11,7 +11,9 @@
  * callers changing.
  */
 
-const STORE_KEY = 'eazepay_recent_items_v1';
+import { STORAGE_KEYS } from './storage-keys';
+
+const STORE_KEY = STORAGE_KEYS.recentItems;
 const MAX_ITEMS = 20;
 
 export interface RecentItem {

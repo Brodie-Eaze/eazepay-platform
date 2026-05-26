@@ -42,6 +42,7 @@ import {
   type Notification,
   type NotificationKind,
 } from '../lib/notifications';
+import { STORAGE_KEYS } from '../lib/storage-keys';
 
 const SECTIONS: Array<{
   id: 'applications' | 'partners' | 'alerts';
@@ -101,7 +102,7 @@ export function NotificationsPanel({ recipient, open, onClose }: NotificationsPa
     refresh();
     const interval = window.setInterval(refresh, 5000);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'eazepay_notifications_v1' || e.key === null) refresh();
+      if (e.key === STORAGE_KEYS.notifications || e.key === null) refresh();
     };
     window.addEventListener('storage', onStorage);
     return () => {

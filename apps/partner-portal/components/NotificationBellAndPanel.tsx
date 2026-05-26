@@ -11,6 +11,7 @@
  */
 import { useEffect, useState } from 'react';
 import { unreadCount } from '../lib/notifications';
+import { STORAGE_KEYS } from '../lib/storage-keys';
 import { NotificationsPanel } from './NotificationsPanel';
 
 export function NotificationBellAndPanel({ recipient }: { recipient: string }) {
@@ -25,7 +26,7 @@ export function NotificationBellAndPanel({ recipient }: { recipient: string }) {
     refresh();
     const interval = window.setInterval(refresh, 5000);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'eazepay_notifications_v1' || e.key === null) refresh();
+      if (e.key === STORAGE_KEYS.notifications || e.key === null) refresh();
     };
     window.addEventListener('storage', onStorage);
     return () => {

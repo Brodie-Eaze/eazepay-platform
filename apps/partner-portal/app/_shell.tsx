@@ -55,6 +55,7 @@ import { MoreMenu } from '../components/MoreMenu';
 import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import { trackItem, listRecent } from '../lib/recent-items';
 import { listPinned, type SavedView } from '../lib/saved-views';
+import { STORAGE_KEYS } from '../lib/storage-keys';
 
 /**
  * Map a per-brand portal to the notification recipient key — the
@@ -555,8 +556,8 @@ export function Shell({ children }: { children: ReactNode }) {
     refresh();
     const onStorage = (e: StorageEvent) => {
       if (
-        e.key === 'eazepay_recent_items_v1' ||
-        e.key === 'eazepay_saved_views_v1' ||
+        e.key === STORAGE_KEYS.recentItems ||
+        e.key === STORAGE_KEYS.savedViews ||
         e.key === null
       ) {
         refresh();
