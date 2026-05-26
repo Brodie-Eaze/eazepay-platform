@@ -1670,7 +1670,7 @@ function SettingsTab({
               onClick={() => setDraft(partner)}
               disabled={saving}
             >
-              Reset
+              Discard changes
             </Button>
             <Button size="sm" variant="primary" onClick={save} disabled={saving} aria-busy={saving}>
               {saving ? (

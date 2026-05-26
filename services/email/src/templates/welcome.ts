@@ -23,22 +23,22 @@ export function renderWelcomeEmail(
   brand: BrandEmailContext,
   vars: WelcomeEmailVars,
 ): { subject: string; email: WrappedEmail } {
-  const subject = `Welcome to ${brand.brandName} — set up your portal`;
+  const subject = `${vars.merchantBusinessName} is live on ${brand.brandName} — finish setup`;
 
   const body =
-    `<h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#111827;letter-spacing:-0.01em;">Welcome, ${esc(vars.recipientName)}.</h1>` +
+    `<h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#111827;letter-spacing:-0.01em;">You're in, ${esc(vars.recipientName)}.</h1>` +
     paragraph(
-      `${vars.merchantBusinessName} has been approved on ${brand.brandName}. Your portal is ready — pick a password, add your team, and start sending your first applications.`,
+      `${vars.merchantBusinessName} is approved on ${brand.brandName}. One step left — set your password and you can send your first application today.`,
     ) +
-    button(brand, vars.portalUrl, `Set up ${brand.brandName} portal`) +
+    button(brand, vars.portalUrl, `Set my password`) +
     paragraph(
-      `The link expires in 24 hours. If you didn't expect this, please ignore — your account stays locked until you complete setup.`,
+      `This link works for the next 24 hours. Didn't request access? Ignore this email — the account stays locked until you finish setup.`,
     );
 
   const plainText =
-    `Welcome to ${brand.brandName}, ${vars.recipientName}.\n\n` +
-    `${vars.merchantBusinessName} has been approved. Set up your portal:\n${vars.portalUrl}\n\n` +
-    `The link expires in 24 hours.\n\n${brand.legalEntity}`;
+    `You're in, ${vars.recipientName}.\n\n` +
+    `${vars.merchantBusinessName} is approved on ${brand.brandName}. Set your password to start:\n${vars.portalUrl}\n\n` +
+    `This link works for the next 24 hours.\n\n${brand.legalEntity}`;
 
   return { subject, email: wrap(brand, { preheader: subject, body, plainText }) };
 }

@@ -54,9 +54,9 @@ export function renderInvoiceIssuedEmail(
     : `<p style="margin:0 0 16px;font-size:12px;color:#6b7280;line-height:1.5;">A pay link isn't configured for this account — confirm the invoice and we'll follow up with payment instructions.</p>`;
 
   const body =
-    `<h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#111827;letter-spacing:-0.01em;">Your ${brand.brandName} invoice is ready</h1>` +
+    `<h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#111827;letter-spacing:-0.01em;">${fmtUsd(vars.amountDueCents)} due ${vars.dueDate}</h1>` +
     paragraph(
-      `Hi ${vars.recipientName}, the ${vars.periodLabel} platform-fee invoice for ${vars.merchantBusinessName} is ready for review.`,
+      `Hi ${vars.recipientName} — here's the ${vars.periodLabel} platform-fee invoice for ${vars.merchantBusinessName}. Confirm the line items, then pay (or flag anything that looks off).`,
     ) +
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:8px 0 20px;border-collapse:collapse;">` +
     metaRow('Invoice', vars.invoiceNo) +

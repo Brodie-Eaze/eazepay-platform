@@ -204,7 +204,7 @@ function DueDateEditor({
             onSaved();
           }}
         >
-          Save
+          Save changes
         </Button>
       </div>
     </section>

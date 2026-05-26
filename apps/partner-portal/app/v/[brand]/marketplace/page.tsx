@@ -61,12 +61,9 @@ export default function PartnerMarketplacePage(): JSX.Element {
         <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#0d9488', fontWeight: 700 }}>
           MARKETPLACE · {brand?.toUpperCase() ?? 'BRAND'}
         </div>
-        <h1 style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700 }}>
-          Your lender marketplace
-        </h1>
+        <h1 style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700 }}>Your lender lineup</h1>
         <p style={{ color: '#475569', fontSize: 14, maxWidth: 620 }}>
-          Lenders showing up on your consumer flow. Click any lender to see their tier coverage and
-          amount envelope. Request a pause to flag a lender for the operations team.
+          Who shows up on your apply form. Toggle any lender on or off.
         </p>
       </header>
 

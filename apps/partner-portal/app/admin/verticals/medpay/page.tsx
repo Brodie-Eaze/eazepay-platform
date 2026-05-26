@@ -87,8 +87,8 @@ export default function MedpayVerticalConfigPage(): JSX.Element {
           { label: 'Verticals', href: '/admin' },
           { label: 'MedPay' },
         ]}
-        title="MedPay configuration"
-        description="What MedPay is, in one screen. The demo's step 2 — lenders see we have a real, operating vertical with its own lender allowlist, routing policy, and economics."
+        title="MedPay settings"
+        description="What MedPay is, in one screen. Lenders see this when we walk them through the platform."
         meta={
           <StatusPill tone="accent" dot>
             VERTICAL · MEDPAY

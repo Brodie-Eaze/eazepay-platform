@@ -256,9 +256,9 @@ export default function ControlPanelPage() {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Master' }, { label: 'Control Panel' }]}
-        title="Control Panel"
-        description="Full partner management — profiles, applications, payouts, users, and lender access"
+        breadcrumbs={[{ label: 'Partners' }]}
+        title="Partners"
+        description="Every partner on the platform. Profiles, applications, payouts, users, and lender access."
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <LiveIndicator pulseKey={sortSeed} />

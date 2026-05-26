@@ -132,8 +132,8 @@ export default function AdminIndexPage(): JSX.Element {
   return (
     <>
       <PageHeader
-        breadcrumbs={[{ label: 'Admin' }, { label: 'Control Plane' }]}
-        title="Control plane"
+        breadcrumbs={[{ label: 'Admin' }]}
+        title="Admin"
         description="Every operational surface on the platform. The MedPay vertical config + lender marketplace + provisioning queue tiles are the demo walk path. Audit log + observability are how we prove compliance and operational discipline to lenders during NDA review."
         actions={
           <div className="flex items-center gap-2 flex-wrap">

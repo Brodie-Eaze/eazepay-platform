@@ -167,8 +167,8 @@ export default function ProvisioningQueuePage(): JSX.Element {
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Provisioning' }]}
-        title="Provisioning queue"
-        description="Every partner being walked through HighSale → Marketplace → MiCamp → Portal seed. Updates every 3 seconds. Click into a run for the per-step result payload."
+        title="New merchant onboarding"
+        description="Every partner being walked through HighSale → Lender Marketplace → MiCamp. Status updates live."
         actions={
           <div className="flex items-center gap-2">
             <LiveIndicator pulseKey={lastSuccessAt ?? 0} />
@@ -192,6 +192,7 @@ export default function ProvisioningQueuePage(): JSX.Element {
           <Link
             href="?status=queued"
             aria-label={`Queued: ${counts.queued} runs. Filter list.`}
+            title="Onboarding runs waiting to start"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Queued" value={counts.queued} icon={<QueueIcon size={14} />} />
@@ -199,6 +200,7 @@ export default function ProvisioningQueuePage(): JSX.Element {
           <Link
             href="?status=running"
             aria-label={`Running: ${counts.running} runs. Filter list.`}
+            title="Onboarding runs currently provisioning (HighSale, Marketplace, MiCamp)"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Running" value={counts.running} />
@@ -206,6 +208,7 @@ export default function ProvisioningQueuePage(): JSX.Element {
           <Link
             href="?status=completed"
             aria-label={`Completed: ${counts.completed} runs. Filter list.`}
+            title="Onboarding runs that finished successfully end-to-end"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Completed" value={counts.completed} />
@@ -213,6 +216,7 @@ export default function ProvisioningQueuePage(): JSX.Element {
           <Link
             href="?status=failed"
             aria-label={`Failed: ${counts.failed} runs. Filter list.`}
+            title="Onboarding runs that errored — click to see which step broke"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Failed" value={counts.failed} />
