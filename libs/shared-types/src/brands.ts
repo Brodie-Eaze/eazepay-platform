@@ -1,4 +1,10 @@
 /**
+ * @deprecated for lifecycle/status concerns — use `./taxonomy.ts`.
+ * This file remains the source of truth for brand presentation metadata
+ * (full names, taglines, accent colors, envelopes) only. Builders Q + R
+ * will migrate remaining lifecycle consumers off the duplicate
+ * definitions in `apps/partner-portal/lib/master-data.ts`.
+ *
  * EazePay product brands.
  *
  * Each brand is a distinct consumer-facing surface (logo + landing +
