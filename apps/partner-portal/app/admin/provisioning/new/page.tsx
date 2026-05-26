@@ -123,7 +123,11 @@ export default function NewProvisionRunPage(): JSX.Element {
       const run = (await res.json()) as { id: string };
       router.push(`/admin/provisioning/${run.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Provisioning failed');
+      setError(
+        err instanceof Error
+          ? `Couldn't start onboarding: ${err.message}. Check the required fields and try again.`
+          : "Couldn't start onboarding. Check the required fields and try again.",
+      );
       setSubmitting(false);
     }
   }
@@ -136,8 +140,8 @@ export default function NewProvisionRunPage(): JSX.Element {
           { label: 'Provisioning', href: '/admin/provisioning' },
           { label: 'New run' },
         ]}
-        title="New provisioning run"
-        description="Submitting this form auto-provisions HighSale (sub-account) → Lender Marketplace defaults → MiCamp (MID pre-underwriting) → Partner-portal seed in a single sequence."
+        title="Onboard a new merchant"
+        description="One configuration form auto-provisions everything — HighSale sub-account, lender marketplace, and MiCamp MID. Active in their first week."
       />
       <PageBody>
         <form onSubmit={submit} className="grid gap-5 max-w-5xl" aria-busy={submitting}>
@@ -170,6 +174,7 @@ export default function NewProvisionRunPage(): JSX.Element {
                   value={form.ein}
                   onChange={(e) => patch('ein', e.target.value)}
                   placeholder="12-3456789"
+                  hint="9-digit Employer ID. Format: XX-XXXXXXX. We use this to file 1099-NEC."
                   required
                 />
               </div>
@@ -237,6 +242,7 @@ export default function NewProvisionRunPage(): JSX.Element {
                   min={0}
                   value={form.monthlyPullCap}
                   onChange={(e) => patch('monthlyPullCap', e.target.value)}
+                  hint="Soft limit per sub-account. Protects you from runaway pre-qual costs."
                 />
                 <Select
                   label="Billing cadence"
@@ -282,6 +288,7 @@ export default function NewProvisionRunPage(): JSX.Element {
                   value={form.mccCode}
                   onChange={(e) => patch('mccCode', e.target.value)}
                   maxLength={4}
+                  hint="4-digit Merchant Category Code. 8099 = medical, 1731 = electrical."
                   required
                 />
               </div>
@@ -300,7 +307,11 @@ export default function NewProvisionRunPage(): JSX.Element {
           </Card>
 
           {error && (
-            <Banner intent="danger" title="Provisioning failed" onDismiss={() => setError(null)}>
+            <Banner
+              intent="danger"
+              title="Couldn't onboard this merchant"
+              onDismiss={() => setError(null)}
+            >
               {error}
             </Banner>
           )}

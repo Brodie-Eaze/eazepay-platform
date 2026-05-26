@@ -57,7 +57,7 @@ export default function LenderDetailPage({ params }: { params: { id: string } })
           { label: lender.displayName },
         ]}
         title={lender.displayName}
-        description={lender.legalName}
+        description="Their integration health, our commercial terms, the partners who see them."
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <StatusPill tone={health.tone} dot>

@@ -106,7 +106,10 @@ export default function SloBoardPage(): JSX.Element {
           credentials: 'same-origin',
         });
         if (!res.ok) {
-          if (!cancelled) setError(`SLO board request failed: ${res.status}`);
+          if (!cancelled)
+            setError(
+              `Couldn't load the SLO board (HTTP ${res.status}). We'll keep retrying — refresh if it doesn't recover.`,
+            );
           return;
         }
         const json = (await res.json()) as BoardResponse;
@@ -117,7 +120,11 @@ export default function SloBoardPage(): JSX.Element {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Network error');
+          setError(
+            err instanceof Error
+              ? `Lost connection while loading SLOs (${err.message}). We'll keep trying.`
+              : "Lost connection while loading SLOs. We'll keep trying.",
+          );
         }
       }
     }
@@ -159,8 +166,8 @@ export default function SloBoardPage(): JSX.Element {
           { label: 'Observability', href: '/admin/observability' },
           { label: 'SLO' },
         ]}
-        title="Service Level Objectives"
-        description={`Targets the platform commits to. Each card shows target, observed failure rate, remaining error budget, and runbook link. Polled every ${POLL_INTERVAL_MS / 1000}s.`}
+        title="Service health targets"
+        description="Where we promise to be, where we actually are."
         actions={
           <div className="flex items-center gap-2">
             <LiveIndicator pulseKey={lastSuccessAt ?? 0} />

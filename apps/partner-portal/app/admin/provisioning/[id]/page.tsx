@@ -80,7 +80,9 @@ export default function ProvisioningRunPage(): JSX.Element {
       try {
         const res = await fetch(`/api/onboarding/provision/${id}`, { cache: 'no-store' });
         if (!res.ok) {
-          setError(`Run ${id} not found`);
+          setError(
+            `We couldn't find onboarding run ${id}. It may have been archived — check the list.`,
+          );
           return;
         }
         const data = (await res.json()) as ProvisionRun;
@@ -114,10 +116,10 @@ export default function ProvisioningRunPage(): JSX.Element {
             { label: 'Provisioning', href: '/admin/provisioning' },
             { label: id ?? 'Run' },
           ]}
-          title="Run not found"
+          title="Onboarding run not found"
         />
         <PageBody>
-          <Banner intent="danger" title="Provisioning run not found">
+          <Banner intent="danger" title="Onboarding run not found">
             {error}
           </Banner>
         </PageBody>
@@ -134,7 +136,7 @@ export default function ProvisioningRunPage(): JSX.Element {
             { label: 'Provisioning', href: '/admin/provisioning' },
             { label: id ?? '…' },
           ]}
-          title="Loading run…"
+          title="Loading onboarding run…"
         />
         <PageBody>
           <div
@@ -157,8 +159,8 @@ export default function ProvisioningRunPage(): JSX.Element {
           { label: 'Provisioning', href: '/admin/provisioning' },
           { label: run.id },
         ]}
-        title={run.id}
-        description={`Partner ${run.partnerId} · Brand ${run.brand}`}
+        title={`Onboarding · ${run.partnerId}`}
+        description={`Step-by-step view of ${run.partnerId}'s onboarding.`}
         meta={
           <>
             <StatusPill tone={STATUS_TONE[run.status]} dot>

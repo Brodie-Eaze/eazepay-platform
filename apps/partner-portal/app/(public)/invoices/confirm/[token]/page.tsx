@@ -120,7 +120,7 @@ export default function InvoiceConfirmPage() {
   if (loading)
     return (
       <PublicShell>
-        <p>Loading…</p>
+        <p>Pulling up your invoice…</p>
       </PublicShell>
     );
 

@@ -217,7 +217,7 @@ export default function MerchantBillingPage() {
                                   variant="ghost"
                                   onClick={() => openConfirm(i.invoiceNo)}
                                 >
-                                  Confirm
+                                  Confirm charge
                                 </Button>
                               )}
                               <Button

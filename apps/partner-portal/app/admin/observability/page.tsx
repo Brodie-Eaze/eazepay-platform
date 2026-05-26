@@ -108,7 +108,10 @@ export default function ObservabilityPage(): JSX.Element {
           credentials: 'same-origin',
         });
         if (!res.ok) {
-          if (!cancelled) setError(`Snapshot request failed: ${res.status}`);
+          if (!cancelled)
+            setError(
+              `Couldn't load the health snapshot (HTTP ${res.status}). We'll keep retrying — refresh if it doesn't recover.`,
+            );
           return;
         }
         const json = (await res.json()) as Snapshot;
@@ -119,7 +122,11 @@ export default function ObservabilityPage(): JSX.Element {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Network error');
+          setError(
+            err instanceof Error
+              ? `Lost connection while loading health (${err.message}). We'll keep trying.`
+              : "Lost connection while loading health. We'll keep trying.",
+          );
         }
       }
     }
@@ -145,8 +152,8 @@ export default function ObservabilityPage(): JSX.Element {
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Observability' }]}
-        title="Operational health"
-        description={`Live counters + queue depth, polled every ${POLL_INTERVAL_MS / 1000}s. Per-lender drill-in via the marketplace registry.`}
+        title="Platform health"
+        description="Live across services and lenders. Click any tile to drill in."
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <LiveIndicator pulseKey={pulseKey} />
@@ -183,6 +190,7 @@ export default function ObservabilityPage(): JSX.Element {
           <KpiTileLink
             href={`/applications?range=24h${rangeQs}`}
             ariaLabel="Open applications submitted in the last 24 hours"
+            tooltip="Total applications received in the last 24 hours"
           >
             <KpiCard
               icon={<ChartIcon size={14} />}
@@ -191,7 +199,11 @@ export default function ObservabilityPage(): JSX.Element {
               hint="since process start (resets on deploy)"
             />
           </KpiTileLink>
-          <KpiTileLink href="/admin/observability/slo" ariaLabel="Open decision-latency SLO board">
+          <KpiTileLink
+            href="/admin/observability/slo"
+            ariaLabel="Open decision-latency SLO board"
+            tooltip="Decision-engine evaluations across internal, Trutopia, and fallback strategies"
+          >
             <KpiCard
               icon={<GaugeIcon size={14} />}
               label="Decisions computed"
@@ -202,6 +214,7 @@ export default function ObservabilityPage(): JSX.Element {
           <KpiTileLink
             href="/admin/audit?action=webhook"
             ariaLabel="Open audit log filtered to webhook events"
+            tooltip="Inbound webhooks queued for processing — duplicates and rejections tracked separately"
           >
             <KpiCard
               icon={<WebhookIcon size={14} />}
@@ -210,7 +223,11 @@ export default function ObservabilityPage(): JSX.Element {
               hint={`dup ${m['webhook.duplicate'] ?? 0} · rejected ${webhookRejected}`}
             />
           </KpiTileLink>
-          <KpiTileLink href="/lender-marketplace" ariaLabel="Open lender marketplace">
+          <KpiTileLink
+            href="/lender-marketplace"
+            ariaLabel="Open lender marketplace"
+            tooltip="Lenders currently passing health checks vs. total registered"
+          >
             <KpiCard
               icon={<HeartPulseIcon size={14} />}
               label="Lenders healthy"
@@ -332,16 +349,19 @@ export default function ObservabilityPage(): JSX.Element {
 function KpiTileLink({
   href,
   ariaLabel,
+  tooltip,
   children,
 }: {
   href: string;
   ariaLabel: string;
+  tooltip?: string;
   children: React.ReactNode;
 }): JSX.Element {
   return (
     <Link
       href={href}
       aria-label={ariaLabel}
+      title={tooltip}
       className="block rounded-lg transition-colors hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
     >
       {children}

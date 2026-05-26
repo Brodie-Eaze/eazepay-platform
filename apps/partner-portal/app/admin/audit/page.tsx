@@ -105,8 +105,8 @@ export default function AuditLogPage(): JSX.Element {
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Audit log' }]}
-        title="Platform actions"
-        description="Every admin action across the platform — search by actor, action, or target type."
+        title="Activity log"
+        description="Every admin action across the platform, in one place. Search by who, what, or when."
         meta={
           <StatusPill tone={source === 'db' ? 'success' : 'neutral'} dot>
             source: {source}

@@ -172,8 +172,8 @@ export default function AiFundingMigrationPage(): JSX.Element {
     <>
       <PageHeader
         breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'AI Funding migrations' }]}
-        title="AI Funding → MedPay"
-        description="Walk every customer closed during May–June onto the MedPay infrastructure (HighSale + Lender Marketplace + MiCamp). Per-customer retries and rollback live in each row."
+        title="Migrate customers to MedPay"
+        description="The July 1 cutover. Walk every AI Funding customer onto the MedPay infrastructure."
         meta={
           <StatusPill tone="warning" dot>
             July 1 cutover · Migration queue
@@ -188,6 +188,7 @@ export default function AiFundingMigrationPage(): JSX.Element {
           <Link
             href="?status=queued"
             aria-label={`Queued: ${counts.queued} migrations. Filter list.`}
+            title="Customers waiting to be migrated from AI Funding onto MedPay"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Queued" value={counts.queued} />
@@ -195,6 +196,7 @@ export default function AiFundingMigrationPage(): JSX.Element {
           <Link
             href="?status=in_progress"
             aria-label={`Migrating: ${counts.in_progress} migrations. Filter list.`}
+            title="Customers currently being walked through the migration steps"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Migrating" value={counts.in_progress} />
@@ -202,6 +204,7 @@ export default function AiFundingMigrationPage(): JSX.Element {
           <Link
             href="?status=completed"
             aria-label={`Completed: ${counts.completed} migrations. Filter list.`}
+            title="Customers fully cut over to MedPay"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Completed" value={counts.completed} />
@@ -209,6 +212,7 @@ export default function AiFundingMigrationPage(): JSX.Element {
           <Link
             href="?status=failed"
             aria-label={`Failed: ${counts.failed} migrations. Filter list.`}
+            title="Customers whose migration errored — open to retry or rollback"
             className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <KpiCard label="Failed" value={counts.failed} />

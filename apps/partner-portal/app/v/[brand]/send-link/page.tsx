@@ -788,7 +788,7 @@ export default function PaymentLinksPage() {
                           })
                         }
                       >
-                        Reset
+                        Clear form
                       </Button>
                       <Button
                         type="submit"
