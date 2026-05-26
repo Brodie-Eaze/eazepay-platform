@@ -201,6 +201,79 @@ const masterGroups: NavGroup[] = [
 ];
 
 /**
+ * Admin (platform-engineering) menu — the third top-level alongside
+ * `masterGroups` and `verticalGroups`. Surfaces the platform-config /
+ * platform-health pages that the ship-ready loop dropped in last week:
+ * vertical config, provisioning queue, AI-funding migrations, the
+ * platform audit log, observability, SLOs, and the lender marketplace
+ * deep-dive.
+ *
+ * Why a third top-level rather than an 8th section appended to
+ * `masterGroups`?
+ *
+ *  1. The master menu already runs 9 sections deep — adding admin items
+ *     to it pushes Account off-screen on a 1080p laptop. Operators
+ *     would lose the muscle memory of "Account is bottom-left".
+ *  2. Admin pages are a different job-to-be-done than the master
+ *     command centre. Master = "run the business this morning"
+ *     (pipeline, partners, invoices). Admin = "tune the platform"
+ *     (provisioning, observability, audit). The context switch is
+ *     real; surfacing it in the sidebar makes the mental model
+ *     visible instead of forcing the operator to URL-type.
+ *  3. The shell already swaps `groups` based on path (master vs
+ *     vertical). Adding a third arm of the same switch is the
+ *     cheapest, most-symmetric extension.
+ *
+ * Trigger: any pathname starting with `/admin` or `/lender-marketplace`
+ * (the lender deep-dive is the one non-/admin page in the admin pack).
+ * Resolved in `Shell()` below.
+ */
+const adminGroups: NavGroup[] = [
+  {
+    label: 'Platform',
+    items: [
+      { href: '/admin', label: 'Control Plane', icon: <SettingsIcon /> },
+      { href: '/admin/observability', label: 'Observability', icon: <GaugeIcon /> },
+      { href: '/admin/observability/slo', label: 'SLO Board', icon: <ChartIcon /> },
+      { href: '/admin/audit', label: 'Audit Log', icon: <DocIcon /> },
+    ],
+  },
+  {
+    label: 'Provisioning',
+    items: [
+      { href: '/admin/provisioning', label: 'Provisioning Queue', icon: <QueueIcon /> },
+      { href: '/admin/provisioning/new', label: 'New Provisioning', icon: <SendIcon /> },
+    ],
+  },
+  {
+    label: 'Verticals',
+    items: [{ href: '/admin/verticals/medpay', label: 'MedPay Config', icon: <HeartPulseIcon /> }],
+  },
+  {
+    label: 'Migrations',
+    items: [
+      {
+        href: '/admin/migrations/ai-funding',
+        label: 'AI Funding Cutover',
+        icon: <BoltIcon />,
+      },
+    ],
+  },
+  {
+    label: 'Lender Network',
+    items: [{ href: '/lender-marketplace', label: 'Marketplace', icon: <BankIcon /> }],
+  },
+  {
+    label: 'Back to Master',
+    items: [{ href: '/', label: 'Command Center', icon: <GaugeIcon /> }],
+  },
+];
+
+const ADMIN_PATH_PREFIXES = ['/admin', '/lender-marketplace'];
+const isAdminPath = (pathname: string): boolean =>
+  ADMIN_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
+
+/**
  * Per-brand partner menu — scoped to a single vertical. A TradePay
  * partner sees only the TradePay submit-application item, never the
  * Med Pay or EAZE Pay variants. The link rendered on the submit page
@@ -528,7 +601,15 @@ export function Shell({ children }: { children: ReactNode }) {
   }
 
   const activeBrand = brandFromPath(pathname);
-  const groups = activeBrand ? verticalGroups(activeBrand) : masterGroups;
+  // Three-way sidebar resolution:
+  //   1. /v/<brand>/*           → verticalGroups(brand)   (per-brand merchant)
+  //   2. /admin/* or /lender-*  → adminGroups             (platform engineering)
+  //   3. everything else        → masterGroups            (operator command centre)
+  // Admin only resolves when there's no activeBrand — a brand portal
+  // never reveals the admin shell, even if a URL collision tried to
+  // sneak through.
+  const inAdmin = !activeBrand && isAdminPath(pathname);
+  const groups = activeBrand ? verticalGroups(activeBrand) : inAdmin ? adminGroups : masterGroups;
   if (activeBrand) assertNoMasterLeaks(groups, BRANDS[activeBrand].slug);
   // Sidebar wordmark + subtitle:
   //   Master view → "EAZE" · "Operating System" (the operating system
@@ -539,10 +620,12 @@ export function Shell({ children }: { children: ReactNode }) {
   //                  bar, so the wordmark stays consistent across
   //                  all three vertical portals)
   const wordmark = activeBrand ? 'Eaze' : 'EAZE';
-  const product = activeBrand ? 'Partner Portal' : 'Operating System';
+  const product = activeBrand ? 'Partner Portal' : inAdmin ? 'Platform Admin' : 'Operating System';
   const envLabel: { label: string; tone: 'live' } = activeBrand
     ? { label: `${BRANDS[activeBrand].name} · Live`, tone: 'live' }
-    : { label: 'Live · Master', tone: 'live' };
+    : inAdmin
+      ? { label: 'Live · Admin', tone: 'live' }
+      : { label: 'Live · Master', tone: 'live' };
 
   return (
     <AppShell

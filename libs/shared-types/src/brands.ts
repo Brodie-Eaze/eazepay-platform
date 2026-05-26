@@ -38,7 +38,9 @@ export const BRANDS: Record<BrandCode, BrandSpec> = {
     verticals: ['Home improvement', 'Solar', 'Roof', 'HVAC', 'Pool & spa', 'Windows', 'Renovation'],
     envelope: { sizeMin: 2_000_00, sizeMax: 100_000_00, termMin: 24, termMax: 144 },
     // Slate primary + warm safety-orange accent — matches the TradePay landing page.
-    accentHex: '#F97316',
+    // Source of truth: apps/partner-portal/lib/brand-theme.ts (BRAND_THEME.tradepay.accentHex).
+    // brand-theme.spec.ts asserts this stays in sync.
+    accentHex: '#D4581A',
     slug: 'tradepay',
   },
   medpay: {
@@ -65,8 +67,10 @@ export const BRANDS: Record<BrandCode, BrandSpec> = {
       'Online courses',
     ],
     envelope: { sizeMin: 500_00, sizeMax: 30_000_00, termMin: 6, termMax: 60 },
-    // Electric indigo (gradient endpoint w/ violet on landing) — matches CoachPay landing.
-    accentHex: '#6366F1',
+    // Violet — matches CoachPay landing + brand-theme.ts.
+    // Source of truth: apps/partner-portal/lib/brand-theme.ts (BRAND_THEME.coachpay.accentHex).
+    // brand-theme.spec.ts asserts this stays in sync.
+    accentHex: '#7C3AED',
     slug: 'coachpay',
   },
   direct: {
