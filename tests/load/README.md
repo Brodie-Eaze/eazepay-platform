@@ -1,14 +1,23 @@
 # Load tests (k6)
 
-Baseline load profile for the EazePay orchestration submit path.
-Currently a single scenario; add new files alongside as the surface
-grows.
+Two generations of profiles live here:
 
-## Specs
+- `*.k6.js` (at this directory root) — iteration 1/2 baseline profiles.
+  Lower targets, used by the CI smoke pipeline.
+- `k6/*.js` (this subdirectory) — iteration 3 production-readiness
+  profiles. Higher targets, run before lender demos / pilot go-live.
 
-- `orchestration.k6.js` — application create + submit cycle. Ramp 1 →
-  100 VUs over 1 minute, hold 100 VUs for 2 minutes, ramp down for 1
-  minute. ~4 minutes wall-clock per run.
+## Iteration 3 profiles (`tests/load/k6/`)
+
+| Script                  | Profile                                 | SLO covered                            |
+| ----------------------- | --------------------------------------- | -------------------------------------- |
+| `k6/applications.js`    | 1500 VUs × 10 min · 3× peak             | Consumer apply availability + latency  |
+| `k6/decision-engine.js` | 500 RPS × 3 min                         | Decision engine latency p95            |
+| `k6/webhook-inbox.js`   | 100 events/sec × 3 min                  | Webhook ingestion availability         |
+| `k6/auth-guard.js`      | 200 RPS × 2 min, mostly-401 enumeration | Admin/partner guard latency under load |
+
+Each script declares its own `thresholds`; the run exits non-zero on any
+breach so CI can fail the build cleanly.
 
 ## Prerequisites
 
@@ -18,80 +27,101 @@ k6 is a single-binary CLI, not an npm package. Install once:
 # macOS
 brew install k6
 
-# Debian/Ubuntu
-sudo apt-get install k6
+# Debian / Ubuntu
+sudo gpg -k && sudo gpg --no-default-keyring \
+    --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+    --keyserver hkp://keyserver.ubuntu.com:80 \
+    --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+    | sudo tee /etc/apt/sources.list.d/k6.list
+sudo apt-get update && sudo apt-get install k6
 
 # Verify
 k6 version  # should report v0.50+
 ```
 
-The k6 binary is intentionally not pinned in `package.json` — that
-would couple every dev install to a Go runtime download.
+The k6 binary is intentionally not in `package.json` — that would couple
+every dev install to a Go runtime download.
 
 ## Running
 
 ```bash
-# Against the deployed production environment (read-only, hits the
-# partner-portal BFF /api/v1 surface which is mock-backed).
-k6 run tests/load/orchestration.k6.js \
-    --env BASE_URL=https://eazepay-platform-production.up.railway.app
+# Local dev server.
+BASE_URL=http://localhost:3000 k6 run tests/load/k6/applications.js
 
-# Against local partner-portal dev server (port 3001 to match the
-# Playwright config; the partner-portal package defaults to 3004 —
-# override `next dev -p 3001` to align).
-k6 run tests/load/orchestration.k6.js \
-    --env BASE_URL=http://localhost:3001
+# Staging.
+k6 run tests/load/k6/applications.js \
+    --env BASE_URL=https://staging.eazepay.com
+
+# Decision-engine requires a session — pass a signed demo cookie:
+k6 run tests/load/k6/decision-engine.js \
+    --env BASE_URL=https://staging.eazepay.com \
+    --env SESSION_COOKIE='eazepay_demo=<signed-master-cookie>'
+
+# Webhook inbox — strict-HMAC staging:
+k6 run tests/load/k6/webhook-inbox.js \
+    --env BASE_URL=https://staging.eazepay.com \
+    --env WEBHOOK_SECRET=$WEBHOOK_HMAC_SECRET
 ```
 
-## What to watch in the output
-
-k6 prints a single-screen summary when the run completes. The
-following lines are the gate:
-
-| Metric                                 | Pass target          | Notes                                              |
-| -------------------------------------- | -------------------- | -------------------------------------------------- |
-| `http_req_duration` ............ p95   | < 500 ms             | Across all steps.                                  |
-| `http_req_duration` ............ p99   | < 1 500 ms           | Tail; spikes here surface GC + warmup issues.      |
-| `http_req_failed` .............. rate  | < 1 %                | Counts 4xx + 5xx + transport.                      |
-| `http_req_duration{step:create}` p95   | < 500 ms             | Application create.                                |
-| `http_req_duration{step:submit}` p95   | < 500 ms             | Orchestration submit.                              |
-| `iterations` ................... total | ≥ ~12 000 over 4 min | Sanity vs. 100 VU × ~1.5 req/s × ~150 s sustained. |
-
-Thresholds are encoded in `options.thresholds` inside the script;
-breaching any of them causes k6 to exit non-zero so CI can fail the
-build cleanly.
-
-## Local sanity check
-
-For a quick smoke test before committing changes to the script,
-truncate the profile to 30 seconds total:
+Syntax-check a script without running it:
 
 ```bash
-k6 run tests/load/orchestration.k6.js \
-    --env BASE_URL=http://localhost:3001 \
-    --vus 10 \
-    --duration 30s
+k6 inspect tests/load/k6/applications.js
 ```
 
-`--vus`/`--duration` flags override the stage profile, so this skips
-the ramp shape but still exercises the request shapes and thresholds.
+## What pass / fail looks like
+
+A passing run ends with green tick boxes against every threshold:
+
+```
+running (10m02.5s), 0000/1500 VUs, 412 891 complete and 0 interrupted iterations
+default ✓ [======================================] 1500 VUs  10m0s
+
+     ✓ checks.........................: 99.87%  ✓ 412355  ✗ 536
+     ✓ http_req_duration..............: avg=287ms p(95)=1.18s  p(99)=2.41s
+     ✓ http_req_failed................: 0.13%   ✓ 536     ✓ 412355
+```
+
+A failing run prints `✗` on the threshold that breached and exits 1:
+
+```
+     ✗ http_req_duration..............: p(95)=2.41s   <  expected p(95)<1500ms
+                                        p(99)=4.92s   <  expected p(99)<3000ms
+
+ERRO[0602] thresholds on metrics 'http_req_duration' have been crossed
+```
+
+When a run fails:
+
+1. Open the `thresholds` block in the script — those are the gates.
+2. Tag-segmented thresholds (e.g. `http_req_duration{step:prequal}`)
+   tell you which step regressed.
+3. Cross-reference with `/admin/observability` and the metrics emitted
+   during the run window. If `webhook.rejected` ticked up during a
+   webhook-inbox run, the signature check is the regression.
+
+## Test environment notes
+
+Real load runs need a dedicated environment that won't trip rate
+limits on shared dev infra and an out-of-band metrics sink (k6 Cloud,
+Grafana Cloud, InfluxDB) so the trend over releases is visible. The
+default `BASE_URL=http://localhost:3000` is for local syntax + sanity
+checks; the gates are calibrated for staging.
 
 ## Wiring into CI
 
-This suite is intentionally NOT in the default test pipeline. Real
-load runs need:
+The iteration-3 profiles are NOT in the default test pipeline. They're
+intended for:
 
-- A dedicated environment that won't trip rate limits on shared dev
-  infra.
-- An out-of-band metrics sink (k6 cloud, InfluxDB + Grafana, etc.)
-  so the trend over releases is visible.
-- A scheduled trigger — load isn't a per-PR signal; nightly /
-  pre-release is the sweet spot.
+- Pre-lender-demo smoke runs (manual trigger before each demo)
+- Nightly staging runs once we wire a Grafana sink
+- The pilot go-live launch checklist (see `docs/launch-checklist.md`)
 
 When that lands, add a workflow that runs:
 
 ```bash
-k6 run --out cloud tests/load/orchestration.k6.js \
+k6 run --out cloud tests/load/k6/applications.js \
     --env BASE_URL=$STAGING_URL
 ```
 
