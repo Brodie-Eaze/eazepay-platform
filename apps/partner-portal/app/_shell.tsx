@@ -14,8 +14,6 @@ import {
   ChartIcon,
   PackageIcon,
   DollarIcon,
-  KeyIcon,
-  WebhookIcon,
   BoltIcon,
   DocIcon,
   SettingsIcon,
@@ -25,15 +23,12 @@ import {
   BankIcon,
   SparkIcon,
   RouteIcon,
-  FlagIcon,
   ArrowRightIcon,
   LinkIcon,
-  AlertIcon,
   GaugeIcon,
   SendIcon,
   HeartPulseIcon,
   PhoneIcon,
-  CrownIcon,
   CardIcon,
   StoreIcon,
   RobotIcon,
@@ -55,6 +50,7 @@ import { LiveActivityStrip } from '../components/LiveActivityStrip';
 import { NotificationBell } from '../components/NotificationBell';
 import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
 import { marketplaceLenders } from '../lib/marketplace-data';
+import { MoreMenu } from '../components/MoreMenu';
 
 /**
  * Map a per-brand portal to the notification recipient key — the
@@ -84,121 +80,51 @@ const NextLink = ({
 );
 
 /**
- * Master Command Centre menu — restructured into clear sections so an
- * operator never has to scan a 24-item flat list. Each group answers a
- * specific job-to-be-done:
+ * Master Command Centre menu — Sprint I IA rationalization. Collapsed
+ * 9 groups / 24 items into 3 groups / 11 items. Full rationale in
+ * docs/ia-rationalization.md.
  *
- *   COMMAND CENTRE — overview + executive control
- *   PIPELINE       — day-to-day operational queue
- *   LENDER INTEGRATIONS — registry, per-partner access, routing, events
- *   SUBMIT APPLICATION  — the three brand application forms
- *   PRODUCTS       — the configurable product surfaces partners adopt
- *   SERVICES       — agency-style services (marketing / sales / affiliate)
- *   DEVELOPER      — docs, sandbox, API keys
- *   ACCOUNT        — AI assistant + settings
+ *   WORK     — operator's daily queue (commands, applications, billing)
+ *   NETWORK  — relationships (partners, lenders, products)
+ *   TOOLS    — set-it-and-forget surfaces (AI, dev, settings)
  *
- * Lender Integrations is the section explicitly carved out — every
- * lender-orchestration knob lives here so it's findable from the menu
- * rather than buried inside "Integrations" with non-lender tools.
+ * Killed: AMALA Foundation (different company), EAZE Affiliate /
+ * Marketing Consult / Sales Recruitment (placeholders, not platform
+ * features). Moved to the topbar "More" menu: Control Panel,
+ * Marketplace, Sandbox, API Keys, Documentation, Admin shortcuts.
+ *
+ * Submit-Application duplication: the three per-brand submit links are
+ * now reached via /applications/new (brand-selector page).
+ *
+ * Lender Network + Partner Access merge: a single "Lender Access" item
+ * targets /lender-marketplace; the per-partner override grid lives
+ * inside that surface as a tab.
  */
 const masterGroups: NavGroup[] = [
   {
-    label: 'Command Centre',
+    label: 'Work',
     items: [
       { href: '/', label: 'Command Center', icon: <GaugeIcon /> },
-      { href: '/control-panel', label: 'Control Panel', icon: <SettingsIcon /> },
+      { href: '/applications', label: 'Applications', icon: <DocIcon /> },
+      { href: '/onboarding-pipeline', label: 'Pipeline', icon: <SendIcon /> },
+      { href: '/invoices', label: 'Billing', icon: <DollarIcon /> },
       { href: '/reports', label: 'Reports', icon: <ChartIcon /> },
       { href: '/insights', label: 'Insights', icon: <SparkIcon /> },
     ],
   },
   {
-    // "Partners" is the front-of-house section for every partner-facing
-    // operation: their initial onboarding (the pipeline) and the live
-    // directory of approved partners. Merchant Approvals previously
-    // lived as a separate menu — it duplicated the pipeline's approve
-    // step, so it now lives inside Business Onboarding itself.
-    label: 'Partners',
+    label: 'Network',
     items: [
-      { href: '/onboarding-pipeline', label: 'Business Onboarding', icon: <SendIcon /> },
-      { href: '/partners', label: 'Partner Directory', icon: <UsersIcon /> },
+      { href: '/partners', label: 'Partners', icon: <UsersIcon /> },
+      { href: '/lender-marketplace', label: 'Lender Access', icon: <BankIcon /> },
+      { href: '/products', label: 'Products', icon: <PackageIcon /> },
     ],
   },
   {
-    // Pipeline now carries Billing only — the platform invoices merchants
-    // for the platform-fee % on funded volume (varies by vertical). The
-    // /invoices workspace is a 3-tab Monthly/Collections/Automation page.
-    // /payouts deep-links here so old bookmarks still resolve.
-    //
-    // 2026-05 reorder: "All Applications" moved into the Submit
-    // Application group so the application surfaces (submit + queue)
-    // are visually adjacent. /applications still works at its direct
-    // URL for anyone with the deep link.
-    label: 'Pipeline',
-    items: [{ href: '/invoices', label: 'Billing', icon: <DollarIcon /> }],
-  },
-  {
-    // Lender Network is intentionally two items:
-    //   - "Lender Network" is the catalog (was Marketplaces + Lender Panel —
-    //     consolidated because they were two views of the same data).
-    //   - "Partner Access" is the override grid: which lenders does each
-    //     partner actually see, with reset-to-default + toggle controls.
-    // Operations chrome (routing queues, DLQ, webhooks, lender events) lives
-    // at its own routes and isn't surfaced here.
-    label: 'Lender Network',
-    items: [
-      { href: '/lender-marketplace', label: 'Lender Network', icon: <BankIcon /> },
-      { href: '/lender-marketplace/access', label: 'Partner Access', icon: <KeyIcon /> },
-    ],
-  },
-  {
-    // 2026-05 reorder: "All Applications" lives at the top of this
-    // group now, alongside the per-brand application links. Keeps the
-    // "show me apps / submit an app" surface visually together.
-    label: 'Submit Application',
-    items: [
-      { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
-      { href: '/submit/coach-pay', label: 'CoachPay Application', icon: <SendIcon /> },
-      { href: '/submit/med-pay', label: 'MedPay Application', icon: <HeartPulseIcon /> },
-      { href: '/submit/trade-pay', label: 'TradePay Application', icon: <BankIcon /> },
-    ],
-  },
-  {
-    label: 'Products',
-    items: [
-      { href: '/coach-pay', label: 'CoachPay', icon: <CrownIcon /> },
-      { href: '/trade-pay', label: 'TradePay', icon: <BankIcon /> },
-      { href: '/eaze-med-pay', label: 'MedPay', icon: <HeartPulseIcon /> },
-      { href: '/eaze-processing', label: 'EAZE Processing', icon: <CardIcon /> },
-      { href: '/dialerpay', label: 'DialerPay', icon: <PhoneIcon /> },
-      { href: '/ez-check', label: 'EZ Check', icon: <ShieldIcon /> },
-    ],
-  },
-  {
-    label: 'Services',
-    items: [
-      { href: '/eaze-affiliate', label: 'EAZE Affiliate', icon: <SparkIcon /> },
-      { href: '/marketing-consult', label: 'Marketing Consult', icon: <BoltIcon /> },
-      { href: '/sales-recruitment', label: 'Sales Recruitment', icon: <UsersIcon /> },
-      { href: '/marketplace', label: 'Marketplace', icon: <StoreIcon /> },
-      {
-        href: 'https://amalafoundation.org/',
-        label: 'AMALA Foundation',
-        icon: <ArrowRightIcon size={14} />,
-      },
-    ],
-  },
-  {
-    label: 'Developer',
-    items: [
-      { href: '/docs', label: 'Documentation', icon: <DocIcon /> },
-      { href: '/sandbox', label: 'Sandbox', icon: <FlagIcon /> },
-      { href: '/api-keys', label: 'API Keys', icon: <KeyIcon /> },
-    ],
-  },
-  {
-    label: 'Account',
+    label: 'Tools',
     items: [
       { href: '/eaze-ai', label: 'EAZE AI', icon: <RobotIcon /> },
+      { href: '/docs', label: 'Developer', icon: <DocIcon /> },
       { href: '/settings', label: 'Settings', icon: <SettingsIcon /> },
     ],
   },
@@ -352,36 +278,20 @@ const verticalGroups = (brand: BrandCode): NavGroup[] => {
       ],
     },
     {
-      // Services — every link is scoped under /v/<brand>/services/ so
-      // a partner can never leak back into the master operator's URL
-      // space. The per-brand routes render the same shared marketing
-      // content as the master pages, but the URL, breadcrumbs, and
-      // sidebar stay inside the brand portal.
-      label: 'Services',
-      items: [
-        {
-          href: `${base}/services/eaze-affiliate`,
-          label: 'Eaze Affiliate',
-          icon: <SparkIcon />,
-        },
-        {
-          href: `${base}/services/marketing-consult`,
-          label: 'Marketing Consult',
-          icon: <BoltIcon />,
-        },
-        {
-          href: `${base}/services/sales-recruitment`,
-          label: 'Sales Recruitment',
-          icon: <UsersIcon />,
-        },
-        { href: `${base}/services/marketplace`, label: 'Marketplace', icon: <StoreIcon /> },
-      ],
-    },
-    {
-      // API keys are master-operator concerns — not exposed in the merchant-scoped
-      // portal. Master operators access keys at /api-keys.
+      // Sprint I IA cleanup: per-brand "Services" group was a
+      // junk-drawer mirror of the master Services group. Three of the
+      // four items (Eaze Affiliate, Marketing Consult, Sales
+      // Recruitment) were placeholder pages — killed. Marketplace
+      // moves into Account as a single low-frequency tool. Routes at
+      // /v/<brand>/services/* are preserved so deep links still
+      // resolve.
+      //
+      // API keys are master-operator concerns — not exposed in the
+      // merchant-scoped portal. Master operators access keys at
+      // /api-keys.
       label: 'Account',
       items: [
+        { href: `${base}/services/marketplace`, label: 'Marketplace', icon: <StoreIcon /> },
         { href: `${base}/team`, label: 'Team & Roles', icon: <UsersIcon /> },
         { href: `${base}/settings`, label: 'Settings', icon: <SettingsIcon /> },
       ],
@@ -719,6 +629,11 @@ export function Shell({ children }: { children: ReactNode }) {
             <NotificationBell
               recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
             />
+            {/* More menu — escape hatch for items removed from the
+              sidebar during Sprint I's IA cleanup (Control Panel,
+              Marketplace, Sandbox, API Keys, Admin shortcuts). Master
+              surface only; hidden inside per-brand portals. */}
+            {!activeBrand && <MoreMenu />}
             <Button size="sm" variant="ghost">
               Help
             </Button>
