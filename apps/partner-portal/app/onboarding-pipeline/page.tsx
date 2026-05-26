@@ -20,6 +20,8 @@ import {
   CopyIcon,
   XIcon,
   Skeleton,
+  Filter,
+  type FilterOption,
 } from '@eazepay/ui/web';
 import { Modal, ErrorBanner, EmptyDataState } from '../../components/a11y';
 import { BRANDS } from '@eazepay/shared-types';
@@ -263,45 +265,46 @@ export default function OnboardingPipelinePage() {
           prefilled. On submit, the application is stamped with your invite token and shows up here.
         </Banner>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap items-center gap-1 mb-3 -mx-1">
-          <div
-            role="tablist"
-            aria-label="Pipeline filters"
-            className="flex flex-wrap items-center gap-1"
+        {/* Pipeline filter (status) — canonical <Filter variant="tabs">.
+            "Your invites" is a separate view-mode toggle and lives beside
+            the status row (it's not a status — it switches the row source). */}
+        <div className="flex flex-wrap items-center gap-2 mb-3 -mx-1">
+          <Filter<OnboardingStatus>
+            variant="tabs"
+            label="Status"
+            value={tab === 'all' || tab === 'my_invites' ? null : (tab as OnboardingStatus)}
+            onChange={(v) => setTab(v === null ? 'all' : v)}
+            allLabel={`All (${counts.all})`}
+            options={
+              TABS.filter((t) => t.id !== 'all' && t.id !== 'my_invites').map((t) => ({
+                value: t.id as OnboardingStatus,
+                label: t.label,
+                count: counts[t.id],
+              })) as FilterOption<OnboardingStatus>[]
+            }
+          />
+          <button
+            type="button"
+            onClick={() => setTab(tab === 'my_invites' ? 'all' : 'my_invites')}
+            aria-pressed={tab === 'my_invites'}
+            className={
+              'min-h-[36px] inline-flex items-center gap-1.5 px-3 rounded-full text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-1 ' +
+              (tab === 'my_invites'
+                ? 'bg-[#0d1530] text-white'
+                : 'text-fg-secondary hover:text-fg hover:bg-bg-muted border border-border')
+            }
           >
-            {TABS.map((t) => {
-              const active = tab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  id={`pipeline-tab-${t.id}`}
-                  aria-selected={active}
-                  aria-controls="pipeline-tabpanel"
-                  tabIndex={active ? 0 : -1}
-                  onClick={() => setTab(t.id)}
-                  className={
-                    'min-h-[36px] inline-flex items-center gap-1.5 px-3 rounded-full text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-1 ' +
-                    (active
-                      ? 'bg-[#0d1530] text-white'
-                      : 'text-fg-secondary hover:text-fg hover:bg-bg-muted')
-                  }
-                >
-                  <span>{t.label}</span>
-                  <span
-                    className={
-                      'text-[10px] tabular-nums ' + (active ? 'text-white/70' : 'text-fg-muted')
-                    }
-                    aria-label={`${counts[t.id]} items`}
-                  >
-                    {counts[t.id]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+            <span>Your invites</span>
+            <span
+              className={
+                'text-[10px] tabular-nums ' +
+                (tab === 'my_invites' ? 'text-white/70' : 'text-fg-muted')
+              }
+              aria-label={`${counts.my_invites} items`}
+            >
+              {counts.my_invites}
+            </span>
+          </button>
           <div className="flex-1" />
           {tab !== 'my_invites' && (
             <label className="flex items-center gap-2 min-h-[36px] rounded-md border border-border bg-bg-elevated px-2.5 w-full sm:w-72 focus-within:border-border-strong focus-within:ring-2 focus-within:ring-border-focus/30">

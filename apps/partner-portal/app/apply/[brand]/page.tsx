@@ -15,6 +15,7 @@ import {
   HomeIcon,
   CrownIcon,
 } from '@eazepay/ui/web';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import {
   marketplaceLenders,
   partnerAccessOverrides,
@@ -90,7 +91,7 @@ const BLANK_INTAKE: Intake = {
 };
 
 const cents = (s: string) => Math.round(parseFloat(s.replace(/[^0-9.]/g, '') || '0') * 100);
-const fmt = (c: number) => `$${(c / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+const fmt = (c: number) => formatCurrencyCents(c);
 
 export default function ApplyLandingPage() {
   const { brand: brandSlug } = useParams<{ brand: string }>();

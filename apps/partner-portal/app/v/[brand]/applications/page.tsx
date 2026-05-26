@@ -13,11 +13,20 @@ import {
   Select,
   DataTable,
   Money,
-  Tabs,
+  Filter,
   type Column,
+  type FilterOption,
   SearchIcon,
 } from '@eazepay/ui/web';
-import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
+import {
+  BRANDS,
+  BRAND_ORDER,
+  APPLICATION_STATUSES,
+  APPLICATION_STATUS_LABEL,
+  type ApplicationStatus,
+  type BrandCode,
+} from '@eazepay/shared-types';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import {
   applicationsForPartner,
   findPartner,
@@ -214,10 +223,16 @@ export default function VerticalApplicationsPage() {
   const seedRows = code
     ? applicationsForPartner(currentPartnerId).filter((a) => a.product === code)
     : [];
-  const rows: ApplicationRow[] = [...submittedForPartner, ...seedRows];
+  // Default sort: newest first by `date`. ISO-8601 date strings sort
+  // lexicographically equivalent to chronological order, so we can
+  // skip a Date parse on every comparison.
+  const rows: ApplicationRow[] = [...submittedForPartner, ...seedRows].sort((a, b) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+  );
 
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState('all');
+  /* `null` = "All" per canonical <Filter>. */
+  const [tab, setTab] = useState<ApplicationStatus | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [onlyMyInvites, setOnlyMyInvites] = useState(false);
 
@@ -295,7 +310,7 @@ export default function VerticalApplicationsPage() {
   }
 
   const filtered = rows.filter((a) => {
-    if (tab !== 'all' && a.status !== tab) return false;
+    if (tab !== null && a.status !== tab) return false;
     if (onlyMyInvites && !myAppIds.has(a.id)) return false;
     if (query) {
       const q = query.toLowerCase();
@@ -355,25 +370,14 @@ export default function VerticalApplicationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [consumerBrandSlug, filtered.map((a) => a.id).join(',')]);
 
-  const tabs = [
-    { key: 'all', label: 'All', count: rows.length },
-    { key: 'funded', label: 'Funded', count: rows.filter((a) => a.status === 'funded').length },
-    {
-      key: 'approved',
-      label: 'Approved',
-      count: rows.filter((a) => a.status === 'approved').length,
-    },
-    {
-      key: 'submitted',
-      label: 'Submitted',
-      count: rows.filter((a) => a.status === 'submitted').length,
-    },
-    {
-      key: 'declined',
-      label: 'Declined',
-      count: rows.filter((a) => a.status === 'declined').length,
-    },
-  ];
+  /* Canonical APPLICATION_STATUSES from @eazepay/shared-types — mirrors the
+   * pgEnum in libs/db/schema.ts. Replaces the prior ad-hoc tab set
+   * (which omitted 'in_review'). */
+  const statusFilterOptions: FilterOption<ApplicationStatus>[] = APPLICATION_STATUSES.map((s) => ({
+    value: s,
+    label: APPLICATION_STATUS_LABEL[s],
+    count: rows.filter((a) => a.status === s).length,
+  }));
 
   const columns: Column<ApplicationRow>[] = [
     {
@@ -466,7 +470,7 @@ export default function VerticalApplicationsPage() {
         meta={
           <>
             <StatusPill tone="accent">{spec.name}</StatusPill>
-            <StatusPill tone="neutral">{rows.length} total</StatusPill>
+            <StatusPill tone="neutral">{pluralize(rows.length, 'application')}</StatusPill>
           </>
         }
       />
@@ -534,7 +538,15 @@ export default function VerticalApplicationsPage() {
           </div>
         </Card>
 
-        <Tabs items={tabs} active={tab} onChange={setTab} className="mb-3" />
+        <Filter<ApplicationStatus>
+          variant="tabs"
+          label="Status"
+          value={tab}
+          onChange={setTab}
+          options={statusFilterOptions}
+          allLabel={`All (${rows.length})`}
+          className="mb-3"
+        />
         <Card>
           <DataTable
             columns={columns}

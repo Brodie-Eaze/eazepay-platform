@@ -122,6 +122,7 @@ interface LiveStatusBody {
   lastUpdatedAt: string;
 }
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import { applications, type ApplicationRow } from '../../../../../lib/master-data';
 import {
   readSubmittedAppsForPartner,
@@ -470,7 +471,7 @@ function buildEvents(app: ApplicationRow, baseStart: number, lenders: WaterfallR
     ev.push({
       ts: t,
       agent: 'FLUX',
-      message: `Funded · $${(app.amountCents / 100).toLocaleString('en-US')} disbursed`,
+      message: `Funded · ${formatCurrencyCents(app.amountCents)} disbursed`,
       ref: `txn_${(hash(app.id + 'txn') % 1_000_000_000).toString(36)} · RTP settled in 4.2s`,
     });
     bump(500, 900);
@@ -1101,7 +1102,7 @@ export default function DealDetailPage() {
                               {offer.apr ? `${offer.apr.toFixed(2)}% APR` : ''}
                               {offer.termMonths ? ` · ${offer.termMonths}mo` : ''}
                               {typeof offer.amount === 'number'
-                                ? ` · $${Math.round(offer.amount / 100).toLocaleString('en-US')}`
+                                ? ` · ${formatCurrencyCents(offer.amount)}`
                                 : ''}
                             </p>
                           )}

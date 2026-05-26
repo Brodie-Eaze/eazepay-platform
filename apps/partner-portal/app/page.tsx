@@ -13,7 +13,7 @@ import {
   TrendDownIcon,
   TrophyIcon,
 } from '@eazepay/ui/web';
-import { formatCurrency } from '../lib/api-client';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import { partners, applications, masterKpis } from '../lib/master-data';
 
 /**
@@ -101,9 +101,7 @@ export default function CommandCenter() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Kpi
             label="Total Funded"
-            value={formatCurrency(masterKpis.totalFundedCents)
-              .replace(/\.\d+/, '')
-              .replace(',000,000', 'M')}
+            value={formatCurrencyCents(masterKpis.totalFundedCents).replace(',000,000', 'M')}
             delta={22}
             icon={<DollarIcon size={14} />}
           />

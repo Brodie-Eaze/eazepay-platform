@@ -6,6 +6,7 @@ import {
   Card,
   CardBody,
   Button,
+  Money,
   InfoIcon,
   DocIcon,
   DollarIcon,
@@ -13,6 +14,7 @@ import {
   RouteIcon,
   ChevronDownIcon,
 } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { currentMonthlyPeriod, stepPeriod, type Period } from '../../lib/billing-period';
 import { previewGenerate, runGenerate, averageActiveFeePct } from '../../lib/billing-generator';
 import { readInvoiceOverrides } from '../../lib/invoicing';
@@ -44,13 +46,6 @@ const TABS: Array<{ id: TabId; label: string; icon: React.ReactNode }> = [
   { id: 'collections', label: 'Collections', icon: <DollarIcon size={14} /> },
   { id: 'automation', label: 'Automation', icon: <SettingsIcon size={14} /> },
 ];
-
-function fmtUsdCompact(cents: number) {
-  const n = Math.round(cents / 100);
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
-  return `$${n.toLocaleString('en-US')}`;
-}
 
 export default function InvoicesPage() {
   const [period, setPeriod] = useState<Period>(() => currentMonthlyPeriod());
@@ -121,7 +116,7 @@ export default function InvoicesPage() {
     bumpVersion();
     setConfirmingGenerate(false);
     flash(
-      `Generated ${result.created.length} draft${result.created.length === 1 ? '' : 's'} · skipped ${result.skipped.alreadyExists} existing, ${result.skipped.paused} paused`,
+      `Generated ${pluralize(result.created.length, 'draft')} · skipped ${result.skipped.alreadyExists} existing, ${result.skipped.paused} paused`,
     );
   };
 
@@ -184,12 +179,17 @@ export default function InvoicesPage() {
                 </div>
                 <div className="flex items-center gap-4 text-[13px]">
                   <span className="text-fg-muted">
-                    Cash: <strong className="text-fg">{fmtUsdCompact(headerStats.cash)}</strong>
+                    Cash:{' '}
+                    <Money cents={headerStats.cash} compact className="font-semibold text-fg" />
                   </span>
                   <span className="text-fg-muted">·</span>
                   <span className="text-fg-muted">
                     Due @ {(headerStats.avgFee * 100).toFixed(1)}%:{' '}
-                    <strong className="text-emerald-700">{fmtUsdCompact(headerStats.due)}</strong>
+                    <Money
+                      cents={headerStats.due}
+                      compact
+                      className="font-semibold text-emerald-700"
+                    />
                   </span>
                   <Button size="sm" onClick={() => setConfirmingGenerate(true)}>
                     <RouteIcon size={12} />
@@ -243,13 +243,12 @@ export default function InvoicesPage() {
               <p className="mt-1 text-[12px] text-fg-muted">{period.label}</p>
               <div className="mt-4 rounded-lg border border-border bg-bg-muted/30 p-3 text-[13px] space-y-1">
                 <p>
-                  Will create <strong>{preview.toCreate}</strong> new draft
-                  {preview.toCreate === 1 ? '' : 's'} totalling{' '}
-                  <strong className="tabular-nums">{fmtUsdCompact(preview.totalFeeCents)}</strong>
+                  Will create <strong>{pluralize(preview.toCreate, 'new draft')}</strong> totalling{' '}
+                  <Money cents={preview.totalFeeCents} compact className="font-semibold" />
                 </p>
                 <p className="text-fg-muted">
-                  Skipping {preview.alreadyExists} already-generated and {preview.paused} paused
-                  merchant{preview.paused === 1 ? '' : 's'}
+                  Skipping {preview.alreadyExists} already-generated and{' '}
+                  {pluralize(preview.paused, 'paused merchant')}
                 </p>
               </div>
               <div className="mt-5 flex items-center justify-end gap-2">
@@ -257,7 +256,7 @@ export default function InvoicesPage() {
                   Cancel
                 </Button>
                 <Button size="sm" onClick={generate} disabled={preview.toCreate === 0}>
-                  Create {preview.toCreate} draft{preview.toCreate === 1 ? '' : 's'}
+                  Create {pluralize(preview.toCreate, 'draft')}
                 </Button>
               </div>
             </div>

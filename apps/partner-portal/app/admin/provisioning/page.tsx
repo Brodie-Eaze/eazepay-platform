@@ -26,16 +26,18 @@ import {
   Button as _Button,
   StatusPill,
   EmptyState,
-  Tabs,
+  Filter,
   ArrowRightIcon,
   QueueIcon,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
+  type FilterOption,
 } from '@eazepay/ui/web';
 import type { ProvisionRun, StepStatus } from '@/lib/orchestrator/provision';
 
-type StatusFilter = 'all' | 'queued' | 'running' | 'completed' | 'failed';
+/* `null` represents the "All" pseudo-filter — see canonical <Filter>. */
+type StatusFilter = ProvisionRun['status'] | null;
 
 /* Locally-typed Button wrapper — matches the pattern in control-panel/page.tsx
  * so strict TS JSX inference picks up `children`. */
@@ -81,7 +83,7 @@ const STEP_LABEL: Record<string, string> = {
 
 export default function ProvisioningQueuePage(): JSX.Element {
   const [runs, setRuns] = useState<ProvisionRun[]>([]);
-  const [filter, setFilter] = useState<StatusFilter>('all');
+  const [filter, setFilter] = useState<StatusFilter>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,7 +110,7 @@ export default function ProvisioningQueuePage(): JSX.Element {
   }, []);
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return runs;
+    if (filter === null) return runs;
     return runs.filter((r) => r.status === filter);
   }, [runs, filter]);
 
@@ -121,6 +123,13 @@ export default function ProvisioningQueuePage(): JSX.Element {
       failed: runs.filter((r) => r.status === 'failed').length,
     };
   }, [runs]);
+
+  const filterOptions: FilterOption<ProvisionRun['status']>[] = [
+    { value: 'queued', label: STATUS_LABEL.queued, count: counts.queued },
+    { value: 'running', label: STATUS_LABEL.running, count: counts.running },
+    { value: 'completed', label: STATUS_LABEL.completed, count: counts.completed },
+    { value: 'failed', label: STATUS_LABEL.failed, count: counts.failed },
+  ];
 
   return (
     <>
@@ -142,17 +151,13 @@ export default function ProvisioningQueuePage(): JSX.Element {
       />
       <PageBody>
         <div className="mb-5">
-          <Tabs
-            label="Filter provisioning runs by status"
-            active={filter}
-            onChange={(k) => setFilter(k as StatusFilter)}
-            items={[
-              { key: 'all', label: 'All', count: counts.all },
-              { key: 'queued', label: 'Queued', count: counts.queued },
-              { key: 'running', label: 'Running', count: counts.running },
-              { key: 'completed', label: 'Completed', count: counts.completed },
-              { key: 'failed', label: 'Failed', count: counts.failed },
-            ]}
+          <Filter<ProvisionRun['status']>
+            variant="tabs"
+            label="Status"
+            value={filter}
+            onChange={setFilter}
+            options={filterOptions}
+            allLabel={`All (${counts.all})`}
           />
         </div>
 

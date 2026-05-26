@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { formatCurrencyCents } from '@eazepay/shared-utils';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import { cn } from './cn';
 
 /**

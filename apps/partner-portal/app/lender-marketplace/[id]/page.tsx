@@ -29,6 +29,9 @@ import {
   ArrowRightIcon,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { formatBps } from '@eazepay/shared-utils/format-bps';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
+import { formatTime } from '@eazepay/shared-utils/format-time';
 import { getLenderDossier, type ApiHealth } from '@/lib/lender-economics';
 import { tierLabel } from '@/lib/marketplace-data';
 
@@ -38,18 +41,6 @@ const HEALTH_TONE: Record<ApiHealth, { label: string; tone: StatusTone }> = {
   down: { label: 'Down', tone: 'danger' },
   unwired: { label: 'Not yet wired', tone: 'neutral' },
 };
-
-function formatCents(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  }).format(cents / 100);
-}
-
-function formatBps(bps: number): string {
-  return `${(bps / 100).toFixed(2)}%`;
-}
 
 export default function LenderDetailPage({ params }: { params: { id: string } }): JSX.Element {
   const dossier = getLenderDossier(params.id);
@@ -90,7 +81,8 @@ export default function LenderDetailPage({ params }: { params: { id: string } })
                 {lender.servesTiers.map((t) => tierLabel[t]).join(' · ')}
               </Row>
               <Row label="Amount envelope">
-                {formatCents(lender.minAmountCents)} – {formatCents(lender.maxAmountCents)}
+                {formatCurrencyCents(lender.minAmountCents)} –{' '}
+                {formatCurrencyCents(lender.maxAmountCents)}
               </Row>
               <Row label="Min FICO">{lender.minScore ?? '—'}</Row>
               <Row label="Permitted states">
@@ -110,7 +102,7 @@ export default function LenderDetailPage({ params }: { params: { id: string } })
                   formatBps(economics.kickbackBps)
                 )}
               </Row>
-              <Row label="Per-loan flat fee">{formatCents(economics.perLoanFeeCents)}</Row>
+              <Row label="Per-loan flat fee">{formatCurrencyCents(economics.perLoanFeeCents)}</Row>
               <Row label="Exclusivity">{economics.exclusivityTerms ?? 'None'}</Row>
               <Row label="Volume bonus">{economics.volumeBonus ?? 'None'}</Row>
             </Section>
@@ -122,7 +114,9 @@ export default function LenderDetailPage({ params }: { params: { id: string } })
                 </StatusPill>
               </Row>
               <Row label="Last sync">
-                {integration.lastSyncAt ? new Date(integration.lastSyncAt).toLocaleString() : '—'}
+                {integration.lastSyncAt
+                  ? formatTime(integration.lastSyncAt, { mode: 'datetime' })
+                  : '—'}
               </Row>
               <Row label="p95 latency">
                 {integration.p95LatencyMs == null ? '—' : `${integration.p95LatencyMs} ms`}
@@ -183,7 +177,7 @@ export default function LenderDetailPage({ params }: { params: { id: string } })
             <Section title="Actions">
               <div className="flex flex-col gap-2">
                 <Button variant="secondary" size="sm">
-                  Pause lender
+                  {lender.globallyEnabled ? 'Pause lender' : 'Resume lender'}
                 </Button>
                 <Button variant="secondary" size="sm">
                   Rotate webhook secret

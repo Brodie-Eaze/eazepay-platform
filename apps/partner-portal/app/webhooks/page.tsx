@@ -15,6 +15,7 @@ import {
   WebhookIcon,
   CheckIcon,
 } from '@eazepay/ui/web';
+import { formatTime } from '@eazepay/shared-utils/format-time';
 import { webhookDeliveries, type WebhookDelivery } from '../../lib/mock-data';
 
 const columns: Column<WebhookDelivery>[] = [
@@ -50,7 +51,7 @@ const columns: Column<WebhookDelivery>[] = [
     align: 'right',
     cell: (d) => (
       <span className="text-[12px] text-fg-muted tabular-nums">
-        {d.deliveredAt ? new Date(d.deliveredAt).toLocaleString('en-US') : '—'}
+        {d.deliveredAt ? formatTime(d.deliveredAt, { mode: 'datetime' }) : '—'}
       </span>
     ),
   },

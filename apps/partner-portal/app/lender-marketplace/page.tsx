@@ -3,7 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader, PageBody, Card, CardBody, Button, BankIcon, XIcon } from '@eazepay/ui/web';
-import { useApi, formatDate, statusBadge } from '../../lib/api-client';
+import { formatTime } from '@eazepay/shared-utils/format-time';
+import { useApi, statusBadge } from '../../lib/api-client';
 import {
   marketplaceLenders as seedLenders,
   type MarketplaceLenderRow,
@@ -346,7 +347,7 @@ export default function LendersPage() {
                       </div>
                       <div className="col-span-2 flex items-center justify-end gap-2">
                         <span className="text-[11px] text-fg-muted">
-                          {formatDate(l.createdAt ?? new Date().toISOString())}
+                          {formatTime(l.createdAt ?? new Date().toISOString(), { mode: 'date' })}
                         </span>
                         <select
                           className="text-[11px] rounded border border-border bg-bg-elevated px-2 py-1"

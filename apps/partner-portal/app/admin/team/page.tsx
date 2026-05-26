@@ -9,6 +9,7 @@ import {
   Button,
   Input,
   Select,
+  Filter,
   StatusPill,
   DataTable,
   Avatar,
@@ -152,7 +153,8 @@ const lookupById = (id: string | null, members: TeamMember[]) =>
 
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>(SEED_MEMBERS);
-  const [filter, setFilter] = useState<'all' | MemberStatus>('all');
+  /* `null` represents "All" per canonical <Filter>. */
+  const [filter, setFilter] = useState<MemberStatus | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
@@ -177,7 +179,7 @@ export default function TeamPage() {
     };
   }, []);
 
-  const visibleMembers = filter === 'all' ? members : members.filter((m) => m.status === filter);
+  const visibleMembers = filter === null ? members : members.filter((m) => m.status === filter);
 
   const updateMember = useCallback((id: string, patch: Partial<TeamMember>) => {
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
@@ -345,24 +347,29 @@ export default function TeamPage() {
         </Banner>
 
         <Card padded className="mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            {(['all', 'active', 'invited', 'disabled'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={
-                  'rounded-full border px-3 py-1 text-[12px] font-medium transition-colors ' +
-                  (filter === f
-                    ? 'border-accent bg-accent text-accent-fg'
-                    : 'border-border text-fg-secondary hover:border-border-strong')
-                }
-              >
-                {f === 'all'
-                  ? `All (${members.length})`
-                  : `${f.charAt(0).toUpperCase()}${f.slice(1)} (${members.filter((m) => m.status === f).length})`}
-              </button>
-            ))}
-          </div>
+          <Filter<MemberStatus>
+            label="Member status"
+            value={filter}
+            onChange={setFilter}
+            allLabel={`All (${members.length})`}
+            options={[
+              {
+                value: 'active',
+                label: 'Active',
+                count: members.filter((m) => m.status === 'active').length,
+              },
+              {
+                value: 'invited',
+                label: 'Invited',
+                count: members.filter((m) => m.status === 'invited').length,
+              },
+              {
+                value: 'disabled',
+                label: 'Disabled',
+                count: members.filter((m) => m.status === 'disabled').length,
+              },
+            ]}
+          />
         </Card>
 
         <Card>

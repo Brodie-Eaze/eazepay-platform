@@ -15,6 +15,7 @@ import {
   Banner,
   type Column,
 } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 
 interface Settlement {
   id: string;
@@ -138,7 +139,7 @@ export default function SettlementsPage() {
         /* fall through */
       }
     }
-    flash(`Exported ${settlements.length} settlement period${settlements.length === 1 ? '' : 's'}`);
+    flash(`Exported ${pluralize(settlements.length, 'settlement period')}`);
   }
   return (
     <>

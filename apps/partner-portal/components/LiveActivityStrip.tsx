@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { formatTime } from '@eazepay/shared-utils/format-time';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { useEventStream, type EventEnvelope } from '../lib/event-stream';
 
 /**
@@ -50,13 +52,11 @@ export function LiveActivityStrip() {
             {connected ? 'Live' : reconnects > 0 ? 'Reconnecting…' : 'Connecting…'}
           </span>
           <span className="text-fg-muted">·</span>
-          <span className="tabular-nums">
-            {events.length} event{events.length === 1 ? '' : 's'}
-          </span>
+          <span className="tabular-nums">{pluralize(events.length, 'event')}</span>
           {recent.length > 0 && !open && (
             <span className="text-fg-muted ml-2 truncate max-w-md">
               latest: <strong className="text-fg-secondary">{recent[0]!.kind}</strong> ·{' '}
-              {formatRelativeTime(recent[0]!.at)}
+              {formatTime(recent[0]!.at, { mode: 'relative' })}
             </span>
           )}
           <span className="text-fg-muted ml-1">{open ? '▾' : '▸'}</span>
@@ -88,7 +88,7 @@ export function ActivityRow({ event }: { event: EventEnvelope }) {
   return (
     <li className="grid grid-cols-12 gap-3 items-center px-5 py-2 text-[12px]">
       <span className="col-span-2 font-mono text-[10px] text-fg-muted">
-        {formatRelativeTime(event.at)}
+        {formatTime(event.at, { mode: 'relative' })}
       </span>
       <span className="col-span-2">
         <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-bg-muted text-fg-secondary font-semibold text-[10px] uppercase tracking-wider">
@@ -108,14 +108,4 @@ export function ActivityRow({ event }: { event: EventEnvelope }) {
       </span>
     </li>
   );
-}
-
-function formatRelativeTime(iso: string): string {
-  const now = Date.now();
-  const then = new Date(iso).getTime();
-  const s = Math.max(0, Math.round((now - then) / 1000));
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.round(s / 60)}m ago`;
-  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

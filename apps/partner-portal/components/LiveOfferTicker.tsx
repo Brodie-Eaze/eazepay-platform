@@ -1,6 +1,9 @@
 'use client';
 import { useCallback, useMemo, useState } from 'react';
 import { Card, CardBody, CardHeader, StatusPill } from '@eazepay/ui/web';
+import { formatBps } from '@eazepay/shared-utils/format-bps';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { useEventStream, type EventEnvelope } from '../lib/event-stream';
 
 /**
@@ -34,10 +37,10 @@ interface LenderRow {
 }
 
 function fmtPct(bps?: number): string {
-  return bps == null ? '—' : `${(bps / 100).toFixed(2)}%`;
+  return bps == null ? '—' : formatBps(bps);
 }
 function fmtCents(c?: number): string {
-  return c == null ? '—' : `$${(c / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  return c == null ? '—' : formatCurrencyCents(c);
 }
 
 function reduceOffers(events: EventEnvelope[]): LenderRow[] {
@@ -138,8 +141,8 @@ export function LiveOfferTicker({
         title="Live offers"
         description={
           responded === 0
-            ? `Waiting for offers… ${responded} of ${totalLenders} lenders quoted.`
-            : `${offered} offer${offered === 1 ? '' : 's'} · ${quoting} quoting · ${responded} of ${totalLenders} responded`
+            ? `Waiting for offers… ${responded} of ${pluralize(totalLenders, 'lender')} quoted.`
+            : `${pluralize(offered, 'offer')} · ${quoting} quoting · ${responded} of ${totalLenders} responded`
         }
         action={
           <div className="flex items-center gap-3 text-[11px]">

@@ -20,10 +20,16 @@ import {
   TrendUpIcon,
   TrendDownIcon,
   EmptyState,
+  Filter,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
+  type FilterOption,
 } from '@eazepay/ui/web';
+import { BRAND_CODES, BRAND_LABEL, type Brand } from '@eazepay/shared-types';
+import { formatBps } from '@eazepay/shared-utils/format-bps';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 
 /* Locally-typed Button — see control-panel/page.tsx for rationale. */
 type ButtonProps = {
@@ -63,6 +69,23 @@ type ReportId =
 
 type BrandFilter = 'All' | 'MedPay' | 'TradePay' | 'CoachPay';
 type DateRange = '7d' | '30d' | '90d' | 'qtd' | 'ytd';
+
+/* Bridge maps between the legacy PascalCase BrandFilter (consumed by
+ * every Report* sub-component on this page) and the canonical
+ * lowercase Brand from @eazepay/shared-types that the new Filter
+ * primitive emits. Builder R owns the report-internals refactor —
+ * conversion happens only at the filter boundary so we don't bleed
+ * scope. */
+const LEGACY_BRAND_TO_CANONICAL: Record<Exclude<BrandFilter, 'All'>, Brand> = {
+  MedPay: 'medpay',
+  TradePay: 'tradepay',
+  CoachPay: 'coachpay',
+};
+const CANONICAL_BRAND_TO_LEGACY: Record<Brand, Exclude<BrandFilter, 'All'>> = {
+  medpay: 'MedPay',
+  tradepay: 'TradePay',
+  coachpay: 'CoachPay',
+};
 
 interface ReportDef {
   id: ReportId;
@@ -474,16 +497,19 @@ function ReportCanvas({
                 ['ytd', 'YTD'],
               ]}
             />
-            <FilterChip
+            <Filter<Brand>
               label="Brand"
-              value={brand}
-              onChange={(v) => setBrand(v as BrandFilter)}
-              options={[
-                ['All', 'All brands'],
-                ['MedPay', 'MedPay'],
-                ['TradePay', 'TradePay'],
-                ['CoachPay', 'CoachPay'],
-              ]}
+              allLabel="All brands"
+              value={brand === 'All' ? null : (LEGACY_BRAND_TO_CANONICAL[brand] ?? null)}
+              onChange={(v) =>
+                setBrand(v === null ? 'All' : (CANONICAL_BRAND_TO_LEGACY[v] as BrandFilter))
+              }
+              options={
+                BRAND_CODES.map((b) => ({
+                  value: b,
+                  label: BRAND_LABEL[b],
+                })) as FilterOption<Brand>[]
+              }
             />
             <FilterChip
               label="Partner"
@@ -610,7 +636,7 @@ function FinancingPerformanceReport({
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
         <Kpi label="Funded volume" value={`$${(totalFunded / 1000).toFixed(1)}M`} delta={yoy} />
-        <Kpi label="Avg ticket" value={`$${(avgTicket / 100).toLocaleString()}`} />
+        <Kpi label="Avg ticket" value={formatCurrencyCents(avgTicket)} />
         <Kpi label="Funded apps" value={String(tableRows.reduce((s, r) => s + r.funded, 0))} />
         <Kpi
           label="Approval rate"
@@ -648,7 +674,7 @@ function FinancingPerformanceReport({
       </Card>
 
       <ReportTable
-        title={`Partner performance — ${tableRows.length} partner${tableRows.length === 1 ? '' : 's'}`}
+        title={`Partner performance — ${pluralize(tableRows.length, 'partner')}`}
         columns={[
           {
             key: 'partner',
@@ -797,7 +823,7 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
       </div>
 
       <ReportTable
-        title={`Lender performance — ${rows.length} lenders`}
+        title={`Lender performance — ${pluralize(rows.length, 'lender')}`}
         columns={[
           {
             key: 'lender',
@@ -848,7 +874,7 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
             key: 'avgAprBps',
             label: 'Avg APR',
             align: 'right',
-            render: (r: (typeof rows)[number]) => `${(r.avgAprBps / 100).toFixed(2)}%`,
+            render: (r: (typeof rows)[number]) => formatBps(r.avgAprBps),
           },
           {
             key: 'volumeCents',

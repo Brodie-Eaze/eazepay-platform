@@ -20,7 +20,9 @@ import {
   PhoneIcon,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
-import { useApi, formatCurrency, formatDate } from '../../../../lib/api-client';
+import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
+import { formatTime } from '@eazepay/shared-utils/format-time';
+import { useApi } from '../../../../lib/api-client';
 import { csrfHeaders } from '../../../../lib/client-csrf';
 
 /**
@@ -124,7 +126,7 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return formatDate(iso);
+  return formatTime(iso, { mode: 'date' });
 }
 
 function CopyBtn({ text }: { text: string }) {
@@ -826,7 +828,7 @@ export default function PaymentLinksPage() {
                               : ''}
                           </strong>
                           {' · expires '}
-                          {new Date(lastMintedInvite.expiresAt).toLocaleString()}
+                          {formatTime(lastMintedInvite.expiresAt, { mode: 'datetime' })}
                         </div>
                         <div className="mt-2 font-mono text-[11px] text-fg-muted break-all">
                           {lastMintedInvite.inviteUrl}
@@ -1130,7 +1132,7 @@ export default function PaymentLinksPage() {
                         </p>
                       </div>
                       <div className="col-span-2 text-right text-[13px] font-semibold text-fg tabular-nums">
-                        {formatCurrency(l.amount)}
+                        {formatCurrencyCents(l.amount)}
                       </div>
                       <div className="col-span-3 flex flex-col gap-1">
                         <ProgressDots status={l.status} />

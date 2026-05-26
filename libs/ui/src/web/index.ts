@@ -18,6 +18,14 @@ export type { NavItem, NavGroup } from './AppShell.js';
 export { EmptyState } from './EmptyState.js';
 export { Skeleton } from './Skeleton.js';
 export { Tabs } from './Tabs.js';
+export { Filter, flattenOptions, isGroupedOptions, nextIndex, findIndexByValue } from './Filter.js';
+export type {
+  FilterOption,
+  FilterGroup,
+  FilterOptions,
+  FilterProps,
+  FilterValue,
+} from './Filter.js';
 export { RouteTimeline } from './RouteTimeline.js';
 export type { RouteStep } from './RouteTimeline.js';
 export { DisclosurePanel } from './Disclosure.js';
