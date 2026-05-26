@@ -1,11 +1,13 @@
 'use client';
 import type { ReactNode } from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   AppShell,
   Button,
+  CommandPalette,
+  type CommandPaletteCommand,
   StatusPill,
   HomeIcon,
   QueueIcon,
@@ -51,6 +53,7 @@ import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
 import { NotificationBell } from '../components/NotificationBell';
 import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
+import { marketplaceLenders } from '../lib/marketplace-data';
 
 /**
  * Map a per-brand portal to the notification recipient key — the
@@ -199,6 +202,79 @@ const masterGroups: NavGroup[] = [
     ],
   },
 ];
+
+/**
+ * Admin (platform-engineering) menu — the third top-level alongside
+ * `masterGroups` and `verticalGroups`. Surfaces the platform-config /
+ * platform-health pages that the ship-ready loop dropped in last week:
+ * vertical config, provisioning queue, AI-funding migrations, the
+ * platform audit log, observability, SLOs, and the lender marketplace
+ * deep-dive.
+ *
+ * Why a third top-level rather than an 8th section appended to
+ * `masterGroups`?
+ *
+ *  1. The master menu already runs 9 sections deep — adding admin items
+ *     to it pushes Account off-screen on a 1080p laptop. Operators
+ *     would lose the muscle memory of "Account is bottom-left".
+ *  2. Admin pages are a different job-to-be-done than the master
+ *     command centre. Master = "run the business this morning"
+ *     (pipeline, partners, invoices). Admin = "tune the platform"
+ *     (provisioning, observability, audit). The context switch is
+ *     real; surfacing it in the sidebar makes the mental model
+ *     visible instead of forcing the operator to URL-type.
+ *  3. The shell already swaps `groups` based on path (master vs
+ *     vertical). Adding a third arm of the same switch is the
+ *     cheapest, most-symmetric extension.
+ *
+ * Trigger: any pathname starting with `/admin` or `/lender-marketplace`
+ * (the lender deep-dive is the one non-/admin page in the admin pack).
+ * Resolved in `Shell()` below.
+ */
+const adminGroups: NavGroup[] = [
+  {
+    label: 'Platform',
+    items: [
+      { href: '/admin', label: 'Control Plane', icon: <SettingsIcon /> },
+      { href: '/admin/observability', label: 'Observability', icon: <GaugeIcon /> },
+      { href: '/admin/observability/slo', label: 'SLO Board', icon: <ChartIcon /> },
+      { href: '/admin/audit', label: 'Audit Log', icon: <DocIcon /> },
+    ],
+  },
+  {
+    label: 'Provisioning',
+    items: [
+      { href: '/admin/provisioning', label: 'Provisioning Queue', icon: <QueueIcon /> },
+      { href: '/admin/provisioning/new', label: 'New Provisioning', icon: <SendIcon /> },
+    ],
+  },
+  {
+    label: 'Verticals',
+    items: [{ href: '/admin/verticals/medpay', label: 'MedPay Config', icon: <HeartPulseIcon /> }],
+  },
+  {
+    label: 'Migrations',
+    items: [
+      {
+        href: '/admin/migrations/ai-funding',
+        label: 'AI Funding Cutover',
+        icon: <BoltIcon />,
+      },
+    ],
+  },
+  {
+    label: 'Lender Network',
+    items: [{ href: '/lender-marketplace', label: 'Marketplace', icon: <BankIcon /> }],
+  },
+  {
+    label: 'Back to Master',
+    items: [{ href: '/', label: 'Command Center', icon: <GaugeIcon /> }],
+  },
+];
+
+const ADMIN_PATH_PREFIXES = ['/admin', '/lender-marketplace'];
+const isAdminPath = (pathname: string): boolean =>
+  ADMIN_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
 /**
  * Per-brand partner menu — scoped to a single vertical. A TradePay
@@ -523,12 +599,73 @@ function assertNoMasterLeaks(groups: NavGroup[], brandSlug: string): void {
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/';
+  const router = useRouter();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  // Build the command palette source — every nav target across the
+  // three sidebar arrangements + the live lender + partner roster.
+  // Hoisted above the NAKED_ROUTES early-return so React Hook order
+  // stays stable across renders.
+  const paletteCommands = useMemo<CommandPaletteCommand[]>(() => {
+    const out: CommandPaletteCommand[] = [];
+    const pushGroup = (section: string, gs: NavGroup[]) => {
+      for (const g of gs) {
+        for (const it of g.items) {
+          if (!it.href || /^https?:/.test(it.href)) continue;
+          out.push({
+            id: `${section}:${it.href}`,
+            section,
+            label: it.label,
+            description: g.label,
+            href: it.href,
+            icon: it.icon,
+          });
+        }
+      }
+    };
+    pushGroup('Master', masterGroups);
+    pushGroup('Admin', adminGroups);
+    pushGroup('MedPay', verticalGroups('medpay'));
+    pushGroup('TradePay', verticalGroups('tradepay'));
+    pushGroup('CoachPay', verticalGroups('coachpay'));
+    for (const l of marketplaceLenders) {
+      out.push({
+        id: `lender:${l.id}`,
+        section: 'Lenders',
+        label: l.displayName,
+        description: l.legalName,
+        href: `/lender-marketplace/${l.id}`,
+        icon: <BankIcon size={14} />,
+        keywords: [l.legalName, l.externalLenderId],
+      });
+    }
+    for (const p of MASTER_PARTNERS_ROSTER) {
+      out.push({
+        id: `partner:${p.id}`,
+        section: 'Partners',
+        label: p.legalName,
+        description: `${p.product} · ${p.email}`,
+        href: `/control-panel/${p.id}`,
+        icon: <UsersIcon size={14} />,
+        keywords: [p.email, p.initials],
+      });
+    }
+    return out;
+  }, []);
+
   if (NAKED_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {
     return <>{children}</>;
   }
 
   const activeBrand = brandFromPath(pathname);
-  const groups = activeBrand ? verticalGroups(activeBrand) : masterGroups;
+  // Three-way sidebar resolution:
+  //   1. /v/<brand>/*           → verticalGroups(brand)   (per-brand merchant)
+  //   2. /admin/* or /lender-*  → adminGroups             (platform engineering)
+  //   3. everything else        → masterGroups            (operator command centre)
+  // Admin only resolves when there's no activeBrand — a brand portal
+  // never reveals the admin shell, even if a URL collision tried to
+  // sneak through.
+  const inAdmin = !activeBrand && isAdminPath(pathname);
+  const groups = activeBrand ? verticalGroups(activeBrand) : inAdmin ? adminGroups : masterGroups;
   if (activeBrand) assertNoMasterLeaks(groups, BRANDS[activeBrand].slug);
   // Sidebar wordmark + subtitle:
   //   Master view → "EAZE" · "Operating System" (the operating system
@@ -539,75 +676,91 @@ export function Shell({ children }: { children: ReactNode }) {
   //                  bar, so the wordmark stays consistent across
   //                  all three vertical portals)
   const wordmark = activeBrand ? 'Eaze' : 'EAZE';
-  const product = activeBrand ? 'Partner Portal' : 'Operating System';
+  const product = activeBrand ? 'Partner Portal' : inAdmin ? 'Platform Admin' : 'Operating System';
   const envLabel: { label: string; tone: 'live' } = activeBrand
     ? { label: `${BRANDS[activeBrand].name} · Live`, tone: 'live' }
-    : { label: 'Live · Master', tone: 'live' };
+    : inAdmin
+      ? { label: 'Live · Admin', tone: 'live' }
+      : { label: 'Live · Master', tone: 'live' };
 
   return (
-    <AppShell
-      wordmark={wordmark}
-      product={product}
-      activePath={pathname}
-      groups={groups}
-      envLabel={envLabel}
-      LinkComponent={NextLink}
-      searchPlaceholder={
-        activeBrand
-          ? `Search ${BRANDS[activeBrand].name} applications, partners…`
-          : 'Search partners, applications, merchants…'
-      }
-      topRight={
-        <div className="flex items-center gap-3">
-          {/* Master-operator chrome — only shown on the master surface (no activeBrand).
+    <>
+      <AppShell
+        wordmark={wordmark}
+        product={product}
+        activePath={pathname}
+        groups={groups}
+        envLabel={envLabel}
+        LinkComponent={NextLink}
+        onSearchClick={() => setPaletteOpen(true)}
+        searchPlaceholder={
+          activeBrand
+            ? `Search ${BRANDS[activeBrand].name} applications, partners…`
+            : 'Search partners, applications, merchants…'
+        }
+        topRight={
+          <div className="flex items-center gap-3">
+            {/* Master-operator chrome — only shown on the master surface (no activeBrand).
               When a merchant is signed in under a specific brand they see a clean
               brand-scoped portal: no cross-brand switcher, no "Vertical view" badge. */}
-          {!activeBrand && (
-            <>
-              <BrandSwitcher activeBrand={activeBrand} />
-              <StatusPill tone="success" dot>
-                3 partners awaiting approval
-              </StatusPill>
-            </>
-          )}
-          {/* Notification bell — scope = 'master' on operator
+            {!activeBrand && (
+              <>
+                <BrandSwitcher activeBrand={activeBrand} />
+                <StatusPill tone="success" dot>
+                  3 partners awaiting approval
+                </StatusPill>
+              </>
+            )}
+            {/* Notification bell — scope = 'master' on operator
               surfaces, partner merchantId on per-brand. Master sees
               a mirror of every notification dispatched from the
               billing send composer; partner sees only their own. */}
-          <NotificationBell
-            recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
-          />
-          <Button size="sm" variant="ghost">
-            Help
-          </Button>
-          <UserMenu activeBrand={activeBrand} />
-        </div>
-      }
-      sidebarFooter={
-        <div className="space-y-2">
-          <div className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wider">
-            {partnerOrg.displayName}
+            <NotificationBell
+              recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
+            />
+            <Button size="sm" variant="ghost">
+              Help
+            </Button>
+            <UserMenu activeBrand={activeBrand} />
           </div>
-          <div className="leading-snug">
-            {activeBrand
-              ? `${BRANDS[activeBrand].name} merchant · ${partnerOrg.liveStates} live states`
-              : `${partnerOrg.tier} · ${partnerOrg.liveStates} live states`}
+        }
+        sidebarFooter={
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wider">
+              {partnerOrg.displayName}
+            </div>
+            <div className="leading-snug">
+              {activeBrand
+                ? `${BRANDS[activeBrand].name} merchant · ${partnerOrg.liveStates} live states`
+                : `${partnerOrg.tier} · ${partnerOrg.liveStates} live states`}
+            </div>
+            <div className="text-[11px] text-fg-muted">
+              Member since{' '}
+              {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', {
+                month: 'short',
+                year: 'numeric',
+              })}
+            </div>
           </div>
-          <div className="text-[11px] text-fg-muted">
-            Member since{' '}
-            {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', {
-              month: 'short',
-              year: 'numeric',
-            })}
-          </div>
-        </div>
-      }
-    >
-      {/* Live Activity strip — master operator only. Streams every
+        }
+      >
+        {/* Live Activity strip — master operator only. Streams every
           fleet event in real-time. Hidden on per-brand surfaces so
           merchants never see other tenants. */}
-      {!activeBrand && <LiveActivityStrip />}
-      {children}
-    </AppShell>
+        {!activeBrand && <LiveActivityStrip />}
+        {children}
+      </AppShell>
+      {/* Global cmd-K command palette — mounted at the Shell root so
+        it's available on every non-naked page. The palette manages
+        its own ⌘K hotkey; we pass `open`/`onOpenChange` so the topbar
+        search input can also trigger it. */}
+      <CommandPalette
+        commands={paletteCommands}
+        LinkComponent={NextLink}
+        onNavigate={(href) => router.push(href)}
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+      />
+    </>
   );
 }

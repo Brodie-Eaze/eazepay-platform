@@ -4,128 +4,134 @@
  * Index page for every admin surface. Drives the demo walkthrough:
  * lender toggle, MedPay vertical config, audit log, observability,
  * provisioning queue, customer migration queue.
+ *
+ * Refactored 2026-05 to mirror /control-panel: PageHeader + PageBody
+ * + Card-based tile grid + token classes. Zero inline styles.
  */
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardBody,
+  StatusPill,
+  ArrowRightIcon,
+  QueueIcon,
+  DocIcon,
+  SettingsIcon,
+  GaugeIcon,
+  BoltIcon,
+  BankIcon,
+  HeartPulseIcon,
+  type StatusTone,
+} from '@eazepay/ui/web';
 
-const TILES: Array<{
+type Tile = {
   href: string;
   title: string;
   desc: string;
-  badge?: string;
-}> = [
+  icon: ReactNode;
+  badge?: { label: string; tone: StatusTone };
+};
+
+const TILES: Tile[] = [
   {
     href: '/control-panel',
     title: 'Partner roster',
     desc: 'Every partner on the platform · suspend / reactivate · per-partner drill-in.',
+    icon: <SettingsIcon size={18} />,
   },
   {
     href: '/admin/verticals/medpay',
     title: 'MedPay vertical config',
     desc: 'Allowed lender set · routing policy · branding defaults · economics.',
-    badge: 'Demo-critical',
+    icon: <HeartPulseIcon size={18} />,
+    badge: { label: 'Demo-critical', tone: 'accent' },
   },
   {
     href: '/lender-marketplace',
     title: 'Lender marketplace',
     desc: 'Registry · per-lender detail · per-partner access matrix.',
+    icon: <BankIcon size={18} />,
   },
   {
     href: '/admin/provisioning',
     title: 'Provisioning queue',
     desc: 'One-config onboarding · HighSale + Marketplace + MiCamp per step.',
-    badge: 'Live',
+    icon: <QueueIcon size={18} />,
+    badge: { label: 'Live', tone: 'success' },
   },
   {
     href: '/admin/audit',
     title: 'Audit log',
     desc: 'Every admin action across the platform · search by actor / target / time.',
+    icon: <DocIcon size={18} />,
   },
   {
     href: '/admin/observability',
     title: 'Observability',
     desc: 'Engine latency · lender health · webhook delivery · queue depth.',
+    icon: <GaugeIcon size={18} />,
   },
   {
     href: '/admin/migrations/ai-funding',
     title: 'AI Funding → MedPay',
     desc: 'July 1 cutover · per-customer migration status · retries.',
-    badge: 'Cutover',
+    icon: <BoltIcon size={18} />,
+    badge: { label: 'Cutover', tone: 'warning' },
   },
 ];
 
 export default function AdminIndexPage(): JSX.Element {
   return (
-    <div style={{ padding: 32, maxWidth: 1180, margin: '0 auto', color: '#e2e8f0' }}>
-      <header style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#7dd3fc', fontWeight: 700 }}>
-          EAZEPAY ADMIN
-        </div>
-        <h1
-          style={{ margin: '6px 0 8px', fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em' }}
-        >
-          Control plane
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: 14.5, maxWidth: 720 }}>
-          Every operational surface on the platform. The MedPay vertical config + lender marketplace
-          + provisioning queue tiles are the demo walk path. Audit log + observability are how we
-          prove compliance and operational discipline to lenders during NDA review.
-        </p>
-      </header>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: 14,
-        }}
-      >
-        {TILES.map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            style={{
-              display: 'block',
-              padding: 22,
-              border: '1px solid #1f2937',
-              borderRadius: 12,
-              background: '#0f172a',
-              color: 'inherit',
-              textDecoration: 'none',
-              transition: 'border-color 120ms ease, transform 120ms ease',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                marginBottom: 6,
-              }}
+    <>
+      <PageHeader
+        breadcrumbs={[{ label: 'Admin' }, { label: 'Control Plane' }]}
+        title="Control plane"
+        description="Every operational surface on the platform. The MedPay vertical config + lender marketplace + provisioning queue tiles are the demo walk path. Audit log + observability are how we prove compliance and operational discipline to lenders during NDA review."
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            <StatusPill tone="accent" dot>
+              Platform admin
+            </StatusPill>
+          </div>
+        }
+      />
+      <PageBody>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {TILES.map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+              aria-label={`${t.title} — ${t.desc}`}
             >
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{t.title}</h3>
-              {t.badge && (
-                <span
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    background: '#1e3a5f',
-                    color: '#7dd3fc',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {t.badge}
-                </span>
-              )}
-            </div>
-            <p style={{ margin: 0, color: '#94a3b8', fontSize: 13, lineHeight: 1.5 }}>{t.desc}</p>
-            <div style={{ marginTop: 12, color: '#7dd3fc', fontSize: 12 }}>Open →</div>
-          </Link>
-        ))}
-      </div>
-    </div>
+              <Card className="h-full transition-colors group-hover:border-border-strong">
+                <CardBody>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className="size-8 rounded-md bg-bg-muted text-fg-secondary flex items-center justify-center shrink-0"
+                        aria-hidden
+                      >
+                        {t.icon}
+                      </span>
+                      <h3 className="text-[14px] font-semibold text-fg truncate">{t.title}</h3>
+                    </div>
+                    {t.badge && <StatusPill tone={t.badge.tone}>{t.badge.label}</StatusPill>}
+                  </div>
+                  <p className="text-[12.5px] text-fg-muted leading-relaxed">{t.desc}</p>
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-accent">
+                    Open <ArrowRightIcon size={12} />
+                  </div>
+                </CardBody>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </PageBody>
+    </>
   );
 }

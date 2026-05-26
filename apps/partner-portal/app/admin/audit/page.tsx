@@ -13,7 +13,17 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardBody,
+  Button,
+  StatusPill,
+  Skeleton,
+  EmptyState,
+  type StatusTone,
+} from '@eazepay/ui/web';
 
 interface AuditEntry {
   id: string;
@@ -27,16 +37,28 @@ interface AuditEntry {
   createdAt: string;
 }
 
-const ACTION_TONE: Record<string, string> = {
-  'lender.toggle': '#7dd3fc',
-  'vertical_config.publish': '#86efac',
-  'partner.suspend': '#fca5a5',
-  'partner.reactivate': '#86efac',
-  'mid.status_change': '#fcd34d',
-  'provision.complete': '#86efac',
-  'provision.failed': '#fca5a5',
-  'migration.complete': '#86efac',
-};
+/** Map known action verbs to a StatusPill tone. Unknown actions fall
+ *  back to `neutral`. We render the pill rather than colour the raw
+ *  text so the action reads as a categorised tag, not just coloured
+ *  prose. */
+function actionTone(action: string): StatusTone {
+  switch (action) {
+    case 'lender.toggle':
+      return 'info';
+    case 'vertical_config.publish':
+    case 'partner.reactivate':
+    case 'provision.complete':
+    case 'migration.complete':
+      return 'success';
+    case 'partner.suspend':
+    case 'provision.failed':
+      return 'danger';
+    case 'mid.status_change':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
 
 export default function AuditLogPage(): JSX.Element {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
@@ -76,189 +98,165 @@ export default function AuditLogPage(): JSX.Element {
     [entries],
   );
 
+  const hasFilter = Boolean(filterActor || filterAction || filterTargetType);
+
   return (
-    <div style={{ padding: 32, maxWidth: 1240, margin: '0 auto', color: '#e2e8f0' }}>
-      <Link href="/admin" style={{ color: '#7dd3fc', fontSize: 13, textDecoration: 'none' }}>
-        ← Admin
-      </Link>
-
-      <header
-        style={{
-          marginTop: 16,
-          marginBottom: 22,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'baseline',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#7dd3fc', fontWeight: 700 }}>
-            AUDIT LOG
-          </div>
-          <h1 style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700 }}>Platform actions</h1>
-          <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 660 }}>
-            Every admin action across the platform · search by actor, action, or target type.
-          </p>
-        </div>
-        <span
-          style={{
-            padding: '4px 10px',
-            borderRadius: 6,
-            fontSize: 11,
-            fontWeight: 600,
-            background: source === 'db' ? '#14532d' : '#1f2937',
-            color: source === 'db' ? '#86efac' : '#a3b8d4',
-          }}
-        >
-          source: {source}
-        </span>
-      </header>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr auto',
-          gap: 10,
-          marginBottom: 18,
-        }}
-      >
-        <Select
-          label="Actor"
-          value={filterActor}
-          onChange={setFilterActor}
-          options={uniqueActors}
-        />
-        <Select
-          label="Action"
-          value={filterAction}
-          onChange={setFilterAction}
-          options={uniqueActions}
-        />
-        <Select
-          label="Target type"
-          value={filterTargetType}
-          onChange={setFilterTargetType}
-          options={uniqueTargetTypes}
-        />
-        <button
-          onClick={() => {
-            setFilterActor('');
-            setFilterAction('');
-            setFilterTargetType('');
-          }}
-          style={{
-            padding: '8px 14px',
-            borderRadius: 8,
-            border: '1px solid #334155',
-            background: 'transparent',
-            color: '#cbd5e1',
-            fontSize: 13,
-            cursor: 'pointer',
-            alignSelf: 'flex-end',
-          }}
-        >
-          Clear
-        </button>
-      </div>
-
-      {loading ? (
-        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>
-          Loading audit entries…
-        </div>
-      ) : entries.length === 0 ? (
+    <>
+      <PageHeader
+        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Audit log' }]}
+        title="Platform actions"
+        description="Every admin action across the platform — search by actor, action, or target type."
+        meta={
+          <StatusPill tone={source === 'db' ? 'success' : 'neutral'} dot>
+            source: {source}
+          </StatusPill>
+        }
+      />
+      <PageBody>
         <div
-          style={{
-            padding: 48,
-            textAlign: 'center',
-            color: '#64748b',
-            border: '1px dashed #334155',
-            borderRadius: 12,
-          }}
+          className="flex flex-wrap items-end gap-2 mb-4"
+          role="search"
+          aria-label="Filter audit entries"
         >
-          No entries match these filters.
+          <FilterSelect
+            id="filter-actor"
+            label="Actor"
+            value={filterActor}
+            onChange={setFilterActor}
+            options={uniqueActors}
+          />
+          <FilterSelect
+            id="filter-action"
+            label="Action"
+            value={filterAction}
+            onChange={setFilterAction}
+            options={uniqueActions}
+          />
+          <FilterSelect
+            id="filter-target"
+            label="Target type"
+            value={filterTargetType}
+            onChange={setFilterTargetType}
+            options={uniqueTargetTypes}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFilterActor('');
+              setFilterAction('');
+              setFilterTargetType('');
+            }}
+            disabled={!hasFilter}
+          >
+            Clear
+          </Button>
         </div>
-      ) : (
-        <div
-          style={{
-            border: '1px solid #1f2937',
-            borderRadius: 12,
-            overflow: 'hidden',
-            background: '#0f172a',
-          }}
-        >
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: '#020617', textAlign: 'left', color: '#94a3b8' }}>
-                <th style={th}>When</th>
-                <th style={th}>Actor</th>
-                <th style={th}>Action</th>
-                <th style={th}>Target</th>
-                <th style={th}>Payload</th>
-                <th style={th}>IP</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={e.id} style={{ borderTop: '1px solid #1f2937' }}>
-                  <td style={td}>{new Date(e.createdAt).toLocaleString()}</td>
-                  <td style={td}>
-                    <strong style={{ color: '#e2e8f0' }}>{e.actor}</strong>
-                  </td>
-                  <td style={td}>
-                    <span style={{ color: ACTION_TONE[e.action] ?? '#cbd5e1', fontWeight: 600 }}>
-                      {e.action}
-                    </span>
-                  </td>
-                  <td style={td}>
-                    {e.targetType}{' '}
-                    {e.targetId && <span style={{ color: '#64748b' }}>· {e.targetId}</span>}
-                  </td>
-                  <td style={{ ...td, maxWidth: 340 }}>
-                    {e.payloadJson ? (
-                      <code style={{ fontSize: 11, color: '#a5b4fc' }}>{e.payloadJson}</code>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td style={{ ...td, color: '#64748b', fontSize: 12 }}>{e.ipAddress ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+
+        {loading ? (
+          <Card>
+            <CardBody>
+              <Skeleton rows={6} label="Loading audit entries" />
+            </CardBody>
+          </Card>
+        ) : entries.length === 0 ? (
+          <EmptyState
+            title="No audit entries"
+            description={
+              hasFilter
+                ? 'No entries match these filters. Clear filters to see all activity.'
+                : 'No admin actions have been recorded yet.'
+            }
+          />
+        ) : (
+          <Card>
+            <CardBody padded={false}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px] border-collapse">
+                  <thead>
+                    <tr className="bg-bg-muted/40 text-left text-fg-muted">
+                      <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-[0.08em]">
+                        When
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-[0.08em]">
+                        Actor
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-[0.08em]">
+                        Action
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-[0.08em]">
+                        Target
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-[0.08em]">
+                        Payload
+                      </th>
+                      <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-[0.08em]">
+                        IP
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((e) => (
+                      <tr key={e.id} className="border-t border-border align-top">
+                        <td className="px-4 py-3 text-fg-secondary whitespace-nowrap">
+                          {new Date(e.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3">
+                          <strong className="text-fg">{e.actor}</strong>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusPill tone={actionTone(e.action)}>{e.action}</StatusPill>
+                        </td>
+                        <td className="px-4 py-3 text-fg-secondary">
+                          {e.targetType}
+                          {e.targetId && <span className="text-fg-muted"> · {e.targetId}</span>}
+                        </td>
+                        <td className="px-4 py-3 max-w-[340px]">
+                          {e.payloadJson ? (
+                            <code className="text-[11px] text-accent break-all">
+                              {e.payloadJson}
+                            </code>
+                          ) : (
+                            <span className="text-fg-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-fg-muted text-[12px] whitespace-nowrap">
+                          {e.ipAddress ?? '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+      </PageBody>
+    </>
   );
 }
 
-function Select({
+function FilterSelect({
+  id,
   label,
   value,
   onChange,
   options,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
 }): JSX.Element {
   return (
-    <label style={{ display: 'block' }}>
-      <span style={{ display: 'block', fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>
-        {label}
-      </span>
+    <label htmlFor={id} className="flex flex-col gap-1.5 text-[13px] flex-1 min-w-[160px]">
+      <span className="font-medium text-fg-secondary text-[12px]">{label}</span>
       <select
+        id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '8px 10px',
-          background: '#020617',
-          border: '1px solid #1f2937',
-          borderRadius: 8,
-          color: '#e2e8f0',
-          fontSize: 13,
-        }}
+        className="h-10 rounded-md border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong"
       >
         <option value="">All</option>
         {options.map((o) => (
@@ -270,12 +268,3 @@ function Select({
     </label>
   );
 }
-
-const th: React.CSSProperties = {
-  padding: '12px 16px',
-  fontWeight: 600,
-  fontSize: 11.5,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-};
-const td: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'top' };

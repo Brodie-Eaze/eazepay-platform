@@ -8,6 +8,7 @@ import {
   type BrandSlug,
   type BrandTheme,
 } from './brand-theme';
+import { BRANDS } from '@eazepay/shared-types';
 
 /**
  * Spec coverage for `lib/brand-theme.ts`.
@@ -112,6 +113,33 @@ describe('lib/brand-theme', () => {
     it('returns null for "other" and empty industry', () => {
       expect(getBrandFromIndustry('other')).toBeNull();
       expect(getBrandFromIndustry('')).toBeNull();
+    });
+  });
+
+  /**
+   * Brand-color lock against shared-types.
+   *
+   * `apps/partner-portal/lib/brand-theme.ts` is the canonical source
+   * (used by checkout + onboarding wizard, the highest-traffic surfaces).
+   * `libs/shared-types/src/brands.ts` exposes `accentHex` for marketing
+   * surfaces and the orchestrator — these MUST match the canonical
+   * theme, otherwise a partner sees one shade in the wizard and another
+   * on a brand-aware admin page. Both files must be updated together.
+   */
+  describe('parity with @eazepay/shared-types BRANDS', () => {
+    it.each(['medpay', 'tradepay', 'coachpay'] as const)(
+      '%s accentHex matches BRANDS[%s].accentHex',
+      (slug) => {
+        expect(BRAND_THEME[slug].accentHex.toLowerCase()).toBe(
+          BRANDS[slug].accentHex.toLowerCase(),
+        );
+      },
+    );
+
+    it('locks the three brand accent values', () => {
+      expect(BRAND_THEME.medpay.accentHex).toBe('#0E7C66');
+      expect(BRAND_THEME.tradepay.accentHex).toBe('#D4581A');
+      expect(BRAND_THEME.coachpay.accentHex).toBe('#7C3AED');
     });
   });
 

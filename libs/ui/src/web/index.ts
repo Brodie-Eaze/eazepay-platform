@@ -26,6 +26,8 @@ export { MaskedField, DataRow } from './MaskedField.js';
 export { CodeBlock, InlineCode } from './CodeBlock.js';
 export { Stepper } from './Stepper.js';
 export type { StepperItem } from './Stepper.js';
+export { CommandPalette } from './CommandPalette.js';
+export type { CommandPaletteCommand, CommandPaletteProps } from './CommandPalette.js';
 
 /* Radix-backed primitives */
 export {

@@ -18,23 +18,58 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardBody,
+  Button as _Button,
+  StatusPill,
+  EmptyState,
+  Tabs,
+  ArrowRightIcon,
+  QueueIcon,
+  type ButtonVariant,
+  type ButtonSize,
+  type StatusTone,
+} from '@eazepay/ui/web';
 import type { ProvisionRun, StepStatus } from '@/lib/orchestrator/provision';
 
 type StatusFilter = 'all' | 'queued' | 'running' | 'completed' | 'failed';
 
-const STATUS_BADGE: Record<ProvisionRun['status'], { label: string; bg: string; fg: string }> = {
-  queued: { label: 'Queued', bg: '#1f2937', fg: '#a3b8d4' },
-  running: { label: 'Running', bg: '#1e3a5f', fg: '#7dd3fc' },
-  completed: { label: 'Completed', bg: '#14532d', fg: '#86efac' },
-  failed: { label: 'Failed', bg: '#5b1e1e', fg: '#fca5a5' },
+/* Locally-typed Button wrapper — matches the pattern in control-panel/page.tsx
+ * so strict TS JSX inference picks up `children`. */
+type ButtonProps = {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  type?: 'button' | 'submit' | 'reset';
+  onClick?: () => void;
+  disabled?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+};
+const Button: React.FC<ButtonProps> = (props) => <_Button {...(props as any)} />;
+
+const STATUS_TONE: Record<ProvisionRun['status'], StatusTone> = {
+  queued: 'neutral',
+  running: 'info',
+  completed: 'success',
+  failed: 'danger',
 };
 
-const STEP_TONE: Record<StepStatus, string> = {
-  pending: '#475569',
-  in_progress: '#0ea5e9',
-  done: '#10b981',
-  failed: '#ef4444',
-  skipped: '#64748b',
+const STATUS_LABEL: Record<ProvisionRun['status'], string> = {
+  queued: 'Queued',
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+};
+
+const STEP_TONE: Record<StepStatus, StatusTone> = {
+  pending: 'neutral',
+  in_progress: 'info',
+  done: 'success',
+  failed: 'danger',
+  skipped: 'neutral',
 };
 
 const STEP_LABEL: Record<string, string> = {
@@ -88,127 +123,110 @@ export default function ProvisioningQueuePage(): JSX.Element {
   }, [runs]);
 
   return (
-    <div style={{ padding: '32px', maxWidth: 1240, margin: '0 auto', color: '#e2e8f0' }}>
-      <header style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#7dd3fc', fontWeight: 700 }}>
-          ADMIN · ONE-CONFIG ONBOARDING
-        </div>
-        <h1
-          style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}
-        >
-          Provisioning queue
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 680 }}>
-          Every partner being walked through HighSale → Marketplace → MiCamp → Portal seed. Updates
-          every 3 seconds. Click into a run for the per-step result payload.
-        </p>
-      </header>
-
-      <nav style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {(['all', 'queued', 'running', 'completed', 'failed'] as StatusFilter[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            style={{
-              padding: '8px 14px',
-              borderRadius: 999,
-              fontSize: 12.5,
-              fontWeight: 600,
-              border: filter === s ? '1px solid #7dd3fc' : '1px solid #334155',
-              background: filter === s ? 'rgba(125, 211, 252, 0.10)' : 'transparent',
-              color: filter === s ? '#7dd3fc' : '#cbd5e1',
-              cursor: 'pointer',
-              textTransform: 'capitalize',
-            }}
+    <>
+      <PageHeader
+        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Provisioning' }]}
+        title="Provisioning queue"
+        description="Every partner being walked through HighSale → Marketplace → MiCamp → Portal seed. Updates every 3 seconds. Click into a run for the per-step result payload."
+        actions={
+          <Link
+            href="/admin/provisioning/new"
+            className="inline-flex"
+            aria-label="New provisioning run"
           >
-            {s} <span style={{ opacity: 0.7, marginLeft: 4 }}>{counts[s]}</span>
-          </button>
-        ))}
-      </nav>
+            <Button size="sm" variant="primary">
+              New provisioning run
+            </Button>
+          </Link>
+        }
+      />
+      <PageBody>
+        <div className="mb-5">
+          <Tabs
+            label="Filter provisioning runs by status"
+            active={filter}
+            onChange={(k) => setFilter(k as StatusFilter)}
+            items={[
+              { key: 'all', label: 'All', count: counts.all },
+              { key: 'queued', label: 'Queued', count: counts.queued },
+              { key: 'running', label: 'Running', count: counts.running },
+              { key: 'completed', label: 'Completed', count: counts.completed },
+              { key: 'failed', label: 'Failed', count: counts.failed },
+            ]}
+          />
+        </div>
 
-      {loading ? (
-        <div style={{ padding: 48, textAlign: 'center', color: '#64748b' }}>Loading runs…</div>
-      ) : filtered.length === 0 ? (
-        <div
-          style={{
-            padding: 48,
-            textAlign: 'center',
-            color: '#64748b',
-            border: '1px dashed #334155',
-            borderRadius: 12,
-          }}
-        >
-          No runs match this filter. Kick off a provisioning run via{' '}
-          <code style={{ color: '#a5b4fc' }}>POST /api/onboarding/provision</code>.
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: 12 }}>
-          {filtered.map((run) => (
-            <Link
-              key={run.id}
-              href={`/admin/provisioning/${run.id}`}
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <div
-                style={{
-                  padding: 20,
-                  border: '1px solid #1f2937',
-                  borderRadius: 12,
-                  background: '#0f172a',
-                  display: 'grid',
-                  gridTemplateColumns: '1.6fr 1fr 2fr auto',
-                  gap: 24,
-                  alignItems: 'center',
-                  transition: 'border-color 120ms ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#334155')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#1f2937')}
+        {loading ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="py-12 text-center text-[13px] text-fg-muted"
+          >
+            Loading runs…
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={<QueueIcon size={20} />}
+            title="No runs match this filter"
+            description={
+              <>
+                Kick off a provisioning run via{' '}
+                <code className="font-mono">POST /api/onboarding/provision</code> or click “New
+                provisioning run”.
+              </>
+            }
+          />
+        ) : (
+          <div className="grid gap-3">
+            {filtered.map((run) => (
+              <Link
+                key={run.id}
+                href={`/admin/provisioning/${run.id}`}
+                className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-lg"
+                aria-label={`Open provisioning run ${run.id}`}
               >
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{run.partnerId}</div>
-                  <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-                    {run.brand.toUpperCase()} · {new Date(run.startedAt).toLocaleString()}
-                  </div>
-                </div>
-                <div>
-                  <span
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      background: STATUS_BADGE[run.status].bg,
-                      color: STATUS_BADGE[run.status].fg,
-                    }}
-                  >
-                    {STATUS_BADGE[run.status].label}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {run.steps.map((s) => (
-                    <span
-                      key={s.name}
-                      title={`${STEP_LABEL[s.name] ?? s.name}: ${s.status}${s.note ? ` — ${s.note}` : ''}`}
-                      style={{
-                        padding: '3px 9px',
-                        borderRadius: 6,
-                        fontSize: 10.5,
-                        fontWeight: 600,
-                        background: `${STEP_TONE[s.status]}22`,
-                        color: STEP_TONE[s.status],
-                        border: `1px solid ${STEP_TONE[s.status]}55`,
-                      }}
-                    >
-                      {STEP_LABEL[s.name] ?? s.name}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ color: '#7dd3fc', fontSize: 18 }}>→</div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
+                <Card className="transition-colors hover:border-border-strong">
+                  <CardBody>
+                    <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr_2fr_auto] gap-4 md:gap-6 items-center">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[14px] text-fg truncate">
+                          {run.partnerId}
+                        </div>
+                        <div className="text-[11.5px] text-fg-muted mt-0.5">
+                          {run.brand.toUpperCase()} · {new Date(run.startedAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <StatusPill tone={STATUS_TONE[run.status]} dot>
+                          {STATUS_LABEL[run.status]}
+                        </StatusPill>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {run.steps.map((s) => (
+                          <StatusPill
+                            key={s.name}
+                            tone={STEP_TONE[s.status]}
+                            className="text-[10.5px] px-2 py-0"
+                          >
+                            <span
+                              title={`${STEP_LABEL[s.name] ?? s.name}: ${s.status}${s.note ? ` — ${s.note}` : ''}`}
+                            >
+                              {STEP_LABEL[s.name] ?? s.name}
+                            </span>
+                          </StatusPill>
+                        ))}
+                      </div>
+                      <div className="text-accent" aria-hidden>
+                        <ArrowRightIcon size={16} />
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </PageBody>
+    </>
   );
 }

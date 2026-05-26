@@ -13,10 +13,21 @@
  *   • Fee economics (our cut, partner cut, lender fees)
  *
  * Reads/writes to the `vertical_configs` table. Until DB seeding,
- * pulls from fixture defaults.
+ * pulls from fixture defaults. Server component — no client
+ * interactivity; data is rendered straight from in-process fixtures.
  */
 
 import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardHeader,
+  CardBody,
+  StatusPill,
+  InlineCode,
+  type StatusTone,
+} from '@eazepay/ui/web';
 import { listAllDossiers } from '@/lib/lender-economics';
 
 const MEDPAY_DEFAULTS = {
@@ -47,6 +58,20 @@ const MEDPAY_DEFAULTS = {
   },
 };
 
+function healthTone(h: 'healthy' | 'degraded' | 'down' | 'unwired'): StatusTone {
+  switch (h) {
+    case 'healthy':
+      return 'success';
+    case 'degraded':
+      return 'warning';
+    case 'down':
+      return 'danger';
+    case 'unwired':
+    default:
+      return 'neutral';
+  }
+}
+
 export default function MedpayVerticalConfigPage(): JSX.Element {
   const dossiers = listAllDossiers();
   const medpayLenders = dossiers.filter(
@@ -54,162 +79,141 @@ export default function MedpayVerticalConfigPage(): JSX.Element {
   );
 
   return (
-    <div style={{ padding: 32, maxWidth: 1180, margin: '0 auto', color: '#e2e8f0' }}>
-      <Link href="/admin" style={{ color: '#7dd3fc', fontSize: 13, textDecoration: 'none' }}>
-        ← Admin
-      </Link>
-
-      <header style={{ marginTop: 16, marginBottom: 24 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#5eead4', fontWeight: 700 }}>
-          VERTICAL CONFIG · MEDPAY
-        </div>
-        <h1 style={{ margin: '6px 0 8px', fontSize: 30, fontWeight: 700 }}>MedPay configuration</h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 720 }}>
-          What MedPay is, in one screen. This is the demo's step 2 — lenders see we have a real,
-          operating vertical with its own lender allowlist, routing policy, and economics.
-        </p>
-      </header>
-
-      <div style={{ display: 'grid', gap: 16 }}>
-        <Section
-          title="Allowed lenders"
-          subtitle={`${medpayLenders.length} lender${medpayLenders.length === 1 ? '' : 's'} configured for MedPay`}
-        >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: 10,
-            }}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin' },
+          { label: 'Verticals', href: '/admin' },
+          { label: 'MedPay' },
+        ]}
+        title="MedPay configuration"
+        description="What MedPay is, in one screen. The demo's step 2 — lenders see we have a real, operating vertical with its own lender allowlist, routing policy, and economics."
+        meta={
+          <StatusPill tone="accent" dot>
+            VERTICAL · MEDPAY
+          </StatusPill>
+        }
+      />
+      <PageBody>
+        <div className="grid gap-4">
+          <Section
+            title="Allowed lenders"
+            subtitle={`${medpayLenders.length} lender${medpayLenders.length === 1 ? '' : 's'} configured for MedPay`}
           >
-            {medpayLenders.map(({ lender, economics, integration }) => (
-              <Link
-                key={lender.id}
-                href={`/lender-marketplace/${lender.id}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <div
-                  style={{
-                    padding: 14,
-                    border: '1px solid #1f2937',
-                    borderRadius: 10,
-                    background: '#020617',
-                  }}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {medpayLenders.map(({ lender, economics, integration }) => (
+                <Link
+                  key={lender.id}
+                  href={`/lender-marketplace/${lender.id}`}
+                  className="block rounded-lg border border-border bg-bg-muted/40 hover:bg-bg-muted hover:border-border-strong p-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus transition-colors"
                 >
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                    }}
-                  >
-                    <strong style={{ fontSize: 13.5 }}>{lender.displayName}</strong>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color:
-                          integration.apiHealth === 'healthy'
-                            ? '#86efac'
-                            : integration.apiHealth === 'unwired'
-                              ? '#a3b8d4'
-                              : '#fcd34d',
-                      }}
-                    >
-                      ● {integration.apiHealth}
-                    </span>
+                  <div className="flex items-start justify-between gap-2">
+                    <strong className="text-[13.5px] text-fg">{lender.displayName}</strong>
+                    <StatusPill tone={healthTone(integration.apiHealth)} dot>
+                      {integration.apiHealth}
+                    </StatusPill>
                   </div>
-                  <div style={{ marginTop: 6, color: '#64748b', fontSize: 11 }}>
+                  <div className="mt-1.5 text-[11px] text-fg-muted">
                     Tiers: {lender.servesTiers.join(', ')}
                   </div>
-                  <div style={{ marginTop: 4, color: '#94a3b8', fontSize: 11.5 }}>
+                  <div className="mt-1 text-[11.5px] text-fg-secondary">
                     Kickback: {(economics.kickbackBps / 100).toFixed(2)}%
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Section>
-
-        <Section title="Decision-engine routing policy">
-          <Row label="Mode">
-            <span
-              style={{
-                padding: '3px 8px',
-                borderRadius: 6,
-                background: '#1e3a5f',
-                color: '#7dd3fc',
-                fontSize: 11,
-                fontWeight: 700,
-              }}
-            >
-              {MEDPAY_DEFAULTS.routingMode.toUpperCase()}
-            </span>
-          </Row>
-          <Row label="Notes">{MEDPAY_DEFAULTS.routingNotes}</Row>
-        </Section>
-
-        <Section title="Application form schema">
-          <Row label="Schema slug">
-            <code style={{ color: '#a5b4fc', fontSize: 12 }}>{MEDPAY_DEFAULTS.formSchemaSlug}</code>
-          </Row>
-          <Row label="Captured fields">
-            <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1' }}>
-              {MEDPAY_DEFAULTS.formFields.map((f) => (
-                <li key={f}>{f}</li>
+                </Link>
               ))}
-            </ul>
-          </Row>
-        </Section>
+            </div>
+          </Section>
 
-        <Section title="Branding defaults (consumer surface)">
-          <Row label="Primary">
-            <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-              <span
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: 4,
-                  background: MEDPAY_DEFAULTS.branding.primary,
-                  border: '1px solid #1f2937',
-                }}
-              />
-              <code style={{ color: '#cbd5e1', fontSize: 12 }}>
-                {MEDPAY_DEFAULTS.branding.primary}
-              </code>
-            </span>
-          </Row>
-          <Row label="Primary glow">
-            <code style={{ color: '#cbd5e1', fontSize: 12 }}>
-              {MEDPAY_DEFAULTS.branding.primaryGlow}
-            </code>
-          </Row>
-          <Row label="Surface">
-            <code style={{ color: '#cbd5e1', fontSize: 12 }}>
-              {MEDPAY_DEFAULTS.branding.surface}
-            </code>
-          </Row>
-          <Row label="Eyebrow text">
-            <code style={{ color: '#cbd5e1', fontSize: 12 }}>
-              {MEDPAY_DEFAULTS.branding.eyebrow}
-            </code>
-          </Row>
-        </Section>
+          <Section title="Decision-engine routing policy">
+            <Row label="Mode">
+              <StatusPill tone="info">{MEDPAY_DEFAULTS.routingMode.toUpperCase()}</StatusPill>
+            </Row>
+            <Row label="Notes">{MEDPAY_DEFAULTS.routingNotes}</Row>
+          </Section>
 
-        <Section title="Fee economics">
-          <Row label="Our cut">{(MEDPAY_DEFAULTS.economics.ourCutBps / 100).toFixed(2)}%</Row>
-          <Row label="Partner cut">
-            {(MEDPAY_DEFAULTS.economics.partnerCutBps / 100).toFixed(2)}%
-          </Row>
-          <Row label="Consumer-paid origination">
-            {(MEDPAY_DEFAULTS.economics.consumerOriginationBps / 100).toFixed(2)}%
-          </Row>
-          <Row label="Notes">{MEDPAY_DEFAULTS.economics.notes}</Row>
-        </Section>
-      </div>
-    </div>
+          <Section title="Application form schema">
+            <Row label="Schema slug">
+              <InlineCode>{MEDPAY_DEFAULTS.formSchemaSlug}</InlineCode>
+            </Row>
+            <Row label="Captured fields">
+              <ul className="m-0 pl-4 text-fg-secondary list-disc space-y-0.5">
+                {MEDPAY_DEFAULTS.formFields.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </Row>
+          </Section>
+
+          <Section title="Branding defaults (consumer surface)">
+            <Row label="Primary">
+              <span className="inline-flex items-center gap-2">
+                {/* Color swatch — visualising configured brand colour
+                    from data. Per spec, inline style on the swatch
+                    element only is acceptable here because the colour
+                    is the data being rendered. */}
+                <span
+                  aria-hidden
+                  className="size-3.5 rounded border border-border"
+                  style={{ background: MEDPAY_DEFAULTS.branding.primary }}
+                />
+                <InlineCode>{MEDPAY_DEFAULTS.branding.primary}</InlineCode>
+              </span>
+            </Row>
+            <Row label="Primary glow">
+              <span className="inline-flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="size-3.5 rounded border border-border"
+                  style={{ background: MEDPAY_DEFAULTS.branding.primaryGlow }}
+                />
+                <InlineCode>{MEDPAY_DEFAULTS.branding.primaryGlow}</InlineCode>
+              </span>
+            </Row>
+            <Row label="Surface">
+              <span className="inline-flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className="size-3.5 rounded border border-border"
+                  style={{ background: MEDPAY_DEFAULTS.branding.surface }}
+                />
+                <InlineCode>{MEDPAY_DEFAULTS.branding.surface}</InlineCode>
+              </span>
+            </Row>
+            <Row label="Eyebrow text">
+              <InlineCode>{MEDPAY_DEFAULTS.branding.eyebrow}</InlineCode>
+            </Row>
+          </Section>
+
+          <Section title="Fee economics">
+            <Row label="Our cut">
+              <StatusPill tone="accent">
+                {(MEDPAY_DEFAULTS.economics.ourCutBps / 100).toFixed(2)}%
+              </StatusPill>
+            </Row>
+            <Row label="Partner cut">
+              <StatusPill tone="neutral">
+                {(MEDPAY_DEFAULTS.economics.partnerCutBps / 100).toFixed(2)}%
+              </StatusPill>
+            </Row>
+            <Row label="Consumer-paid origination">
+              <StatusPill tone="neutral">
+                {(MEDPAY_DEFAULTS.economics.consumerOriginationBps / 100).toFixed(2)}%
+              </StatusPill>
+            </Row>
+            <Row label="Notes">{MEDPAY_DEFAULTS.economics.notes}</Row>
+          </Section>
+        </div>
+      </PageBody>
+    </>
   );
 }
 
+/**
+ * Collapsible section helper — kept (rather than inlining `<Card>`
+ * per call site) because the page has 5 near-identical sections and
+ * the helper compresses the repetitive Card + Header + grid scaffold
+ * into a single declarative call.
+ */
 function Section({
   title,
   subtitle,
@@ -220,30 +224,20 @@ function Section({
   children: React.ReactNode;
 }): JSX.Element {
   return (
-    <div
-      style={{
-        padding: 22,
-        border: '1px solid #1f2937',
-        borderRadius: 12,
-        background: '#0f172a',
-      }}
-    >
-      <div style={{ marginBottom: 14 }}>
-        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{title}</h2>
-        {subtitle && <div style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>{subtitle}</div>}
-      </div>
-      <div style={{ display: 'grid', gap: 9 }}>{children}</div>
-    </div>
+    <Card>
+      <CardHeader title={title} description={subtitle} />
+      <CardBody>
+        <div className="grid gap-2.5">{children}</div>
+      </CardBody>
+    </Card>
   );
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }): JSX.Element {
   return (
-    <div
-      style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 14, alignItems: 'baseline' }}
-    >
-      <div style={{ color: '#64748b', fontSize: 12 }}>{label}</div>
-      <div style={{ color: '#e2e8f0', fontSize: 13.5 }}>{children}</div>
+    <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-1.5 sm:gap-4 sm:items-baseline">
+      <div className="text-[12px] text-fg-muted font-medium">{label}</div>
+      <div className="text-[13.5px] text-fg-secondary">{children}</div>
     </div>
   );
 }

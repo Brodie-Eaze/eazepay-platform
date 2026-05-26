@@ -22,6 +22,23 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  PageHeader,
+  PageBody,
+  Card,
+  CardHeader,
+  CardBody,
+  KpiCard,
+  Banner,
+  StatusPill,
+  GaugeIcon,
+  QueueIcon,
+  ChartIcon,
+  WebhookIcon,
+  HeartPulseIcon,
+  ArrowRightIcon,
+  type StatusTone,
+} from '@eazepay/ui/web';
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -97,175 +114,168 @@ export default function ObservabilityPage(): JSX.Element {
 
   const stale = lastSuccessAt != null && Date.now() - lastSuccessAt > POLL_INTERVAL_MS * 3;
 
-  return (
-    <div style={{ padding: 32, maxWidth: 1240, margin: '0 auto', color: '#e2e8f0' }}>
-      <Link href="/admin" style={{ color: '#7dd3fc', fontSize: 13, textDecoration: 'none' }}>
-        ← Admin
-      </Link>
+  const webhookRejected = m['webhook.rejected'] ?? 0;
+  const lenderDegraded = (lender?.degraded ?? 0) + (lender?.down ?? 0);
 
-      <header style={{ marginTop: 16, marginBottom: 24 }}>
-        <div style={{ fontSize: 12, letterSpacing: '0.18em', color: '#7dd3fc', fontWeight: 700 }}>
-          OBSERVABILITY
-        </div>
-        <h1 style={{ margin: '6px 0 8px', fontSize: 28, fontWeight: 700 }}>Operational health</h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, maxWidth: 660 }}>
-          Live counters + queue depth, polled every {POLL_INTERVAL_MS / 1000}s. Per-lender drill-in
-          via the marketplace registry.
-        </p>
+  return (
+    <>
+      <PageHeader
+        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Observability' }]}
+        title="Operational health"
+        description={`Live counters + queue depth, polled every ${POLL_INTERVAL_MS / 1000}s. Per-lender drill-in via the marketplace registry.`}
+        actions={
+          <Link
+            href="/admin/observability/slo"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            SLO board <ArrowRightIcon size={12} />
+          </Link>
+        }
+      />
+      <PageBody>
         {error ? (
-          <div style={{ marginTop: 8, color: '#fca5a5', fontSize: 12 }}>
-            ! {error} (showing last good snapshot)
+          <div className="mb-4">
+            <Banner intent="danger" title="Snapshot fetch failed">
+              {error} (showing last good snapshot)
+            </Banner>
           </div>
         ) : null}
         {stale ? (
-          <div style={{ marginTop: 8, color: '#fcd34d', fontSize: 12 }}>
-            ! Snapshot is stale — last update{' '}
-            {lastSuccessAt ? new Date(lastSuccessAt).toLocaleTimeString() : '—'}
+          <div className="mb-4">
+            <Banner intent="warning" title="Snapshot is stale">
+              Last update {lastSuccessAt ? new Date(lastSuccessAt).toLocaleTimeString() : '—'}
+            </Banner>
           </div>
         ) : null}
-      </header>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 12,
-          marginBottom: 18,
-        }}
-      >
-        <KpiTile
-          label="Applications created"
-          value={(m['applications.created'] ?? 0).toLocaleString()}
-          sub={`since process start (resets on deploy)`}
-        />
-        <KpiTile
-          label="Decisions computed"
-          value={(m['decisions.computed'] ?? 0).toLocaleString()}
-          sub={`engine evaluations (internal / trutopia / fallback)`}
-        />
-        <KpiTile
-          label="Webhook events queued"
-          value={(m['webhook.queued'] ?? 0).toLocaleString()}
-          sub={`dup ${m['webhook.duplicate'] ?? 0} · rejected ${m['webhook.rejected'] ?? 0}`}
-          tone={(m['webhook.rejected'] ?? 0) > 0 ? 'warn' : 'ok'}
-        />
-        <KpiTile
-          label="Lenders healthy"
-          value={lender ? `${lender.healthy} / ${lender.total}` : '—'}
-          sub={lender ? `${lender.degraded} degraded · ${lender.unwired} unwired` : 'loading …'}
-          tone={lender && lender.degraded + lender.down > 0 ? 'warn' : 'ok'}
-        />
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+          <KpiCard
+            icon={<ChartIcon size={14} />}
+            label="Applications 24h"
+            value={(m['applications.created'] ?? 0).toLocaleString()}
+            hint="since process start (resets on deploy)"
+          />
+          <KpiCard
+            icon={<GaugeIcon size={14} />}
+            label="Decisions computed"
+            value={(m['decisions.computed'] ?? 0).toLocaleString()}
+            hint="engine evaluations (internal / trutopia / fallback)"
+          />
+          <KpiCard
+            icon={<WebhookIcon size={14} />}
+            label="Webhook events queued"
+            value={(m['webhook.queued'] ?? 0).toLocaleString()}
+            hint={`dup ${m['webhook.duplicate'] ?? 0} · rejected ${webhookRejected}`}
+          />
+          <KpiCard
+            icon={<HeartPulseIcon size={14} />}
+            label="Lenders healthy"
+            value={lender ? `${lender.healthy} / ${lender.total}` : '—'}
+            hint={lender ? `${lender.degraded} degraded · ${lender.unwired} unwired` : 'loading…'}
+          />
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div
-          style={{
-            padding: 22,
-            border: '1px solid #1f2937',
-            borderRadius: 12,
-            background: '#0f172a',
-          }}
-        >
-          <h2 style={{ margin: '0 0 14px', fontSize: 16 }}>Orchestrator throughput</h2>
-          <div style={{ display: 'grid', gap: 10 }}>
-            <CounterRow
-              label="Provisioning runs completed"
-              value={m['provisioning.completed'] ?? 0}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader title="Orchestrator throughput" />
+            <CardBody>
+              <div className="grid gap-2.5">
+                <CounterRow
+                  label="Provisioning runs completed"
+                  value={m['provisioning.completed'] ?? 0}
+                />
+                <CounterRow
+                  label="Provisioning runs failed"
+                  value={m['provisioning.failed'] ?? 0}
+                  tone={(m['provisioning.failed'] ?? 0) > 0 ? 'warning' : undefined}
+                />
+                <CounterRow
+                  label="Customer migrations completed"
+                  value={m['migration.completed'] ?? 0}
+                />
+                <CounterRow
+                  label="Customer migrations failed"
+                  value={m['migration.failed'] ?? 0}
+                  tone={(m['migration.failed'] ?? 0) > 0 ? 'warning' : undefined}
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="Queue depth"
+              description={
+                queues
+                  ? 'BullMQ queue state across orchestrator workers.'
+                  : 'Queue substrate offline — REDIS_URL not configured.'
+              }
             />
-            <CounterRow
-              label="Provisioning runs failed"
-              value={m['provisioning.failed'] ?? 0}
-              tone={(m['provisioning.failed'] ?? 0) > 0 ? 'warn' : 'ok'}
-            />
-            <CounterRow
-              label="Customer migrations completed"
-              value={m['migration.completed'] ?? 0}
-            />
-            <CounterRow
-              label="Customer migrations failed"
-              value={m['migration.failed'] ?? 0}
-              tone={(m['migration.failed'] ?? 0) > 0 ? 'warn' : 'ok'}
-            />
+            <CardBody>
+              {!queues ? (
+                <p className="text-[13px] text-fg-muted">
+                  Workers using setImmediate fallback. Connect Redis to surface queue depth.
+                </p>
+              ) : (
+                <div className="grid gap-2">
+                  <QueueTile
+                    name="Provisioning"
+                    stats={queues.provisioning}
+                    link="/admin/provisioning"
+                  />
+                  <QueueTile
+                    name="Customer migrations"
+                    stats={queues.migrations}
+                    link="/admin/migrations/ai-funding"
+                  />
+                  <QueueTile name="Webhook inbox" stats={queues.webhooks} link={null} />
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Surface lender health as its own card so operators see the
+            tally without leaving the page. */}
+        {lender && (
+          <div className="mt-4">
+            <Card>
+              <CardHeader
+                title="Lender health summary"
+                description="Categorised by integration status. Drill into the marketplace for per-lender detail."
+                action={
+                  <Link
+                    href="/lender-marketplace"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+                  >
+                    Open marketplace <ArrowRightIcon size={12} />
+                  </Link>
+                }
+              />
+              <CardBody>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill tone="success" dot>
+                    {lender.healthy} healthy
+                  </StatusPill>
+                  <StatusPill tone={lender.degraded > 0 ? 'warning' : 'neutral'} dot>
+                    {lender.degraded} degraded
+                  </StatusPill>
+                  <StatusPill tone={lender.down > 0 ? 'danger' : 'neutral'} dot>
+                    {lender.down} down
+                  </StatusPill>
+                  <StatusPill tone="neutral" dot>
+                    {lender.unwired} unwired
+                  </StatusPill>
+                  <StatusPill tone={lenderDegraded > 0 ? 'warning' : 'success'}>
+                    {lender.total} total
+                  </StatusPill>
+                </div>
+              </CardBody>
+            </Card>
           </div>
-        </div>
-
-        <div
-          style={{
-            padding: 22,
-            border: '1px solid #1f2937',
-            borderRadius: 12,
-            background: '#0f172a',
-          }}
-        >
-          <h2 style={{ margin: '0 0 14px', fontSize: 16 }}>Queue depth</h2>
-          {!queues ? (
-            <div style={{ color: '#94a3b8', fontSize: 13 }}>
-              Queue substrate offline — REDIS_URL not configured. Workers using setImmediate
-              fallback.
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: 12 }}>
-              <QueueTile
-                name="Provisioning"
-                stats={queues.provisioning}
-                link="/admin/provisioning"
-              />
-              <QueueTile
-                name="Customer migrations"
-                stats={queues.migrations}
-                link="/admin/migrations/ai-funding"
-              />
-              <QueueTile name="Webhook inbox" stats={queues.webhooks} link={null} />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function KpiTile({
-  label,
-  value,
-  sub,
-  tone,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  tone?: 'ok' | 'warn';
-}): JSX.Element {
-  return (
-    <div
-      style={{
-        padding: 18,
-        border: '1px solid #1f2937',
-        borderRadius: 12,
-        background: '#0f172a',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 11.5,
-          color: '#94a3b8',
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: 24,
-          fontWeight: 700,
-          marginTop: 6,
-          color: tone === 'warn' ? '#fcd34d' : '#e2e8f0',
-        }}
-      >
-        {value}
-      </div>
-      <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>{sub}</div>
-    </div>
+        )}
+      </PageBody>
+    </>
   );
 }
 
@@ -276,23 +286,16 @@ function CounterRow({
 }: {
   label: string;
   value: number;
-  tone?: 'ok' | 'warn';
+  tone?: StatusTone;
 }): JSX.Element {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto',
-        gap: 10,
-        alignItems: 'baseline',
-        padding: '6px 0',
-        borderBottom: '1px dashed #1f2937',
-      }}
-    >
-      <span style={{ fontSize: 13, color: '#cbd5e1' }}>{label}</span>
-      <strong style={{ fontSize: 15, color: tone === 'warn' ? '#fcd34d' : '#e2e8f0' }}>
-        {value.toLocaleString()}
-      </strong>
+    <div className="grid grid-cols-[1fr_auto] gap-3 items-baseline py-1.5 border-b border-dashed border-border last:border-0">
+      <span className="text-[13px] text-fg-secondary">{label}</span>
+      {tone ? (
+        <StatusPill tone={tone}>{value.toLocaleString()}</StatusPill>
+      ) : (
+        <strong className="text-[15px] text-fg tabular-nums">{value.toLocaleString()}</strong>
+      )}
     </div>
   );
 }
@@ -307,50 +310,36 @@ function QueueTile({
   link: string | null;
 }): JSX.Element {
   const body = (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1.4fr repeat(4, auto)',
-        gap: 12,
-        alignItems: 'baseline',
-      }}
-    >
-      <strong style={{ fontSize: 13 }}>{name}</strong>
+    <div className="grid grid-cols-[1.4fr_repeat(4,auto)] gap-3 items-baseline">
+      <strong className="text-[13px] text-fg flex items-center gap-2">
+        <QueueIcon size={13} className="text-fg-muted" />
+        {name}
+      </strong>
       {stats === null ? (
-        <span style={{ fontSize: 12, color: '#fca5a5' }}>stats unavailable</span>
+        <span className="text-[12px] text-danger col-span-4">stats unavailable</span>
       ) : (
         <>
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>waiting {stats.waiting}</span>
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>active {stats.active}</span>
+          <span className="text-[12px] text-fg-secondary tabular-nums">
+            waiting {stats.waiting}
+          </span>
+          <span className="text-[12px] text-fg-secondary tabular-nums">active {stats.active}</span>
           <span
-            style={{
-              fontSize: 12,
-              color: stats.failed > 0 ? '#fca5a5' : '#94a3b8',
-            }}
+            className={`text-[12px] tabular-nums ${stats.failed > 0 ? 'text-danger' : 'text-fg-secondary'}`}
           >
             failed {stats.failed}
           </span>
-          <span style={{ fontSize: 12, color: '#64748b' }}>delayed {stats.delayed}</span>
+          <span className="text-[12px] text-fg-muted tabular-nums">delayed {stats.delayed}</span>
         </>
       )}
     </div>
   );
   if (!link) {
-    return (
-      <div style={{ padding: '10px 12px', borderRadius: 8, background: '#020617' }}>{body}</div>
-    );
+    return <div className="px-3 py-2.5 rounded-md bg-bg-muted/40 border border-border">{body}</div>;
   }
   return (
     <Link
       href={link}
-      style={{
-        display: 'block',
-        padding: '10px 12px',
-        borderRadius: 8,
-        background: '#020617',
-        color: 'inherit',
-        textDecoration: 'none',
-      }}
+      className="block px-3 py-2.5 rounded-md bg-bg-muted/40 border border-border hover:bg-bg-muted hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
     >
       {body}
     </Link>
