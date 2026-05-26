@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, CheckIcon, DocIcon, SendIcon, ChevronDownIcon } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import {
   readInvoiceOverrides,
   setInvoiceOverride,
@@ -351,7 +352,7 @@ export function MonthlyBillingTab({ period, flash, version, bumpVersion }: Props
     const csv = rowsToCsv(target);
     const stamp = new Date().toISOString().slice(0, 10);
     downloadCsv(`eazepay-invoices-${period.id}-${stamp}.csv`, csv);
-    flash(`Exported ${target.length} row${target.length === 1 ? '' : 's'}`);
+    flash(`Exported ${pluralize(target.length, 'row')}`);
   };
 
   /* ─── Sort header ─────────────────────────────────────────────── */

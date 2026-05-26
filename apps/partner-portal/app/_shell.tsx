@@ -49,6 +49,7 @@ import {
   type NavGroup,
 } from '@eazepay/ui/web';
 import { BRAND_ORDER, BRANDS, type BrandCode } from '@eazepay/shared-types';
+import { formatTime } from '@eazepay/shared-utils/format-time';
 import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
 import { NotificationBell } from '../components/NotificationBell';
@@ -735,11 +736,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 : `${partnerOrg.tier} · ${partnerOrg.liveStates} live states`}
             </div>
             <div className="text-[11px] text-fg-muted">
-              Member since{' '}
-              {new Date(partnerOrg.joinedAt).toLocaleDateString('en-US', {
-                month: 'short',
-                year: 'numeric',
-              })}
+              Member since {formatTime(partnerOrg.joinedAt, { mode: 'date' })}
             </div>
           </div>
         }

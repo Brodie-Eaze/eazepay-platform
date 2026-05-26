@@ -26,6 +26,7 @@ import {
   type ButtonSize,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { Modal, ErrorBanner } from '../../../components/a11y';
 
 /* Locally-typed Button wrapper to sidestep the codebase-wide
@@ -937,7 +938,7 @@ function ApplicationsTab({ partnerId, partnerName }: { partnerId: string; partne
     <Card>
       <CardHeader
         title="Recent applications"
-        description={`Last ${apps.length} applications submitted by this partner.`}
+        description={`Last ${pluralize(apps.length, 'application')} submitted by this partner.`}
         action={
           <Link
             href={`/applications/${partnerId}`}
@@ -1172,7 +1173,7 @@ function BillingTab({
       <Card>
         <CardHeader
           title="Recent invoices"
-          description={`${invoices.length} invoice${invoices.length === 1 ? '' : 's'} on file. Use the billing workspace for full edit / send / payment flows.`}
+          description={`${pluralize(invoices.length, 'invoice')} on file. Use the billing workspace for full edit / send / payment flows.`}
         />
         <CardBody className="p-0">
           {invoices.length === 0 ? (

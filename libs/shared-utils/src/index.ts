@@ -5,3 +5,7 @@ export * from './crypto.js';
 export * from './object-storage.js';
 export * from './local-fs-storage.js';
 export * from './idempotent.decorator.js';
+export * from './format-currency.js';
+export * from './format-bps.js';
+export * from './format-time.js';
+export * from './pluralize.js';

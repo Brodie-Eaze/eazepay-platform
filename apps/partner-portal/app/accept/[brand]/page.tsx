@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
+import { formatTime } from '@eazepay/shared-utils/format-time';
 import { csrfHeaders } from '../../../lib/client-csrf';
 
 /**
@@ -166,7 +167,7 @@ export default function AcceptInvitePage() {
               <strong className="text-fg">{preview.inviterName}</strong> invited you to {spec.name}{' '}
               as <strong className="text-fg">{preview.role}</strong>.
               <br />
-              Expires {new Date(preview.expiresAt).toLocaleDateString()}.
+              Expires {formatTime(preview.expiresAt, { mode: 'date' })}.
               {preview.inviterNote && (
                 <>
                   <br />

@@ -28,6 +28,7 @@ import {
   InlineCode,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { listAllDossiers } from '@/lib/lender-economics';
 
 const MEDPAY_DEFAULTS = {
@@ -98,7 +99,7 @@ export default function MedpayVerticalConfigPage(): JSX.Element {
         <div className="grid gap-4">
           <Section
             title="Allowed lenders"
-            subtitle={`${medpayLenders.length} lender${medpayLenders.length === 1 ? '' : 's'} configured for MedPay`}
+            subtitle={`${pluralize(medpayLenders.length, 'lender')} configured for MedPay`}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {medpayLenders.map(({ lender, economics, integration }) => (

@@ -11,9 +11,11 @@
  *   - throws a typed Error on non-2xx so TanStack Query treats it as
  *     `isError`
  *
- * Formatting helpers (`formatCurrency`, `formatDate`, `statusBadge`)
- * are byte-identical to Lovable's so badge colours and date strings
- * match across both platforms.
+ * Currency + date formatting now lives in `@eazepay/shared-utils`
+ * (`formatCurrencyCents` / `formatTime`) so every surface — partner,
+ * merchant, master, public consumer — renders identically. The
+ * `statusBadge` helper stays here because it's a portal-specific
+ * tailwind mapping.
  */
 
 import { useCallback } from 'react';
@@ -106,23 +108,6 @@ export function useApi() {
     return apiRequest<T>(path, options);
   }, []);
   return { call };
-}
-
-// ───── Formatting helpers (byte-identical to Lovable) ─────
-
-export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(cents / 100);
-}
-
-export function formatDate(iso: string | Date): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }
 
 /**

@@ -17,6 +17,7 @@ import {
   ExternalIcon,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { formatTime } from '@eazepay/shared-utils/format-time';
 import { auditLog, type AuditEntry } from '../../lib/master-data';
 
 /**
@@ -37,16 +38,7 @@ const outcomeTone: Record<Exclude<Outcome, 'all'>, StatusTone> = {
 };
 
 function relative(iso: string): string {
-  const d = new Date(iso).getTime();
-  const diff = Date.now() - d;
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(iso).toISOString().slice(0, 10);
+  return formatTime(iso, { mode: 'relative' });
 }
 
 const PAGE_SIZE = 25;

@@ -19,6 +19,7 @@ import {
   type ButtonVariant,
   type ButtonSize,
 } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { helpArticles, type HelpArticle } from '../../lib/master-data';
 
 type ButtonProps = {
@@ -169,10 +170,7 @@ export default function HelpPage() {
           <div className="space-y-4">
             {[...byCat.entries()].map(([catKey, articles]) => (
               <Card key={catKey}>
-                <CardHeader
-                  title={catKey}
-                  description={`${articles.length} article${articles.length === 1 ? '' : 's'}`}
-                />
+                <CardHeader title={catKey} description={pluralize(articles.length, 'article')} />
                 <CardBody className="p-0">
                   <ul className="divide-y divide-border">
                     {articles.map((a) => (

@@ -9,6 +9,7 @@ import {
   Button as _Button,
   StatusPill,
   Money,
+  Filter,
   ArrowRightIcon,
   SearchIcon,
   ExternalIcon,
@@ -18,7 +19,19 @@ import {
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
+  type FilterGroup,
+  type FilterOption,
 } from '@eazepay/ui/web';
+import {
+  NICHES_BY_BRAND,
+  NICHE_LABEL,
+  PARTNER_STATUSES,
+  PARTNER_STATUS_LABEL,
+  normalizePartnerStatus,
+  type Niche as CanonicalNiche,
+  type PartnerStatus,
+} from '@eazepay/shared-types';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 import { Modal, ErrorBanner } from '../../components/a11y';
 
 /* Local typed re-export — the upstream Button declares its props via a
@@ -74,6 +87,37 @@ const nicheLabel: Record<Niche, string> = {
   consumer: 'Consumer',
 };
 
+/* Canonical niche dropdown — grouped Brand → Niche per Builder P's
+ * taxonomy. Brand groupings match `NICHES_BY_BRAND` in
+ * `@eazepay/shared-types`; pre-existing fixture rows whose niche is
+ * `coaching` / `trades` / `consumer` won't match any canonical key — they
+ * simply won't pass the filter when one is applied. */
+const NICHE_FILTER_GROUPS: FilterGroup<CanonicalNiche>[] = [
+  {
+    label: 'MedPay',
+    options: NICHES_BY_BRAND.medpay.map(
+      (n) => ({ value: n, label: NICHE_LABEL[n] }) as FilterOption<CanonicalNiche>,
+    ),
+  },
+  {
+    label: 'TradePay',
+    options: NICHES_BY_BRAND.tradepay.map(
+      (n) => ({ value: n, label: NICHE_LABEL[n] }) as FilterOption<CanonicalNiche>,
+    ),
+  },
+  {
+    label: 'CoachPay',
+    options: NICHES_BY_BRAND.coachpay.map(
+      (n) => ({ value: n, label: NICHE_LABEL[n] }) as FilterOption<CanonicalNiche>,
+    ),
+  },
+];
+
+const STATUS_FILTER_OPTIONS: FilterOption<PartnerStatus>[] = PARTNER_STATUSES.map((s) => ({
+  value: s,
+  label: PARTNER_STATUS_LABEL[s],
+}));
+
 const brandTone: Record<ProductBrand, StatusTone> = {
   MedPay: 'info',
   TradePay: 'accent',
@@ -96,8 +140,15 @@ function seed(): LocalPartner[] {
 export default function ControlPanelPage() {
   const [rows, setRows] = useState<LocalPartner[]>(seed);
   const [search, setSearch] = useState('');
-  const [niche, setNiche] = useState<Niche | ''>('');
-  const [status, setStatus] = useState<LocalPartner['uiStatus'] | ''>('');
+  /* Canonical niche from `@eazepay/shared-types` (Builder P). Local fixture
+   * rows use a smaller `Niche` union ('coaching' / 'trades' / 'consumer'
+   * mixed with 'medical' / 'dental'); the canonical taxonomy narrows that to
+   * a brand-scoped set (`medical | dental | wellness | veterinary | hvac …`).
+   * The dropdown drives the filter against the fixture `p.niche` field —
+   * matches happen on the overlap ('medical', 'dental'). 'consumer' is
+   * dropped per the spec. */
+  const [niche, setNiche] = useState<CanonicalNiche | null>(null);
+  const [status, setStatus] = useState<PartnerStatus | null>(null);
   const [sortSeed, setSortSeed] = useState(0);
   const [openKebab, setOpenKebab] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -117,7 +168,12 @@ export default function ControlPanelPage() {
           return false;
       }
       if (niche && p.niche !== niche) return false;
-      if (status && p.uiStatus !== status) return false;
+      if (status) {
+        // Normalize the fixture row's legacy uiStatus ('Approved' / 'Pending'
+        // / 'Suspended') into canonical PartnerStatus before comparing.
+        const canonical = normalizePartnerStatus(p.uiStatus);
+        if (canonical !== status) return false;
+      }
       return true;
     });
     if (sortSeed > 0) {
@@ -126,6 +182,16 @@ export default function ControlPanelPage() {
         const ha = (a.id + sortSeed).split('').reduce((s, c) => s + c.charCodeAt(0), 0);
         const hb = (b.id + sortSeed).split('').reduce((s, c) => s + c.charCodeAt(0), 0);
         return ha - hb;
+      });
+    } else {
+      // Default sort: most-recently-approved first. Pending rows
+      // (approvedOn undefined) sink to the bottom so the active
+      // roster is what operators see on landing. ISO YYYY-MM-DD
+      // strings compare lexicographically === chronologically.
+      list = [...list].sort((a, b) => {
+        const ad = a.approvedOn ?? '';
+        const bd = b.approvedOn ?? '';
+        return ad < bd ? 1 : ad > bd ? -1 : 0;
       });
     }
     return list;
@@ -236,49 +302,31 @@ export default function ControlPanelPage() {
               </button>
             )}
           </label>
-          <label className="sr-only" htmlFor="filter-niche">
-            Niche
-          </label>
-          <select
-            id="filter-niche"
+          <Filter<CanonicalNiche>
+            label="Niche"
             value={niche}
-            onChange={(e) => setNiche(e.target.value as Niche | '')}
-            aria-label="Filter by niche"
-            className="h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong flex-1 sm:flex-none min-w-[140px]"
-          >
-            <option value="">All niches</option>
-            <option value="medical">Medical</option>
-            <option value="trades">Trades</option>
-            <option value="coaching">Coaching</option>
-            <option value="dental">Dental</option>
-            <option value="consumer">Consumer</option>
-          </select>
-          <label className="sr-only" htmlFor="filter-status">
-            Status
-          </label>
-          <select
-            id="filter-status"
+            onChange={setNiche}
+            options={NICHE_FILTER_GROUPS}
+            allLabel="All niches"
+          />
+          <Filter<PartnerStatus>
+            label="Status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as LocalPartner['uiStatus'] | '')}
-            aria-label="Filter by status"
-            className="h-10 rounded-lg border border-border bg-bg-elevated px-3 text-[13px] text-fg outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:border-border-strong flex-1 sm:flex-none min-w-[140px]"
-          >
-            <option value="">All statuses</option>
-            <option value="Approved">Approved</option>
-            <option value="Pending">Pending</option>
-            <option value="Suspended">Suspended</option>
-          </select>
+            onChange={setStatus}
+            options={STATUS_FILTER_OPTIONS}
+            allLabel="All statuses"
+          />
         </div>
 
         <p className="text-[12px] text-fg-muted mb-3" role="status" aria-live="polite">
-          {filtered.length} partner{filtered.length === 1 ? '' : 's'} found
+          {pluralize(filtered.length, 'partner')} found
           {(search || niche || status) && (
             <button
               type="button"
               onClick={() => {
                 setSearch('');
-                setNiche('');
-                setStatus('');
+                setNiche(null);
+                setStatus(null);
               }}
               className="ml-2 text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
             >
@@ -297,8 +345,8 @@ export default function ControlPanelPage() {
                     type="button"
                     onClick={() => {
                       setSearch('');
-                      setNiche('');
-                      setStatus('');
+                      setNiche(null);
+                      setStatus(null);
                     }}
                     className="ml-1 text-accent font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
                   >

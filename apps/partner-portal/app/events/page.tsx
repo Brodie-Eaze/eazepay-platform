@@ -11,6 +11,7 @@ import {
   ArrowRightIcon,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { pluralize } from '@eazepay/shared-utils/pluralize';
 
 /**
  * Domain event bus — live tail. Filterable by type, actor, target.
@@ -167,9 +168,7 @@ export default function EventsPage() {
               className="flex-1 bg-transparent outline-none text-[13px] text-fg placeholder:text-fg-muted/80"
             />
           </div>
-          <span className="text-[11px] text-fg-muted">
-            {filtered.length} event{filtered.length === 1 ? '' : 's'}
-          </span>
+          <span className="text-[11px] text-fg-muted">{pluralize(filtered.length, 'event')}</span>
         </div>
 
         <Card>

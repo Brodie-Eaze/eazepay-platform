@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { formatTime } from '@eazepay/shared-utils/format-time';
 import {
   listNotifications,
   markAllRead,
@@ -167,22 +168,14 @@ function NotificationRow({ item, onClick }: { item: Notification; onClick: () =>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-fg truncate">{item.title}</p>
         <p className="mt-0.5 text-[12px] text-fg-secondary leading-snug">{item.body}</p>
-        <p className="mt-1 text-[10px] text-fg-muted">{formatRelative(item.createdAt)}</p>
+        <p className="mt-1 text-[10px] text-fg-muted">
+          {formatTime(item.createdAt, { mode: 'relative' })}
+        </p>
       </div>
     </div>
   );
   if (item.href) return <Link href={item.href}>{content}</Link>;
   return content;
-}
-
-function formatRelative(iso: string): string {
-  const now = Date.now();
-  const then = new Date(iso).getTime();
-  const s = Math.max(0, Math.round((now - then) / 1000));
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.round(s / 60)}m ago`;
-  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 const BellIcon = () => (

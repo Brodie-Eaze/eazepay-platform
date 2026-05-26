@@ -19,6 +19,7 @@
     "@eazepay/api-client": "workspace:*",
     "@eazepay/service-email": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
+    "@eazepay/shared-utils": "workspace:*",
     "@eazepay/ui": "workspace:*",
     "@tanstack/react-query": "^5.0.0",
     "bullmq": "^5.0.0",

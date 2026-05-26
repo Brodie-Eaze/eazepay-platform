@@ -13,6 +13,7 @@ import {
   Sparkline,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { formatBps } from '@eazepay/shared-utils/format-bps';
 import {
   approval30d,
   latency30d,
@@ -649,7 +650,7 @@ const recentDecisions: DecisionRow[] = [
 /* ----------------------------------------------------------------------- */
 
 const fmtPct = (n: number, decimals = 1) => `${(n * 100).toFixed(decimals)}%`;
-const fmtBps = (bps: number | null) => (bps == null ? '—' : `${(bps / 100).toFixed(2)}%`);
+const fmtBps = (bps: number | null) => (bps == null ? '—' : formatBps(bps));
 const fmtMs = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`);
 const fmtDwell = (ms: number) => {
   if (ms === 0) return '—';
