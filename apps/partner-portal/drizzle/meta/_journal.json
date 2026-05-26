@@ -8,6 +8,20 @@
       "when": 1779638400000,
       "tag": "0001_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779700000000,
+      "tag": "0002_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779765347599,
+      "tag": "0003_platform_scaffolding",
+      "breakpoints": true
     }
   ]
 }

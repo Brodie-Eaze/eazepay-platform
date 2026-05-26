@@ -224,3 +224,313 @@ export const offers = pgTable(
 
 export type Offer = typeof offers.$inferSelect;
 export type NewOffer = typeof offers.$inferInsert;
+
+/* ---------- lenders ----------
+ *
+ * Persisted lender registry. Source of truth for the EazePay Lender
+ * Marketplace. Replaces the in-memory `lib/marketplace-data.ts` fixture
+ * once production lands. The fixture is still used as the seed source
+ * during local development.
+ *
+ * Each row represents one connected lender. Verticals the lender is
+ * eligible for live in `enabled_brands` (a CSV of `brandEnum` values)
+ * so a single lender can be exposed across MedPay / TradePay / CoachPay
+ * with one record. Per-partner overrides live in `partner_marketplaces`.
+ *
+ * `eligibility_rules_json` holds each lender's HARD eligibility rules
+ * (FICO floor, DTI cap, income floor, employment type, geography,
+ * treatment-category eligibility, etc.) — these feed the decision
+ * engine's filter-and-rank step.
+ *
+ * `kickback_bps` is the origination fee paid back to us per funded
+ * loan, expressed in basis points of the loan amount (e.g. 250 = 2.5%).
+ * Integer-safe, kept as basis points to match `apr_bps` convention.
+ */
+export const lenders = pgTable(
+  'lenders',
+  {
+    id: text('id').primaryKey(),
+    displayName: text('display_name').notNull(),
+    /** CSV of brandEnum values: 'medpay,tradepay'. Empty = available
+     * to all verticals. Stored as text because Postgres array support
+     * in Drizzle is uneven across pg drivers. */
+    enabledBrands: text('enabled_brands').notNull().default(''),
+    /** 'live' | 'pending_integration' | 'paused' | 'archived' */
+    status: text('status').notNull().default('pending_integration'),
+    /** Connection health from the last sync attempt. */
+    connectionHealth: text('connection_health').notNull().default('unknown'),
+    lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    /** Hard eligibility rules (FICO floor, DTI cap, geography, etc.)
+     * shape varies per lender — stored as JSON-encoded text. */
+    eligibilityRulesJson: text('eligibility_rules_json'),
+    /** Origination kickback in basis points of funded amount. */
+    kickbackBps: integer('kickback_bps').notNull().default(0),
+    /** Webhook endpoint we POST to for application submission. */
+    webhookUrl: text('webhook_url'),
+    /** Webhook secret for HMAC verification on inbound callbacks. */
+    webhookSecret: text('webhook_secret'),
+    /** Minimum / maximum loan size envelope, in integer cents. */
+    minAmountCents: bigint('min_amount_cents', { mode: 'number' }),
+    maxAmountCents: bigint('max_amount_cents', { mode: 'number' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    statusIdx: index('lenders_status_idx').on(t.status),
+    displayNameIdx: index('lenders_display_name_idx').on(t.displayName),
+  }),
+);
+
+export type Lender = typeof lenders.$inferSelect;
+export type NewLender = typeof lenders.$inferInsert;
+
+/* ---------- vertical_configs ----------
+ *
+ * Per-vertical (medpay / tradepay / coachpay) configuration. The
+ * admin portal "MedPay configuration" view writes here. Holds the
+ * vertical-level lender allowlist, decision-engine routing policy,
+ * application form schema reference, fee economics, branding defaults.
+ *
+ * Exactly one row per brand. Stored as JSON blobs because the schema
+ * for each block evolves frequently and we want config changes to be
+ * a single row update without migrations.
+ */
+export const verticalConfigs = pgTable(
+  'vertical_configs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    brand: brandEnum('brand').notNull(),
+    /** CSV of lender ids enabled for this vertical (subset of
+     * lenders.id where the brand is also in enabled_brands). */
+    enabledLenderIds: text('enabled_lender_ids').notNull().default(''),
+    /** Decision-engine routing policy: 'waterfall' | 'parallel' | 'hybrid' */
+    routingMode: text('routing_mode').notNull().default('hybrid'),
+    /** Vertical-level overrides on top of each lender's rules. JSON. */
+    routingRulesJson: text('routing_rules_json'),
+    /** Application form schema reference (slug into lib/forms/*). */
+    formSchemaSlug: text('form_schema_slug'),
+    /** Branding defaults for the consumer-facing surface. JSON. */
+    brandingJson: text('branding_json'),
+    /** Fee economics: our cut, partner cut, lender fees. JSON. */
+    economicsJson: text('economics_json'),
+    /** When the config was last published live. */
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    publishedBy: text('published_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    brandUnique: uniqueIndex('vertical_configs_brand_unique').on(t.brand),
+  }),
+);
+
+export type VerticalConfig = typeof verticalConfigs.$inferSelect;
+export type NewVerticalConfig = typeof verticalConfigs.$inferInsert;
+
+/* ---------- partner_marketplaces ----------
+ *
+ * Per-partner override of the vertical-level lender allowlist. A med
+ * spa can be allowed/denied a specific lender independently of the
+ * MedPay default (e.g. compliance exclusion, exclusivity, performance
+ * pause). Replaces the `partnerAccessOverrides` map in
+ * `lib/marketplace-data.ts`.
+ *
+ * Composite unique on (partner_id, lender_id) — a partner has at most
+ * one override row per lender.
+ */
+export const partnerMarketplaces = pgTable(
+  'partner_marketplaces',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: text('partner_id').notNull(),
+    lenderId: text('lender_id').notNull(),
+    /** 'enabled' | 'disabled' — disabled overrides the vertical default. */
+    state: text('state').notNull(),
+    reason: text('reason'),
+    changedBy: text('changed_by').notNull().default('system'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    partnerLenderUnique: uniqueIndex('partner_marketplaces_partner_lender_unique').on(
+      t.partnerId,
+      t.lenderId,
+    ),
+    partnerIdx: index('partner_marketplaces_partner_idx').on(t.partnerId),
+  }),
+);
+
+export type PartnerMarketplace = typeof partnerMarketplaces.$inferSelect;
+export type NewPartnerMarketplace = typeof partnerMarketplaces.$inferInsert;
+
+/* ---------- mids (MiCamp merchant IDs) ----------
+ *
+ * One row per partner per MID. MiCamp can issue more than one MID per
+ * merchant (different processors, different sub-merchants); we don't
+ * assume a 1:1.
+ *
+ * `provisioning_status` walks: requested → underwriting_pre →
+ * underwriting_post → active | rejected | paused. Auto-provisioning
+ * lives in the `provisioning_state` JSON blob — the orchestrator
+ * writes step status there.
+ *
+ * `rate_card_json` captures the interchange + processing fee schedule
+ * agreed at provisioning time. Locked at issuance, updated on
+ * re-negotiation only.
+ */
+export const mids = pgTable(
+  'mids',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    partnerId: text('partner_id').notNull(),
+    /** External MiCamp identifier — the number on the merchant's
+     * processing statement. NULL until MiCamp returns it. */
+    micampMid: text('micamp_mid'),
+    /** requested | underwriting_pre | underwriting_post | active | rejected | paused */
+    provisioningStatus: text('provisioning_status').notNull().default('requested'),
+    /** JSON blob: per-step status from the auto-provisioning orchestrator. */
+    provisioningStateJson: text('provisioning_state_json'),
+    /** JSON blob: interchange % + processing fee schedule at issuance. */
+    rateCardJson: text('rate_card_json'),
+    /** When MiCamp flipped us from pre- to post-underwriting. */
+    postUnderwritingAt: timestamp('post_underwriting_at', { withTimezone: true }),
+    /** Rolling total of processing volume (cents) used to trigger the
+     * pre→post underwriting flip. */
+    volumeCentsToDate: bigint('volume_cents_to_date', { mode: 'number' }).notNull().default(0),
+    /** Last settlement timestamp from the MiCamp webhook. */
+    lastSettledAt: timestamp('last_settled_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    partnerIdx: index('mids_partner_idx').on(t.partnerId),
+    statusIdx: index('mids_status_idx').on(t.provisioningStatus),
+    micampMidUnique: uniqueIndex('mids_micamp_mid_unique').on(t.micampMid),
+  }),
+);
+
+export type Mid = typeof mids.$inferSelect;
+export type NewMid = typeof mids.$inferInsert;
+
+/* ---------- decisions ----------
+ *
+ * One row per decision-engine evaluation. The engine runs at intake
+ * (after HighSale pre-qual lands) and produces a propensity-ranked
+ * list of lenders. We persist the full ranked output so:
+ *   • The offer page can be re-rendered deterministically from history
+ *   • Adverse-action notices can cite the specific eligibility rule
+ *     that excluded a lender (Reg B compliance)
+ *   • The ranking algorithm can be A/B tested against historical
+ *     decisions without re-running HighSale pulls
+ *
+ * `ranked_lenders_json` shape:
+ *   [{ lenderId, propensityScore, rank, reasonCode, included: bool }]
+ *
+ * `inputs_json` captures the HighSale pre-qual snapshot + intake form
+ * data that produced the decision. Frozen at decision time.
+ */
+export const decisions = pgTable(
+  'decisions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    applicationId: uuid('application_id').notNull(),
+    /** Which engine produced this — 'trutopia' | 'internal' | 'fallback' */
+    engine: text('engine').notNull(),
+    /** Engine version / model identifier for replay. */
+    engineVersion: text('engine_version').notNull().default('v1'),
+    inputsJson: text('inputs_json'),
+    rankedLendersJson: text('ranked_lenders_json'),
+    /** Top-line stats for fast dashboard reads without parsing JSON. */
+    eligibleLenderCount: integer('eligible_lender_count').notNull().default(0),
+    excludedLenderCount: integer('excluded_lender_count').notNull().default(0),
+    topPropensityScore: integer('top_propensity_score'),
+    /** Latency in ms for the engine call — observability metric. */
+    latencyMs: integer('latency_ms'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    appCreatedIdx: index('decisions_app_created_idx').on(t.applicationId, t.createdAt),
+    engineIdx: index('decisions_engine_idx').on(t.engine),
+  }),
+);
+
+export type Decision = typeof decisions.$inferSelect;
+export type NewDecision = typeof decisions.$inferInsert;
+
+/* ---------- audit_log ----------
+ *
+ * Admin-action audit log. Distinct from `application_events` (which
+ * is application-scoped). Every change made through the admin portal
+ * (lender toggle, vertical config publish, partner approval, MID
+ * pause, etc.) lands here.
+ *
+ * `target_type` + `target_id` form a polymorphic reference — common
+ * values: 'lender' | 'partner' | 'vertical_config' | 'mid' | 'migration'.
+ */
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Operator user id. */
+    actor: text('actor').notNull(),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id'),
+    /** Before/after snapshot or free-form context, JSON-encoded. */
+    payloadJson: text('payload_json'),
+    /** Source IP — for sensitive admin actions. NULL if unknown. */
+    ipAddress: text('ip_address'),
+    /** Source user agent. */
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    actorCreatedIdx: index('audit_log_actor_created_idx').on(t.actor, t.createdAt),
+    targetIdx: index('audit_log_target_idx').on(t.targetType, t.targetId),
+    createdIdx: index('audit_log_created_idx').on(t.createdAt),
+  }),
+);
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type NewAuditLog = typeof auditLog.$inferInsert;
+
+/* ---------- customer_migrations ----------
+ *
+ * AI Funding Solutions → MedPay book migration queue. On launch day
+ * (July 1) we walk every customer who closed during May–June through
+ * a controlled migration onto the MedPay financial infrastructure:
+ * HighSale sub-account, MedPay partner portal, Lender Marketplace,
+ * MiCamp MID. Each customer is a row here so we can run the migration
+ * in batches, see per-customer status, and retry failures.
+ *
+ * `step_state_json` shape:
+ *   { highsale: 'pending|done|failed', marketplace: ..., micamp: ... }
+ */
+export const customerMigrations = pgTable(
+  'customer_migrations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** AI Funding customer id — opaque identifier from the source system. */
+    sourceCustomerId: text('source_customer_id').notNull(),
+    /** Destination partner row created during migration. NULL until partner exists. */
+    targetPartnerId: text('target_partner_id'),
+    sourceProduct: text('source_product').notNull().default('ai_funding'),
+    targetBrand: brandEnum('target_brand').notNull().default('medpay'),
+    /** queued | in_progress | completed | failed | rolled_back */
+    status: text('status').notNull().default('queued'),
+    stepStateJson: text('step_state_json'),
+    failureReason: text('failure_reason'),
+    /** When the migration was kicked off + completed. */
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    statusIdx: index('customer_migrations_status_idx').on(t.status),
+    sourceUnique: uniqueIndex('customer_migrations_source_unique').on(t.sourceCustomerId),
+  }),
+);
+
+export type CustomerMigration = typeof customerMigrations.$inferSelect;
+export type NewCustomerMigration = typeof customerMigrations.$inferInsert;
