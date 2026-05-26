@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader, PageBody, Card, CardBody, Button, BankIcon, XIcon } from '@eazepay/ui/web';
+import { SavedViewsMenu } from '../../components/SavedViewsMenu';
 import { formatTime } from '@eazepay/shared-utils/format-time';
 import { useApi, statusBadge } from '../../lib/api-client';
 import {
@@ -137,6 +138,7 @@ export default function LendersPage() {
             <Button size="sm" onClick={() => setShowCreate((v) => !v)}>
               {showCreate ? 'Cancel' : 'Add lender'}
             </Button>
+            <SavedViewsMenu surface="/lender-marketplace" />
           </div>
         }
       />

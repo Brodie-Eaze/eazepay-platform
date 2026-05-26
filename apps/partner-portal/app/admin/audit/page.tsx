@@ -25,6 +25,7 @@ import {
   SearchIcon,
   type StatusTone,
 } from '@eazepay/ui/web';
+import { SavedViewsMenu } from '../../../components/SavedViewsMenu';
 
 interface AuditEntry {
   id: string;
@@ -112,6 +113,7 @@ export default function AuditLogPage(): JSX.Element {
             source: {source}
           </StatusPill>
         }
+        actions={<SavedViewsMenu surface="/admin/audit" />}
       />
       <PageBody>
         <div

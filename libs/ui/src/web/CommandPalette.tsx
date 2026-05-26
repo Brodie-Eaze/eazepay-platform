@@ -68,6 +68,16 @@ export interface CommandPaletteProps {
   onOpenChange?: (open: boolean) => void;
   /** Customise the search placeholder text. */
   placeholder?: string;
+  /** Recently-opened items rendered as a "Recent" section at the top
+   *  of the palette ONLY while the search query is empty. Once the
+   *  user types, the section hides so it doesn't compete with the
+   *  filtered results. Caller is responsible for tracking (see
+   *  `lib/recent-items.ts` in partner-portal). */
+  recentItems?: CommandPaletteCommand[];
+  /** Fires after a command is selected (post-close, pre-navigation).
+   *  The shell uses this to push the selected command into the
+   *  recent-items store. */
+  onItemSelected?: (cmd: CommandPaletteCommand) => void;
 }
 
 /**
@@ -98,10 +108,19 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   open: controlledOpen,
   onOpenChange,
   placeholder = 'Search pages, lenders, partners…',
+  recentItems,
+  onItemSelected,
 }) => {
   const isControlled = controlledOpen !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
   const open = isControlled ? controlledOpen : internalOpen;
+  const [query, setQuery] = useState('');
+
+  // Reset the query each time the palette closes so re-opening
+  // shows the Recent section instead of stale filtered results.
+  useEffect(() => {
+    if (!open) setQuery('');
+  }, [open]);
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -129,6 +148,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   const handleSelect = useCallback(
     (cmd: CommandPaletteCommand) => {
       setOpen(false);
+      onItemSelected?.(cmd);
       // Defer navigation/action one tick so the dialog finishes its
       // close transition before the route changes (avoids a flash of
       // the palette overlapping the destination page). queueMicrotask
@@ -147,8 +167,13 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         }
       });
     },
-    [setOpen, onNavigate],
+    [setOpen, onNavigate, onItemSelected],
   );
+
+  // Render the Recent section only when the search query is empty,
+  // and only when the caller actually provided recents. Hidden as
+  // soon as the user types so it doesn't compete with results.
+  const showRecent = !query.trim() && recentItems && recentItems.length > 0;
 
   return (
     <Command.Dialog
@@ -193,6 +218,8 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
             </svg>
             <Command.Input
               placeholder={placeholder}
+              value={query}
+              onValueChange={setQuery}
               className="flex-1 h-full bg-transparent outline-none text-[14px] text-fg placeholder:text-fg-muted"
             />
             <kbd className="text-[10px] font-mono text-fg-muted border border-border rounded px-1.5 py-0.5">
@@ -208,6 +235,49 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                 description="Try a partner name, page, or lender slug."
               />
             </Command.Empty>
+            {showRecent && recentItems && (
+              <Command.Group
+                heading="Recent"
+                className={cn(
+                  '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5',
+                  '[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase',
+                  '[&_[cmdk-group-heading]]:tracking-[0.14em]',
+                  '[&_[cmdk-group-heading]]:font-semibold',
+                  '[&_[cmdk-group-heading]]:text-fg-muted',
+                )}
+              >
+                {recentItems.map((item) => (
+                  <Command.Item
+                    key={`recent-${item.id}`}
+                    value={`recent ${item.label} ${item.description ?? ''}`}
+                    onSelect={() => handleSelect(item)}
+                    className={cn(
+                      'mx-2 my-0.5 px-2.5 py-2 rounded-md cursor-pointer flex items-center gap-2.5',
+                      'text-[13px] text-fg-secondary',
+                      'aria-selected:bg-bg-muted aria-selected:text-fg',
+                      'data-[selected=true]:bg-bg-muted data-[selected=true]:text-fg',
+                    )}
+                  >
+                    {item.icon && (
+                      <span className="size-5 shrink-0 text-fg-muted flex items-center justify-center">
+                        {item.icon}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{item.label}</span>
+                      {item.description && (
+                        <span className="block truncate text-[11.5px] text-fg-muted">
+                          {item.description}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wider text-fg-muted shrink-0">
+                      Recent
+                    </span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
             {grouped.map(({ section, items }) => (
               <Command.Group
                 key={section}

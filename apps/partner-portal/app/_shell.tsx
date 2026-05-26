@@ -48,11 +48,15 @@ import { BRAND_ORDER, BRANDS, type BrandCode } from '@eazepay/shared-types';
 import { formatTime } from '@eazepay/shared-utils/format-time';
 import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
-import { NotificationBell } from '../components/NotificationBell';
+import { NotificationBellAndPanel } from '../components/NotificationBellAndPanel';
 import { PublicFooter } from '../components/PublicFooter';
 import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
 import { marketplaceLenders } from '../lib/marketplace-data';
 import { MoreMenu } from '../components/MoreMenu';
+import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
+import { trackItem, listRecent } from '../lib/recent-items';
+import { listPinned, type SavedView } from '../lib/saved-views';
+import { STORAGE_KEYS } from '../lib/storage-keys';
 
 /**
  * Map a per-brand portal to the notification recipient key — the
@@ -61,6 +65,18 @@ import { MoreMenu } from '../components/MoreMenu';
  * pattern in /v/[brand]/billing). When real auth lands, swap this
  * for the merchantId resolved from the JWT.
  */
+/**
+ * Serialize a pinned SavedView back to an href the sidebar can link
+ * to. Mirror of `viewToHref` from `lib/saved-views.ts` — kept inline
+ * so the shell doesn't depend on that module's full surface.
+ */
+function viewHrefForPin(v: SavedView): string {
+  const sp = new URLSearchParams();
+  for (const [k, val] of Object.entries(v.filters)) sp.set(k, val);
+  const qs = sp.toString();
+  return qs ? `${v.surface}?${qs}` : v.surface;
+}
+
 function notificationRecipientForBrand(brand: BrandCode): string {
   const brandName = BRANDS[brand].name.toLowerCase();
   const partner = MASTER_PARTNERS_ROSTER.find((p) => p.product.toLowerCase() === brandName);
@@ -534,6 +550,53 @@ export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/';
   const router = useRouter();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // Recent items + pinned saved views are both localStorage-backed,
+  // so we re-read them on every palette open and on `storage` events
+  // (handles cross-tab edits without forcing a reload).
+  const [recentCommands, setRecentCommands] = useState<CommandPaletteCommand[]>([]);
+  const [pinnedViews, setPinnedViews] = useState<SavedView[]>([]);
+
+  useEffect(() => {
+    const refresh = () => {
+      setPinnedViews(listPinned());
+      setRecentCommands(
+        listRecent(10).map((r) => ({
+          id: r.id,
+          section: r.section,
+          label: r.label,
+          description: r.description,
+          href: r.href,
+        })),
+      );
+    };
+    refresh();
+    const onStorage = (e: StorageEvent) => {
+      if (
+        e.key === STORAGE_KEYS.recentItems ||
+        e.key === STORAGE_KEYS.savedViews ||
+        e.key === null
+      ) {
+        refresh();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  // Re-pull recents specifically when opening the palette, so an
+  // item the user just clicked through bumps to the top next open.
+  useEffect(() => {
+    if (!paletteOpen) return;
+    setRecentCommands(
+      listRecent(10).map((r) => ({
+        id: r.id,
+        section: r.section,
+        label: r.label,
+        description: r.description,
+        href: r.href,
+      })),
+    );
+  }, [paletteOpen]);
   // Build the command palette source — every nav target across the
   // three sidebar arrangements + the live lender + partner roster.
   // Hoisted above the NAKED_ROUTES early-return so React Hook order
@@ -598,7 +661,28 @@ export function Shell({ children }: { children: ReactNode }) {
   // never reveals the admin shell, even if a URL collision tried to
   // sneak through.
   const inAdmin = !activeBrand && isAdminPath(pathname);
-  const groups = activeBrand ? verticalGroups(activeBrand) : inAdmin ? adminGroups : masterGroups;
+  const baseGroups = activeBrand
+    ? verticalGroups(activeBrand)
+    : inAdmin
+      ? adminGroups
+      : masterGroups;
+  // Pinned saved-views rail — master + admin surfaces only. Per-brand
+  // portals stay clean (no cross-tenant leakage risk) and pinned
+  // views never deep-link out of /v/<brand>/* anyway.
+  const showPinned = !activeBrand && pinnedViews.length > 0;
+  const groups: NavGroup[] = showPinned
+    ? [
+        {
+          label: 'Pinned',
+          items: pinnedViews.map((v) => ({
+            href: viewHrefForPin(v),
+            label: v.name,
+            icon: <SparkIcon />,
+          })),
+        },
+        ...baseGroups,
+      ]
+    : baseGroups;
   if (activeBrand) assertNoMasterLeaks(groups, BRANDS[activeBrand].slug);
   // Sidebar wordmark + subtitle:
   //   Master view → "EAZE" · "Operating System" (the operating system
@@ -648,7 +732,7 @@ export function Shell({ children }: { children: ReactNode }) {
               surfaces, partner merchantId on per-brand. Master sees
               a mirror of every notification dispatched from the
               billing send composer; partner sees only their own. */}
-            <NotificationBell
+            <NotificationBellAndPanel
               recipient={activeBrand ? notificationRecipientForBrand(activeBrand) : 'master'}
             />
             {/* More menu — escape hatch for items removed from the
@@ -706,7 +790,23 @@ export function Shell({ children }: { children: ReactNode }) {
         onNavigate={(href) => router.push(href)}
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
+        recentItems={recentCommands}
+        onItemSelected={(cmd) => {
+          if (!cmd.href) return;
+          trackItem({
+            id: cmd.id,
+            label: cmd.label,
+            description: cmd.description,
+            section: cmd.section,
+            href: cmd.href,
+          });
+        }}
       />
+      {/* Sprint G — global keyboard shortcut listener. Owns the
+        `<ShortcutsHelpDialog>` it renders inside. Mounted at the
+        Shell root so shortcuts work on every authenticated page; the
+        listener self-skips when focus is inside an editable field. */}
+      <KeyboardShortcuts />
     </>
   );
 }
