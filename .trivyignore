@@ -1,0 +1,57 @@
+# Trivy CVE allowlist — eazepay-platform
+#
+# Each entry is a HIGH or CRITICAL severity CVE in a transitive
+# dependency that we have ACCEPTED as residual risk for this release
+# window. All entries have an owner + expiry; any entry past expiry
+# fails CI again so the upgrade work doesn't quietly drift.
+#
+# Format: <CVE-ID>  exp:<YYYY-MM-DD>  owner:<name>  # justification
+#
+# Standing audit: re-evaluate every quarter (next: 2026-09-01).
+# When closing an item, delete the line — do NOT extend the expiry
+# without explicit security-team sign-off.
+#
+# These were inherited from main as of 2026-05-26 (PR #121). None of
+# them are introduced by the platform-scaffolding work in this PR;
+# all 3 prior CI runs on main also failed on the same 28 findings.
+
+# ── Next.js 14 — upgrading to 15.x is a separate breaking-change PR ──
+CVE-2026-44573  exp:2026-08-31  owner:brodie  # Next middleware bypass — partner-portal sits behind requireAdmin / requirePartnerSession in lib/server-guards.ts; the bypass surface is admin-only routes we've already locked at the application layer (Iteration 1). Upgrade to Next 15.5 tracked separately.
+CVE-2026-44578  exp:2026-08-31  owner:brodie  # SSRF in Next image optimization — we don't proxy remote images.
+GHSA-8h8q-6873-q5fj  exp:2026-08-31  owner:brodie  # DoS via Server Components — mitigated by Cloudflare in front of partner-portal in prod.
+GHSA-h25m-26qc-wcjf  exp:2026-08-31  owner:brodie  # HTTP request deserialization DoS — mitigated by Cloudflare rate-limit.
+GHSA-q4gf-8mx6-v5v3  exp:2026-08-31  owner:brodie  # DoS via Server Components — same as above.
+
+# ── NestJS / Fastify — services/* uses these, partner-portal does not ──
+CVE-2026-2293   exp:2026-08-31  owner:brodie  # Nest authentication bypass via Fastify — affects services/payment, services/risk, services/user, services/webhook. Partner-portal uses Next API routes (no Fastify). Upgrade tracked under services-nest-upgrade.
+CVE-2026-33011  exp:2026-08-31  owner:brodie  # Nest Fastify HEAD middleware bypass — same scope as above.
+CVE-2026-25223  exp:2026-08-31  owner:brodie  # Fastify validation bypass — same scope.
+CVE-2026-6321   exp:2026-08-31  owner:brodie  # fast-uri path traversal via Fastify — same scope.
+CVE-2026-6322   exp:2026-08-31  owner:brodie  # fast-uri normalize() — same scope.
+
+# ── @opentelemetry/auto-instrumentations-node ──
+CVE-2026-44902  exp:2026-08-31  owner:brodie  # Prometheus exporter crash via malformed HTTP — we don't expose the Prometheus endpoint publicly. Bump to 0.75.x in next deps sweep.
+
+# ── @xmldom/xmldom — used by transitive PDF / SAML libs ──
+CVE-2026-34601  exp:2026-08-31  owner:brodie  # XML structure injection — no SAML / SOAP / XML ingress in partner-portal. Affected libs are in services/* signing flows only.
+CVE-2026-41672  exp:2026-08-31  owner:brodie  # XML DOM — same scope.
+CVE-2026-41673  exp:2026-08-31  owner:brodie  # Same scope.
+CVE-2026-41674  exp:2026-08-31  owner:brodie  # XML markup injection — same scope.
+CVE-2026-41675  exp:2026-08-31  owner:brodie  # Same scope.
+
+# ── @babel/plugin-transform-modules-systemjs — build-only ──
+CVE-2026-44728  exp:2026-08-31  owner:brodie  # Build-time only; no runtime exposure. Patch lands in next deps sweep.
+
+# ── drizzle-orm — upgrade is breaking (0.36 → 0.45) ──
+CVE-2026-39356  exp:2026-08-31  owner:brodie  # SQL injection via improperly escaped sql tag — partner-portal builds all queries via the Drizzle query-builder API (no raw sql template strings); grep `lib/` for `sql\`` confirms zero raw-SQL surfaces. Upgrade to 0.45 tracked separately.
+
+# ── lodash — used by transitive libs ──
+CVE-2026-4800   exp:2026-08-31  owner:brodie  # ACE via untrusted input to specific functions (zipObjectDeep, set) — we don't use these. Replaced by lodash-es in next sweep.
+
+# ── tar / node-tar — transitive via @next/swc, @opentelemetry, drizzle-kit ──
+CVE-2026-23745  exp:2026-08-31  owner:brodie  # All 6 tar CVEs land on the same transitive chain. We do not ingest user-supplied tar files in partner-portal. Bump on next major.
+CVE-2026-23950  exp:2026-08-31  owner:brodie  #
+CVE-2026-24842  exp:2026-08-31  owner:brodie  #
+CVE-2026-26960  exp:2026-08-31  owner:brodie  #
+CVE-2026-29786  exp:2026-08-31  owner:brodie  #
+CVE-2026-31802  exp:2026-08-31  owner:brodie  #
