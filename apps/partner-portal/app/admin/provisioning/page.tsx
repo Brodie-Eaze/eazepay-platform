@@ -16,7 +16,8 @@
  *   • Drill into a single run's per-step result payload
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -27,8 +28,10 @@ import {
   StatusPill,
   EmptyState,
   Filter,
+  KpiCard,
   ArrowRightIcon,
   QueueIcon,
+  LiveIndicator,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
@@ -81,10 +84,38 @@ const STEP_LABEL: Record<string, string> = {
   partner_portal_seed: 'Portal Seed',
 };
 
+const VALID_STATUSES: ReadonlyArray<ProvisionRun['status']> = [
+  'queued',
+  'running',
+  'completed',
+  'failed',
+];
+
 export default function ProvisioningQueuePage(): JSX.Element {
   const [runs, setRuns] = useState<ProvisionRun[]>([]);
-  const [filter, setFilter] = useState<StatusFilter>(null);
   const [loading, setLoading] = useState(true);
+  const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
+
+  /* Sprint H: URL is the source of truth for the status filter. KPI tile
+   * drill-ins push `?status=` so the page lands pre-filtered without
+   * needing a layout-level link map. */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const statusFromUrl = sp?.get('status');
+  const filter: StatusFilter =
+    statusFromUrl && (VALID_STATUSES as readonly string[]).includes(statusFromUrl)
+      ? (statusFromUrl as ProvisionRun['status'])
+      : null;
+  const setFilter = useCallback(
+    (next: StatusFilter) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      if (next === null) params.delete('status');
+      else params.set('status', next);
+      const qs = params.toString();
+      router.replace(qs ? `?${qs}` : '?', { scroll: false });
+    },
+    [router, sp],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +127,7 @@ export default function ProvisioningQueuePage(): JSX.Element {
         if (!cancelled) {
           setRuns(data.runs);
           setLoading(false);
+          setLastSuccessAt(Date.now());
         }
       } catch {
         /* swallow — next poll will retry */
@@ -138,18 +170,54 @@ export default function ProvisioningQueuePage(): JSX.Element {
         title="Provisioning queue"
         description="Every partner being walked through HighSale → Marketplace → MiCamp → Portal seed. Updates every 3 seconds. Click into a run for the per-step result payload."
         actions={
-          <Link
-            href="/admin/provisioning/new"
-            className="inline-flex"
-            aria-label="New provisioning run"
-          >
-            <Button size="sm" variant="primary">
-              New provisioning run
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <LiveIndicator pulseKey={lastSuccessAt ?? 0} />
+            <Link
+              href="/admin/provisioning/new"
+              className="inline-flex"
+              aria-label="New provisioning run"
+            >
+              <Button size="sm" variant="primary">
+                New provisioning run
+              </Button>
+            </Link>
+          </div>
         }
       />
       <PageBody>
+        {/* Sprint H: clickable KPI summary above the filter tabs. Each tile
+            sets `?status=` which is the source of truth — the Filter row
+            reads the same query param so the two stay in lockstep. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <Link
+            href="?status=queued"
+            aria-label={`Queued: ${counts.queued} runs. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Queued" value={counts.queued} icon={<QueueIcon size={14} />} />
+          </Link>
+          <Link
+            href="?status=running"
+            aria-label={`Running: ${counts.running} runs. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Running" value={counts.running} />
+          </Link>
+          <Link
+            href="?status=completed"
+            aria-label={`Completed: ${counts.completed} runs. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Completed" value={counts.completed} />
+          </Link>
+          <Link
+            href="?status=failed"
+            aria-label={`Failed: ${counts.failed} runs. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Failed" value={counts.failed} />
+          </Link>
+        </div>
         <div className="mb-5">
           <Filter<ProvisionRun['status']>
             variant="tabs"

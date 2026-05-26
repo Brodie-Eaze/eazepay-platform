@@ -12,6 +12,8 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   PageHeader,
   PageBody,
@@ -24,6 +26,7 @@ import {
   EmptyState,
   Button as _Button,
   QueueIcon,
+  LiveIndicator,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
@@ -83,16 +86,34 @@ const STEP_TONE: Record<StepState['status'], StatusTone> = {
   skipped: 'neutral',
 };
 
+const VALID_MIGRATION_STATUSES: ReadonlyArray<MigrationRecord['status']> = [
+  'queued',
+  'in_progress',
+  'completed',
+  'failed',
+  'rolled_back',
+];
+
 export default function AiFundingMigrationPage(): JSX.Element {
   const [migrations, setMigrations] = useState<MigrationRecord[]>([]);
   const [seedInput, setSeedInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
+
+  /* Sprint H: URL-driven status filter — clicking a KPI tile drills in. */
+  const sp = useSearchParams();
+  const statusFromUrl = sp?.get('status');
+  const filter: MigrationRecord['status'] | null =
+    statusFromUrl && (VALID_MIGRATION_STATUSES as readonly string[]).includes(statusFromUrl)
+      ? (statusFromUrl as MigrationRecord['status'])
+      : null;
 
   async function refresh() {
     const res = await fetch('/api/admin/migrations', { cache: 'no-store' });
     if (res.ok) {
       const data = (await res.json()) as { migrations: MigrationRecord[] };
       setMigrations(data.migrations);
+      setLastSuccessAt(Date.now());
     }
   }
 
@@ -157,13 +178,40 @@ export default function AiFundingMigrationPage(): JSX.Element {
             July 1 cutover · Migration queue
           </StatusPill>
         }
+        actions={<LiveIndicator pulseKey={lastSuccessAt ?? 0} />}
       />
       <PageBody>
+        {/* Sprint H: each KPI is a clickable drill-in. URL is source of
+            truth — list below filters via `filter`. */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <KpiCard label="Queued" value={counts.queued} />
-          <KpiCard label="Migrating" value={counts.in_progress} />
-          <KpiCard label="Completed" value={counts.completed} />
-          <KpiCard label="Failed" value={counts.failed} />
+          <Link
+            href="?status=queued"
+            aria-label={`Queued: ${counts.queued} migrations. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Queued" value={counts.queued} />
+          </Link>
+          <Link
+            href="?status=in_progress"
+            aria-label={`Migrating: ${counts.in_progress} migrations. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Migrating" value={counts.in_progress} />
+          </Link>
+          <Link
+            href="?status=completed"
+            aria-label={`Completed: ${counts.completed} migrations. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Completed" value={counts.completed} />
+          </Link>
+          <Link
+            href="?status=failed"
+            aria-label={`Failed: ${counts.failed} migrations. Filter list.`}
+            className="block rounded-lg hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            <KpiCard label="Failed" value={counts.failed} />
+          </Link>
         </div>
 
         <Card className="mb-5">
@@ -200,64 +248,92 @@ export default function AiFundingMigrationPage(): JSX.Element {
           </CardBody>
         </Card>
 
-        {migrations.length === 0 ? (
-          <EmptyState
-            icon={<QueueIcon size={20} />}
-            title="No migrations yet"
-            description="Seed the queue above with AI Funding customer ids to get started."
-          />
-        ) : (
-          <div className="grid gap-2.5">
-            {migrations.map((m) => (
-              <Card key={m.id}>
-                <CardBody>
-                  <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_2fr_auto] gap-4 md:gap-5 items-center">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-[14px] text-fg truncate">
-                        {m.sourceCustomerId}
+        {(() => {
+          const filteredList =
+            filter === null ? migrations : migrations.filter((m) => m.status === filter);
+          if (migrations.length === 0) {
+            return (
+              <EmptyState
+                icon={<QueueIcon size={20} />}
+                title="No migrations yet"
+                description="Seed the queue above with AI Funding customer ids to get started."
+              />
+            );
+          }
+          if (filteredList.length === 0) {
+            return (
+              <EmptyState
+                icon={<QueueIcon size={20} />}
+                title={`No ${filter ? STATUS_LABEL[filter].toLowerCase() : ''} migrations`}
+                description={
+                  <>
+                    <Link
+                      href="?"
+                      className="text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-sm"
+                    >
+                      Clear filter
+                    </Link>{' '}
+                    to see all migrations.
+                  </>
+                }
+              />
+            );
+          }
+          return (
+            <div className="grid gap-2.5">
+              {filteredList.map((m) => (
+                <Card key={m.id}>
+                  <CardBody>
+                    <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr_2fr_auto] gap-4 md:gap-5 items-center">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[14px] text-fg truncate">
+                          {m.sourceCustomerId}
+                        </div>
+                        <div className="text-[11.5px] text-fg-muted mt-0.5">
+                          {m.targetPartnerId
+                            ? `→ ${m.targetPartnerId}`
+                            : 'pending partner creation'}
+                        </div>
                       </div>
-                      <div className="text-[11.5px] text-fg-muted mt-0.5">
-                        {m.targetPartnerId ? `→ ${m.targetPartnerId}` : 'pending partner creation'}
-                      </div>
-                    </div>
-                    <div>
-                      <StatusPill tone={STATUS_TONE[m.status]} dot>
-                        {STATUS_LABEL[m.status]}
-                      </StatusPill>
-                      {m.failureReason && (
-                        <div className="mt-1.5 text-[11px] text-danger">{m.failureReason}</div>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {m.steps.map((s) => (
-                        <StatusPill
-                          key={s.name}
-                          tone={STEP_TONE[s.status]}
-                          className="text-[10.5px] px-2 py-0"
-                        >
-                          <span title={`${s.name}: ${s.status}${s.note ? ` — ${s.note}` : ''}`}>
-                            {s.name.replace(/_/g, ' ')}
-                          </span>
+                      <div>
+                        <StatusPill tone={STATUS_TONE[m.status]} dot>
+                          {STATUS_LABEL[m.status]}
                         </StatusPill>
-                      ))}
+                        {m.failureReason && (
+                          <div className="mt-1.5 text-[11px] text-danger">{m.failureReason}</div>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {m.steps.map((s) => (
+                          <StatusPill
+                            key={s.name}
+                            tone={STEP_TONE[s.status]}
+                            className="text-[10.5px] px-2 py-0"
+                          >
+                            <span title={`${s.name}: ${s.status}${s.note ? ` — ${s.note}` : ''}`}>
+                              {s.name.replace(/_/g, ' ')}
+                            </span>
+                          </StatusPill>
+                        ))}
+                      </div>
+                      <div className="md:justify-self-end">
+                        {m.status === 'queued' ? (
+                          <Button variant="primary" size="sm" onClick={() => startOne(m.id)}>
+                            Start
+                          </Button>
+                        ) : (
+                          <span className="text-[11.5px] text-fg-muted tabular-nums">
+                            {m.startedAt ? new Date(m.startedAt).toLocaleTimeString() : '—'}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="md:justify-self-end">
-                      {m.status === 'queued' ? (
-                        <Button variant="primary" size="sm" onClick={() => startOne(m.id)}>
-                          Start
-                        </Button>
-                      ) : (
-                        <span className="text-[11.5px] text-fg-muted tabular-nums">
-                          {m.startedAt ? new Date(m.startedAt).toLocaleTimeString() : '—'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-        )}
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+          );
+        })()}
       </PageBody>
     </>
   );

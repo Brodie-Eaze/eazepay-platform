@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useMemo } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
+import { useParams, notFound, useRouter, useSearchParams } from 'next/navigation';
 import {
   PageHeader,
   PageBody,
@@ -17,7 +17,12 @@ import {
   Money,
   Apr,
   ChartIcon,
+  LiveIndicator,
+  TimeRangeSelector,
+  TIME_RANGES,
+  InteractiveBarChart,
   type Column,
+  type TimeRange,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { ficoBandApproval } from '../../../../lib/mock-data';
@@ -734,12 +739,74 @@ function heatShade(v: number | null | undefined, min: number, max: number): stri
 // Component
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * KpiTileLink — wrap a KpiCard primitive in a router Link so the entire
+ * card becomes the drill-in affordance. Mirrors the helper in
+ * /admin/observability/page.tsx (Sprint H pattern).
+ */
+function KpiTileLink({
+  href,
+  ariaLabel,
+  children,
+}: {
+  href: string;
+  ariaLabel: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <Link
+      href={href}
+      aria-label={ariaLabel}
+      className="block rounded-lg transition-colors hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+    >
+      {children}
+    </Link>
+  );
+}
+
+/* FICO band → canonical tier mapping used by the chart drill-in. The
+ * insights chart uses band labels like "700+", "660–699"; the
+ * /applications list reads `tier=` and matches against
+ * `creditTierFor()` in dashboard-metrics.ts. */
+const FICO_BAND_TO_TIER: Record<string, string> = {
+  '720+': 'Prime',
+  '700+': 'Prime',
+  '700–719': 'Prime',
+  '680–699': 'NearPrime',
+  '660–699': 'NearPrime',
+  '660–679': 'NearPrime',
+  '640–659': 'NearPrime',
+  '620–639': 'Subprime',
+  '<660': 'Subprime',
+  '<620': 'DeepSubprime',
+};
+
 export default function BrandInsightsPage() {
   const { brand: brandSlug } = useParams<{ brand: string }>();
   const brandCode = BRAND_ORDER.find((b) => BRANDS[b].slug === brandSlug) as BrandCode | undefined;
   if (!brandCode || brandCode === 'direct') notFound();
   const brand = brandCode as Exclude<BrandCode, 'direct'>;
   const spec = BRANDS[brand];
+
+  /* Sprint H: URL-driven time range so insights deep-links carry the
+   * window. Drill-in URLs propagate `?range=` to the destination list. */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const rangeFromUrl = (sp?.get('range') as TimeRange | null) ?? null;
+  const range: TimeRange =
+    rangeFromUrl && (TIME_RANGES as readonly string[]).includes(rangeFromUrl)
+      ? rangeFromUrl
+      : '30d';
+  const handleRangeChange = useCallback(
+    (next: TimeRange) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      params.set('range', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, sp],
+  );
+  const rangeQs = `&range=${range}`;
+  const baseList = `/v/${brandSlug}/applications`;
 
   // Tenant isolation: this page renders the SIGNED-IN partner's
   // insights only. Pre-fix, the `?partnerId=` query string let any
@@ -965,12 +1032,14 @@ export default function BrandInsightsPage() {
         title={`${partnerCtx.legalName} · Insights`}
         description={`Approval, decline, latency, lender mix, vintage, and fair-lending cuts for ${partnerCtx.legalName} on ${spec.name}. Scoped to this account only — master operators see the full ${spec.name} network.`}
         actions={
-          <>
+          <div className="flex items-center gap-2 flex-wrap">
+            <LiveIndicator pulseKey={range} />
+            <TimeRangeSelector value={range} onChange={handleRangeChange} />
             <Button variant="ghost" leadingIcon={<ChartIcon size={16} />}>
               Schedule report
             </Button>
             <Button>Download MIS pack</Button>
-          </>
+          </div>
         }
         meta={
           <>
@@ -1018,14 +1087,24 @@ export default function BrandInsightsPage() {
           bank-partner audit pack. AAN latency p95 = 18.4 days (Reg B 30-day window).
         </Banner>
 
-        {/* ───────────────────────── KPI strip (8 cards) ───────────────────────── */}
+        {/* ───────────────────────── KPI strip ─────────────────────────
+           Sprint H: the four most actionable KPIs are clickable drill-ins.
+           Approval rate / funded loans / total funded / manual review all
+           map cleanly to a `/applications?status=` filter scoped to this
+           brand. The remaining KPIs are derived metrics (latency, lift)
+           where a list drill-in is meaningless — left static. */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <KpiCard
-            label={`${spec.name} approval rate (30d)`}
-            value={pct(profile.approvalRate, 1)}
-            delta={{ value: '+2.1pp', direction: 'up', isGood: true }}
-            series={profile.approvalSeries}
-          />
+          <KpiTileLink
+            href={`${baseList}?status=approved${rangeQs}`}
+            ariaLabel="Open approved applications"
+          >
+            <KpiCard
+              label={`${spec.name} approval rate (30d)`}
+              value={pct(profile.approvalRate, 1)}
+              delta={{ value: '+2.1pp', direction: 'up', isGood: true }}
+              series={profile.approvalSeries}
+            />
+          </KpiTileLink>
           <KpiCard
             label="Avg decision latency"
             value={`${profile.latencyMs}ms`}
@@ -1044,18 +1123,28 @@ export default function BrandInsightsPage() {
             delta={{ value: '+4.3pp', direction: 'up', isGood: true }}
             hint="Offer → e-signed"
           />
-          <KpiCard
-            label={`${spec.name} funded loans (30d)`}
-            value={numFmt(profile.fundedLoans30d)}
-            delta={{ value: '+12.4%', direction: 'up', isGood: true }}
-            series={fundedLoansSeries(profile.fundedLoans30d)}
-          />
-          <KpiCard
-            label={`${spec.name} total funded (30d)`}
-            value={<Money cents={profile.fundedDollars30dCents} compact />}
-            delta={{ value: '+18%', direction: 'up', isGood: true }}
-            series={fundedDollarsSeries(profile.fundedDollars30dCents)}
-          />
+          <KpiTileLink
+            href={`${baseList}?status=funded${rangeQs}`}
+            ariaLabel="Open funded applications"
+          >
+            <KpiCard
+              label={`${spec.name} funded loans (30d)`}
+              value={numFmt(profile.fundedLoans30d)}
+              delta={{ value: '+12.4%', direction: 'up', isGood: true }}
+              series={fundedLoansSeries(profile.fundedLoans30d)}
+            />
+          </KpiTileLink>
+          <KpiTileLink
+            href={`${baseList}?status=funded${rangeQs}`}
+            ariaLabel="Open funded applications by total funded"
+          >
+            <KpiCard
+              label={`${spec.name} total funded (30d)`}
+              value={<Money cents={profile.fundedDollars30dCents} compact />}
+              delta={{ value: '+18%', direction: 'up', isGood: true }}
+              series={fundedDollarsSeries(profile.fundedDollars30dCents)}
+            />
+          </KpiTileLink>
           <KpiCard
             label="Pull-through"
             value={pct(profile.pullThrough, 1)}
@@ -1076,12 +1165,17 @@ export default function BrandInsightsPage() {
             series={netLiftSeries(profile.netLiftPp)}
             hint="vs. champion model"
           />
-          <KpiCard
-            label="Manual review rate"
-            value={pct(profile.manualReviewRate, 1)}
-            delta={{ value: '-0.3pp', direction: 'down', isGood: true }}
-            series={manualReviewSeries(profile.manualReviewRate)}
-          />
+          <KpiTileLink
+            href={`${baseList}?status=in_review${rangeQs}`}
+            ariaLabel="Open applications under manual review"
+          >
+            <KpiCard
+              label="Manual review rate"
+              value={pct(profile.manualReviewRate, 1)}
+              delta={{ value: '-0.3pp', direction: 'down', isGood: true }}
+              series={manualReviewSeries(profile.manualReviewRate)}
+            />
+          </KpiTileLink>
         </div>
 
         {/* ───────────────────────── A. Volume & flow funnel ───────────────────────── */}
@@ -1173,15 +1267,30 @@ export default function BrandInsightsPage() {
           <Card>
             <CardHeader
               title={`${spec.name} approval rate by FICO band`}
-              description="Cohorts ≥ 25 applications. Orchestration honours the brand's min-FICO floor."
+              description="Click a band to filter — cohorts ≥ 25 applications. Orchestration honours the brand's min-FICO floor."
             />
             <CardBody>
-              <div className="text-accent">
-                <BarChart
-                  data={ficoBandApproval.map((d) => ({ label: d.label, value: d.value * 100 }))}
-                  height={170}
-                />
-              </div>
+              {/* Sprint H: FICO band → /applications?tier=. The
+                  destination list reads `tier=` and applies a FICO-band
+                  filter (see dashboard-metrics → creditTierFor). */}
+              <InteractiveBarChart
+                data={ficoBandApproval.map((d) => ({
+                  label: d.label,
+                  value: Math.round(d.value * 100),
+                  meta: { band: d.label },
+                }))}
+                yMax={100}
+                formatValue={(d) => `${d.value}% approved`}
+                onSelect={(d) => {
+                  const band = (d.meta?.band as string | undefined) ?? d.label;
+                  const tier = FICO_BAND_TO_TIER[band];
+                  const qs = tier
+                    ? `?tier=${encodeURIComponent(tier)}${rangeQs}`
+                    : `?band=${encodeURIComponent(band)}${rangeQs}`;
+                  router.push(`${baseList}${qs}`);
+                }}
+                ariaLabel={`${spec.name} approval rate by FICO band`}
+              />
               <div className="mt-3 text-[12px] text-fg-muted leading-relaxed">
                 The 660–699 cohort approval is up 5.4pp vs. last quarter, driven by Plaid cashflow
                 additions. ECOA non-discrimination notice + reason codes are enforced on every

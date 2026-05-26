@@ -1,6 +1,7 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   PageHeader,
   PageBody,
@@ -16,11 +17,15 @@ import {
   XIcon,
   CheckIcon,
   AlertIcon,
+  LiveIndicator,
+  TimeRangeSelector,
+  TIME_RANGES,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
   type FilterGroup,
   type FilterOption,
+  type TimeRange,
 } from '@eazepay/ui/web';
 import {
   NICHES_BY_BRAND,
@@ -154,6 +159,26 @@ export default function ControlPanelPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  /* Sprint H: URL-driven time range. The roster itself doesn't filter by
+   * window today (the fixture is timeless), but the selector ships for
+   * cross-dashboard consistency and to carry the window across drill-ins
+   * into the per-partner detail page. */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const rangeFromUrl = (sp?.get('range') as TimeRange | null) ?? null;
+  const range: TimeRange =
+    rangeFromUrl && (TIME_RANGES as readonly string[]).includes(rangeFromUrl)
+      ? rangeFromUrl
+      : '30d';
+  const handleRangeChange = useCallback(
+    (next: TimeRange) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      params.set('range', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, sp],
+  );
+
   function flash(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -236,6 +261,8 @@ export default function ControlPanelPage() {
         description="Full partner management — profiles, applications, payouts, users, and lender access"
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            <LiveIndicator pulseKey={sortSeed} />
+            <TimeRangeSelector value={range} onChange={handleRangeChange} />
             <Button
               size="sm"
               variant="secondary"
@@ -253,25 +280,35 @@ export default function ControlPanelPage() {
         }
       />
       <PageBody>
-        {/* Stats bar */}
+        {/* Stats bar — each tile drills into the roster pre-filtered by
+            the matching status query. The time-range selector above
+            carries forward via `?range=`. */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <StatTile label="Total partners" value={String(stats.total)} hint="across all brands" />
+          <StatTile
+            label="Total partners"
+            value={String(stats.total)}
+            hint="across all brands"
+            href={`?range=${range}`}
+          />
           <StatTile
             label="Active"
             value={String(stats.active)}
             hint="approved & live"
             tone="success"
+            href={`?status=active&range=${range}`}
           />
           <StatTile
             label="Suspended"
             value={String(stats.suspended)}
             hint="blocked from intake"
             tone={stats.suspended > 0 ? 'danger' : 'neutral'}
+            href={`?status=suspended&range=${range}`}
           />
           <StatTile
             label="Funded volume"
             value={<Money cents={stats.totalFunded} compact />}
             hint="all-time net"
+            href={`?range=${range}`}
           />
         </div>
 
@@ -522,11 +559,14 @@ function StatTile({
   value,
   hint,
   tone = 'neutral',
+  href,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: string;
   tone?: StatusTone;
+  /** Optional drill-in URL — when provided the tile becomes a Link. */
+  href?: string;
 }) {
   const accent =
     tone === 'success'
@@ -536,15 +576,28 @@ function StatTile({
         : tone === 'warning'
           ? 'text-warning'
           : 'text-fg';
-  return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
+  const body = (
+    <>
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
       <p className={`mt-1.5 text-[22px] font-bold tracking-tight leading-none ${accent}`}>
         {value}
       </p>
       {hint && <p className="text-[10px] text-fg-muted mt-1.5">{hint}</p>}
-    </div>
+    </>
   );
+  const base = 'block rounded-xl border border-border bg-bg-elevated px-4 py-3';
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={`${label}. Filter list.`}
+        className={`${base} transition-colors hover:border-border-strong hover:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus`}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={base}>{body}</div>;
 }
 
 function KebabItem({

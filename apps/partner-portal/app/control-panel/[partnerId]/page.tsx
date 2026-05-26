@@ -966,31 +966,41 @@ function ApplicationsTab({ partnerId, partnerName }: { partnerId: string; partne
             </div>
             <ul className="divide-y divide-border" aria-label={`${apps.length} applications`}>
               {apps.map((a) => (
-                <li key={a.id} className="grid grid-cols-12 items-center px-5 py-3 text-[12px]">
-                  <div className="col-span-3 font-mono text-fg-muted">{a.id}</div>
-                  <div className="col-span-3 font-medium text-fg">{a.customer}</div>
-                  <div className="col-span-2 text-fg-secondary font-mono text-[11px]">
-                    {a.product}
-                  </div>
-                  <div className="col-span-2 text-right font-semibold tabular-nums">
-                    <Money cents={a.amount} noFractions />
-                  </div>
-                  <div className="col-span-1">
-                    <StatusPill
-                      tone={
-                        a.status === 'funded'
-                          ? 'success'
-                          : a.status === 'approved'
-                            ? 'info'
-                            : a.status === 'declined'
-                              ? 'danger'
-                              : 'neutral'
-                      }
-                    >
-                      {a.status}
-                    </StatusPill>
-                  </div>
-                  <div className="col-span-1 text-right text-[11px] text-fg-muted">{a.date}</div>
+                <li key={a.id}>
+                  {/* Sprint H: each row drills into the filtered list
+                      scoped to this partner + the row's status. The
+                      destination /applications page reads `partnerId` +
+                      `status` to apply both filters. */}
+                  <Link
+                    href={`/applications?partnerId=${encodeURIComponent(partnerId)}&status=${a.status}`}
+                    aria-label={`Open ${a.customer} ${a.status} applications for ${partnerName}`}
+                    className="grid grid-cols-12 items-center px-5 py-3 text-[12px] hover:bg-bg-muted/40 focus-visible:outline-none focus-visible:bg-bg-muted/40"
+                  >
+                    <div className="col-span-3 font-mono text-fg-muted">{a.id}</div>
+                    <div className="col-span-3 font-medium text-fg">{a.customer}</div>
+                    <div className="col-span-2 text-fg-secondary font-mono text-[11px]">
+                      {a.product}
+                    </div>
+                    <div className="col-span-2 text-right font-semibold tabular-nums">
+                      <Money cents={a.amount} noFractions />
+                    </div>
+                    <div className="col-span-1">
+                      <StatusPill
+                        tone={
+                          a.status === 'funded'
+                            ? 'success'
+                            : a.status === 'approved'
+                              ? 'info'
+                              : a.status === 'declined'
+                                ? 'danger'
+                                : 'neutral'
+                        }
+                      >
+                        {a.status}
+                      </StatusPill>
+                    </div>
+                    <div className="col-span-1 text-right text-[11px] text-fg-muted">{a.date}</div>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -1330,20 +1340,30 @@ function LenderAccessTab({ partnerId, flash }: { partnerId: string; flash: (m: s
 
   return (
     <div className="space-y-4">
+      {/* Sprint H: per-partner stat tiles drill into pre-filtered list
+          views. Lender-related tiles route to the lender marketplace
+          scoped to this partner. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatTile
           label="Lenders enabled"
           value={String(enabled)}
           hint={`of ${view.length} available`}
           tone="success"
+          href={`/lender-marketplace?partnerId=${encodeURIComponent(partnerId)}&enabled=true`}
         />
         <StatTile
           label="Overrides"
           value={String(overridden)}
           hint="partner-specific"
           tone={overridden > 0 ? 'warning' : 'neutral'}
+          href={`/lender-marketplace/access?partnerId=${encodeURIComponent(partnerId)}`}
         />
-        <StatTile label="Marketplaces" value={String(marketplaces.length)} hint="active pools" />
+        <StatTile
+          label="Marketplaces"
+          value={String(marketplaces.length)}
+          hint="active pools"
+          href="/lender-marketplace"
+        />
         <StatTile label="Sync freshness" value="4h ago" hint="last marketplace sync" />
       </div>
 
@@ -1750,11 +1770,14 @@ function StatTile({
   value,
   hint,
   tone = 'neutral',
+  href,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: string;
   tone?: StatusTone;
+  /** Optional drill-in URL — when provided the tile becomes a Link. */
+  href?: string;
 }) {
   const accent =
     tone === 'success'
@@ -1764,15 +1787,28 @@ function StatTile({
         : tone === 'warning'
           ? 'text-warning'
           : 'text-fg';
-  return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
+  const body = (
+    <>
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
       <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${accent}`}>
         {value}
       </p>
       {hint && <p className="text-[10px] text-fg-muted mt-1.5">{hint}</p>}
-    </div>
+    </>
   );
+  const base = 'block rounded-xl border border-border bg-bg-elevated px-4 py-3';
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={`${label}. Open filtered list.`}
+        className={`${base} transition-colors hover:border-border-strong hover:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus`}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={base}>{body}</div>;
 }
 
 function formatRelative(iso: string): string {

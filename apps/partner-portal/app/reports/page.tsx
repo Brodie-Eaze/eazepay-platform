@@ -1,6 +1,7 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   PageHeader,
   PageBody,
@@ -21,10 +22,14 @@ import {
   TrendDownIcon,
   EmptyState,
   Filter,
+  LiveIndicator,
+  TimeRangeSelector,
+  TIME_RANGES,
   type ButtonVariant,
   type ButtonSize,
   type StatusTone,
   type FilterOption,
+  type TimeRange,
 } from '@eazepay/ui/web';
 import { BRAND_CODES, BRAND_LABEL, type Brand } from '@eazepay/shared-types';
 import { formatBps } from '@eazepay/shared-utils/format-bps';
@@ -258,6 +263,30 @@ export default function ReportsPage() {
     (r) => !query || r.title.toLowerCase().includes(query.toLowerCase()),
   );
 
+  /* Sprint H: canonical TimeRange surfaced in the header. The legacy
+   * in-report `range` selector (qtd / ytd) lives in each report card; the
+   * canonical bar drives URL `?range=` so reports.page URLs survive
+   * sharing. We map (7d/30d/90d) directly to DateRange and fall back to
+   * 30d for 12m / all (the in-report selector still owns the longer
+   * windows). */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const tRangeFromUrl = (sp?.get('range') as TimeRange | null) ?? null;
+  const tRange: TimeRange =
+    tRangeFromUrl && (TIME_RANGES as readonly string[]).includes(tRangeFromUrl)
+      ? tRangeFromUrl
+      : '30d';
+  const handleTRangeChange = useCallback(
+    (next: TimeRange) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      params.set('range', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+      /* Mirror into the in-report selector for windows it supports. */
+      if (next === '7d' || next === '30d' || next === '90d') setRange(next);
+    },
+    [router, sp],
+  );
+
   return (
     <>
       <PageHeader
@@ -266,6 +295,8 @@ export default function ReportsPage() {
         description="Operational reporting across the partner network — financials, lender performance, compliance posture."
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            <LiveIndicator pulseKey={`${tRange}-${reportId}`} />
+            <TimeRangeSelector value={tRange} onChange={handleTRangeChange} />
             <Button size="sm" variant="secondary" onClick={() => setShowSchedules((v) => !v)}>
               <ClockIcon size={12} aria-hidden />
               {showSchedules ? 'Hide schedules' : 'Scheduled reports'}
@@ -634,19 +665,40 @@ function FinancingPerformanceReport({
 
   return (
     <>
+      {/* Sprint H: top KPI strip — each tile drills into the underlying
+          /applications view filtered to the report's brand + range. */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <Kpi label="Funded volume" value={`$${(totalFunded / 1000).toFixed(1)}M`} delta={yoy} />
-        <Kpi label="Avg ticket" value={formatCurrencyCents(avgTicket)} />
-        <Kpi label="Funded apps" value={String(tableRows.reduce((s, r) => s + r.funded, 0))} />
+        <Kpi
+          label="Funded volume"
+          value={`$${(totalFunded / 1000).toFixed(1)}M`}
+          delta={yoy}
+          href={`/applications?status=funded&range=${range}`}
+        />
+        <Kpi
+          label="Avg ticket"
+          value={formatCurrencyCents(avgTicket)}
+          href={`/applications?status=funded&range=${range}`}
+        />
+        <Kpi
+          label="Funded apps"
+          value={String(tableRows.reduce((s, r) => s + r.funded, 0))}
+          href={`/applications?status=funded&range=${range}`}
+        />
         <Kpi
           label="Approval rate"
           value={`${Math.floor(50 + r() * 22)}%`}
           delta={Math.floor(r() * 8) - 3}
+          href={`/applications?status=approved&range=${range}`}
         />
         <Kpi
           label="Top partner"
           value={(tableRows[0]?.partner ?? '—').split(' ')[0] ?? '—'}
           hint="by volume"
+          href={
+            tableRows[0]?.partnerId
+              ? `/control-panel/${encodeURIComponent(tableRows[0].partnerId)}`
+              : '/control-panel'
+          }
         />
       </div>
 
@@ -1812,12 +1864,15 @@ function Kpi({
   hint,
   delta,
   tone = 'neutral',
+  href,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: string;
   delta?: number;
   tone?: StatusTone;
+  /** Optional drill-in URL — when provided the tile becomes a Link. */
+  href?: string;
 }) {
   const valColor =
     tone === 'success'
@@ -1827,8 +1882,8 @@ function Kpi({
         : tone === 'warning'
           ? 'text-warning'
           : 'text-fg';
-  return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-4 py-3">
+  const body = (
+    <>
       <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">{label}</p>
       <p className={`mt-1.5 text-[20px] font-bold tracking-tight leading-none ${valColor}`}>
         {value}
@@ -1845,8 +1900,21 @@ function Kpi({
         )}
         {hint && <span className="text-[10px] text-fg-muted">{hint}</span>}
       </div>
-    </div>
+    </>
   );
+  const base = 'block rounded-xl border border-border bg-bg-elevated px-4 py-3';
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={`${label}. Open underlying list.`}
+        className={`${base} transition-colors hover:border-border-strong hover:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus`}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={base}>{body}</div>;
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
