@@ -116,7 +116,13 @@ const HIGHSALE_WEBHOOK_SECRET = process.env.HIGHSALE_WEBHOOK_SECRET ?? '';
 /** SEC-002 — see micamp/client.ts for rationale. */
 const WEBHOOK_FRESHNESS_SECONDS = 300;
 
-if (process.env.NODE_ENV === 'production' && !HIGHSALE_WEBHOOK_SECRET) {
+// SEC-002 hard floor: fail-closed at RUNTIME if the secret is unset in
+// production. We do NOT throw during `next build` (NEXT_PHASE is set by
+// Next.js itself) — build-time imports happen in CI without secrets,
+// and refusing to load there would only break the build, not protect a
+// real request. The throw still fires on the first runtime import path.
+const IS_BUILD_TIME = process.env.NEXT_PHASE === 'phase-production-build';
+if (process.env.NODE_ENV === 'production' && !IS_BUILD_TIME && !HIGHSALE_WEBHOOK_SECRET) {
   throw new Error(
     '[highsale/client] HIGHSALE_WEBHOOK_SECRET is unset in production — refusing to load. ' +
       'Without it, verifyHighsaleSignature() cannot fail-closed and forged webhooks would be accepted (SEC-002).',

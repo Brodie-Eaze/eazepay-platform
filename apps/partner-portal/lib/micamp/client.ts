@@ -136,7 +136,12 @@ const WEBHOOK_FRESHNESS_SECONDS = 300;
  * belt-and-braces second line in case anything imports this module
  * before middleware evaluates.
  */
-if (process.env.NODE_ENV === 'production' && !MICAMP_WEBHOOK_SECRET) {
+// SEC-002 hard floor — see lib/highsale/client.ts for rationale on
+// the NEXT_PHASE exemption. Fail-closed at runtime, allow build time
+// to complete in CI without secrets (the throw still fires on the
+// first real import via a request).
+const MICAMP_IS_BUILD_TIME = process.env.NEXT_PHASE === 'phase-production-build';
+if (process.env.NODE_ENV === 'production' && !MICAMP_IS_BUILD_TIME && !MICAMP_WEBHOOK_SECRET) {
   throw new Error(
     '[micamp/client] MICAMP_WEBHOOK_SECRET is unset in production — refusing to load. ' +
       'Without it, verifyWebhookSignature() cannot fail-closed and forged webhooks would be accepted (SEC-002).',

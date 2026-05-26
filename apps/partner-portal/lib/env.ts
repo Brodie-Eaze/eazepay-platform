@@ -228,6 +228,11 @@ export function assertProdEnv(): EnvAssertionResult {
   }
 
   const isProd = process.env.NODE_ENV === 'production';
+  // `next build` evaluates middleware at build time without secrets set in
+  // CI. We log everything as warnings during build but skip the throw —
+  // the throw still fires on the first worker boot at runtime (which is
+  // when REQUIRED env vars actually need to exist).
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build';
 
   if (errors.length > 0) {
     const banner = isProd
@@ -249,11 +254,15 @@ export function assertProdEnv(): EnvAssertionResult {
         console.warn(`  • ${w}`);
       }
     }
-    if (isProd) {
+    if (isProd && !isBuildTime) {
       // Throwing here aborts module evaluation, which aborts middleware
       // initialisation, which fails the Next.js worker boot. Railway's
       // healthcheck never goes green and the rotation stays on the
       // previous revision — a half-configured deploy never serves.
+      //
+      // Skipped during `next build` (NEXT_PHASE === 'phase-production-build')
+      // so CI can produce a build artifact without holding the prod
+      // secrets — the throw still fires at runtime on first request.
       throw new Error(
         `partner-portal refusing to boot: ${errors.length} required env var(s) invalid. ` +
           `See stderr above for details.`,
