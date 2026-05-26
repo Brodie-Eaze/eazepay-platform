@@ -1,10 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { runPrequal, type PrequalRequest } from '@/lib/highsale/client';
-import { assertResourceOwnershipStub, requirePartnerSession } from '@/lib/server-guards';
+import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { verifyFCRAConsent } from '@/lib/consumer-consent';
 import { hasDb, getDb, schema } from '@/lib/db';
 import { safeLog } from '@/lib/safe-log';
+import { safeErrorResponse } from '@/lib/safe-error';
+import { enforceOrigin } from '@/lib/origin-guard';
+import { enforce as enforceEdgeRateLimit } from '@/lib/edge-rate-limit';
 
 /**
  * POST /api/integrations/highsale/prequal
@@ -145,12 +148,58 @@ function pickClientIp(req: NextRequest): string {
   return xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
 }
 
+/**
+ * Rate-limit settings for prequal (SEC-006 follow-up).
+ *
+ * Two independent buckets, applied with whichever-runs-out-first wins:
+ *   • 30 / hour / IP — bounds botnet / single-IP scraping.
+ *   • 10 / hour / partner — bounds a stolen consent-receipt loop on
+ *     one partner's wholesale pull budget.
+ *
+ * HighSale pulls are wholesale-billed to EazePay; each pull burns a
+ * unit of the monthly cap. A single attacker with one valid consent
+ * receipt could otherwise empty the cap before the partner notices.
+ */
+const PREQUAL_RATE_LIMIT_IP = 30;
+const PREQUAL_RATE_LIMIT_PARTNER = 10;
+const PREQUAL_RATE_WINDOW_MS = 60 * 60 * 1000;
+
 export async function POST(req: NextRequest) {
+  // SEC-010: origin allowlist before any expensive verification.
+  // Consumer prequal is initiated from the partner-portal apply flow
+  // (same origin); cross-origin POSTs to this endpoint are rejected
+  // even when the caller has a valid session cookie.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   // SEC-001 (Builder B): partner session required. The body carries
   // `subAccountId` which maps to a specific partner's HighSale account;
   // pre-fix the route trusted whatever id the caller sent.
   const guard = await requirePartnerSession(req);
   if (guard instanceof NextResponse) return guard;
+
+  // SEC-006 follow-up: bound prequal volume per IP first (constant-cost
+  // rejection before we touch the receipt store). Partner-bucket check
+  // runs AFTER body parse so we have a partnerId to key on.
+  const ip = pickClientIp(req);
+  const ipRl = enforceEdgeRateLimit(ip, PREQUAL_RATE_LIMIT_IP, PREQUAL_RATE_WINDOW_MS);
+  if (!ipRl.allowed) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Too Many Requests',
+        status: 429,
+        code: 'rate_limited',
+        detail: 'Too many pre-qualifications from this network. Retry shortly.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil((ipRl.retryAfterMs ?? 60_000) / 1000).toString(),
+        },
+      },
+    );
+  }
 
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
@@ -169,10 +218,38 @@ export async function POST(req: NextRequest) {
 
   const body: PrequalBody = parsed.data;
 
-  // sub-account → partner ownership lookup is stubbed until the
-  // `partner_highsale_subaccount` mapping table lands. See the helper
-  // doc for the failure mode that survives in the meantime.
-  const ownership = assertResourceOwnershipStub(guard, body.subAccountId, 'subaccount');
+  // Per-partner rate bucket — keyed on the session's partnerId (or the
+  // synthetic operator override token). Stops a stolen consent receipt
+  // from draining ONE partner's wholesale quota even when the attacker
+  // rotates source IPs.
+  const partnerKey = `partner:${guard.partnerId || 'admin_override'}`;
+  const partnerRl = enforceEdgeRateLimit(
+    partnerKey,
+    PREQUAL_RATE_LIMIT_PARTNER,
+    PREQUAL_RATE_WINDOW_MS,
+  );
+  if (!partnerRl.allowed) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Too Many Requests',
+        status: 429,
+        code: 'rate_limited',
+        detail: 'Too many pre-qualifications for this partner. Retry shortly.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil((partnerRl.retryAfterMs ?? 60_000) / 1000).toString(),
+        },
+      },
+    );
+  }
+
+  // SEC-001 follow-up: real sub-account → partner ownership check.
+  // Returns 404 (not 403) on mismatch / not-found to avoid leaking
+  // existence of another partner's `hs_*` sub-account ids.
+  const ownership = await assertResourceOwnership(guard, body.subAccountId, 'subaccount');
   if (ownership) return ownership;
 
   // SEC-006: verify FCRA consent BEFORE any state-changing call. Order
@@ -243,15 +320,13 @@ export async function POST(req: NextRequest) {
       consentReceiptId: verdict.receiptId,
       msg: err instanceof Error ? err.message : 'unknown',
     });
-    return NextResponse.json(
-      {
-        type: 'about:blank',
-        title: 'Bad Gateway',
-        status: 502,
-        code: 'highsale_prequal_failed',
-        detail: err instanceof Error ? err.message : 'HighSale pre-qual failed',
-      },
-      { status: 502 },
+    // SEC-007: never echo upstream error text — HighSale's 5xx bodies
+    // can include internal endpoint paths + raw upstream error strings.
+    return safeErrorResponse(
+      err,
+      'highsale_prequal_failed',
+      502,
+      '/api/integrations/highsale/prequal',
     );
   }
 }

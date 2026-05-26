@@ -1,0 +1,41 @@
+# Railway service configuration for the BullMQ workers process
+# (Task #50).
+#
+# Runs SEPARATE from the Next.js web service (see railway.toml). The
+# web service handles HTTP traffic + enqueues jobs; this service owns
+# the actual work — provisioning runs, customer migrations, webhook
+# inbox dispatch.
+#
+# Why two services not one: Next.js doesn't run background workers by
+# default, and we want the worker fleet to scale independently from
+# the web tier. A burst of webhook traffic should be handled by adding
+# worker replicas, not by spinning up extra public-facing nodes.
+#
+# Required env (Railway will inject when services are linked):
+#   REDIS_URL       — required, workers boot-fail otherwise
+#   DATABASE_URL    — required, same Postgres as the web service
+#
+# Deploy:
+#   railway service create eazepay-workers
+#   railway link --service eazepay-workers
+#   railway up --config railway.workers.toml
+#
+# Both services should be linked to the same Redis + Postgres add-ons
+# in the Railway project so they share queue + state.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Boot the BullMQ workers (see apps/partner-portal/scripts/start-workers.ts).
+# `pnpm` is the runner the rest of the repo uses; this matches the
+# web service's invocation style for consistency.
+startCommand = "pnpm --filter=@eazepay/partner-portal workers"
+# A worker crash should restart so in-flight jobs continue (BullMQ
+# returns stalled jobs to the queue when the lock is lost).
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+# No HTTP server in the worker process — no healthcheck path. Railway
+# falls back to "process up" as the liveness signal, which is what we
+# want: as long as the workers are running the service is healthy.

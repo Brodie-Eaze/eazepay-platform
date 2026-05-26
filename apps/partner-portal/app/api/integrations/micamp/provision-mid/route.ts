@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { provisionMid, type ProvisionMidRequest } from '@/lib/micamp/client';
 import { assertPartnerOwnership, requirePartnerSession } from '@/lib/server-guards';
+import { safeErrorResponse } from '@/lib/safe-error';
+import { enforceOrigin } from '@/lib/origin-guard';
+import { enforce as enforceEdgeRateLimit } from '@/lib/edge-rate-limit';
 
 /**
  * POST /api/integrations/micamp/provision-mid
@@ -29,10 +32,53 @@ const BodySchema = z.object({
   funnelUrls: z.array(z.string()).default([]),
 });
 
+/**
+ * Per-IP edge rate limit for MID provisioning. Each MID issuance
+ * triggers upstream underwriting + a billing schedule write on the
+ * MiCamp side. 10/hour/IP keeps an attacker (or a buggy retry loop)
+ * from spamming pre-underwriting requests across hundreds of fake
+ * EINs in a few minutes.
+ */
+const PROVISION_RATE_LIMIT = 10;
+const PROVISION_RATE_WINDOW_MS = 60 * 60 * 1000;
+
+function pickClientIp(req: NextRequest): string {
+  const xff = req.headers.get('x-forwarded-for') ?? '';
+  return xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+}
+
 export async function POST(req: NextRequest) {
+  // SEC-010: origin allowlist on state-changing partner POSTs.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   // SEC-001: partner session required + partnerId ownership.
   const guard = await requirePartnerSession(req);
   if (guard instanceof NextResponse) return guard;
+
+  // SEC-006 follow-up: bound MID issuance rate per IP.
+  const rl = enforceEdgeRateLimit(
+    pickClientIp(req),
+    PROVISION_RATE_LIMIT,
+    PROVISION_RATE_WINDOW_MS,
+  );
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Too Many Requests',
+        status: 429,
+        code: 'rate_limited',
+        detail: 'Too many MID provisioning requests from this network. Retry shortly.',
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil((rl.retryAfterMs ?? 60_000) / 1000).toString(),
+        },
+      },
+    );
+  }
 
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
@@ -56,15 +102,13 @@ export async function POST(req: NextRequest) {
     const result = await provisionMid(parsed.data as ProvisionMidRequest);
     return NextResponse.json(result, { status: 202 });
   } catch (err) {
-    return NextResponse.json(
-      {
-        type: 'about:blank',
-        title: 'Bad Gateway',
-        status: 502,
-        code: 'micamp_unreachable',
-        detail: err instanceof Error ? err.message : 'MiCamp call failed',
-      },
-      { status: 502 },
+    // SEC-007: never echo `err.message` — MiCamp error bodies include
+    // internal endpoint paths and sometimes auth-state hints.
+    return safeErrorResponse(
+      err,
+      'micamp_unreachable',
+      502,
+      '/api/integrations/micamp/provision-mid',
     );
   }
 }

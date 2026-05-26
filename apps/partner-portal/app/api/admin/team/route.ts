@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/server-guards';
+import { enforceOrigin } from '@/lib/origin-guard';
 
 /**
  * Internal-team list + invite. Proxies to backend `/v1/admin/team`
@@ -71,6 +72,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC-010: origin allowlist on state-changing admin POSTs.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   // SEC-001: admin-only.
   const guard = await requireAdmin(req);
   if (guard instanceof NextResponse) return guard;

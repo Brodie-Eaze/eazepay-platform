@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getMigration, startMigration } from '@/lib/orchestrator/migration';
 import { requireAdmin } from '@/lib/server-guards';
+import { enforceOrigin } from '@/lib/origin-guard';
 
 /**
  * GET  /api/admin/migrations/[id]       — fetch migration status
@@ -28,6 +29,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  // SEC-010: origin allowlist on state-changing admin POSTs.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   // SEC-001: admin-only.
   const guard = await requireAdmin(req);
   if (guard instanceof NextResponse) return guard;

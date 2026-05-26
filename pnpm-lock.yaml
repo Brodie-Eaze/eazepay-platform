@@ -442,9 +442,15 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.0.0
         version: 5.100.10(react@18.3.1)
+      bullmq:
+        specifier: ^5.0.0
+        version: 5.76.8
       drizzle-orm:
         specifier: ^0.36.4
         version: 0.36.4(@opentelemetry/api@1.9.1)(@prisma/client@5.22.0(prisma@5.22.0))(@types/pg@8.20.0)(@types/react@18.3.28)(pg@8.21.0)(prisma@5.22.0)(react@18.3.1)
+      ioredis:
+        specifier: ^5.4.0
+        version: 5.10.1
       next:
         specifier: ^14.2.0
         version: 14.2.35(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -10981,7 +10987,7 @@ snapshots:
   '@commitlint/is-ignored@19.8.1':
     dependencies:
       '@commitlint/types': 19.8.1
-      semver: 7.7.4
+      semver: 7.8.0
 
   '@commitlint/lint@19.8.1':
     dependencies:
@@ -11448,7 +11454,7 @@ snapshots:
       resolve: 1.22.12
       resolve-from: 5.0.0
       resolve.exports: 2.0.3
-      semver: 7.7.4
+      semver: 7.8.0
       send: 0.18.0
       slugify: 1.6.9
       source-map-support: 0.5.21
@@ -11486,7 +11492,7 @@ snapshots:
       getenv: 1.0.0
       glob: 7.1.6
       resolve-from: 5.0.0
-      semver: 7.7.4
+      semver: 7.8.0
       slash: 3.0.0
       slugify: 1.6.9
       xcode: 3.0.1
@@ -11506,7 +11512,7 @@ snapshots:
       glob: 7.1.6
       require-from-string: 2.0.2
       resolve-from: 5.0.0
-      semver: 7.7.4
+      semver: 7.8.0
       slugify: 1.6.9
       sucrase: 3.34.0
     transitivePeerDependencies:
@@ -11539,7 +11545,7 @@ snapshots:
       node-fetch: 2.7.0
       parse-png: 2.1.0
       resolve-from: 5.0.0
-      semver: 7.7.4
+      semver: 7.8.0
       tempy: 0.3.0
     transitivePeerDependencies:
       - encoding
@@ -11609,7 +11615,7 @@ snapshots:
       expo-modules-autolinking: 1.11.3
       fs-extra: 9.1.0
       resolve-from: 5.0.0
-      semver: 7.7.4
+      semver: 7.8.0
       xml2js: 0.6.0
     transitivePeerDependencies:
       - encoding
@@ -12465,7 +12471,7 @@ snapshots:
       '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.28.0
       forwarded-parse: 2.1.2
-      semver: 7.7.4
+      semver: 7.8.0
     transitivePeerDependencies:
       - supports-color
 
@@ -12666,7 +12672,7 @@ snapshots:
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.15.0
       require-in-the-middle: 7.5.2
-      semver: 7.7.4
+      semver: 7.8.0
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
@@ -12811,7 +12817,7 @@ snapshots:
       '@opentelemetry/propagator-b3': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/propagator-jaeger': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.1)
-      semver: 7.7.4
+      semver: 7.8.0
 
   '@opentelemetry/semantic-conventions@1.27.0': {}
 
@@ -13314,7 +13320,7 @@ snapshots:
       hermes-profile-transformer: 0.0.6
       node-stream-zip: 1.15.0
       ora: 5.4.1
-      semver: 7.7.4
+      semver: 7.8.0
       strip-ansi: 5.2.0
       wcwidth: 1.0.1
       yaml: 2.8.4
@@ -13385,7 +13391,7 @@ snapshots:
       node-fetch: 2.7.0
       open: 6.4.0
       ora: 5.4.1
-      semver: 7.7.4
+      semver: 7.8.0
       shell-quote: 1.8.3
       sudo-prompt: 9.2.1
     transitivePeerDependencies:
@@ -13413,7 +13419,7 @@ snapshots:
       fs-extra: 8.1.0
       graceful-fs: 4.2.11
       prompts: 2.4.2
-      semver: 7.7.4
+      semver: 7.8.0
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -14095,7 +14101,7 @@ snapshots:
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.9
-      semver: 7.7.4
+      semver: 7.8.0
       ts-api-utils: 1.4.3(typescript@5.9.3)
     optionalDependencies:
       typescript: 5.9.3
@@ -15859,7 +15865,7 @@ snapshots:
       proxy-addr: 2.0.7
       rfdc: 1.4.1
       secure-json-parse: 2.7.0
-      semver: 7.7.4
+      semver: 7.8.0
       toad-cache: 3.7.0
 
   fastify@4.29.1:

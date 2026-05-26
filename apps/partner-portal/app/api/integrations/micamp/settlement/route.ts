@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { settlementReport } from '@/lib/micamp/client';
-import { requirePartnerSession } from '@/lib/server-guards';
+import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
+import { safeErrorResponse } from '@/lib/safe-error';
 
 /**
  * GET /api/integrations/micamp/settlement?midId=...&start=...&end=...
@@ -33,8 +34,6 @@ export async function GET(req: NextRequest) {
   // SEC-001: partner session required. Settlement reports include
   // cents-level revenue + per-MID payout history — pre-fix anyone
   // could pull another partner's report by guessing their midId.
-  // mid → partner ownership lookup is deferred (no mapping table on
-  // this branch yet); the session-gate stops anonymous reads.
   const guard = await requirePartnerSession(req);
   if (guard instanceof NextResponse) return guard;
 
@@ -57,6 +56,12 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // SEC-001 follow-up: midId → partner ownership check (mids.partner_id
+  // is the source of truth). 404 on mismatch / not-found avoids
+  // leaking the existence of another partner's MID uuid.
+  const ownership = await assertResourceOwnership(guard, parsed.data.midId, 'mid');
+  if (ownership) return ownership;
+
   const end = parsed.data.end ?? new Date().toISOString().slice(0, 10);
   const startFallback = new Date();
   startFallback.setUTCDate(startFallback.getUTCDate() - 30);
@@ -66,15 +71,13 @@ export async function GET(req: NextRequest) {
     const report = await settlementReport(parsed.data.midId, { start, end });
     return NextResponse.json(report);
   } catch (err) {
-    return NextResponse.json(
-      {
-        type: 'about:blank',
-        title: 'Bad Gateway',
-        status: 502,
-        code: 'micamp_settlement_failed',
-        detail: err instanceof Error ? err.message : 'MiCamp settlement fetch failed',
-      },
-      { status: 502 },
+    // SEC-007: never echo upstream error text. GETs leak fewer cycles
+    // but the body still gets logged + cached downstream.
+    return safeErrorResponse(
+      err,
+      'micamp_settlement_failed',
+      502,
+      '/api/integrations/micamp/settlement',
     );
   }
 }

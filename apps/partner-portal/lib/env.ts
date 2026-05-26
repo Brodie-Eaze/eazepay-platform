@@ -116,6 +116,31 @@ const REQUIRED: ReadonlyArray<RequiredVar> = [
         ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
         : null,
   },
+  {
+    // SEC-010: without an explicit allowlist, the origin-guard on
+    // /api/admin/* + /api/integrations/* state-changing routes falls
+    // open to any origin in production. SameSite=Lax + the CSRF cookie
+    // still block the obvious cases, but defence-in-depth requires an
+    // explicit list. CSV of `https://host[:port]` entries.
+    name: 'ALLOWED_ORIGINS',
+    failureMode:
+      'origin-guard on state-changing admin/integration routes falls open — any cross-origin POST with stolen credentials succeeds',
+    validate: (v) => {
+      const entries = v
+        .split(',')
+        .map((e) => e.trim())
+        .filter(Boolean);
+      if (entries.length === 0) {
+        return 'must list at least one origin (e.g. https://app.eazepay.com)';
+      }
+      for (const entry of entries) {
+        if (!/^https?:\/\/[^/]+$/.test(entry)) {
+          return `invalid origin "${entry}" — must be scheme + host[:port] with no path (e.g. https://app.eazepay.com)`;
+        }
+      }
+      return null;
+    },
+  },
 ];
 
 /**

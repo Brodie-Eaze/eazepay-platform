@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { desc, sql, and, eq, gt } from 'drizzle-orm';
 import { hasDb, getDb, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/server-guards';
+import { safeErrorResponse } from '@/lib/safe-error';
 
 /**
  * GET /api/admin/audit?actor=&action=&targetType=&since=
@@ -124,15 +125,10 @@ export async function GET(req: NextRequest) {
       entries: rows,
     });
   } catch (err) {
-    return NextResponse.json(
-      {
-        type: 'about:blank',
-        title: 'Internal Server Error',
-        status: 500,
-        code: 'audit_query_failed',
-        detail: err instanceof Error ? err.message : 'Unknown DB error',
-      },
-      { status: 500 },
-    );
+    // SEC-007: never echo `err.message` to the wire — Drizzle/pg errors
+    // carry the full SQL statement + offending column. safeErrorResponse
+    // logs the full error context for the operator and returns the
+    // generic detail mapped from `audit_query_failed`.
+    return safeErrorResponse(err, 'audit_query_failed', 500, '/api/admin/audit');
   }
 }

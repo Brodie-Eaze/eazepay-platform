@@ -48,6 +48,7 @@ import { randomUUID } from 'node:crypto';
 import { hasDb, getDb, schema } from './db';
 import { safeLog } from './safe-log';
 import { SAMPLE_LENDERS, type Brand, type LenderTier } from './api-v1/shared';
+import { incrementMetric } from './observability/metrics';
 
 /* ---------- types ---------- */
 
@@ -548,6 +549,12 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
       }
     }
   }
+
+  // Platform-wide decision counter for /admin/observability. Bumped on
+  // every completed evaluation regardless of engine (internal /
+  // trutopia / fallback) — the dashboard's "decisions computed" tile
+  // counts work done, not engine selection.
+  incrementMetric('decisions.computed');
 
   return {
     decisionId,

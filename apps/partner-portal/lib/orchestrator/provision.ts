@@ -38,6 +38,8 @@ import { createSubAccount } from '../highsale/client';
 import { provisionMid } from '../micamp/client';
 import { getDb, hasDb, schema } from '../db';
 import { safeLog } from '../safe-log';
+import { hasQueue } from '../queue';
+import { incrementMetric } from '../observability/metrics';
 
 export type ProvisionStepName =
   | 'highsale_subaccount'
@@ -59,7 +61,12 @@ export interface ProvisionStep {
 
 export interface ProvisionRun {
   id: string;
-  partnerId: string;
+  /** NULL only after a partner row is deleted (FK ON DELETE SET NULL in
+   *  0008). Every new run starts with a non-null partner_id; the column
+   *  was relaxed to nullable so historical runs survive partner cleanup.
+   *  Callers that need to act on the partner should treat null as
+   *  "partner gone, audit row only". */
+  partnerId: string | null;
   brand: 'medpay' | 'tradepay' | 'coachpay' | 'ai_funding';
   status: 'queued' | 'running' | 'completed' | 'failed';
   steps: ProvisionStep[];
@@ -102,6 +109,17 @@ const ORCHESTRATOR_ACTOR = 'system:orchestrator';
  * truth is the `provisioning_runs` table.
  */
 const MEMORY_RUNS = new Map<string, ProvisionRun>();
+
+/**
+ * Parallel in-memory store for the ProvisionConfig keyed by runId.
+ * Mirrors the new `config_json` column on provisioning_runs — the
+ * BullMQ worker recovers config from the DB, but the in-process
+ * fallback path (no Redis) recovers it from this map.
+ *
+ * Held only as long as MEMORY_RUNS holds the corresponding run. No
+ * separate eviction: the run lifetime is the natural bound.
+ */
+const MEMORY_RUNS_CONFIG = new Map<string, ProvisionConfig>();
 
 function newSteps(): ProvisionStep[] {
   return INITIAL_STEPS.map((name) => ({
@@ -178,6 +196,54 @@ async function persistRun(run: ProvisionRun): Promise<void> {
       event: 'orchestrator.provision.persist_failed',
       runId: run.id,
       partnerId: run.partnerId,
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+  }
+}
+
+/**
+ * Persist the HighSale sub-account → partner ownership mapping so the
+ * prequal route's `assertResourceOwnership('subaccount', ...)` can
+ * gate cross-tenant calls. Best-effort: a write failure logs loudly
+ * and continues — the orchestrator step still completes (the upstream
+ * sub-account exists), and ops can re-seed manually. The unique
+ * constraint on `subaccount_id` makes re-runs idempotent.
+ *
+ * No-op when the sub-account id is missing (synthetic / live failure
+ * upstream that we still want to surface as a soft warning, not a
+ * hard step failure — the step itself caught that earlier).
+ */
+async function seedSubaccountOwnership(input: {
+  partnerId: string;
+  subaccountId: string | null;
+  bureau: string | null;
+  runId: string;
+}): Promise<void> {
+  if (!input.subaccountId) {
+    safeLog.warn({
+      event: 'orchestrator.provision.subaccount_seed.missing_id',
+      runId: input.runId,
+      partnerId: input.partnerId,
+    });
+    return;
+  }
+  if (!hasDb()) return;
+  try {
+    const db = getDb();
+    await db
+      .insert(schema.partnerHighsaleSubaccounts)
+      .values({
+        partnerId: input.partnerId,
+        subaccountId: input.subaccountId,
+        bureau: input.bureau,
+      })
+      .onConflictDoNothing({ target: schema.partnerHighsaleSubaccounts.subaccountId });
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.subaccount_seed_failed',
+      runId: input.runId,
+      partnerId: input.partnerId,
+      subaccountId: input.subaccountId,
       err: err instanceof Error ? err.message : 'unknown',
     });
   }
@@ -265,8 +331,18 @@ export async function listRuns(): Promise<ProvisionRun[]> {
 /**
  * Kick off a provisioning run. Returns immediately with the run
  * record so the caller can poll for status. The work itself happens
- * in the background via setImmediate so the HTTP response isn't
- * blocked on upstream integrations.
+ * either in a BullMQ worker (when `hasQueue()` is true — production
+ * path) or in-process via setImmediate (local dev / Redis-less envs
+ * — fallback path).
+ *
+ * Why both paths: the cross-process BullMQ path is what scales to
+ * the July 1 cutover (500+ partners) and survives a Next.js redeploy
+ * mid-run. The in-process path keeps the dev experience hermetic —
+ * a contributor without Redis still walks the wizard end-to-end.
+ *
+ * IMPORTANT: only ONE of the two paths runs per call. Enqueueing AND
+ * setImmediate would race two workers on the same row; the DB-side
+ * status transitions are not idempotent past the first claim.
  */
 export async function startProvision(config: ProvisionConfig): Promise<ProvisionRun> {
   const id = crypto.randomUUID();
@@ -291,6 +367,10 @@ export async function startProvision(config: ProvisionConfig): Promise<Provision
         brand: run.brand,
         status: run.status,
         stepsJson: JSON.stringify(run.steps),
+        // Persist the inputs so a cross-process BullMQ worker can recover
+        // them. Keeps partner PII out of the Redis job payload — the job
+        // carries only the run id.
+        configJson: JSON.stringify(config),
         startedAt: new Date(startedAt),
       });
     } catch (err) {
@@ -303,9 +383,11 @@ export async function startProvision(config: ProvisionConfig): Promise<Provision
         partnerId: run.partnerId,
         err: err instanceof Error ? err.message : 'unknown',
       });
+      MEMORY_RUNS_CONFIG.set(id, config);
       MEMORY_RUNS.set(id, run);
     }
   } else {
+    MEMORY_RUNS_CONFIG.set(id, config);
     MEMORY_RUNS.set(id, run);
   }
 
@@ -314,18 +396,119 @@ export async function startProvision(config: ProvisionConfig): Promise<Provision
     runId: run.id,
     partnerId: run.partnerId,
     brand: run.brand,
+    transport: hasQueue() ? 'bullmq' : 'in_process',
   });
   await writeAudit(run, 'provision.start', { startedAt });
 
-  // Defer execution so the caller gets a fast 202 + can poll.
-  setImmediate(() => {
-    void executeRun(run, config);
-  });
+  // Dispatch to the worker. When Redis is configured we hand the
+  // job off to BullMQ (a worker process picks it up). Otherwise we
+  // defer to setImmediate so the caller still gets a fast 202.
+  if (hasQueue()) {
+    try {
+      // Lazy import so this module doesn't pull bullmq into the bundle
+      // for environments that never enqueue (e.g. middleware edge runtime).
+      const { enqueueProvisioningRun } = await import('../queue/provisioning');
+      await enqueueProvisioningRun(run.id);
+    } catch (err) {
+      // Enqueue failure must surface — silently falling back to the
+      // in-process path would split traffic between two transports
+      // and split the failure mode. Re-throw so the route returns 5xx.
+      safeLog.error({
+        event: 'orchestrator.provision.enqueue_failed',
+        runId: run.id,
+        err: err instanceof Error ? err.message : 'unknown',
+      });
+      throw err;
+    }
+  } else {
+    // In-process fallback. setImmediate does NOT surface throws as
+    // unhandled rejections — wrap with .catch so a worker error
+    // becomes a structured log rather than crashing the Node process.
+    // The BullMQ path doesn't need this because the Worker harness
+    // catches + retries automatically.
+    setImmediate(() => {
+      void executeProvisionRun(run.id, config).catch((err) => {
+        safeLog.error({
+          event: 'orchestrator.provision.in_process_failed',
+          runId: run.id,
+          err: err instanceof Error ? err.message : 'unknown',
+        });
+      });
+    });
+  }
 
   return run;
 }
 
-async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<void> {
+/**
+ * Load the persisted ProvisionConfig for a run. Used by the BullMQ
+ * worker to recover inputs without them riding in the Redis payload.
+ *
+ * Returns `undefined` if:
+ *   - The run id is unknown
+ *   - The row pre-dates Task #50 (config_json is NULL)
+ * Workers treat undefined as a terminal failure: there's nothing to
+ * drive the run.
+ */
+export async function loadProvisionConfig(id: string): Promise<ProvisionConfig | undefined> {
+  if (!hasDb()) return MEMORY_RUNS_CONFIG.get(id);
+  try {
+    const db = getDb();
+    const rows = await db
+      .select({ configJson: schema.provisioningRuns.configJson })
+      .from(schema.provisioningRuns)
+      .where(eq(schema.provisioningRuns.id, id))
+      .limit(1);
+    const json = rows[0]?.configJson;
+    if (!json) return undefined;
+    try {
+      return JSON.parse(json) as ProvisionConfig;
+    } catch (err) {
+      safeLog.error({
+        event: 'orchestrator.provision.config_parse_failed',
+        runId: id,
+        err: err instanceof Error ? err.message : 'unknown',
+      });
+      return undefined;
+    }
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.load_config_failed',
+      runId: id,
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+    return undefined;
+  }
+}
+
+/**
+ * Execute a provisioning run end-to-end. Exported for the BullMQ
+ * worker entry point (`lib/queue/provisioning.ts`) and the in-process
+ * fallback path inside `startProvision`. Re-reads the run row first
+ * so a worker that picks up a job after a redeploy sees the latest
+ * status — a run already past 'queued' is a no-op rather than a
+ * double-claim.
+ */
+export async function executeProvisionRun(runId: string, config: ProvisionConfig): Promise<void> {
+  const run = await getRun(runId);
+  if (!run) {
+    // The runId was given to a worker but the row doesn't exist —
+    // possible after a hard DB rollback. Throw so BullMQ retries
+    // (the row may exist by the next attempt) and eventually DLQs.
+    throw new Error(`provisioning_run_not_found:${runId}`);
+  }
+  if (run.status === 'completed' || run.status === 'failed') {
+    safeLog.info({
+      event: 'orchestrator.provision.skip_already_terminal',
+      runId,
+      status: run.status,
+    });
+    return;
+  }
+  await runSteps(run, config);
+}
+
+async function runSteps(run: ProvisionRun, config: ProvisionConfig): Promise<void> {
   run.status = 'running';
   await persistRun(run);
 
@@ -413,21 +596,46 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
   }
 
   // Step 4: Partner portal seed — branding defaults, webhook URLs,
-  // team owner invite. All local DB writes, no upstream calls.
+  // team owner invite, ownership-mapping rows. All local DB writes,
+  // no upstream calls.
   try {
     setStep(run, 'partner_portal_seed', { status: 'in_progress', startedAt: nowIso() });
     await persistRun(run);
+    // Persist the HighSale sub-account ownership row so the prequal
+    // route's `assertResourceOwnership('subaccount', ...)` can verify
+    // cross-tenant access (Task #51, SEC-001 follow-up). Idempotent
+    // via the unique index on subaccount_id — a re-run of this step
+    // collides on conflict and no-ops.
+    const subAccountStep = run.steps.find((s) => s.name === 'highsale_subaccount');
+    const subAccountId =
+      typeof subAccountStep?.result?.subAccountId === 'string'
+        ? (subAccountStep.result.subAccountId as string)
+        : null;
+    const bureau =
+      typeof subAccountStep?.result?.configuredBureau === 'string'
+        ? (subAccountStep.result.configuredBureau as string)
+        : null;
+    await seedSubaccountOwnership({
+      partnerId: config.partnerId,
+      subaccountId: subAccountId,
+      bureau,
+      runId: run.id,
+    });
     // TODO(db): INSERT into partners row + seed branding_json defaults +
     // dispatch primary-contact invite via team-invites-store.
     setStep(run, 'partner_portal_seed', {
       status: 'done',
       completedAt: nowIso(),
-      result: { invitedContact: config.primaryContactEmail },
+      result: {
+        invitedContact: config.primaryContactEmail,
+        subAccountId,
+      },
       note: `Owner invite dispatched to ${config.primaryContactEmail}.`,
     });
     await persistRun(run);
     await writeAudit(run, 'provision.step.complete', {
       step: 'partner_portal_seed',
+      subAccountId,
     });
   } catch (err) {
     return failRun(run, 'partner_portal_seed', err);
@@ -436,6 +644,7 @@ async function executeRun(run: ProvisionRun, config: ProvisionConfig): Promise<v
   run.status = 'completed';
   run.completedAt = nowIso();
   await persistRun(run);
+  incrementMetric('provisioning.completed');
   safeLog.info({
     event: 'orchestrator.provision.completed',
     runId: run.id,
@@ -455,6 +664,7 @@ function failRun(run: ProvisionRun, stepName: ProvisionStepName, err: unknown): 
   run.status = 'failed';
   run.failureReason = `${stepName}: ${reason}`;
   run.completedAt = nowIso();
+  incrementMetric('provisioning.failed');
   safeLog.error({
     event: 'orchestrator.provision.failed',
     runId: run.id,

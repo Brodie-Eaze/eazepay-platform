@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { evaluateDecision } from '@/lib/decision-engine';
 import type { Brand } from '@/lib/api-v1/shared';
-import { assertResourceOwnershipStub, requirePartnerSession } from '@/lib/server-guards';
+import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 
 /**
  * POST /api/v1/decision-engine
@@ -58,9 +58,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // applicationId → partner ownership lookup is stubbed until the
-  // application_partner_map table lands. See server-guards doc.
-  const ownership = assertResourceOwnershipStub(guard, parsed.data.applicationId, 'application');
+  // SEC-001 follow-up: real applicationId → partner ownership check.
+  // 404 on mismatch / not-found so the propensity ranking can't be
+  // reached by enumerating UUIDs.
+  const ownership = await assertResourceOwnership(guard, parsed.data.applicationId, 'application');
   if (ownership) return ownership;
 
   const result = await evaluateDecision({

@@ -45,6 +45,7 @@ import { getDb, hasDb } from '../../../../../lib/db';
 import { applicationEvents, applications, partners } from '../../../../../lib/db/schema';
 import { getSessionContext, allowedPartnerIdsForBrand } from '../../../../../lib/session';
 import { UNATTRIBUTED_PARTNER_ID } from '../../../../../lib/submitted-applications';
+import { incrementMetric } from '../../../../../lib/observability/metrics';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 
@@ -201,6 +202,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
   }
   if (!row) {
     return problem(500, 'insert_failed', 'Could not persist the application.');
+  }
+
+  // Only count fresh inserts — duplicate replays of the same request_id
+  // share the original counter bump. Keeps the dashboard "applications
+  // submitted" tile honest (1 submission = 1 increment, regardless of
+  // network retries).
+  if (inserted[0]) {
+    incrementMetric('applications.created');
   }
 
   return NextResponse.json(

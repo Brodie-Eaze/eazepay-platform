@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { charge, type ChargeRequest } from '@/lib/micamp/client';
-import { assertResourceOwnershipStub, requirePartnerSession } from '@/lib/server-guards';
+import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
+import { safeErrorResponse } from '@/lib/safe-error';
+import { enforceOrigin } from '@/lib/origin-guard';
 
 /**
  * POST /api/integrations/micamp/payments
@@ -28,6 +30,10 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-010: origin allowlist on state-changing partner POSTs.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   // SEC-001: partner session required. Pre-fix any anonymous caller
   // could trigger a MID charge against any midId + applicationId.
   const guard = await requirePartnerSession(req);
@@ -48,24 +54,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // applicationId → partner ownership is stubbed (see helper docs).
-  // The session-gate above blocks anonymous abuse in the meantime.
-  const ownership = assertResourceOwnershipStub(guard, parsed.data.applicationId, 'application');
+  // SEC-001 follow-up: real applicationId → partner ownership check.
+  // 404 on mismatch / not-found so callers can't enumerate UUIDs.
+  const ownership = await assertResourceOwnership(guard, parsed.data.applicationId, 'application');
   if (ownership) return ownership;
 
   try {
     const result = await charge(parsed.data as ChargeRequest);
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
-    return NextResponse.json(
-      {
-        type: 'about:blank',
-        title: 'Bad Gateway',
-        status: 502,
-        code: 'micamp_charge_failed',
-        detail: err instanceof Error ? err.message : 'MiCamp charge failed',
-      },
-      { status: 502 },
-    );
+    // SEC-007: never echo upstream error text — MiCamp's 5xx bodies
+    // can carry internal stack info + processing identifiers.
+    return safeErrorResponse(err, 'micamp_charge_failed', 502, '/api/integrations/micamp/payments');
   }
 }

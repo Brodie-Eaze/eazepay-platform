@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { listMigrations, seedMigrationQueue, queueMigration } from '@/lib/orchestrator/migration';
 import { requireAdmin } from '@/lib/server-guards';
+import { enforceOrigin } from '@/lib/origin-guard';
 
 /**
  * GET  /api/admin/migrations            — list all migration runs
@@ -25,6 +26,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC-010: origin allowlist on state-changing admin POSTs.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   // SEC-001: admin-only. Pre-fix, an anonymous attacker could queue
   // arbitrary `sourceCustomerId` values into the migration orchestrator.
   const guard = await requireAdmin(req);

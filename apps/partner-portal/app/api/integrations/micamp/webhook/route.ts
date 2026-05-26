@@ -3,6 +3,8 @@ import { verifyWebhookSignature } from '@/lib/micamp/client';
 import { getDb, hasDb, schema } from '@/lib/db';
 import { extractProviderEventId } from '@/lib/workers/webhook-processor';
 import { safeLog } from '@/lib/safe-log';
+import { incrementMetric } from '@/lib/observability/metrics';
+import { hasQueue } from '@/lib/queue';
 
 /**
  * POST /api/integrations/micamp/webhook
@@ -47,6 +49,7 @@ export async function POST(req: NextRequest) {
 
   const verification = verifyWebhookSignature(rawBody, signatureHeader);
   if (!verification.valid) {
+    incrementMetric('webhook.rejected');
     safeLog.warn({
       event: 'micamp.webhook.rejected',
       reason: verification.reason,
@@ -148,6 +151,7 @@ export async function POST(req: NextRequest) {
     if (inserted.length === 0) {
       // Replay — already in the inbox. Do NOT enqueue again; the
       // worker handled (or will handle) the original row.
+      incrementMetric('webhook.duplicate');
       safeLog.info({
         event: 'webhook.inbox.duplicate',
         provider: PROVIDER,
@@ -157,12 +161,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, duplicate: true });
     }
 
+    const inboxId = inserted[0]!.id;
+
+    // Enqueue the row for the BullMQ webhooks worker (Task #50).
+    // When REDIS_URL is unset (local dev / Redis-less env), the admin
+    // tick endpoint at /api/admin/webhook-processor/tick is the manual
+    // escape hatch — the inbox row is still durably persisted, so the
+    // ack is honest even if the dispatch is deferred.
+    if (hasQueue()) {
+      try {
+        const { enqueueWebhookInbox } = await import('@/lib/queue/webhooks');
+        await enqueueWebhookInbox(inboxId);
+      } catch (err) {
+        // Enqueue failure is logged but does NOT cause a 5xx: the
+        // inbox row is on disk and the admin tick endpoint can drain
+        // it manually. Upstream still gets the 200 they're waiting
+        // for so we don't trigger a retry storm.
+        safeLog.error({
+          event: 'webhook.inbox.enqueue_failed',
+          provider: PROVIDER,
+          inboxId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    incrementMetric('webhook.queued');
     safeLog.info({
       event: 'webhook.inbox.queued',
       provider: PROVIDER,
       eventType,
       eventId,
-      inboxId: inserted[0]!.id,
+      inboxId,
     });
     return NextResponse.json({ ok: true, queued: true });
   } catch (err) {

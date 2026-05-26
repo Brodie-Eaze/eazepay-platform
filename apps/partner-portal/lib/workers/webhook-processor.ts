@@ -72,9 +72,90 @@ export function extractProviderEventId(payload: Record<string, unknown>): string
 }
 
 /**
+ * Process a single inbox row by id. Used by the BullMQ webhook worker
+ * (`lib/queue/webhooks.ts`) — the route handler enqueues a job carrying
+ * the inbox id, and the worker calls this to claim + dispatch + record.
+ *
+ * Throws on handler failure so BullMQ can apply its retry / backoff
+ * policy. The row's `attempts` counter is incremented inside catch so
+ * an ops view of the inbox still reflects retry pressure even when
+ * the actual retry scheduling has moved to Redis.
+ *
+ * If the row is not found (e.g. a job arrives after a hard rollback)
+ * we return early without throwing — there's nothing to retry against.
+ */
+export async function processInboxRow(inboxId: string): Promise<void> {
+  if (!hasDb()) {
+    safeLog.warn({ event: 'webhook.processor.db_unavailable', inboxId });
+    return;
+  }
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: schema.webhookInbox.id,
+      provider: schema.webhookInbox.provider,
+      eventId: schema.webhookInbox.eventId,
+      eventType: schema.webhookInbox.eventType,
+      rawBody: schema.webhookInbox.rawBody,
+      attempts: schema.webhookInbox.attempts,
+      processingStatus: schema.webhookInbox.processingStatus,
+    })
+    .from(schema.webhookInbox)
+    .where(eq(schema.webhookInbox.id, inboxId))
+    .limit(1);
+  const row = rows[0];
+  if (!row) {
+    safeLog.warn({ event: 'webhook.processor.row_not_found', inboxId });
+    return;
+  }
+  if (row.processingStatus === 'done') {
+    // Already handled — likely a duplicate enqueue. No-op.
+    return;
+  }
+  const claimed = await claimRow(db, row.id);
+  if (!claimed) {
+    // Another worker grabbed it first (e.g. admin tick endpoint).
+    safeLog.info({
+      event: 'webhook.processor.row_claimed_by_other',
+      inboxId,
+      provider: row.provider,
+    });
+    return;
+  }
+  try {
+    const parsed = JSON.parse(row.rawBody) as Record<string, unknown>;
+    await dispatchEvent(row.provider as Provider, row.eventType, parsed, row);
+    await markDone(db, row.id);
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    const nextAttempts = row.attempts + 1;
+    await markFailed(db, row.id, reason, nextAttempts);
+    safeLog.error({
+      event: 'webhook.processor.handler_failed',
+      provider: row.provider,
+      eventType: row.eventType,
+      eventId: row.eventId,
+      attempts: nextAttempts,
+      terminal: nextAttempts >= MAX_ATTEMPTS,
+      error: reason,
+    });
+    // Re-throw so BullMQ applies its retry/backoff. The DLQ listener
+    // on the worker writes the terminal failure_reason on attempts
+    // exhausted (see lib/queue/dlq.ts).
+    throw err;
+  }
+}
+
+/**
  * Drain the inbox once. Safe to call concurrently — the
  * status='pending' → 'processing' update is the claim, and a row that
  * another invocation already moved out of 'pending' is skipped.
+ *
+ * @deprecated Task #50: now an ops escape hatch. The primary path is
+ *   the BullMQ worker (`lib/queue/webhooks.ts`) — the route handlers
+ *   enqueue a job per inbox row. Use this to drain pre-Task-#50 rows
+ *   that never got an enqueue, or to re-run all `pending` rows after
+ *   a handler bugfix.
  */
 export async function processInbox(): Promise<ProcessInboxResult> {
   if (!hasDb()) {

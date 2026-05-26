@@ -102,8 +102,16 @@ export const applications = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     brand: brandEnum('brand').notNull(),
-    /** Soft reference to `partners.id`. The synthetic '__unattributed__'
-     * value is allowed and stays out of every partner-scoped read. */
+    /** Soft reference to `partners.id` — intentionally NOT a foreign
+     *  key. The synthetic `'__unattributed__'` sentinel value (used by
+     *  direct-traffic applications with no inbound ref attribution)
+     *  has no corresponding row in `partners`, and minting a placeholder
+     *  row would carry worse integrity hazards (brand? legal_name?
+     *  what happens when a real partner later wants that id?). The
+     *  partner-scoped reads filter on this column via the
+     *  `applications_partner_created_idx`, so a typo in partnerId at
+     *  write time is the only failure mode — surfaced by the
+     *  application-detail page returning 404 on the master view. */
     partnerId: text('partner_id').notNull(),
     /** Raw `?ref=...` from the apply URL, kept verbatim for audit. */
     refQuery: text('ref_query'),
@@ -151,7 +159,12 @@ export const applicationEvents = pgTable(
   'application_events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    applicationId: uuid('application_id').notNull(),
+    /** FK → applications.id ON DELETE CASCADE. Events are meaningless
+     *  without their parent application — cascading the delete keeps
+     *  the table tidy for test fixtures + GDPR RTBF. */
+    applicationId: uuid('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
     type: applicationEventTypeEnum('type').notNull(),
     fromStatus: applicationStatusEnum('from_status'),
     toStatus: applicationStatusEnum('to_status'),
@@ -192,7 +205,13 @@ export const offers = pgTable(
   'offers',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    applicationId: uuid('application_id').notNull(),
+    /** FK → applications.id ON DELETE CASCADE. Same reasoning as
+     *  application_events: an offer without its application can't be
+     *  interpreted. lender_id stays a soft reference because the slug
+     *  is denormalised at write time (see `lenderName`). */
+    applicationId: uuid('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
     lenderId: text('lender_id').notNull(),
     /** Display name at write time so historical UI keeps rendering
      * even if the lender catalogue entry is later renamed/removed. */
@@ -343,8 +362,17 @@ export const partnerMarketplaces = pgTable(
   'partner_marketplaces',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    partnerId: text('partner_id').notNull(),
-    lenderId: text('lender_id').notNull(),
+    /** FK → partners.id ON DELETE CASCADE. Per-partner override rows
+     *  are pure config; if the partner is deleted the override has no
+     *  reader. */
+    partnerId: text('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'cascade' }),
+    /** FK → lenders.id ON DELETE CASCADE. Same: an override targeting
+     *  a deleted lender is meaningless. */
+    lenderId: text('lender_id')
+      .notNull()
+      .references(() => lenders.id, { onDelete: 'cascade' }),
     /** 'enabled' | 'disabled' — disabled overrides the vertical default. */
     state: text('state').notNull(),
     reason: text('reason'),
@@ -383,7 +411,13 @@ export const mids = pgTable(
   'mids',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    partnerId: text('partner_id').notNull(),
+    /** FK → partners.id ON DELETE RESTRICT. A partner with an active
+     *  MID is a live merchant. RESTRICT forces the operator to pause /
+     *  migrate the MID before deleting the partner — silently
+     *  cascading would be a compliance incident. */
+    partnerId: text('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'restrict' }),
     /** External MiCamp identifier — the number on the merchant's
      * processing statement. NULL until MiCamp returns it. */
     micampMid: text('micamp_mid'),
@@ -434,7 +468,12 @@ export const decisions = pgTable(
   'decisions',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    applicationId: uuid('application_id').notNull(),
+    /** FK → applications.id ON DELETE CASCADE. The decision row is
+     *  keyed on the application; without it the ranked-lender JSON
+     *  is uninterpretable. */
+    applicationId: uuid('application_id')
+      .notNull()
+      .references(() => applications.id, { onDelete: 'cascade' }),
     /** Which engine produced this — 'trutopia' | 'internal' | 'fallback' */
     engine: text('engine').notNull(),
     /** Engine version / model identifier for replay. */
@@ -518,8 +557,13 @@ export const customerMigrations = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     /** AI Funding customer id — opaque identifier from the source system. */
     sourceCustomerId: text('source_customer_id').notNull(),
-    /** Destination partner row created during migration. NULL until partner exists. */
-    targetPartnerId: text('target_partner_id'),
+    /** FK → partners.id ON DELETE SET NULL. Destination partner row
+     *  created during migration. NULL until partner exists, AND set
+     *  NULL again if the partner is later removed so the migration
+     *  audit record survives partner cleanup. */
+    targetPartnerId: text('target_partner_id').references(() => partners.id, {
+      onDelete: 'set null',
+    }),
     sourceProduct: text('source_product').notNull().default('ai_funding'),
     targetBrand: brandEnum('target_brand').notNull().default('medpay'),
     /** queued | in_progress | completed | failed | rolled_back */
@@ -561,7 +605,11 @@ export const provisioningRuns = pgTable(
   'provisioning_runs',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    partnerId: text('partner_id').notNull(),
+    /** FK → partners.id ON DELETE SET NULL. Originally NOT NULL; the
+     *  NOT NULL constraint is dropped in 0008 so the FK can clear the
+     *  column on partner deletion. The audit record (steps, failures,
+     *  brand) survives even if the partner row is later removed. */
+    partnerId: text('partner_id').references(() => partners.id, { onDelete: 'set null' }),
     /** Allows 'ai_funding' alongside the brand enum since migrated
      * runs carry the source product for audit; stored as text so the
      * brand enum doesn't have to gain a vestigial value. */
@@ -570,6 +618,11 @@ export const provisioningRuns = pgTable(
     status: text('status').notNull().default('queued'),
     /** JSON-encoded ProvisionStep[]. Rewritten on every step transition. */
     stepsJson: text('steps_json'),
+    /** JSON-encoded ProvisionConfig — persisted at startProvision time so
+     *  a cross-process worker (BullMQ — Task #50) can recover the inputs
+     *  without the config riding inside the Redis job payload. Nullable
+     *  for rows that pre-date Task #50. */
+    configJson: text('config_json'),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     failureReason: text('failure_reason'),
@@ -694,3 +747,56 @@ export const idempotencyKeys = pgTable(
 
 export type IdempotencyKeyRow = typeof idempotencyKeys.$inferSelect;
 export type NewIdempotencyKeyRow = typeof idempotencyKeys.$inferInsert;
+
+/* ---------- partner_highsale_subaccounts ----------
+ *
+ * Ownership-mapping table for HighSale sub-accounts (Task #51 +
+ * SEC-001 follow-up). One row per (partner, sub-account). The
+ * orchestrator's `partner_portal_seed` step writes here once a
+ * HighSale sub-account has been provisioned for the partner;
+ * `assertResourceOwnership('subaccount', ...)` reads here on every
+ * prequal call to confirm the caller's partner owns the
+ * subAccountId in the body.
+ *
+ * Why this exists: pre-fix, the prequal route trusted whatever
+ * subAccountId the caller sent — an authenticated partner who
+ * guessed another partner's `hs_*` id could run unlimited soft
+ * pulls against that sub-account's wholesale budget. The mapping
+ * table is the canonical source of truth (HighSale itself is the
+ * upstream, but reaching out on every request adds latency + ties
+ * authz to network health).
+ *
+ * Unique on `subaccount_id` because a sub-account belongs to exactly
+ * one partner. The partner→subaccounts relationship is 1:N — a
+ * partner can have separate sub-accounts per brand (medpay vs.
+ * tradepay) or per bureau (fico8 vs. vantage).
+ */
+export const partnerHighsaleSubaccounts = pgTable(
+  'partner_highsale_subaccounts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** FK → partners.id ON DELETE CASCADE. A deleted partner's
+     *  HighSale sub-account ownership rows have no reader. */
+    partnerId: text('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'cascade' }),
+    /** Opaque HighSale identifier (the `hs_*` slug). Unique because a
+     *  sub-account belongs to exactly one partner. */
+    subaccountId: text('subaccount_id').notNull(),
+    /** Bureau the sub-account was configured against — fico8 | vantage.
+     *  Captured here so the prequal route can avoid a second lookup
+     *  when validating bureau compatibility. */
+    bureau: text('bureau'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    subaccountUnique: uniqueIndex('partner_highsale_subaccounts_subaccount_unique').on(
+      t.subaccountId,
+    ),
+    partnerIdx: index('partner_highsale_subaccounts_partner_idx').on(t.partnerId),
+  }),
+);
+
+export type PartnerHighsaleSubaccount = typeof partnerHighsaleSubaccounts.$inferSelect;
+export type NewPartnerHighsaleSubaccount = typeof partnerHighsaleSubaccounts.$inferInsert;

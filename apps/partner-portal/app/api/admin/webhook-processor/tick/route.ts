@@ -3,18 +3,16 @@ import { getSessionContext } from '@/lib/session';
 import { hasDb } from '@/lib/db';
 import { inboxBacklog, processInbox } from '@/lib/workers/webhook-processor';
 import { safeLog } from '@/lib/safe-log';
+import { enforceOrigin } from '@/lib/origin-guard';
 
 /**
  * POST /api/admin/webhook-processor/tick
  *
- * Manual kick-off for the webhook inbox processor. Drains pending rows
- * from `webhook_inbox` (limit 50), dispatches each to its provider's
- * event handler, and returns per-status counts.
- *
- * This endpoint is the TEMPORARY trigger until BullMQ lands in Task #50,
- * at which point a repeatable job will call `processInbox()` instead
- * and this route becomes ops-only (re-drain on demand after a handler
- * fix).
+ * @deprecated Task #50 — the primary dispatcher is now the BullMQ
+ * webhooks worker (`lib/queue/webhooks.ts`). The route handlers enqueue
+ * a job per inbox row the moment they INSERT. This endpoint remains as
+ * an ops escape hatch — re-drain all `pending` rows after a handler
+ * bugfix without having to manually requeue individual jobs.
  *
  * Authz: operator session required. `processInbox()` does not take any
  * tenant scope because the inbox is platform-global — events from
@@ -30,6 +28,10 @@ function problem(status: number, code: string, detail: string) {
 }
 
 export async function POST(req: NextRequest) {
+  // SEC-010: origin allowlist on state-changing admin POSTs.
+  const originFail = enforceOrigin(req);
+  if (originFail) return originFail;
+
   const session = await getSessionContext(req);
   // TODO(SEC-104): switch to `requireAdmin(req)` once Builder B's
   // helper lands. Until then we accept the same gate the existing

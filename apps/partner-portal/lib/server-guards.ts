@@ -30,8 +30,11 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
+import { eq } from 'drizzle-orm';
 import type { BrandCode } from '@eazepay/shared-types';
 import { getSessionContext } from './session';
+import { getDb, hasDb, schema } from './db';
+import { safeLog } from './safe-log';
 
 export type AdminRole = 'admin' | 'master_admin';
 
@@ -182,26 +185,166 @@ export function assertPartnerOwnership(
   return unauthorized('forbidden', 'Resource belongs to a different partner.');
 }
 
+/** Resource kinds the ownership lookup understands. Adding a new kind
+ *  requires (1) a column on a partner-owned table that holds the
+ *  partner_id and (2) a branch in `assertResourceOwnership`. */
+export type ResourceKind = 'subaccount' | 'application' | 'mid' | 'provisioning_run';
+
 /**
- * STUB ownership lookup for resources whose owner-mapping table doesn't
- * exist on this branch yet (e.g. HighSale sub-account → partner_id,
- * application_id → partner_id). Returns true to keep prequal /
- * decision-engine flows unblocked during scaffolding.
+ * Look up the partner that owns a given resource and confirm the
+ * caller's session matches. Replaces the SEC-001 stub.
  *
- * TODO(SEC-001 follow-up): replace with a DB lookup once the lookup
- * tables land. Failure mode if you forget: an attacker who knows /
- * guesses any `subAccountId` or `applicationId` can run prequal /
- * decision-engine against another partner's resource — the route still
- * requires a valid partner session, so it's not anonymous abuse, but
- * it IS cross-tenant. The TODO is intentionally loud so it doesn't
- * survive the next sweep.
+ * Contract:
+ *   - On admin override → null (allow). Operators can act on any
+ *     partner's resources.
+ *   - On ownership match → null (allow).
+ *   - On resource not found → 404 Problem Details. We do NOT 403 here
+ *     because that would leak the existence of resource ids belonging
+ *     to other partners — enumeration risk on UUIDs is low but non-zero
+ *     for shorter slugs (e.g. `hs_*` sub-account ids).
+ *   - On ownership mismatch → 404 (same payload). Same reasoning:
+ *     "exists but not yours" is functionally equivalent to "doesn't
+ *     exist" for the caller and avoids the side-channel.
+ *   - On no-DB (local dev) → null. The session-gate upstream still
+ *     prevents anonymous abuse; the prequal / decision-engine flows
+ *     stay walkable in `next dev` without a Postgres service.
+ *
+ * Lookups are scoped to the partner-portal schema; routes that act on
+ * resources owned by other services (e.g. the NestJS billing API) must
+ * not use this helper.
  */
-export function assertResourceOwnershipStub(
+export async function assertResourceOwnership(
   ctx: PartnerContext,
-  _resourceId: string,
-  _resourceKind: 'subaccount' | 'application',
-): NextResponse | null {
+  resourceId: string,
+  resourceKind: ResourceKind,
+): Promise<NextResponse | null> {
   if (ctx.isAdminOverride) return null;
-  // TODO(SEC-001): wire DB lookup. See module comment.
+  if (!hasDb()) {
+    // Local dev without DATABASE_URL — degrade gracefully. The route
+    // still ran requirePartnerSession upstream so the call is at least
+    // authenticated. Production deploys always have DATABASE_URL set.
+    safeLog.warn({
+      event: 'server_guards.ownership.no_db_skip',
+      resourceKind,
+      resourceId,
+      partnerId: ctx.partnerId,
+    });
+    return null;
+  }
+
+  let ownerPartnerId: string | null;
+  try {
+    ownerPartnerId = await lookupOwnerPartnerId(resourceId, resourceKind);
+  } catch (err) {
+    safeLog.error({
+      event: 'server_guards.ownership.lookup_failed',
+      resourceKind,
+      resourceId,
+      partnerId: ctx.partnerId,
+      err: err instanceof Error ? err.message : 'unknown',
+    });
+    // DB unavailable mid-request — fail closed. 503 vs. 404 is a
+    // tradeoff: 503 surfaces the outage to the operator dashboard,
+    // 404 hides it from a caller probing for resource existence. We
+    // pick 503 because the ownership lookup IS the security boundary
+    // and silently 404'ing a real lookup failure would mask attacks.
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'ownership_lookup_failed',
+        detail: 'Ownership lookup temporarily unavailable.',
+      },
+      { status: 503 },
+    );
+  }
+
+  if (ownerPartnerId === null) {
+    // Either the resource doesn't exist OR it exists but the lookup
+    // resolved to a null FK (e.g. provisioning_runs.partner_id after a
+    // partner deletion). Both cases collapse to 404 for the caller.
+    return notFoundForKind(resourceKind);
+  }
+
+  if (ownerPartnerId !== ctx.partnerId) {
+    // Cross-tenant — same 404 to avoid leaking existence. We DO emit a
+    // structured warn so SOC2 audit can flag enumeration patterns.
+    safeLog.warn({
+      event: 'server_guards.ownership.mismatch',
+      resourceKind,
+      resourceId,
+      callerPartnerId: ctx.partnerId,
+      ownerPartnerId,
+    });
+    return notFoundForKind(resourceKind);
+  }
+
   return null;
+}
+
+/**
+ * Per-kind SELECT that returns the owning partner_id, or null if no
+ * matching row exists. Kept private so the calling surface stays a
+ * single `assertResourceOwnership` entry point.
+ */
+async function lookupOwnerPartnerId(
+  resourceId: string,
+  resourceKind: ResourceKind,
+): Promise<string | null> {
+  const db = getDb();
+  switch (resourceKind) {
+    case 'application': {
+      const rows = await db
+        .select({ partnerId: schema.applications.partnerId })
+        .from(schema.applications)
+        .where(eq(schema.applications.id, resourceId))
+        .limit(1);
+      return rows[0]?.partnerId ?? null;
+    }
+    case 'subaccount': {
+      const rows = await db
+        .select({ partnerId: schema.partnerHighsaleSubaccounts.partnerId })
+        .from(schema.partnerHighsaleSubaccounts)
+        .where(eq(schema.partnerHighsaleSubaccounts.subaccountId, resourceId))
+        .limit(1);
+      return rows[0]?.partnerId ?? null;
+    }
+    case 'mid': {
+      const rows = await db
+        .select({ partnerId: schema.mids.partnerId })
+        .from(schema.mids)
+        .where(eq(schema.mids.id, resourceId))
+        .limit(1);
+      return rows[0]?.partnerId ?? null;
+    }
+    case 'provisioning_run': {
+      const rows = await db
+        .select({ partnerId: schema.provisioningRuns.partnerId })
+        .from(schema.provisioningRuns)
+        .where(eq(schema.provisioningRuns.id, resourceId))
+        .limit(1);
+      return rows[0]?.partnerId ?? null;
+    }
+  }
+}
+
+/** Kind-specific 404 Problem Details. The `code` lets callers
+ *  differentiate without leaking why the lookup failed. */
+function notFoundForKind(resourceKind: ResourceKind): NextResponse {
+  const code: Record<ResourceKind, string> = {
+    application: 'application_not_found',
+    subaccount: 'subaccount_not_found',
+    mid: 'mid_not_found',
+    provisioning_run: 'provision_run_not_found',
+  };
+  return NextResponse.json(
+    {
+      type: 'about:blank',
+      title: 'Not Found',
+      status: 404,
+      code: code[resourceKind],
+    },
+    { status: 404 },
+  );
 }

@@ -36,20 +36,37 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   // IDOR check — caller must own the partner this run is for, or be
-  // an admin override. We return 404 (not 403) for the wrong-tenant
-  // case to avoid leaking the existence of run ids belonging to
-  // other partners.
-  const ownership = assertPartnerOwnership(guard, run.partnerId);
-  if (ownership) {
-    return NextResponse.json(
-      {
-        type: 'about:blank',
-        title: 'Not Found',
-        status: 404,
-        code: 'provision_run_not_found',
-      },
-      { status: 404 },
-    );
+  // an admin override. 404 (not 403) on wrong-tenant avoids leaking
+  // the existence of run ids belonging to other partners.
+  //
+  // A run with a null partnerId means the partner row was deleted
+  // (FK ON DELETE SET NULL in 0008). Only admin overrides can read
+  // those historical records; partner sessions get a 404.
+  if (run.partnerId === null) {
+    if (!guard.isAdminOverride) {
+      return NextResponse.json(
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: 'provision_run_not_found',
+        },
+        { status: 404 },
+      );
+    }
+  } else {
+    const ownership = assertPartnerOwnership(guard, run.partnerId);
+    if (ownership) {
+      return NextResponse.json(
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: 'provision_run_not_found',
+        },
+        { status: 404 },
+      );
+    }
   }
 
   return NextResponse.json(run);
