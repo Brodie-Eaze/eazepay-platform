@@ -19,7 +19,8 @@
  * `/admin/*` fence so the fetch carries the session cookie.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -30,7 +31,11 @@ import {
   Banner,
   StatusPill,
   Skeleton,
+  LiveIndicator,
+  TimeRangeSelector,
+  TIME_RANGES,
   type StatusTone,
+  type TimeRange,
 } from '@eazepay/ui/web';
 
 const POLL_INTERVAL_MS = 30_000;
@@ -125,6 +130,25 @@ export default function SloBoardPage(): JSX.Element {
 
   const stale = lastSuccessAt != null && Date.now() - lastSuccessAt > POLL_INTERVAL_MS * 3;
 
+  /* Sprint H: URL-driven time range. The SLO board itself is window-fixed
+   * (per-SLO `window` is part of the SLO definition), but we still surface
+   * the selector for cross-dashboard consistency — switching range here
+   * carries through to /admin/observability via the shared `?range=`
+   * query. */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const rangeFromUrl = (sp?.get('range') as TimeRange | null) ?? null;
+  const range: TimeRange =
+    rangeFromUrl && (TIME_RANGES as readonly string[]).includes(rangeFromUrl) ? rangeFromUrl : '7d';
+  const handleRangeChange = useCallback(
+    (next: TimeRange) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      params.set('range', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, sp],
+  );
+
   return (
     <>
       <PageHeader
@@ -135,6 +159,12 @@ export default function SloBoardPage(): JSX.Element {
         ]}
         title="Service Level Objectives"
         description={`Targets the platform commits to. Each card shows target, observed failure rate, remaining error budget, and runbook link. Polled every ${POLL_INTERVAL_MS / 1000}s.`}
+        actions={
+          <div className="flex items-center gap-2">
+            <LiveIndicator pulseKey={lastSuccessAt ?? 0} />
+            <TimeRangeSelector value={range} onChange={handleRangeChange} />
+          </div>
+        }
       />
       <PageBody>
         {board?.observabilityNote ? (
@@ -184,77 +214,79 @@ function SloCard({ row }: { row: BoardRow }): JSX.Element {
   const tone: StatusTone = isObservable ? ALERT_TONE[alertLevel] : 'neutral';
 
   return (
-    <Card>
-      <CardHeader
-        title={row.slo.name}
-        description={`${row.slo.service} · ${row.slo.sli.category}`}
-        action={
-          <StatusPill tone={tone} dot>
-            {isObservable ? ALERT_LABEL[alertLevel] : 'NO DATA'}
-          </StatusPill>
-        }
-      />
-      <CardBody>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Target" value={`${targetPct}%`} sub={`over ${row.slo.window}`} />
-          <Field
-            label="Observed failure"
-            value={
-              row.observation.failureRate === null
-                ? '—'
-                : `${(row.observation.failureRate * 100).toFixed(3)}%`
-            }
-            sub={
-              row.observation.failureRate === null
-                ? 'no data yet'
-                : `n=${row.observation.sampleSize.toLocaleString()} (${row.observation.window})`
-            }
-          />
-          <Field
-            label="Budget remaining"
-            value={
-              row.budget === null
-                ? '—'
-                : `${row.budget.remainingMinutes >= 0 ? '' : '−'}${Math.abs(row.budget.remainingMinutes)} min`
-            }
-            sub={`of ${row.slo.errorBudgetMinutes} min total`}
-            tone={isObservable ? tone : undefined}
-          />
-          <Field
-            label="Burn"
-            value={
-              row.budget === null
-                ? '—'
-                : Number.isFinite(row.budget.percentBurned)
-                  ? `${(row.budget.percentBurned * 100).toFixed(1)}%`
-                  : '> 100%'
-            }
-            sub={row.budget === null ? '' : 'of error budget'}
-            tone={isObservable ? tone : undefined}
-          />
-        </div>
-
-        {row.observation.notObservableReason ? (
-          <div className="mt-3 px-3 py-2 rounded-md border border-dashed border-border bg-bg-muted/30 text-[12px] text-fg-muted">
-            {row.observation.notObservableReason}
+    <Link
+      href={`/${row.slo.runbookLink}`}
+      aria-label={`${row.slo.name}: ${isObservable ? ALERT_LABEL[alertLevel] : 'no data'}. Open runbook.`}
+      className="block rounded-xl transition-colors hover:[&>div]:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+    >
+      <Card>
+        <CardHeader
+          title={row.slo.name}
+          description={`${row.slo.service} · ${row.slo.sli.category}`}
+          action={
+            <StatusPill tone={tone} dot>
+              {isObservable ? ALERT_LABEL[alertLevel] : 'NO DATA'}
+            </StatusPill>
+          }
+        />
+        <CardBody>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Target" value={`${targetPct}%`} sub={`over ${row.slo.window}`} />
+            <Field
+              label="Observed failure"
+              value={
+                row.observation.failureRate === null
+                  ? '—'
+                  : `${(row.observation.failureRate * 100).toFixed(3)}%`
+              }
+              sub={
+                row.observation.failureRate === null
+                  ? 'no data yet'
+                  : `n=${row.observation.sampleSize.toLocaleString()} (${row.observation.window})`
+              }
+            />
+            <Field
+              label="Budget remaining"
+              value={
+                row.budget === null
+                  ? '—'
+                  : `${row.budget.remainingMinutes >= 0 ? '' : '−'}${Math.abs(row.budget.remainingMinutes)} min`
+              }
+              sub={`of ${row.slo.errorBudgetMinutes} min total`}
+              tone={isObservable ? tone : undefined}
+            />
+            <Field
+              label="Burn"
+              value={
+                row.budget === null
+                  ? '—'
+                  : Number.isFinite(row.budget.percentBurned)
+                    ? `${(row.budget.percentBurned * 100).toFixed(1)}%`
+                    : '> 100%'
+              }
+              sub={row.budget === null ? '' : 'of error budget'}
+              tone={isObservable ? tone : undefined}
+            />
           </div>
-        ) : null}
 
-        <div className="mt-4 flex items-center gap-2 text-[12px] pt-3 border-t border-border">
-          <span className="text-fg-muted">Runbook:</span>
-          {/* External-relative path — the runbook docs live in the repo,
+          {row.observation.notObservableReason ? (
+            <div className="mt-3 px-3 py-2 rounded-md border border-dashed border-border bg-bg-muted/30 text-[12px] text-fg-muted">
+              {row.observation.notObservableReason}
+            </div>
+          ) : null}
+
+          <div className="mt-4 flex items-center gap-2 text-[12px] pt-3 border-t border-border">
+            <span className="text-fg-muted">Runbook:</span>
+            {/* External-relative path — the runbook docs live in the repo,
               not under the app. We surface the path so an operator opens
               it in their editor; the link target is the GitHub blob URL
-              when REPO_URL is wired (future). */}
-          <Link
-            href={`/${row.slo.runbookLink}`}
-            className="text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-sm"
-          >
-            {row.slo.runbookLink.replace('docs/runbooks/', '')}
-          </Link>
-        </div>
-      </CardBody>
-    </Card>
+              when REPO_URL is wired (future). The outer Card link handles
+              the click; this inline span keeps the path visible. */}
+            <span className="text-accent">{row.slo.runbookLink.replace('docs/runbooks/', '')}</span>
+          </div>
+        </CardBody>
+      </Card>
+    </Link>
   );
 }
 

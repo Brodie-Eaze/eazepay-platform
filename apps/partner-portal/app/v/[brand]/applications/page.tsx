@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { notFound, useParams, useRouter } from 'next/navigation';
+import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   PageHeader,
   PageBody,
@@ -40,6 +40,8 @@ import {
   type SubmittedAppBrand,
 } from '../../../../lib/submitted-applications';
 import { fetchApplicationsForPartner } from '../../../../lib/applications-client';
+import { expandedApplications } from '../../../../lib/seeded-applications';
+import { creditTierFor, type CreditTier } from '../../../../lib/dashboard-metrics';
 
 /* ─── Live-tracking shapes — mirror the BFF status route response.
  * Duplicated locally rather than importing from the server-only store
@@ -219,20 +221,56 @@ export default function VerticalApplicationsPage() {
   void toLegacyRow;
 
   // Final row set: this partner's submitted apps (newest first) +
-  // their seeded historical apps, filtered to this brand.
+  // their seeded historical apps, filtered to this brand. Sprint H also
+  // mixes in the deterministic seeded fixture (`expandedApplications`)
+  // so the time-range selector / month drilldowns have actual history
+  // to surface — not just the dozen hand-typed seed rows.
+  const partnerName = useMemo(() => {
+    const p = findPartner(currentPartnerId);
+    return p?.legalName ?? '';
+  }, [currentPartnerId]);
   const seedRows = code
     ? applicationsForPartner(currentPartnerId).filter((a) => a.product === code)
     : [];
+  const expandedRows = useMemo(() => {
+    if (!code || !partnerName) return [] as ApplicationRow[];
+    const seen = new Set(seedRows.map((r) => r.id));
+    return expandedApplications.filter(
+      (a) => a.partner === partnerName && a.product === code && !seen.has(a.id),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, partnerName]);
   // Default sort: newest first by `date`. ISO-8601 date strings sort
   // lexicographically equivalent to chronological order, so we can
   // skip a Date parse on every comparison.
-  const rows: ApplicationRow[] = [...submittedForPartner, ...seedRows].sort((a, b) =>
-    a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+  const rows: ApplicationRow[] = [...submittedForPartner, ...seedRows, ...expandedRows].sort(
+    (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0),
   );
 
   const [query, setQuery] = useState('');
+  /* Sprint H: read drill-in params from the URL so KPI clicks land the
+   * user on a pre-filtered view. We initialise on first render; further
+   * filter changes only update local state (the URL stays put so the
+   * back button returns to the dashboard). */
+  const sp = useSearchParams();
+  const initialStatus = (() => {
+    const raw = sp?.get('status');
+    if (!raw) return null;
+    return (APPLICATION_STATUSES as readonly string[]).includes(raw)
+      ? (raw as ApplicationStatus)
+      : null;
+  })();
+  const initialFrom = sp?.get('from') ?? null;
+  const initialTo = sp?.get('to') ?? null;
+  const initialTier = (() => {
+    const raw = sp?.get('tier');
+    if (!raw) return null;
+    return (['Prime', 'NearPrime', 'Subprime', 'DeepSubprime'] as const).includes(raw as CreditTier)
+      ? (raw as CreditTier)
+      : null;
+  })();
   /* `null` = "All" per canonical <Filter>. */
-  const [tab, setTab] = useState<ApplicationStatus | null>(null);
+  const [tab, setTab] = useState<ApplicationStatus | null>(initialStatus);
   const [toast, setToast] = useState<string | null>(null);
   const [onlyMyInvites, setOnlyMyInvites] = useState(false);
 
@@ -312,6 +350,10 @@ export default function VerticalApplicationsPage() {
   const filtered = rows.filter((a) => {
     if (tab !== null && a.status !== tab) return false;
     if (onlyMyInvites && !myAppIds.has(a.id)) return false;
+    /* Sprint H drill-in: optional date window + tier from URL params. */
+    if (initialFrom && a.date < initialFrom) return false;
+    if (initialTo && a.date > initialTo) return false;
+    if (initialTier && creditTierFor(a.fico) !== initialTier) return false;
     if (query) {
       const q = query.toLowerCase();
       return (

@@ -20,7 +20,8 @@
  * auth fence, so the fetch carries the session cookie automatically.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -37,7 +38,11 @@ import {
   WebhookIcon,
   HeartPulseIcon,
   ArrowRightIcon,
+  LiveIndicator,
+  TimeRangeSelector,
+  TIME_RANGES,
   type StatusTone,
+  type TimeRange,
 } from '@eazepay/ui/web';
 
 const POLL_INTERVAL_MS = 5000;
@@ -70,6 +75,25 @@ export default function ObservabilityPage(): JSX.Element {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastSuccessAt, setLastSuccessAt] = useState<number | null>(null);
+
+  /* Sprint H: URL-driven time range. Drives the KPI drill-in URLs so the
+   * destination list page opens scoped to the same window the operator
+   * was inspecting here. */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const rangeFromUrl = (sp?.get('range') as TimeRange | null) ?? null;
+  const range: TimeRange =
+    rangeFromUrl && (TIME_RANGES as readonly string[]).includes(rangeFromUrl) ? rangeFromUrl : '7d';
+  const handleRangeChange = useCallback(
+    (next: TimeRange) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      params.set('range', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, sp],
+  );
+  const rangeQs = useMemo(() => `&range=${range}`, [range]);
+  const pulseKey = lastSuccessAt ?? 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -124,12 +148,16 @@ export default function ObservabilityPage(): JSX.Element {
         title="Operational health"
         description={`Live counters + queue depth, polled every ${POLL_INTERVAL_MS / 1000}s. Per-lender drill-in via the marketplace registry.`}
         actions={
-          <Link
-            href="/admin/observability/slo"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
-          >
-            SLO board <ArrowRightIcon size={12} />
-          </Link>
+          <div className="flex items-center gap-2 flex-wrap">
+            <LiveIndicator pulseKey={pulseKey} />
+            <TimeRangeSelector value={range} onChange={handleRangeChange} />
+            <Link
+              href="/admin/observability/slo"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+            >
+              SLO board <ArrowRightIcon size={12} />
+            </Link>
+          </div>
         }
       />
       <PageBody>
@@ -148,31 +176,48 @@ export default function ObservabilityPage(): JSX.Element {
           </div>
         ) : null}
 
+        {/* Sprint H: every KPI drills into the canonical surface for that
+            slice. Wrap the KpiCard primitive in a Link so the entire tile
+            is the affordance — no separate "view" button to discover. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-          <KpiCard
-            icon={<ChartIcon size={14} />}
-            label="Applications 24h"
-            value={(m['applications.created'] ?? 0).toLocaleString()}
-            hint="since process start (resets on deploy)"
-          />
-          <KpiCard
-            icon={<GaugeIcon size={14} />}
-            label="Decisions computed"
-            value={(m['decisions.computed'] ?? 0).toLocaleString()}
-            hint="engine evaluations (internal / trutopia / fallback)"
-          />
-          <KpiCard
-            icon={<WebhookIcon size={14} />}
-            label="Webhook events queued"
-            value={(m['webhook.queued'] ?? 0).toLocaleString()}
-            hint={`dup ${m['webhook.duplicate'] ?? 0} · rejected ${webhookRejected}`}
-          />
-          <KpiCard
-            icon={<HeartPulseIcon size={14} />}
-            label="Lenders healthy"
-            value={lender ? `${lender.healthy} / ${lender.total}` : '—'}
-            hint={lender ? `${lender.degraded} degraded · ${lender.unwired} unwired` : 'loading…'}
-          />
+          <KpiTileLink
+            href={`/applications?range=24h${rangeQs}`}
+            ariaLabel="Open applications submitted in the last 24 hours"
+          >
+            <KpiCard
+              icon={<ChartIcon size={14} />}
+              label="Applications 24h"
+              value={(m['applications.created'] ?? 0).toLocaleString()}
+              hint="since process start (resets on deploy)"
+            />
+          </KpiTileLink>
+          <KpiTileLink href="/admin/observability/slo" ariaLabel="Open decision-latency SLO board">
+            <KpiCard
+              icon={<GaugeIcon size={14} />}
+              label="Decisions computed"
+              value={(m['decisions.computed'] ?? 0).toLocaleString()}
+              hint="engine evaluations (internal / trutopia / fallback)"
+            />
+          </KpiTileLink>
+          <KpiTileLink
+            href="/admin/audit?action=webhook"
+            ariaLabel="Open audit log filtered to webhook events"
+          >
+            <KpiCard
+              icon={<WebhookIcon size={14} />}
+              label="Webhook events queued"
+              value={(m['webhook.queued'] ?? 0).toLocaleString()}
+              hint={`dup ${m['webhook.duplicate'] ?? 0} · rejected ${webhookRejected}`}
+            />
+          </KpiTileLink>
+          <KpiTileLink href="/lender-marketplace" ariaLabel="Open lender marketplace">
+            <KpiCard
+              icon={<HeartPulseIcon size={14} />}
+              label="Lenders healthy"
+              value={lender ? `${lender.healthy} / ${lender.total}` : '—'}
+              hint={lender ? `${lender.degraded} degraded · ${lender.unwired} unwired` : 'loading…'}
+            />
+          </KpiTileLink>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -276,6 +321,31 @@ export default function ObservabilityPage(): JSX.Element {
         )}
       </PageBody>
     </>
+  );
+}
+
+/**
+ * KpiTileLink — wraps a KpiCard primitive in a router Link so the entire
+ * tile becomes the drill-in affordance. Reuses the shared focus/hover
+ * pattern from KpiTile in /v/[brand]/page.tsx.
+ */
+function KpiTileLink({
+  href,
+  ariaLabel,
+  children,
+}: {
+  href: string;
+  ariaLabel: string;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <Link
+      href={href}
+      aria-label={ariaLabel}
+      className="block rounded-lg transition-colors hover:[&>div]:border-border-strong hover:[&>div]:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+    >
+      {children}
+    </Link>
   );
 }
 

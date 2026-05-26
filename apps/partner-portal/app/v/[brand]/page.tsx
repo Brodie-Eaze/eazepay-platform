@@ -1,7 +1,7 @@
 'use client';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   PageHeader,
   PageBody,
@@ -18,10 +18,29 @@ import {
   TrendUpIcon,
   TrendDownIcon,
   ArrowRightIcon,
+  TimeRangeSelector,
+  type TimeRange,
+  TIME_RANGES,
+  LiveIndicator,
+  InteractiveBarChart,
+  InteractiveDonut,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../lib/master-data';
+import { expandedApplications } from '../../../lib/seeded-applications';
 import { currentPartnerForBrand, partnerShareOfBrand } from '../../../lib/partner-profile';
+import {
+  applicationsByMonth,
+  applicationsByStatus,
+  applicationsInRange,
+  creditMix,
+  fundedVolumeByMonth,
+  monthKeyToWindow,
+  priorWindow,
+  timeRangeToWindow,
+  totalFundedCents,
+  trendDelta,
+} from '../../../lib/dashboard-metrics';
 
 /**
  * Brand portal — Dashboard.
@@ -227,18 +246,26 @@ const applicationStatusToPill = (
 //  exactly: corner icon, big number, signed-and-coloured delta.
 // ────────────────────────────────────────────────────────────────────
 
+/**
+ * KpiTile — clickable when `href` is provided. Wrapping the tile in a
+ * <Link> turns every KPI into a drill-in to a pre-filtered list view. The
+ * href pattern is `/v/[brand]/applications?status=...&range=...` so the
+ * destination page reads the URL and applies the matching filter (Sprint H).
+ */
 const KpiTile = ({
   label,
   value,
   deltaPct,
   icon,
   goodWhenDown = false,
+  href,
 }: {
   label: string;
   value: string;
   deltaPct: number;
   icon: React.ReactNode;
   goodWhenDown?: boolean;
+  href?: string;
 }) => {
   const isUp = deltaPct > 0;
   const isDown = deltaPct < 0;
@@ -254,8 +281,8 @@ const KpiTile = ({
           : 'text-fg-muted';
   const Arrow = isUp ? TrendUpIcon : isDown ? TrendDownIcon : TrendUpIcon;
 
-  return (
-    <div className="relative flex flex-col justify-between rounded-lg border border-border bg-bg-elevated px-4 py-3.5 shadow-sm min-h-[110px]">
+  const body = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <span className="text-[10px] uppercase tracking-[0.16em] text-fg-muted font-semibold leading-tight">
           {label}
@@ -273,8 +300,24 @@ const KpiTile = ({
           {fmtPctDelta(deltaPct)}
         </span>
       </div>
-    </div>
+    </>
   );
+
+  const base =
+    'relative flex flex-col justify-between rounded-lg border border-border bg-bg-elevated px-4 py-3.5 shadow-sm min-h-[110px]';
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={`${label}: ${value}. Open filtered list.`}
+        className={`${base} transition-colors hover:border-border-strong hover:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus`}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={base}>{body}</div>;
 };
 
 // ────────────────────────────────────────────────────────────────────
@@ -672,12 +715,84 @@ export default function BrandHomePage() {
   );
   const brandSnapshot = BRAND_SNAPSHOTS[productBrand];
 
+  /* ─── Sprint H: URL-driven time range ─────────────────────────────────
+   * The dashboard reads `?range=` from the URL so deep-links carry the
+   * window with them. We default to 30d, the same default applied across
+   * /admin and /reports. Changing the range replaces the URL (no scroll,
+   * no history push) so back-button still moves between pages. */
+  const sp = useSearchParams();
+  const router = useRouter();
+  const rangeFromUrl = (sp?.get('range') as TimeRange | null) ?? null;
+  const range: TimeRange =
+    rangeFromUrl && (TIME_RANGES as readonly string[]).includes(rangeFromUrl)
+      ? rangeFromUrl
+      : '30d';
+
+  const handleRangeChange = useCallback(
+    (next: TimeRange) => {
+      const params = new URLSearchParams(sp?.toString() ?? '');
+      params.set('range', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, sp],
+  );
+
+  /* The live indicator pulses every time we register an "update" — for
+   * this fixture-only sprint, that's whenever the user changes range
+   * (acts as a heartbeat). Real Pusher wiring lives in
+   * lib/use-application-realtime.ts (per-application channel); brand-
+   * channel subscriptions are scoped to a follow-on sprint. */
+  const [pulseKey, setPulseKey] = useState(0);
+
+  /* ─── Live snapshot derived from expandedApplications ──────────────── */
+  const liveSnapshot = useMemo(() => {
+    if (!partner) return null;
+    const { fromIso, toIso } = timeRangeToWindow(range);
+    const prior = priorWindow(range);
+
+    const partnerRows = expandedApplications.filter((a) => a.partner === partner.legalName);
+    if (partnerRows.length === 0) return null;
+
+    const inWindow = applicationsInRange(partnerRows, fromIso, toIso);
+    const inPrior = applicationsInRange(partnerRows, prior.fromIso, prior.toIso);
+    const cur = applicationsByStatus(inWindow);
+    const pre = applicationsByStatus(inPrior);
+
+    const submittedDelta = trendDelta(cur.total, pre.total);
+    const approvedDelta = trendDelta(cur.approved, pre.approved);
+    const fundedDelta = trendDelta(cur.funded, pre.funded);
+    const declinedDelta = trendDelta(cur.declined, pre.declined);
+
+    const fundedCents = totalFundedCents(inWindow);
+    const fundedCentsPrior = totalFundedCents(inPrior);
+    const fundedCentsDelta = trendDelta(fundedCents, fundedCentsPrior);
+
+    const monthlySubs = applicationsByMonth(partnerRows, fromIso, toIso);
+    const monthlyFunded = fundedVolumeByMonth(partnerRows, fromIso, toIso);
+    const mix = creditMix(inWindow);
+
+    return {
+      cur,
+      submittedDelta,
+      approvedDelta,
+      fundedDelta,
+      declinedDelta,
+      fundedCents,
+      fundedCentsDelta,
+      inReview: cur.in_review,
+      monthlySubs,
+      monthlyFunded,
+      mix,
+    };
+  }, [partner, range]);
+
   /**
    * The dashboard snapshot, scaled down from brand-aggregate to the
-   * signed-in partner's slice. Volumes (submitted / approved / funded
-   * / declined / dollars / monthly bars) are scaled by partnerShare;
-   * rates and credit-mix percentages stay unchanged because they're
-   * already partner-invariant.
+   * signed-in partner's slice. Used as the FALLBACK when the partner
+   * has no rows in expandedApplications (typically because they were
+   * added after the seeded fixture). The primary path is `liveSnapshot`,
+   * which derives every KPI from the real (fixture) ApplicationRow set
+   * and respects the time range.
    */
   const snapshot = useMemo(() => {
     if (!partner) return brandSnapshot;
@@ -699,13 +814,46 @@ export default function BrandHomePage() {
         ...d,
         value: scaleInt(d.value),
       })),
-      // Credit mix is partner-invariant (the rate distribution doesn't
-      // change just because we're looking at one partner), but the
-      // COUNTS should be scaled down so the donut total feels right
-      // for the partner's volume.
       creditMix: brandSnapshot.creditMix.map((c) => ({ ...c, count: scaleInt(c.count) })),
     };
   }, [brandSnapshot, partner, partnerShare]);
+
+  /* The values rendered on screen. When `liveSnapshot` resolves we use
+   * that (real time-window math); otherwise we fall back to the scaled
+   * BRAND_SNAPSHOTS so the page still renders for partners with no
+   * fixture rows. Both shapes expose the same fields we read below. */
+  const kpiSubmitted = liveSnapshot ? liveSnapshot.cur.total : snapshot.totalSubmitted;
+  const kpiApproved = liveSnapshot ? liveSnapshot.cur.approved : snapshot.approved;
+  const kpiFunded = liveSnapshot ? liveSnapshot.cur.funded : snapshot.funded;
+  const kpiDeclined = liveSnapshot ? liveSnapshot.cur.declined : snapshot.declined;
+  const kpiInReview = liveSnapshot ? liveSnapshot.cur.in_review : 0;
+  const kpiTotalFundedCents = liveSnapshot ? liveSnapshot.fundedCents : snapshot.totalFundedCents;
+
+  const signed = (
+    d: { pct: number; direction: 'up' | 'down' | 'flat' } | undefined,
+    fallback: number,
+  ): number => {
+    if (!d) return fallback;
+    if (d.direction === 'flat') return 0;
+    return d.direction === 'up' ? d.pct : -d.pct;
+  };
+  const dSubmitted = signed(liveSnapshot?.submittedDelta, snapshot.totalSubmittedDeltaPct);
+  const dApproved = signed(liveSnapshot?.approvedDelta, snapshot.approvedDeltaPct);
+  const dFunded = signed(liveSnapshot?.fundedDelta, snapshot.fundedDeltaPct);
+  const dDeclined = signed(liveSnapshot?.declinedDelta, snapshot.declinedDeltaPct);
+  const dTotalFunded = signed(liveSnapshot?.fundedCentsDelta, snapshot.totalFundedDeltaPct);
+
+  /* Build drill-in URLs. Every KPI links to /applications with the matching
+   * status + the current time range carried across so the destination shows
+   * the SAME slice the user just clicked on. */
+  const baseList = `/v/${brandSlug}/applications`;
+  const rangeQs = `&range=${range}`;
+  const urlSubmitted = `${baseList}?status=submitted${rangeQs}`;
+  const urlApproved = `${baseList}?status=approved${rangeQs}`;
+  const urlFunded = `${baseList}?status=funded${rangeQs}`;
+  const urlDeclined = `${baseList}?status=declined${rangeQs}`;
+  const urlInReview = `${baseList}?status=in_review${rangeQs}`;
+  const urlTotalFunded = `${baseList}?status=funded${rangeQs}`;
 
   // Recent applications — scoped to the signed-in partner. Filter
   // master-data + synthesised rows by partner.legalName (the `partner`
@@ -715,7 +863,10 @@ export default function BrandHomePage() {
     const synth = synthesisedFor(productBrand);
     const fromMaster = applications.filter((a) => a.partner === partner.legalName);
     const fromSynth = synth.filter((a) => a.partner === partner.legalName);
-    return [...fromSynth, ...fromMaster]
+    const fromSeeded = expandedApplications.filter(
+      (a) => a.partner === partner.legalName && !fromMaster.includes(a) && !fromSynth.includes(a),
+    );
+    return [...fromSynth, ...fromMaster, ...fromSeeded]
       .slice()
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .slice(0, 6);
@@ -723,28 +874,70 @@ export default function BrandHomePage() {
 
   // Donut palette. Prime gets the brand accent so each portal feels
   // tinted without recolouring the whole chart.
-  const donutSegments = useMemo(() => {
-    const palette: Record<'Prime' | 'NearPrime' | 'Subprime' | 'DeepSubprime', string> = {
-      Prime: spec.accentHex,
-      NearPrime: '#94a3b8',
-      Subprime: '#cbd5e1',
-      DeepSubprime: '#e2e8f0',
-    };
-    return snapshot.creditMix.map((c) => ({
-      name: c.name,
-      count: c.count,
-      color: palette[c.name],
-    }));
-  }, [snapshot.creditMix, spec.accentHex]);
+  const palette: Record<'Prime' | 'NearPrime' | 'Subprime' | 'DeepSubprime', string> = {
+    Prime: spec.accentHex,
+    NearPrime: '#94a3b8',
+    Subprime: '#cbd5e1',
+    DeepSubprime: '#e2e8f0',
+  };
 
-  const creditTotal = snapshot.creditMix.reduce((s, c) => s + c.count, 0);
+  const creditSource = liveSnapshot ? liveSnapshot.mix : snapshot.creditMix;
+  const donutSegments = creditSource.map((c) => ({
+    name: c.name,
+    count: c.count,
+    color: palette[c.name],
+    description: c.range,
+  }));
+  const creditTotal = creditSource.reduce((s, c) => s + c.count, 0);
 
-  // Y-axis caps for the bar charts — round up to the nearest 25 above
-  // the series max, with a fallback so empty series still render.
-  const subsMax = Math.max(...snapshot.monthlySubmissions.map((d) => d.value), 1);
-  const subsYMax = Math.max(100, Math.ceil(subsMax / 25) * 25);
-  const fundedMax = Math.max(...snapshot.monthlyFunded.map((d) => d.value), 1);
-  const fundedYMax = Math.max(50, Math.ceil(fundedMax / 25) * 25);
+  /* Chart data: prefer live month-bucket from real applications, fall back
+   * to the static snapshot series. */
+  const submissionsSeries = liveSnapshot
+    ? liveSnapshot.monthlySubs.map((m) => ({
+        label: m.label,
+        value: m.value,
+        meta: { monthKey: m.monthKey } as const,
+      }))
+    : snapshot.monthlySubmissions.map((d) => ({ label: d.label, value: d.value, meta: {} }));
+
+  const fundedSeries = liveSnapshot
+    ? liveSnapshot.monthlyFunded.map((m) => ({
+        label: m.label,
+        value: m.value,
+        meta: { monthKey: m.monthKey } as const,
+      }))
+    : snapshot.monthlyFunded.map((d) => ({ label: d.label, value: d.value, meta: {} }));
+
+  /* Chart-click → drill-in. Monthly Submissions click → /applications
+   * filtered to that month (any status); Monthly Funded click →
+   * /applications?status=funded for that month. The destination reads
+   * `?from=` / `?to=` (Sprint H wiring). */
+  const onClickSubsBar = useCallback(
+    (d: { meta?: Record<string, unknown> }) => {
+      const monthKey = (d.meta?.monthKey as string | undefined) ?? null;
+      if (!monthKey) return;
+      const { fromIso, toIso } = monthKeyToWindow(monthKey);
+      router.push(`${baseList}?from=${fromIso}&to=${toIso}`);
+    },
+    [router, baseList],
+  );
+  const onClickFundedBar = useCallback(
+    (d: { meta?: Record<string, unknown> }) => {
+      const monthKey = (d.meta?.monthKey as string | undefined) ?? null;
+      if (!monthKey) return;
+      const { fromIso, toIso } = monthKeyToWindow(monthKey);
+      router.push(`${baseList}?status=funded&from=${fromIso}&to=${toIso}`);
+    },
+    [router, baseList],
+  );
+  /* Donut wedge click → /applications?tier=<name>&range=<r>. List page
+   * reads `tier=` to apply a FICO-band filter (Sprint H). */
+  const onClickDonut = useCallback(
+    (s: { name: string }) => {
+      router.push(`${baseList}?tier=${encodeURIComponent(s.name)}${rangeQs}`);
+    },
+    [router, baseList, rangeQs],
+  );
 
   return (
     <>
@@ -755,6 +948,18 @@ export default function BrandHomePage() {
           partner
             ? `Showing data for ${partner.legalName} only. Master operators see the full ${spec.name} network.`
             : undefined
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <LiveIndicator pulseKey={pulseKey} />
+            <TimeRangeSelector
+              value={range}
+              onChange={(r) => {
+                handleRangeChange(r);
+                setPulseKey((p) => p + 1);
+              }}
+            />
+          </div>
         }
       />
       <PageBody>
@@ -782,92 +987,126 @@ export default function BrandHomePage() {
             </div>
           </div>
         )}
-        {/* ─── 6-KPI grid ─── */}
+        {/* ─── 6-KPI grid ─── Every tile drills into the matching
+            filtered list view, carrying the current time range. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
           <KpiTile
             label="Total submitted"
-            value={String(snapshot.totalSubmitted)}
-            deltaPct={snapshot.totalSubmittedDeltaPct}
+            value={String(kpiSubmitted)}
+            deltaPct={dSubmitted}
             icon={<DocIcon size={16} />}
+            href={urlSubmitted}
           />
           <KpiTile
             label="Approved"
-            value={String(snapshot.approved)}
-            deltaPct={snapshot.approvedDeltaPct}
+            value={String(kpiApproved)}
+            deltaPct={dApproved}
             icon={<CheckIcon size={16} />}
+            href={urlApproved}
           />
           <KpiTile
             label="Funded"
-            value={String(snapshot.funded)}
-            deltaPct={snapshot.fundedDeltaPct}
+            value={String(kpiFunded)}
+            deltaPct={dFunded}
             icon={<DollarIcon size={16} />}
+            href={urlFunded}
           />
           <KpiTile
             label="Declined"
-            value={String(snapshot.declined)}
-            deltaPct={snapshot.declinedDeltaPct}
+            value={String(kpiDeclined)}
+            deltaPct={dDeclined}
             icon={<XIcon size={16} />}
             goodWhenDown
+            href={urlDeclined}
+          />
+          <KpiTile
+            label="In review"
+            value={String(kpiInReview)}
+            deltaPct={0}
+            icon={<ClockIcon size={16} />}
+            href={urlInReview}
           />
           <KpiTile
             label="Total funded"
-            value={fmtCompactUsd(snapshot.totalFundedCents)}
-            deltaPct={snapshot.totalFundedDeltaPct}
+            value={fmtCompactUsd(kpiTotalFundedCents)}
+            deltaPct={dTotalFunded}
             icon={<DollarIcon size={16} />}
-          />
-          <KpiTile
-            label="Pending payout"
-            value={fmtCompactUsd(snapshot.pendingPayoutCents)}
-            deltaPct={snapshot.pendingPayoutDeltaPct}
-            icon={<ClockIcon size={16} />}
+            href={urlTotalFunded}
           />
         </div>
 
-        {/* ─── Chart row: Submissions · Funded · Credit Insights ─── */}
+        {/* ─── Chart row: Submissions · Funded · Credit Insights ───
+            Hover any bar/wedge for an exact value tooltip; click to drill
+            in to the matching month or FICO tier. */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-5">
           <Card>
             <CardHeader
               title={<span className="text-[14px]">Monthly Submissions</span>}
-              description={<span className="text-[12px]">Application volume over time</span>}
+              description={<span className="text-[12px]">Click a month to filter the list</span>}
             />
             <CardBody className="pt-3">
-              <BarChart data={snapshot.monthlySubmissions} yMax={subsYMax} yStep={subsYMax / 2} />
+              <InteractiveBarChart
+                data={submissionsSeries}
+                onSelect={onClickSubsBar}
+                formatValue={(d) => `${d.value} applications`}
+                ariaLabel="Monthly submissions bar chart"
+              />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader
               title={<span className="text-[14px]">Monthly Funded</span>}
-              description={<span className="text-[12px]">Funded deals over time</span>}
+              description={
+                <span className="text-[12px]">Click a month to filter funded deals</span>
+              }
             />
             <CardBody className="pt-3">
-              <BarChart data={snapshot.monthlyFunded} yMax={fundedYMax} yStep={fundedYMax / 2} />
+              <InteractiveBarChart
+                data={fundedSeries}
+                onSelect={onClickFundedBar}
+                formatValue={(d) => fmtUsd(d.value * 100)}
+                ariaLabel="Monthly funded volume bar chart"
+              />
             </CardBody>
           </Card>
 
           <Card>
             <CardHeader
               title={<span className="text-[14px]">Credit Insights</span>}
-              description={<span className="text-[12px]">FICO mix of this period</span>}
+              description={<span className="text-[12px]">Click a tier to filter</span>}
             />
             <CardBody className="pt-3">
               <div className="flex flex-col items-center">
-                <DonutChart segments={donutSegments} total={creditTotal} />
+                <InteractiveDonut
+                  segments={donutSegments}
+                  total={creditTotal}
+                  onSelect={onClickDonut}
+                  ariaLabel="Credit tier distribution donut chart"
+                />
                 <ul className="mt-4 w-full space-y-1.5">
                   {donutSegments.map((s, i) => (
                     <li key={s.name} className="flex items-center justify-between text-[12px]">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="size-2 rounded-full shrink-0"
-                          style={{ backgroundColor: s.color }}
-                          aria-hidden
-                        />
-                        <span className="text-fg font-medium truncate">{s.name}</span>
-                        <span className="text-fg-muted shrink-0">
-                          · {snapshot.creditMix[i]?.range ?? ''}
+                      <Link
+                        href={`${baseList}?tier=${encodeURIComponent(s.name)}${rangeQs}`}
+                        className="flex items-center justify-between w-full gap-2 rounded px-1 py-0.5 hover:bg-bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+                        aria-label={`Filter applications to ${s.name} tier (${s.count})`}
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="size-2 rounded-full shrink-0"
+                            style={{ backgroundColor: s.color }}
+                            aria-hidden
+                          />
+                          <span className="text-fg font-medium truncate">{s.name}</span>
+                          <span className="text-fg-muted shrink-0">
+                            · {creditSource[i]?.range ?? ''}
+                          </span>
                         </span>
-                      </span>
-                      <span className="text-fg font-semibold tabular-nums shrink-0">{s.count}</span>
+                        <span className="text-fg font-semibold tabular-nums shrink-0">
+                          {s.count}
+                        </span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
