@@ -25,6 +25,11 @@
  *   • Counter names follow `domain.event` dotted notation. The catalogue
  *     below is the canonical list; adding a new name is one line + a
  *     call site.
+ *   • Bounded tags (provider + eventType only) are supported on metrics
+ *     that need a DLQ-style breakdown — see `webhook.handler.not_implemented`.
+ *     Both dimensions are bounded by the integration catalogue (4 providers
+ *     × ~10 events) so the combination count stays well under the
+ *     1000-per-metric cardinality budget.
  *
  * Coverage
  * --------
@@ -34,6 +39,8 @@
  *   • webhook.queued           — inbox row inserted (new event)
  *   • webhook.duplicate        — inbox dedupe fired (replay)
  *   • webhook.rejected         — signature / payload validation failure
+ *   • webhook.handler.not_implemented
+ *                              — stub handler refused to ack (DLQ surface)
  *   • provisioning.completed   — orchestrator end-to-end success
  *   • provisioning.failed      — orchestrator step failure (any step)
  *   • migration.completed      — AI Funding → MedPay migration success
@@ -53,15 +60,11 @@ export type MetricName =
   | 'webhook.queued'
   | 'webhook.duplicate'
   | 'webhook.rejected'
+  | 'webhook.handler.not_implemented'
   | 'provisioning.completed'
   | 'provisioning.failed'
   | 'migration.completed'
-  | 'migration.failed'
-  /** SEC-201 — POST /api/account/set-password with the legacy
-   *  {userId, newPassword} body shape. Non-zero means a client (likely
-   *  a stale welcome email or a probing attacker) is still hitting the
-   *  pre-fix surface; investigate before removing the rejection branch. */
-  | 'welcome.legacy_userid_attempt';
+  | 'migration.failed';
 
 /**
  * All known metric names. Snapshot returns these in a stable order with
@@ -75,14 +78,38 @@ const KNOWN_METRICS: ReadonlyArray<MetricName> = [
   'webhook.queued',
   'webhook.duplicate',
   'webhook.rejected',
+  'webhook.handler.not_implemented',
   'provisioning.completed',
   'provisioning.failed',
   'migration.completed',
   'migration.failed',
-  'welcome.legacy_userid_attempt',
 ];
 
 const COUNTERS = new Map<MetricName, number>();
+
+/**
+ * Bounded tag dimensions for the small number of metrics that need
+ * a partner/event breakdown for DLQ surfacing. Kept deliberately
+ * narrow to honour cardinality discipline — only `provider` and
+ * `eventType` are accepted, both bounded by the integration catalogue.
+ *
+ * Stored as a flat dotted-key (`metric|provider=X|eventType=Y`) so
+ * the in-process Map stays simple. Snapshot consumers call
+ * `getTaggedMetricsSnapshot` to enumerate the tag breakdown.
+ */
+export interface MetricTags {
+  provider?: string;
+  eventType?: string;
+}
+
+const TAGGED_COUNTERS = new Map<string, number>();
+
+function taggedKey(name: MetricName, tags: MetricTags): string {
+  const parts: string[] = [name];
+  if (tags.provider) parts.push(`provider=${tags.provider}`);
+  if (tags.eventType) parts.push(`eventType=${tags.eventType}`);
+  return parts.join('|');
+}
 
 /**
  * Bump a counter by one. No-op-safe: if the name happens to land before
@@ -91,10 +118,30 @@ const COUNTERS = new Map<MetricName, number>();
  *
  * Constant-cost (Map lookup + numeric increment). Safe to call inline
  * on the hot path.
+ *
+ * Optional `tags` adds a bounded breakdown for DLQ-style metrics
+ * (provider + eventType only). The aggregate counter is always bumped;
+ * the tagged counter is bumped additionally when tags are supplied.
+ *
+ * Backwards-compatible call shapes:
+ *   incrementMetric('x')                       — by 1, no tags
+ *   incrementMetric('x', 5)                    — by 5, no tags
+ *   incrementMetric('x', { provider: 'p' })    — by 1, tagged
+ *   incrementMetric('x', { provider: 'p' }, 5) — by 5, tagged
  */
-export function incrementMetric(name: MetricName, by = 1): void {
+export function incrementMetric(
+  name: MetricName,
+  byOrTags: number | MetricTags = 1,
+  maybeBy = 1,
+): void {
+  const by = typeof byOrTags === 'number' ? byOrTags : maybeBy;
+  const tags = typeof byOrTags === 'object' ? byOrTags : undefined;
   const next = (COUNTERS.get(name) ?? 0) + by;
   COUNTERS.set(name, next);
+  if (tags && (tags.provider || tags.eventType)) {
+    const key = taggedKey(name, tags);
+    TAGGED_COUNTERS.set(key, (TAGGED_COUNTERS.get(key) ?? 0) + by);
+  }
 }
 
 /**
@@ -110,7 +157,21 @@ export function getMetricsSnapshot(): Record<MetricName, number> {
   return out as Record<MetricName, number>;
 }
 
+/**
+ * Read the tagged counter set. Returns a fresh object keyed by the
+ * flat dotted-key form. Used by the DLQ surface to render the
+ * per-provider breakdown of unimplemented webhook handlers.
+ */
+export function getTaggedMetricsSnapshot(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [key, value] of TAGGED_COUNTERS.entries()) {
+    out[key] = value;
+  }
+  return out;
+}
+
 /** Test-only: drop all counters between specs. */
 export function _resetMetricsForTest(): void {
   COUNTERS.clear();
+  TAGGED_COUNTERS.clear();
 }

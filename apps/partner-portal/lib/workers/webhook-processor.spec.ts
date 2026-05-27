@@ -15,8 +15,6 @@ const dbMock = {
     from: () => ({
       where: () => ({
         limit: async () => {
-          // Return the lone matching row, if any. The webhook-processor
-          // calls .select({...}).from(...).where(eq(id, x)).limit(1).
           const arr = Array.from(rowsStore.values());
           void cols;
           return arr;
@@ -26,10 +24,6 @@ const dbMock = {
   }),
   update: () => ({
     set: (patch: Record<string, unknown>) => {
-      // Build a thenable + returnable chain. drizzle's `.where(...)`
-      // returns a promise (no .returning() needed) OR a thenable that
-      // exposes .returning(). The webhook-processor's claimRow uses
-      // .returning(), and markDone/markFailed don't.
       const apply = () => {
         for (const row of rowsStore.values()) Object.assign(row, patch);
       };
@@ -114,9 +108,7 @@ describe('processInboxRow (Task #50 worker entry)', () => {
 
   it('no-ops when hasDb() is false (no Postgres available)', async () => {
     hasDbMock.mockReturnValue(false);
-    // Must not throw.
     await processInboxRow('any-id');
-    // Nothing was touched.
     expect(rowsStore.size).toBe(0);
   });
 
@@ -137,13 +129,12 @@ describe('processInboxRow (Task #50 worker entry)', () => {
       processingStatus: 'done',
     });
     await processInboxRow('row-done');
-    // Status was already 'done' and remains 'done' — no change.
     expect((rowsStore.get('row-done') as { processingStatus: string }).processingStatus).toBe(
       'done',
     );
   });
 
-  it('claims a pending row, dispatches, and marks done on success', async () => {
+  it('claims a pending row, dispatches stub, and marks failed (NotImplementedError) — fail-loud posture', async () => {
     rowsStore.set('row-pending', {
       id: 'row-pending',
       provider: 'micamp',
@@ -153,9 +144,13 @@ describe('processInboxRow (Task #50 worker entry)', () => {
       attempts: 0,
       processingStatus: 'pending',
     });
-    await processInboxRow('row-pending');
-    const status = (rowsStore.get('row-pending') as { processingStatus: string }).processingStatus;
-    expect(status).toBe('done');
+    await expect(processInboxRow('row-pending')).rejects.toThrow(/handler_not_implemented/);
+    const row = rowsStore.get('row-pending') as {
+      processingStatus: string;
+      failureReason: string;
+    };
+    expect(row.processingStatus).toBe('failed');
+    expect(row.failureReason).toMatch(/handler_not_implemented:micamp:mid\.underwriting\.approved/);
   });
 
   it('throws on a handler failure so BullMQ retries', async () => {
@@ -169,5 +164,26 @@ describe('processInboxRow (Task #50 worker entry)', () => {
       processingStatus: 'pending',
     });
     await expect(processInboxRow('row-bad')).rejects.toThrow(/unknown_event_type/);
+  });
+
+  it('NotImplementedError → terminal failed immediately (no backoff/retry budget)', async () => {
+    rowsStore.set('row-trutopia', {
+      id: 'row-trutopia',
+      provider: 'trutopia',
+      eventId: 'evt_tru',
+      eventType: 'decision.returned',
+      rawBody: JSON.stringify({ id: 'evt_tru', type: 'decision.returned' }),
+      attempts: 0,
+      processingStatus: 'pending',
+    });
+    await expect(processInboxRow('row-trutopia')).rejects.toThrow(/handler_not_implemented/);
+    const row = rowsStore.get('row-trutopia') as {
+      processingStatus: string;
+      attempts: number;
+      failureReason: string;
+    };
+    expect(row.processingStatus).toBe('failed');
+    expect(row.attempts).toBe(1);
+    expect(row.failureReason).toMatch(/handler_not_implemented:trutopia:decision\.returned/);
   });
 });
