@@ -61,6 +61,10 @@ android/.gradle/
 *.tfstate.*
 *.tfplan
 .terraform.lock.hcl
+# tfvars hold per-account values (account IDs, overrides) — never commit.
+# Track only *.tfvars.example templates.
+*.tfvars
+!*.tfvars.example
 
 # AWS / secrets
 .aws/
