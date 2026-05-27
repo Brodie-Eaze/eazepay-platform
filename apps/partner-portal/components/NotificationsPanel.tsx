@@ -44,6 +44,17 @@ import {
 } from '../lib/notifications';
 import { STORAGE_KEYS } from '../lib/storage-keys';
 
+/**
+ * Section assignment is FIRST-MATCH-WINS to keep each notification in
+ * exactly one section. Order is intentional:
+ *
+ *   applications → partners → alerts
+ *
+ * "Partner onboarding completed" carries `kind: 'system'` AND has
+ * "partner" + "onboard" in its title, so the partners rule MUST come
+ * before alerts or the row appears in both sections (visible bug shipped
+ * in Sprint G's first cut).
+ */
 const SECTIONS: Array<{
   id: 'applications' | 'partners' | 'alerts';
   title: string;
@@ -63,22 +74,34 @@ const SECTIONS: Array<{
   {
     id: 'partners',
     title: 'Partners',
-    match: (n) =>
-      n.title.toLowerCase().includes('partner') ||
-      n.title.toLowerCase().includes('onboard') ||
-      n.title.toLowerCase().includes('mid'),
+    match: (n) => {
+      const t = n.title.toLowerCase();
+      return t.includes('partner') || t.includes('onboard') || t.includes('mid issued');
+    },
   },
   {
     id: 'alerts',
     title: 'Alerts',
-    match: (n) =>
-      n.kind === 'system' ||
-      n.title.toLowerCase().includes('webhook') ||
-      n.title.toLowerCase().includes('slo') ||
-      n.title.toLowerCase().includes('dlq') ||
-      n.title.toLowerCase().includes('cve'),
+    match: (n) => {
+      const t = n.title.toLowerCase();
+      return (
+        n.kind === 'system' ||
+        t.includes('webhook') ||
+        t.includes('slo') ||
+        t.includes('dlq') ||
+        t.includes('cve')
+      );
+    },
   },
 ];
+
+/** First-match-wins section assignment. */
+function assignSection(n: Notification): (typeof SECTIONS)[number]['id'] | null {
+  for (const s of SECTIONS) {
+    if (s.match(n)) return s.id;
+  }
+  return null;
+}
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -147,10 +170,22 @@ export function NotificationsPanel({ recipient, open, onClose }: NotificationsPa
   const grouped = useMemo(() => {
     const cutoff = Date.now() - SEVEN_DAYS_MS;
     const recent = items.filter((n) => new Date(n.createdAt).getTime() >= cutoff);
-    return SECTIONS.map((s) => ({
-      ...s,
-      items: recent.filter(s.match),
-    }));
+    // Exclusive assignment: each notification lives in exactly one
+    // section (the first that matches per SECTIONS order). Was
+    // double-counting before — partner onboarding showed in both
+    // PARTNERS and ALERTS because its kind is 'system' AND its title
+    // contains "partner". Real cost: total count was inflated, and
+    // users saw the same row twice.
+    const buckets: Record<'applications' | 'partners' | 'alerts', Notification[]> = {
+      applications: [],
+      partners: [],
+      alerts: [],
+    };
+    for (const n of recent) {
+      const sectionId = assignSection(n);
+      if (sectionId) buckets[sectionId].push(n);
+    }
+    return SECTIONS.map((s) => ({ ...s, items: buckets[s.id] }));
   }, [items]);
 
   const total = grouped.reduce((a, b) => a + b.items.length, 0);
@@ -386,60 +421,53 @@ function KindIcon({ kind }: { kind: NotificationKind }) {
 /**
  * Seed a small fixture so the panel always has content for demos.
  * Idempotent — the caller only invokes when the store is empty.
+ *
+ * Each sample passes an explicit `createdAt` so the panel shows a
+ * realistic spread of timestamps (8m, 42m, 1.5h, 3.5h, 11h ago) rather
+ * than 5 identical "1 min. ago" entries — fixes the "obviously fake"
+ * demo feel that shipped in Sprint G's first cut.
  */
 function seedDemoNotifications(recipient: string): void {
   const now = Date.now();
-  const minutes = (m: number) => new Date(now - m * 60_000).toISOString();
-  const samples: Array<
-    Omit<Parameters<typeof pushNotification>[0], 'recipient'> & { _at: string }
-  > = [
+  const at = (m: number) => new Date(now - m * 60_000).toISOString();
+  const samples: Array<Omit<Parameters<typeof pushNotification>[0], 'recipient'>> = [
     {
       kind: 'application_submitted',
       title: 'New application submitted',
       body: 'TradePay · ACME Roofing · $45,000 requested',
       href: '/applications',
-      _at: minutes(8),
+      createdAt: at(8),
     },
     {
       kind: 'application_funded',
       title: 'Application funded',
       body: 'MedPay · Lakeside Dental · $12,800 funded by Helios Capital',
       href: '/applications',
-      _at: minutes(42),
+      createdAt: at(42),
     },
     {
       kind: 'system',
       title: 'Webhook failure rate above SLO',
       body: 'partner-events: 4.1% failures over the last 15m (SLO 1%).',
       href: '/admin/observability',
-      _at: minutes(95),
+      createdAt: at(95),
     },
     {
       kind: 'system',
       title: 'Partner onboarding completed',
       body: 'Northstar Auto Group finished KYC + MID issued (MID 7741).',
       href: '/control-panel',
-      _at: minutes(220),
+      createdAt: at(220),
     },
     {
       kind: 'invoice_paid',
       title: 'Invoice paid',
       body: 'CoachPay · Peak Performance Coaching · $1,950',
       href: '/invoices',
-      _at: minutes(680),
+      createdAt: at(680),
     },
   ];
   for (const s of samples) {
-    pushNotification({
-      recipient,
-      kind: s.kind,
-      title: s.title,
-      body: s.body,
-      href: s.href,
-    });
-    // Pull the entry we just wrote and overwrite createdAt so the
-    // "in last 7 days" filter keeps a realistic distribution.
-    // (We can't easily backdate without re-importing the store; the
-    // fresh timestamps are still useful for the demo.)
+    pushNotification({ recipient, ...s });
   }
 }
