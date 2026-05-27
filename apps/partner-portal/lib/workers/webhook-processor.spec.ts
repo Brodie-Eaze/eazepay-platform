@@ -144,7 +144,18 @@ describe('processInboxRow (Task #50 worker entry)', () => {
       provider: 'micamp',
       eventId: 'evt_pending',
       eventType: 'mid.underwriting.approved',
-      rawBody: JSON.stringify({ id: 'evt_pending', type: 'mid.underwriting.approved' }),
+      rawBody: JSON.stringify({
+        id: 'evt_pending',
+        midId: 'mid_abc',
+        micampMid: 'mc_999',
+        rateCard: {
+          interchangeBps: 195,
+          processorBps: 35,
+          perTransactionCents: 12,
+          monthlyFeeCents: null,
+          settlementDays: 2,
+        },
+      }),
       attempts: 0,
       processingStatus: 'pending',
     });
@@ -157,17 +168,45 @@ describe('processInboxRow (Task #50 worker entry)', () => {
     expect(row.failureReason).toMatch(/handler_not_implemented:micamp:mid\.underwriting\.approved/);
   });
 
-  it('throws on a handler failure so BullMQ retries', async () => {
+  it('throws MalformedWebhookError on an unknown event type — Zod-discriminator path', async () => {
     rowsStore.set('row-bad', {
       id: 'row-bad',
       provider: 'micamp',
       eventId: 'evt_bad',
       eventType: 'mid.unknown_event_for_test',
-      rawBody: JSON.stringify({ id: 'evt_bad', type: 'mid.unknown_event_for_test' }),
+      rawBody: JSON.stringify({ id: 'evt_bad' }),
       attempts: 0,
       processingStatus: 'pending',
     });
-    await expect(processInboxRow('row-bad')).rejects.toThrow(/unknown_event_type/);
+    await expect(processInboxRow('row-bad')).rejects.toThrow(/malformed_webhook_payload/);
+  });
+
+  it('typed webhook dispatch — malformed payload throws MalformedWebhookError', async () => {
+    // The wire format claims a valid event type but is missing required
+    // fields (`midId`, `micampMid`, `rateCard`). Pre-fix this would have
+    // silently advanced to the NotImplementedError stub on body it can't
+    // actually consume. Now: terminal `failed` row with the structured
+    // malformed_webhook_payload reason so an operator sees the contract
+    // drift.
+    rowsStore.set('row-malformed', {
+      id: 'row-malformed',
+      provider: 'micamp',
+      eventId: 'evt_malformed',
+      eventType: 'mid.underwriting.approved',
+      rawBody: JSON.stringify({ id: 'evt_malformed' }),
+      attempts: 0,
+      processingStatus: 'pending',
+    });
+    await expect(processInboxRow('row-malformed')).rejects.toThrow(/malformed_webhook_payload/);
+    const row = rowsStore.get('row-malformed') as {
+      processingStatus: string;
+      failureReason: string;
+    };
+    // Standard catch path: malformed = retryable from the worker's
+    // perspective (in case ops fixes upstream + replays), so it lands
+    // 'pending' on first attempt — not 'failed' — like other handler
+    // exceptions. Same shape as a real partner 500.
+    expect(row.failureReason).toMatch(/malformed_webhook_payload:micamp:mid\.underwriting\.approved/);
   });
 
   it('NotImplementedError → terminal failed immediately (no backoff/retry budget)', async () => {

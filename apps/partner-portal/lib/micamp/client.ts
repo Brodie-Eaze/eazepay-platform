@@ -32,6 +32,7 @@
  */
 
 import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import {
   createHmacWebhookVerifier,
   IntegrationErrorException,
@@ -41,6 +42,11 @@ import {
 } from '@eazepay/integrations-core';
 import { safeLog } from '../safe-log';
 import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
+
+// Re-exported for back-compat; the canonical declaration lives in
+// @eazepay/shared-types/webhook-events alongside the Zod schema that
+// the worker uses to fail-loud on malformed deliveries.
+export type { MicampWebhookEvent } from '@eazepay/shared-types';
 
 /** Per-call timeouts. provision = known-slow (real MiCamp underwriting
  *  takes 5–20s); charge = money path, must fail fast so a hung partner
@@ -53,6 +59,14 @@ const PARTNER = 'micamp' as const;
 
 /* ---------- types ---------- */
 
+/**
+ * Response shapes are declared as Zod schemas; TypeScript types are
+ * derived via `z.infer<>`. Single source of truth — a parse failure at
+ * the boundary throws `IntegrationErrorException({ kind: 'MalformedResponse' })`
+ * so an upstream contract drift surfaces in the inbox / metrics tile
+ * rather than corrupting downstream state via an unchecked `as` cast.
+ */
+
 export type MidProvisioningStatus =
   | 'requested'
   | 'underwriting_pre'
@@ -61,18 +75,20 @@ export type MidProvisioningStatus =
   | 'rejected'
   | 'paused';
 
-export interface RateCard {
+export const RateCardSchema = z.object({
   /** Interchange + assessment pass-through in basis points. */
-  interchangeBps: number;
+  interchangeBps: z.number().int().nonnegative(),
   /** Processor markup in basis points. */
-  processorBps: number;
+  processorBps: z.number().int().nonnegative(),
   /** Per-transaction fee in cents. */
-  perTransactionCents: number;
+  perTransactionCents: z.number().int().nonnegative(),
   /** Monthly service fee in cents. NULL if waived. */
-  monthlyFeeCents: number | null;
+  monthlyFeeCents: z.number().int().nonnegative().nullable(),
   /** Settlement cadence in business days. */
-  settlementDays: number;
-}
+  settlementDays: z.number().int().nonnegative(),
+});
+
+export type RateCard = z.infer<typeof RateCardSchema>;
 
 export interface ProvisionMidRequest {
   partnerId: string;
@@ -90,21 +106,30 @@ export interface ProvisionMidRequest {
   funnelUrls: string[];
 }
 
-export interface ProvisionMidResponse {
-  ok: boolean;
-  midId: string;
-  micampMid: string | null;
-  status: MidProvisioningStatus;
-  rateCard: RateCard;
-  /** Steps in the provisioning workflow + their current status. */
-  steps: Array<{
-    name: string;
-    status: 'pending' | 'in_progress' | 'done' | 'failed' | 'skipped';
-    note: string | null;
-  }>;
-  /** Estimated time-to-active, in hours. NULL once active. */
-  etaHours: number | null;
-}
+export const ProvisionMidResponseSchema = z.object({
+  ok: z.boolean(),
+  midId: z.string().min(1),
+  micampMid: z.string().min(1).nullable(),
+  status: z.enum([
+    'requested',
+    'underwriting_pre',
+    'underwriting_post',
+    'active',
+    'rejected',
+    'paused',
+  ]),
+  rateCard: RateCardSchema,
+  steps: z.array(
+    z.object({
+      name: z.string(),
+      status: z.enum(['pending', 'in_progress', 'done', 'failed', 'skipped']),
+      note: z.string().nullable(),
+    }),
+  ),
+  etaHours: z.number().nullable(),
+});
+
+export type ProvisionMidResponse = z.infer<typeof ProvisionMidResponseSchema>;
 
 export interface ChargeRequest {
   midId: string;
@@ -127,30 +152,57 @@ export interface ChargeRequest {
   metadata?: Record<string, string>;
 }
 
-export interface ChargeResponse {
-  ok: boolean;
-  transactionId: string;
-  status: 'authorized' | 'captured' | 'declined' | 'pending';
-  declineReason: string | null;
-  feeBreakdown: {
-    interchangeCents: number;
-    processorCents: number;
-    perTransactionCents: number;
-    netCents: number;
-  };
-}
+export const ChargeResponseSchema = z.object({
+  ok: z.boolean(),
+  transactionId: z.string().min(1),
+  status: z.enum(['authorized', 'captured', 'declined', 'pending']),
+  declineReason: z.string().nullable(),
+  feeBreakdown: z.object({
+    interchangeCents: z.number().int(),
+    processorCents: z.number().int(),
+    perTransactionCents: z.number().int(),
+    netCents: z.number().int(),
+  }),
+});
 
-export interface SettlementReport {
-  midId: string;
-  periodStart: string;
-  periodEnd: string;
-  grossCents: number;
-  feesCents: number;
-  refundsCents: number;
-  netCents: number;
-  payoutDate: string;
-  payoutStatus: 'pending' | 'in_transit' | 'paid' | 'failed';
-  transactionCount: number;
+export type ChargeResponse = z.infer<typeof ChargeResponseSchema>;
+
+export const SettlementReportSchema = z.object({
+  midId: z.string().min(1),
+  periodStart: z.string().min(1),
+  periodEnd: z.string().min(1),
+  grossCents: z.number().int().nonnegative(),
+  feesCents: z.number().int().nonnegative(),
+  refundsCents: z.number().int().nonnegative(),
+  netCents: z.number().int(),
+  payoutDate: z.string().min(1),
+  payoutStatus: z.enum(['pending', 'in_transit', 'paid', 'failed']),
+  transactionCount: z.number().int().nonnegative(),
+});
+
+export type SettlementReport = z.infer<typeof SettlementReportSchema>;
+
+/**
+ * Parse a JSON response body against a Zod schema, converting parse
+ * failures into the canonical `IntegrationErrorException({ kind:
+ * 'MalformedResponse' })` so route handlers + workers see a uniform
+ * failure shape regardless of which adapter raised it. We pass through
+ * the raw `ZodError.message` as `detail` — it carries the path of the
+ * offending field, which is what an operator needs to triage a
+ * contract drift without re-fetching the request body.
+ */
+function parseMicampResponse<T>(schema: z.ZodType<T>, body: unknown, endpoint: string): T {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    throw new IntegrationErrorException({
+      provider: PARTNER,
+      endpoint,
+      kind: 'MalformedResponse',
+      message: `MiCamp ${endpoint} response did not match schema`,
+      detail: result.error.message,
+    });
+  }
+  return result.data;
 }
 
 /* ---------- env wiring ---------- */
@@ -238,7 +290,7 @@ export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionM
     if (!res.ok) {
       throw new Error(`MiCamp provisioning failed: ${res.status}`);
     }
-    return (await res.json()) as ProvisionMidResponse;
+    return parseMicampResponse(ProvisionMidResponseSchema, await res.json(), 'provisionMid');
   }
 
   const midId = `mid_${Date.now().toString(36)}`;
@@ -281,7 +333,7 @@ export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
     if (!res.ok) {
       throw new Error(`MiCamp charge failed: ${res.status}`);
     }
-    return (await res.json()) as ChargeResponse;
+    return parseMicampResponse(ChargeResponseSchema, await res.json(), 'charge');
   }
 
   const interchangeCents = Math.round((req.amountCents * DEFAULT_RATE_CARD.interchangeBps) / 10000);
@@ -320,7 +372,7 @@ export async function settlementReport(
     if (!res.ok) {
       throw new Error(`MiCamp settlement fetch failed: ${res.status}`);
     }
-    return (await res.json()) as SettlementReport;
+    return parseMicampResponse(SettlementReportSchema, await res.json(), 'settlementReport');
   }
 
   return {
@@ -401,13 +453,9 @@ export function verifyWebhookSignature(
   return micampVerifier.verifySignature(rawBody, signatureHeader);
 }
 
-export type MicampWebhookEvent =
-  | { type: 'mid.underwriting.approved'; midId: string; micampMid: string; rateCard: RateCard }
-  | { type: 'mid.underwriting.rejected'; midId: string; reason: string }
-  | { type: 'mid.post_underwriting'; midId: string; thresholdCents: number }
-  | { type: 'payment.captured'; transactionId: string; midId: string; amountCents: number }
-  | { type: 'payment.refunded'; transactionId: string; midId: string; amountCents: number }
-  | { type: 'settlement.paid'; midId: string; payoutDate: string; netCents: number };
+/* MicampWebhookEvent is exported at the top of this file via re-export
+ * from @eazepay/shared-types — the canonical schema lives there next to
+ * the Zod discriminated union used by the worker. */
 
 /* ---------- MerchantProcessor adapter ---------- */
 
