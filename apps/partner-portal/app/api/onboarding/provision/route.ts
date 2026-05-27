@@ -2,6 +2,18 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { listRuns, startProvision, type ProvisionConfig } from '@/lib/orchestrator/provision';
 import { requireAdmin } from '@/lib/server-guards';
+import {
+  IMPLICIT_DEDUPE_TTL_SECONDS,
+  deriveImplicitKey,
+  hashRequestBody,
+  parseIdempotencyKeyHeader,
+  replayIfStored,
+  storeResponse,
+} from '@/lib/idempotency';
+import { safeLog } from '@/lib/safe-log';
+
+const IDEMPOTENCY_SCOPE = 'onboarding.provision';
+const IMPLICIT_SCOPE = 'onboarding.provision.implicit';
 
 /**
  * POST /api/onboarding/provision
@@ -15,6 +27,17 @@ import { requireAdmin } from '@/lib/server-guards';
  *   2. Lender marketplace defaults (inherit brand allowlist)
  *   3. MiCamp MID (pre-underwriting)
  *   4. Partner-portal seed (branding + owner invite)
+ *
+ * Idempotency
+ * -----------
+ * Every POST requires `Idempotency-Key: <uuid>`. We layer TWO checks:
+ *   • Explicit caller-supplied key (24h TTL) — standard Stripe-style
+ *     replay protection.
+ *   • Implicit `sha256(partnerId|bodyHash)` key (5min TTL) — defeats
+ *     the double-click case where the operator's second click mints
+ *     a fresh Idempotency-Key client-side. Without this, two near-
+ *     simultaneous clicks would each create a HighSale sub-account +
+ *     a MiCamp MID against the same partner.
  *
  * GET /api/onboarding/provision  — list recent runs (for the admin
  *                                  provisioning queue page).
@@ -44,6 +67,12 @@ export async function POST(req: NextRequest) {
   const guard = await requireAdmin(req);
   if (guard instanceof NextResponse) return guard;
 
+  // Idempotency-Key required — a double-click on the admin provision
+  // button would otherwise mint TWO HighSale sub-accounts + TWO MiCamp
+  // MIDs for the same partner. Real money side-effects.
+  const idempotencyKey = parseIdempotencyKeyHeader(req);
+  if (idempotencyKey instanceof NextResponse) return idempotencyKey;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -57,6 +86,25 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  // Explicit caller-supplied key replay (24h TTL).
+  const requestHash = hashRequestBody(raw);
+  const replay = await replayIfStored(IDEMPOTENCY_SCOPE, idempotencyKey, requestHash);
+  if (replay) return replay;
+
+  // Implicit dedupe — even if the operator generated a brand-new
+  // Idempotency-Key on the second click, the same (partnerId, body)
+  // pair within a 5-minute window collapses to the prior run. Belt
+  // to the Idempotency-Key braces.
+  const implicitKey = deriveImplicitKey([parsed.data.partnerId, requestHash]);
+  const implicitReplay = await replayIfStored(IMPLICIT_SCOPE, implicitKey, requestHash);
+  if (implicitReplay) {
+    safeLog.info({
+      event: 'onboarding.provision.implicit_dedupe.hit',
+      partnerId: parsed.data.partnerId,
+    });
+    return implicitReplay;
   }
 
   const config: ProvisionConfig = {
@@ -78,6 +126,20 @@ export async function POST(req: NextRequest) {
   };
 
   const run = await startProvision(config);
+
+  // Store under BOTH scopes so subsequent retries — whether they reuse
+  // the same Idempotency-Key, or mint a fresh one within 5 minutes —
+  // hit the existing run instead of provisioning again.
+  await storeResponse(IDEMPOTENCY_SCOPE, idempotencyKey, requestHash, 202, run);
+  await storeResponse(
+    IMPLICIT_SCOPE,
+    implicitKey,
+    requestHash,
+    202,
+    run,
+    IMPLICIT_DEDUPE_TTL_SECONDS,
+  );
+
   return NextResponse.json(run, { status: 202 });
 }
 

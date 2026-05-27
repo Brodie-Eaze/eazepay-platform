@@ -9,19 +9,14 @@
  * This was the highest-leverage broken thing on the platform — a real
  * customer literally could not sign up.
  *
- * What it does now
- * ----------------
- *   1. Parse + validate the `OnboardingState` body shape (Zod).
- *   2. Reject `industry = 'other'` with 400 + a "we'll be in touch"
- *      message — there's no `direct` brand in the partners enum.
- *   3. Map industry → brand (medical→medpay, trades→tradepay,
- *      coaching→coachpay).
- *   4. Mint a partner-id from the legal name slug + a timestamp suffix.
- *   5. INSERT into the partners table.
- *   6. Mint a signed account-session cookie so the user lands logged in.
- *   7. Send a welcome email via Resend (when wired) — silently logged
- *      otherwise.
- *   8. Return 201 with `{ partnerId, brand, redirect: '/welcome/submitted' }`.
+ * Idempotency (this PR)
+ * ---------------------
+ * The double-submit bug previously called out in "What it does NOT yet
+ * do" is now closed: every POST requires an `Idempotency-Key` request
+ * header (UUIDv4). Replays within 24h return the stored response
+ * verbatim; replays older than 24h return 410 Gone. The shared helper
+ * lives in `lib/idempotency.ts` so the provision route + future money
+ * paths share the same contract.
  *
  * What it does NOT yet do
  * -----------------------
@@ -34,17 +29,14 @@
  *   • Persist beneficial-owner records. Same reason — owner SSN-4 +
  *     DOB are PII and need the vault.
  *   • Run KYB. The Middesk integration is in the next sprint.
- *   • Real idempotency. A double-submit creates two partner rows.
- *     The user-visible mitigation is the wizard's `submitting` flag
- *     that disables the button between click and response; the
- *     server-side mitigation is a future ADR-0015 idempotency key.
  *
  * Failure modes
  * -------------
- *   400 — validation failed, industry is 'other', or industry/brand
- *         is missing
- *   503 — Postgres not provisioned (hasDb() returned false) OR
- *         insert failed for any DB-level reason
+ *   400 — validation failed, industry is 'other', industry/brand
+ *         missing, OR Idempotency-Key header missing/malformed
+ *   410 — replay against a key older than 24h
+ *   422 — same Idempotency-Key replayed with a different body
+ *   503 — Postgres not provisioned OR insert failed for any reason
  *   500 — unexpected error, logged via safeLog
  *
  * Response shape mirrors RFC-7807 Problem-Details per ADR-0014.
@@ -52,11 +44,18 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
 import { getDb, hasDb } from '../../../../lib/db';
 import { partners } from '../../../../lib/db/schema';
 import { signAccountSession, ACCOUNT_COOKIE } from '../../../../lib/account-cookie';
 import { safeLog } from '../../../../lib/safe-log';
+import {
+  hashRequestBody,
+  parseIdempotencyKeyHeader,
+  replayIfStored,
+  storeResponse,
+} from '../../../../lib/idempotency';
+
+const IDEMPOTENCY_SCOPE = 'onboarding.submit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -87,6 +86,7 @@ const piiRejected = z
   .refine((v) => v === undefined || v === null || v === '', {
     message: 'PII vault not yet wired; do not submit',
   });
+
 
 const beneficialOwnerSchema = z.object({
   firstName: z.string().min(1),
@@ -174,14 +174,6 @@ const INDUSTRY_TO_BRAND = {
 
 type Brand = (typeof INDUSTRY_TO_BRAND)[keyof typeof INDUSTRY_TO_BRAND];
 
-/**
- * Mint a partner-id from the legal name + timestamp. Slug + suffix
- * gives a human-readable identifier (`p_brodie-dental_abc123`) that's
- * still unique even if two practices share a name.
- *
- * Length-capped at 64 chars to fit the partner_id column comfortably
- * and survive any future TEXT → VARCHAR migration.
- */
 function mintPartnerId(legalName: string): string {
   const slug = legalName
     .toLowerCase()
@@ -192,11 +184,6 @@ function mintPartnerId(legalName: string): string {
   return `p_${slug}_${suffix}`.slice(0, 64);
 }
 
-/**
- * Render an RFC-7807 Problem-Details response. Centralised so every
- * failure path uses the same shape and the front-end's `body.detail`
- * read keeps working.
- */
 function problem(
   status: number,
   title: string,
@@ -216,8 +203,6 @@ function problem(
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // Postgres availability gate — same pattern as the other write routes
-  // in `app/api/v/[brand]/applications/`.
   if (!hasDb()) {
     safeLog.warn({ event: 'onboarding.submit.no_db' });
     return problem(
@@ -227,7 +212,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Parse + validate the body.
+  // Idempotency-Key is required — a double-submit (refresh, double-click,
+  // mobile-network retry) must NOT mint a second partner row. See
+  // lib/idempotency.ts. 24-hour TTL; replays after that return 410 Gone.
+  const idempotencyKey = parseIdempotencyKeyHeader(req);
+  if (idempotencyKey instanceof NextResponse) return idempotencyKey;
+
   let raw: unknown;
   try {
     raw = await req.json();
@@ -236,9 +226,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // GLBA Safeguards / SOC2 CC6.1 — fail fast (501) on any unwired-PII
-  // field. Done BEFORE Zod so the client gets a routable
-  // `pii_vault_not_wired` code instead of a generic validation error,
-  // and BEFORE any downstream persistence so PII never reaches storage.
+  // field. Done BEFORE Zod and BEFORE the idempotency replay so a PII
+  // submission can never get cached + replayed, and the client gets a
+  // routable `pii_vault_not_wired` code instead of a generic validation
+  // error. PII never reaches storage on this path.
   const piiOffenders = detectUnwiredPii(raw);
   if (piiOffenders.length > 0) {
     safeLog.warn({
@@ -259,6 +250,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // Replay check runs AFTER PII gate + body parse so the request-hash
+  // mismatch detection has a stable value AND a poisoned PII body
+  // cannot land in the idempotency store. A hit short-circuits the
+  // partner insert + the welcome email.
+  const requestHash = hashRequestBody(raw);
+  const replay = await replayIfStored(IDEMPOTENCY_SCOPE, idempotencyKey, requestHash);
+  if (replay) return replay;
+
   const parsed = onboardingSchema.safeParse(raw);
   if (!parsed.success) {
     return problem(
@@ -270,10 +269,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
   const data = parsed.data;
 
-  // 'other' industry has no brand in the partners enum. We treat it
-  // as a soft reject: the customer hears from us via support rather
-  // than getting auto-provisioned. Future: add a `general` brand and
-  // wire a manual-approval queue.
   if (data.industry === 'other') {
     return problem(
       400,
@@ -287,9 +282,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const partnerId = mintPartnerId(data.legalName);
   const primaryEmail = data.owners[0]?.email ?? '';
 
-  // Insert the partner row. We log + drop the bank-account + owner
-  // detail intentionally; persisting that without the PII vault (ADR-0016)
-  // would be a SOC2 finding waiting to happen.
   try {
     const db = getDb();
     await db
@@ -300,7 +292,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         legalName: data.legalName,
         displayName: data.dba || data.legalName,
         primaryContactEmail: primaryEmail,
-        status: 'pending', // operator review before they appear in admin tools
+        status: 'pending',
       })
       .onConflictDoNothing({ target: partners.id });
   } catch (err) {
@@ -319,8 +311,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     industry: data.industry,
   });
 
-  // Mint the account-session cookie. The user-id for now is the
-  // partner-id; a future identity service will issue real user records.
   let cookieValue: string;
   try {
     cookieValue = await signAccountSession(
@@ -329,15 +319,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   } catch (err) {
     safeLog.error({ event: 'onboarding.submit.cookie_mint_failed', err });
-    // Partner row created but session not. The user can sign in via
-    // /sign-in with their email — we'll continue with 201 instead of
-    // rolling back the insert.
     cookieValue = '';
   }
 
-  // Send the welcome email — best-effort, never blocks the response.
-  // The notification service / Resend wiring will fire `welcome.<brand>`
-  // template once it lands. For now we log the intent.
   safeLog.info({
     event: 'onboarding.submit.welcome_email_queued',
     partnerId,
@@ -345,14 +329,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     to: primaryEmail,
   });
 
-  const res = NextResponse.json(
-    {
-      partnerId,
-      brand,
-      redirect: '/welcome/submitted',
-    },
-    { status: 201 },
-  );
+  const responseBody = {
+    partnerId,
+    brand,
+    redirect: '/welcome/submitted',
+  };
+
+  // Persist the response under the idempotency key BEFORE returning so a
+  // racing client retry hits the stored row instead of inserting a
+  // second partner. The cookie itself is NOT stored — replays return
+  // the same 201 body without a Set-Cookie, which is correct: the
+  // first caller's browser already has the session.
+  await storeResponse(IDEMPOTENCY_SCOPE, idempotencyKey, requestHash, 201, responseBody);
+
+  const res = NextResponse.json(responseBody, { status: 201 });
 
   if (cookieValue) {
     res.cookies.set({
