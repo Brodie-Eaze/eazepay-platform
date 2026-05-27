@@ -22,6 +22,11 @@
  * REST API is the no-money option) because two replicas each
  * counting 20 ≈ 40/min/IP defeats the cap.
  *
+ * Follow-up: SEC-207 — see `edge-rate-limit-upstash.ts` for the stub
+ * that the Upstash wiring will replace. Flip every call site in
+ * app/api/* from `enforce(ip)` to `await enforceShared(ip)` in one PR
+ * once the Upstash env vars are provisioned in Railway.
+ *
  * Sliding-window math: we keep an array of request timestamps per IP,
  * drop entries older than the window on each call, and reject when
  * the surviving count meets the limit. O(log n) cost per request via

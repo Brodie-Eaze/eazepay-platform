@@ -2,6 +2,28 @@ import { describe, it, expect } from 'vitest';
 import { redactForLog } from './safe-log';
 
 describe('redactForLog', () => {
+  it('SEC-208 — redacts Error.message (often echoes user input / PII)', () => {
+    const err = new Error('duplicate key (email)=(brodie@amalafinance.com.au)');
+    const out = redactForLog({ event: 'thing.failed', err }) as Record<string, unknown>;
+    expect(out.event).toBe('thing.failed');
+    const errOut = out.err as Record<string, unknown>;
+    expect(errOut.message).toBe('[redacted]');
+    expect(errOut.errorName).toBe('Error');
+    // The raw message must not appear anywhere in the serialized output.
+    expect(JSON.stringify(out)).not.toContain('brodie@amalafinance');
+    expect(JSON.stringify(out)).not.toContain('duplicate key');
+  });
+
+  it('SEC-208 — redacts subclassed Errors and preserves class name', () => {
+    class CustomError extends Error {
+      override name = 'CustomError';
+    }
+    const out = redactForLog(new CustomError('ssn=123-45-6789 leaked')) as Record<string, unknown>;
+    expect(out.errorName).toBe('CustomError');
+    expect(out.message).toBe('[redacted]');
+    expect(JSON.stringify(out)).not.toContain('123-45-6789');
+  });
+
   it('passes primitives through untouched', () => {
     expect(redactForLog('hello')).toBe('hello');
     expect(redactForLog(42)).toBe(42);

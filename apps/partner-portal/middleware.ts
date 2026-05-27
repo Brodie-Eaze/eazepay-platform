@@ -124,6 +124,25 @@ export async function middleware(req: NextRequest) {
   requestHeaders.set('x-pathname', pathname);
   const res = NextResponse.next({ request: { headers: requestHeaders } });
 
+  // SEC-212 — sensitive paths must not be cached by intermediaries.
+  // Session-bearing + per-tenant + admin routes carry identity-tied or
+  // org-scoped payloads. A shared corporate proxy / mis-configured CDN
+  // / browser back-button cache holding a 200 from these endpoints
+  // would replay the cached body to a second viewer on the same hop.
+  // `no-store` forbids storage entirely.
+  const sensitivePathPrefixes = [
+    '/api/account',
+    '/api/admin',
+    '/api/v/',
+    '/api/auth',
+    '/v/', // brand-portal pages render per-tenant data inside the brand path
+  ];
+  if (sensitivePathPrefixes.some((p) => pathname.startsWith(p))) {
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.headers.set('Pragma', 'no-cache');
+    res.headers.set('Expires', '0');
+  }
+
   // Mint a CSRF token cookie if missing. We do this on every GET
   // (public OR authenticated) so the cookie is already present when
   // the React tree renders a form. State-changing routes — including

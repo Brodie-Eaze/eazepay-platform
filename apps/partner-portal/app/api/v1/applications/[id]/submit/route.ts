@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { idFor, problem, withMeta } from '../../../../../../lib/api-v1/shared';
+import { enforceCsrf } from '../../../../../../lib/csrf';
 
 /**
  * Submit application — `POST /api/v1/applications/[id]/submit`.
@@ -19,6 +20,12 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest, ctx: { params: { id: string } }) {
+  // SEC-205: explicit-consent submission must be CSRF-protected. A
+  // cross-site forged POST could trigger orchestration (and downstream
+  // soft-pull bureau hits) under a victim's account.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {

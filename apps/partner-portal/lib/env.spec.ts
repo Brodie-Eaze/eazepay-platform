@@ -78,6 +78,33 @@ describe('lib/env — assertProdEnv', () => {
       expect(result.ok).toBe(true);
     });
 
+    it('SEC-209 — throws when MICAMP_WEBHOOK_INSECURE_ALLOW=true in prod', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_WEBHOOK_INSECURE_ALLOW = 'true';
+      expect(() => assertProdEnv()).toThrow(/MICAMP_WEBHOOK_INSECURE_ALLOW/);
+      delete process.env.MICAMP_WEBHOOK_INSECURE_ALLOW;
+    });
+
+    it('SEC-209 — throws when MICAMP_DEV_SKIP_WEBHOOK_SIG=1 in prod', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG = '1';
+      expect(() => assertProdEnv()).toThrow(/MICAMP_DEV_SKIP_WEBHOOK_SIG/);
+      delete process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG;
+    });
+
+    it('SEC-209 — does not throw when dev-skip flag is unset / false', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG = 'false';
+      expect(() => assertProdEnv()).not.toThrow();
+      delete process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG;
+    });
+
     it('aggregates multiple failures into one error message', () => {
       // All three required vars missing → one throw with all three named.
       let caught: Error | null = null;
