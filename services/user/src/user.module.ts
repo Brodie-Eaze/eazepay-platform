@@ -1,5 +1,8 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { DynamicModule, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { KMSClient } from '@aws-sdk/client-kms';
+import type { PrismaClient } from '@prisma/client';
+import { AwsKmsKeyManager } from './adapters/aws-kms-key-manager.adapter.js';
 import { LocalKeyManager } from './adapters/local-key-manager.adapter.js';
 import { MockKycAdapter } from './adapters/mock-kyc.adapter.js';
 import { PiiVaultService } from './internal/pii-vault.service.js';
@@ -14,7 +17,15 @@ export interface UserModuleOptions {
   /** Hex-encoded 32-byte KEK for the LocalKeyManager. Required when
    *  keyManager === 'local'. */
   localKekHex?: string;
-  keyManager: 'local' | 'kms';
+  /** KMS key ARN or alias for AwsKmsKeyManager. Required when
+   *  keyManager === 'aws-kms'. */
+  kmsKeyId?: string;
+  /** AWS region override for the KMS client. Falls back to the SDK
+   *  default credential chain / `AWS_REGION` when omitted. */
+  kmsRegion?: string;
+  /** `local` for dev (KEK from env), `aws-kms` for the production
+   *  AWS KMS path. `kms` kept as a back-compat alias for `aws-kms`. */
+  keyManager: 'local' | 'kms' | 'aws-kms';
   kycProvider: 'mock' | 'alloy' | 'persona';
   isDevelopment: boolean;
 }
@@ -36,7 +47,26 @@ export class UserModule {
           }
           return new LocalKeyManager(options.localKekHex);
         }
-        throw new Error('KMS KeyManager not yet implemented');
+        if (options.keyManager === 'aws-kms' || options.keyManager === 'kms') {
+          // Resolve the KMS key id lazily so dev/test boots that never
+          // select this path don't need the AWS env present (per the
+          // module-load safety rule in PR #170's audit comments).
+          const keyId = options.kmsKeyId ?? process.env.KMS_KEK_KEY_ID;
+          if (!keyId) {
+            throw new Error(
+              'UserModule: keyManager=aws-kms requires kmsKeyId option or KMS_KEK_KEY_ID env (full KMS key ARN or alias).',
+            );
+          }
+          const client = new KMSClient({
+            ...(options.kmsRegion ? { region: options.kmsRegion } : {}),
+          });
+          return new AwsKmsKeyManager({ keyId, client });
+        }
+        // Exhaustiveness: any future literal added to the union must
+        // be handled above. The cast lets the compiler still flag a
+        // missing branch via the unreachable assignment.
+        const _exhaustive: never = options.keyManager;
+        throw new Error(`UserModule: unsupported keyManager=${String(_exhaustive)}`);
       },
     };
 
