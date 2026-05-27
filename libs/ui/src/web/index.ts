@@ -16,6 +16,7 @@ export { Logo } from './Logo.js';
 export * from './Icon.js';
 export { Button } from './Button.js';
 export type { ButtonVariant, ButtonSize } from './Button.js';
+export { BackButton } from './BackButton.js';
 export { Input, Textarea, Select } from './Input.js';
 export { Card, CardHeader, CardBody, CardFooter } from './Card.js';
 export { StatusPill } from './StatusPill.js';
