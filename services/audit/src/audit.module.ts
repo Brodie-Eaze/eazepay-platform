@@ -4,13 +4,19 @@ import type { PrismaClient } from '@prisma/client';
 import { AuditDrainService } from './audit-drain.service.js';
 import { AUDIT_SINK } from './ports/audit-sink.port.js';
 import { LocalFsAuditSink } from './adapters/local-fs-audit-sink.adapter.js';
+import {
+  S3AuditWormAdapter,
+  loadS3AuditWormConfigFromEnv,
+} from './adapters/s3-audit-worm.adapter.js';
+import { S3AuditDrainSink } from './adapters/s3-audit-drain-sink.adapter.js';
 import { AUDIT_DRAIN_CRON_OPTIONS, PRISMA } from './internal/tokens.js';
 import { CronLeaderService } from './internal/cron-leader.service.js';
 
 export interface AuditModuleOptions {
   prismaToken: symbol | string | (abstract new (...args: never[]) => PrismaClient);
-  /** Sink kind. 'local-fs' is dev only. */
-  sink: 'local-fs' | 'dynamodb';
+  /** Sink kind. 'local-fs' is dev only; 's3-aws' is the production
+   *  target backed by S3 Object Lock (GOVERNANCE, 7yr retain). */
+  sink: 'local-fs' | 'dynamodb' | 's3-aws';
   /** Root dir for the local-fs sink. */
   localFsRoot?: string;
   /** Umbrella leader gate — set by the caller from `env.CRON_LEADER`.
@@ -40,6 +46,16 @@ export class AuditModule {
             throw new Error('local-fs audit sink requires localFsRoot');
           }
           return new LocalFsAuditSink(options.localFsRoot);
+        }
+        if (options.sink === 's3-aws') {
+          // Construction throws fast (and loud) if any AWS env var is
+          // missing — boot-time guard is intentional. The drain wraps
+          // the WORM adapter in an in-process chain-head bridge so the
+          // drain port's `put(record)` contract is satisfied without
+          // round-tripping S3 for each chain head fetch.
+          const cfg = loadS3AuditWormConfigFromEnv();
+          const worm = new S3AuditWormAdapter(cfg);
+          return new S3AuditDrainSink(worm);
         }
         throw new Error(`audit sink ${options.sink} not yet implemented`);
       },
