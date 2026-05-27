@@ -14,6 +14,10 @@
  *   - SoftPullProvider     (HighSale today)
  *   - WebhookVerifier      (one HMAC implementation shared by all)
  *   - IntegrationError     (closed discriminated union of failure modes)
+ *   - KeyManager           (envelope-encryption port — LocalKeyManager
+ *                           in services/user, MockKmsKeyManager here for
+ *                           the rewrap-migration cutover, AwsKmsKeyManager
+ *                           added once AWS account is provisioned)
  *
  * What does NOT live here:
  *   - Env wiring, secret loading, fail-loud module-load guards. Those
@@ -29,3 +33,5 @@ export * from './soft-pull-provider.js';
 export * from './webhook-verification-result.js';
 export * from './webhook-verifier.js';
 export * from './outbox-prisma.js';
+export * from './key-manager.js';
+export * from './mock-kms-key-manager.js';

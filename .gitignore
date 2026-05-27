@@ -87,7 +87,19 @@ playwright-report/
 apps/partner-portal/public/flow-screenshots/
 apps/partner-portal/scripts/capture-*.mjs
 flow-chart.html
-/scripts/
+
+# /scripts/ — operator-only by default (one-shot personal helpers), with
+# explicit negations for production-shipping migration scripts that MUST
+# be committed. A directory-level ignore (`/scripts/`) cannot be undone
+# by file-level negations, so we ignore contents instead and re-include
+# the load-bearing files one by one. New committed scripts must add a
+# matching `!` line here.
+/scripts/*
+!/scripts/migrate-deks-to-kms.ts
+!/scripts/migrate-deks-to-kms.spec.ts
+!/scripts/package.json
+!/scripts/tsconfig.json
+!/scripts/vitest.config.ts
 
 # git worktrees
 .worktrees/

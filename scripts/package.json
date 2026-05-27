@@ -1,0 +1,21 @@
+{
+  "name": "@eazepay/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Operator-facing one-shot scripts (data migrations, cutovers, backfills). NOT a runtime dependency of any service — invoked directly via `pnpm tsx scripts/<name>.ts`.",
+  "scripts": {
+    "migrate:deks": "tsx migrate-deks-to-kms.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@eazepay/integrations-core": "workspace:*",
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^17.4.2",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "vitest": "^2.1.0"
+  }
+}
