@@ -120,119 +120,128 @@ export default function AccessMatrixPage() {
     (o) => o.merchantId === selectedPartnerId,
   ).length;
 
-  const columns: Column<(typeof marketplaceLenders)[number]>[] = [
-    {
-      key: 'lender',
-      header: 'Lender',
-      cell: (l) => {
-        const mkt = marketplaces.find((m) => m.id === l.marketplaceId)!;
-        return (
-          <div>
-            <div className="font-medium">{l.displayName}</div>
-            <div className="text-[12px] text-fg-muted">
-              {l.legalName} · {mkt.displayName}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      key: 'tiers',
-      header: 'Tiers',
-      cell: (l) => (
-        // Single-line tier list. If the lender serves all 4 tiers we
-        // collapse to one "All tiers" pill so the row stays tight.
-        <div className="flex items-center gap-1 whitespace-nowrap">
-          {l.servesTiers.length >= 4 ? (
-            <StatusPill tone="neutral">All tiers</StatusPill>
-          ) : (
-            l.servesTiers.map((t) => <TierPill key={t} tier={t} />)
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'envelope',
-      header: 'Envelope',
-      align: 'right',
-      cell: (l) => (
-        <span className="text-[12px] tabular-nums text-fg-muted">
-          <Money cents={l.minAmountCents} compact noFractions /> –{' '}
-          <Money cents={l.maxAmountCents} compact noFractions />
-        </span>
-      ),
-    },
-    {
-      key: 'access',
-      header: 'Access',
-      align: 'right',
-      cell: (l) => {
-        const status = accessFor(l.id);
-        const lender = marketplaceLenders.find((ml) => ml.id === l.id)!;
-        const isOverridden = status.via === 'override';
-        const isPaused = status.via === 'marketplace-paused';
-
-        if (isPaused) {
+  // Memoised: was a fresh array on every render → DataTable saw new
+  // column refs every state change → internal table state remounted →
+  // visible flicker + scroll position reset on each toggle. User
+  // explicitly reported: 'whenever I make a change in this page, it
+  // flickers and restarts each time.'
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const columns: Column<(typeof marketplaceLenders)[number]>[] = useMemo(
+    () => [
+      {
+        key: 'lender',
+        header: 'Lender',
+        cell: (l) => {
+          const mkt = marketplaces.find((m) => m.id === l.marketplaceId)!;
           return (
-            <div className="flex items-center justify-end gap-2">
-              <StatusPill tone="warning">Marketplace paused</StatusPill>
+            <div>
+              <div className="font-medium">{l.displayName}</div>
+              <div className="text-[12px] text-fg-muted">
+                {l.legalName} · {mkt.displayName}
+              </div>
             </div>
           );
-        }
-
-        const handleToggle = () => setOverride(l.id, !status.enabled);
-
-        return (
-          <div className="flex items-center justify-end gap-2">
-            {isOverridden && (
-              <button
-                type="button"
-                onClick={() => setOverride(l.id, null)}
-                className="text-[10px] text-fg-muted hover:text-fg underline-offset-2 hover:underline transition"
-                title={`Reset to global default (${lender.globallyEnabled ? 'enabled' : 'disabled'})`}
-              >
-                reset
-              </button>
+        },
+      },
+      {
+        key: 'tiers',
+        header: 'Tiers',
+        cell: (l) => (
+          // Single-line tier list. If the lender serves all 4 tiers we
+          // collapse to one "All tiers" pill so the row stays tight.
+          <div className="flex items-center gap-1 whitespace-nowrap">
+            {l.servesTiers.length >= 4 ? (
+              <StatusPill tone="neutral">All tiers</StatusPill>
+            ) : (
+              l.servesTiers.map((t) => <TierPill key={t} tier={t} />)
             )}
-            <label
-              className="relative inline-flex items-center gap-2 cursor-pointer"
-              title={
-                status.enabled
-                  ? 'Click to disable for this partner'
-                  : 'Click to enable for this partner'
-              }
-            >
-              <span
-                className={`text-[11px] tabular-nums font-medium ${
-                  status.enabled ? 'text-fg' : 'text-fg-muted'
-                }`}
-                aria-hidden
-              >
-                {status.enabled ? 'On' : 'Off'}
-              </span>
-              <input
-                type="checkbox"
-                checked={status.enabled}
-                onChange={handleToggle}
-                className="peer sr-only"
-                aria-label={`Toggle ${l.displayName} for this partner`}
-              />
-              <span
-                className="relative h-5 w-9 rounded-full bg-bg-muted ring-1 ring-border transition-colors duration-200 peer-checked:bg-emerald-500 peer-checked:ring-emerald-600/40 peer-focus-visible:ring-2 peer-focus-visible:ring-border-focus"
-                aria-hidden
+          </div>
+        ),
+      },
+      {
+        key: 'envelope',
+        header: 'Envelope',
+        align: 'right',
+        cell: (l) => (
+          <span className="text-[12px] tabular-nums text-fg-muted">
+            <Money cents={l.minAmountCents} compact noFractions /> –{' '}
+            <Money cents={l.maxAmountCents} compact noFractions />
+          </span>
+        ),
+      },
+      {
+        key: 'access',
+        header: 'Access',
+        align: 'right',
+        cell: (l) => {
+          const status = accessFor(l.id);
+          const lender = marketplaceLenders.find((ml) => ml.id === l.id)!;
+          const isOverridden = status.via === 'override';
+          const isPaused = status.via === 'marketplace-paused';
+
+          if (isPaused) {
+            return (
+              <div className="flex items-center justify-end gap-2">
+                <StatusPill tone="warning">Marketplace paused</StatusPill>
+              </div>
+            );
+          }
+
+          const handleToggle = () => setOverride(l.id, !status.enabled);
+
+          return (
+            <div className="flex items-center justify-end gap-2">
+              {isOverridden && (
+                <button
+                  type="button"
+                  onClick={() => setOverride(l.id, null)}
+                  className="text-[10px] text-fg-muted hover:text-fg underline-offset-2 hover:underline transition"
+                  title={`Reset to global default (${lender.globallyEnabled ? 'enabled' : 'disabled'})`}
+                >
+                  reset
+                </button>
+              )}
+              <label
+                className="relative inline-flex items-center gap-2 cursor-pointer"
+                title={
+                  status.enabled
+                    ? 'Click to disable for this partner'
+                    : 'Click to enable for this partner'
+                }
               >
                 <span
-                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                    status.enabled ? 'translate-x-4' : ''
+                  className={`text-[11px] tabular-nums font-medium ${
+                    status.enabled ? 'text-fg' : 'text-fg-muted'
                   }`}
+                  aria-hidden
+                >
+                  {status.enabled ? 'On' : 'Off'}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={status.enabled}
+                  onChange={handleToggle}
+                  className="peer sr-only"
+                  aria-label={`Toggle ${l.displayName} for this partner`}
                 />
-              </span>
-            </label>
-          </div>
-        );
+                <span
+                  className="relative h-5 w-9 rounded-full bg-bg-muted ring-1 ring-border transition-colors duration-200 peer-checked:bg-emerald-500 peer-checked:ring-emerald-600/40 peer-focus-visible:ring-2 peer-focus-visible:ring-border-focus"
+                  aria-hidden
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                      status.enabled ? 'translate-x-4' : ''
+                    }`}
+                  />
+                </span>
+              </label>
+            </div>
+          );
+        },
       },
-    },
-  ];
+    ],
+    [overrides, selectedPartnerId],
+  );
 
   return (
     <>

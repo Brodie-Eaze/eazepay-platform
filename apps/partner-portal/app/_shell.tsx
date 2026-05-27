@@ -123,7 +123,11 @@ const masterGroups: NavGroup[] = [
     label: 'Command Centre',
     items: [
       { href: '/', label: 'Command Center', icon: <GaugeIcon /> },
-      { href: '/control-panel', label: 'Control Panel', icon: <SettingsIcon /> },
+      // 'Control Panel' removed from Command Centre group on
+      // 2026-05-27 — it pointed at /control-panel which is now the
+      // primary 'Partners' destination, causing both sidebar entries
+      // to highlight on the same URL. Operators reach the partners
+      // grid via Partners > Partners.
       { href: '/reports', label: 'Reports', icon: <ChartIcon /> },
       { href: '/insights', label: 'Insights', icon: <SparkIcon /> },
     ],
