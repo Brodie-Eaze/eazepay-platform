@@ -42,11 +42,18 @@ RUN apk add --no-cache libc6-compat \
   && corepack enable \
   && corepack prepare pnpm@9.12.0 --activate
 
-# Bring in the installed node_modules + the full repo source.
+# Bring in the full repo source FIRST, then layer installed node_modules
+# ON TOP. Order matters: if we copied libs/ from deps before `COPY . .`,
+# the source copy would overwrite libs/ui/node_modules (pnpm's symlinks
+# to motion, cmdk, radix, etc.) — which is exactly how Railway builds
+# started failing with "Module not found: 'motion/react'".
+COPY . .
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/apps/partner-portal/node_modules ./apps/partner-portal/node_modules
-COPY --from=deps /repo/libs ./libs
-COPY . .
+COPY --from=deps /repo/libs/ui/node_modules ./libs/ui/node_modules
+COPY --from=deps /repo/libs/shared-types/node_modules ./libs/shared-types/node_modules
+COPY --from=deps /repo/libs/shared-utils/node_modules ./libs/shared-utils/node_modules
+COPY --from=deps /repo/libs/api-client/node_modules ./libs/api-client/node_modules
 
 # Build the partner-portal app. `output: 'standalone'` in next.config.mjs
 # writes the trim-down bundle to apps/partner-portal/.next/standalone.
