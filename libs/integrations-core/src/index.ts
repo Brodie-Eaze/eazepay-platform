@@ -25,6 +25,7 @@
 
 export * from './errors.js';
 export * from './merchant-processor.js';
+export * from './sanctions-screen.js';
 export * from './soft-pull-provider.js';
 export * from './webhook-verification-result.js';
 export * from './webhook-verifier.js';

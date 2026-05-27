@@ -1,11 +1,14 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type { PrismaClient } from '@prisma/client';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { BadRequest, Conflict, Forbidden, NotFound, sha256Hex } from '@eazepay/shared-utils';
 import type { MerchantId, UserId } from '@eazepay/shared-types';
 import type { PiiVaultService } from '@eazepay/service-user';
 import { type PiiV1 } from '@eazepay/service-user';
+import type { SanctionsScreen, SanctionsScreenResult } from '@eazepay/integrations-core';
+import { SANCTIONS_SCREEN } from '@eazepay/integrations-core';
 import { MERCHANT_REGISTRATION_REQUIRES_ADMIN, PRISMA } from './internal/tokens.js';
+import { KybValidationError } from './internal/kyb-validation-error.js';
 import { KYB_PROVIDER, type KybProvider } from './ports/kyb-provider.port.js';
 import type { BoPiiV1 } from './bo-pii.types.js';
 import type { CreateMerchantDto } from './dto/create-merchant.dto.js';
@@ -14,6 +17,30 @@ import type { CreateApplicationLinkDto } from './dto/create-application-link.dto
 
 const PROHIBITED_NAICS_PREFIXES = ['7132', '7139', '7224', '7222']; // gambling, adult, etc — placeholder
 const TOKEN_BYTES = 32;
+
+/**
+ * FinCEN CDD Rule (31 CFR §1010.230) — beneficial ownership requirements.
+ *
+ * Two prongs MUST be satisfied at KYB initiation:
+ *
+ *   1. Ownership prong: every individual who, directly or indirectly,
+ *      owns ≥25% of the equity is a beneficial owner. By construction
+ *      that's at most four BOs. The platform enforces this floor as
+ *      "declared owners cumulatively cover ≥75% of equity AND each
+ *      declared owner ≥25%". The 25% per-owner check guards against
+ *      a single declared 75% owner being used to bypass disclosure
+ *      of the remaining shareholders.
+ *
+ *   2. Controller prong: ONE individual with significant managerial
+ *      control (CEO, COO, GP, etc.) must be on file regardless of
+ *      ownership stake. This is the `isControlling=true` BO.
+ *
+ * Rejecting at the service boundary keeps the regulatory check off
+ * the route handler and out of the KYB adapter — both happy and
+ * error paths flow through one place that the audit log can trust.
+ */
+const BO_OWNERSHIP_PCT_FLOOR_PER_OWNER = 25;
+const BO_CUMULATIVE_COVERAGE_FLOOR_PCT = 75;
 
 @Injectable()
 export class MerchantService {
@@ -25,6 +52,11 @@ export class MerchantService {
     @Inject(KYB_PROVIDER) private readonly kyb: KybProvider,
     @Inject(MERCHANT_REGISTRATION_REQUIRES_ADMIN)
     private readonly requiresAdmin: boolean,
+    // Optional so existing test fixtures that don't wire the sanctions
+    // port keep compiling; production MerchantModule.forRoot always
+    // binds an adapter, and startKyb() asserts non-null at call time
+    // so a missing port can't silently skip OFAC screening.
+    @Optional() @Inject(SANCTIONS_SCREEN) private readonly sanctions: SanctionsScreen | null = null,
   ) {}
 
   async create(userId: UserId, dto: CreateMerchantDto): Promise<{ id: MerchantId; slug: string }> {
@@ -208,6 +240,39 @@ export class MerchantService {
       });
     }
 
+    // FinCEN CDD — ownership prong. Every declared owner must be ≥25%
+    // (per-row guard so a 10% + 70% declaration can't slip through as
+    // "two BOs covering 80%"), and the cumulative coverage across all
+    // declared owners must be ≥75%. The per-owner floor encodes the
+    // statutory threshold; the cumulative floor encodes the disclosure
+    // ceiling the rule was designed around (≥75% covered → ≤25%
+    // undisclosed, which is the boundary at which a hidden BO would
+    // itself be a reportable ≥25% owner).
+    const qualifyingOwners = merchant.beneficialOwners.filter(
+      (bo) => bo.ownershipPct >= BO_OWNERSHIP_PCT_FLOOR_PER_OWNER,
+    );
+    const cumulativePct = qualifyingOwners.reduce((sum, bo) => sum + bo.ownershipPct, 0);
+    if (cumulativePct < BO_CUMULATIVE_COVERAGE_FLOOR_PCT) {
+      this.logger.warn(
+        `KYB rejected: bo_coverage_insufficient merchant=${merchantId} cumulativePct=${cumulativePct} qualifyingCount=${qualifyingOwners.length}`,
+      );
+      throw KybValidationError({
+        code: 'bo_coverage_insufficient',
+        detail: `declared owners ≥${BO_OWNERSHIP_PCT_FLOOR_PER_OWNER}% must cumulatively cover ≥${BO_CUMULATIVE_COVERAGE_FLOOR_PCT}%; got ${cumulativePct}% across ${qualifyingOwners.length} owner(s)`,
+      });
+    }
+
+    // FinCEN CDD — controller prong. At least one BO MUST carry the
+    // isControlling=true flag regardless of equity stake.
+    if (!merchant.beneficialOwners.some((bo) => bo.isControlling)) {
+      this.logger.warn(`KYB rejected: bo_controller_missing merchant=${merchantId}`);
+      throw KybValidationError({
+        code: 'bo_controller_missing',
+        detail:
+          'at least one beneficial owner must be marked isControlling=true (CDD §1010.230(d)(2))',
+      });
+    }
+
     // SEC-019 — open each BO blob via the BO-id-bound AAD. The vault
     // picks v1 vs v2 AAD by inspecting the persisted schemaVersion,
     // so legacy v1 rows (merchant-bound AAD) keep decrypting while
@@ -227,6 +292,37 @@ export class MerchantService {
         isControlling: bo.isControlling,
       })),
     );
+
+    // OFAC SDN screening — 31 CFR §501. Screen the legal entity AND
+    // every beneficial owner BEFORE handing the file to the KYB
+    // provider. A 'match'/'review'/'error' on ANY subject halts
+    // onboarding to manual_review and writes an audit row; we never
+    // forward a sanctioned subject to the KYB adapter (which may
+    // forward to a credit bureau or MID provisioner that would treat
+    // their record as cleared by default).
+    if (!this.sanctions) {
+      // why: production MerchantModule.forRoot always wires the port.
+      // If we reach here in prod it's a wiring bug — fail closed
+      // rather than silently skipping a regulatory control.
+      throw KybValidationError({
+        code: 'sanctions_halt',
+        detail: 'sanctions screening adapter not configured — refusing to proceed',
+      });
+    }
+    const screeningResults = await this.runSanctionsScreen(
+      merchantId,
+      merchant.legalName,
+      merchant.ein ?? undefined,
+      owners,
+    );
+    const halt = screeningResults.find((r) => r.result.status !== 'cleared');
+    if (halt) {
+      await this.haltForSanctions(userId, merchantId, halt);
+      throw KybValidationError({
+        code: 'sanctions_halt',
+        detail: `sanctions ${halt.result.status} on ${halt.subjectKind}; manual review required`,
+      });
+    }
 
     const initiate = await this.kyb.initiate({
       merchantId,
@@ -467,6 +563,105 @@ export class MerchantService {
     if (link.role === 'read_only' || link.role === 'staff') {
       throw Forbidden({ code: 'insufficient_role', detail: `role=${link.role}` });
     }
+  }
+
+  /**
+   * Screen the entity + every BO against OFAC. Returns one record per
+   * subject so the caller can pin the FIRST non-cleared result to the
+   * halt decision. Failure modes (provider 'error') are treated the
+   * same as a 'match' for routing — never as 'cleared'.
+   */
+  private async runSanctionsScreen(
+    merchantId: MerchantId,
+    legalName: string,
+    ein: string | undefined,
+    owners: ReadonlyArray<{ pii: BoPiiV1; ownershipPct: number; isControlling: boolean }>,
+  ): Promise<
+    Array<{
+      subjectKind: 'entity' | 'beneficial_owner';
+      subjectLabel: string;
+      result: SanctionsScreenResult;
+    }>
+  > {
+    // why: assert here so the type narrows even if a caller invokes this
+    // helper bypassing the startKyb null-check (defense in depth).
+    if (!this.sanctions) {
+      throw KybValidationError({
+        code: 'sanctions_halt',
+        detail: 'sanctions screening adapter not configured',
+      });
+    }
+    const sanctions = this.sanctions;
+    const entity = await sanctions.screenEntity({ legalName, ...(ein && { ein }) });
+    this.logger.log(
+      `sanctions.entity merchant=${merchantId} status=${entity.status} provider=${entity.provider} listVersion=${entity.listVersion ?? 'unknown'}`,
+    );
+    const boResults = await Promise.all(
+      owners.map(async (o) => {
+        const r = await sanctions.screen({
+          legalName: o.pii.legalName,
+          ...(o.pii.dateOfBirth && { dateOfBirth: o.pii.dateOfBirth }),
+        });
+        this.logger.log(
+          `sanctions.bo merchant=${merchantId} status=${r.status} provider=${r.provider} listVersion=${r.listVersion ?? 'unknown'} controller=${o.isControlling}`,
+        );
+        return {
+          subjectKind: 'beneficial_owner' as const,
+          subjectLabel: `${o.pii.legalName.last}, ${o.pii.legalName.first.charAt(0)}.`,
+          result: r,
+        };
+      }),
+    );
+    return [{ subjectKind: 'entity', subjectLabel: legalName, result: entity }, ...boResults];
+  }
+
+  /**
+   * Persist halt state + audit row when sanctions screening blocks
+   * KYB. Runs in a single transaction so the merchant row's
+   * manual_review status and the auditOutbox entry commit atomically;
+   * a partial commit could let the merchant flip back to 'active' on
+   * the next happy-path retry without a reviewer signing off.
+   */
+  private async haltForSanctions(
+    userId: UserId,
+    merchantId: MerchantId,
+    halt: {
+      subjectKind: 'entity' | 'beneficial_owner';
+      subjectLabel: string;
+      result: SanctionsScreenResult;
+    },
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.merchant.update({
+        where: { id: merchantId },
+        data: {
+          kybStatus: 'manual_review',
+          status: 'kyb_manual_review',
+          kybLastCheckedAt: new Date(),
+        },
+      });
+      await tx.auditOutbox.create({
+        data: {
+          actorType: 'user',
+          actorId: userId,
+          action: 'merchant.kyb.sanctions_halt',
+          targetType: 'Merchant',
+          targetId: merchantId,
+          after: {
+            subjectKind: halt.subjectKind,
+            subjectLabel: halt.subjectLabel,
+            status: halt.result.status,
+            provider: halt.result.provider,
+            listVersion: halt.result.listVersion ?? null,
+            screenedAt: halt.result.screenedAt,
+            matchCount: halt.result.matches?.length ?? 0,
+          },
+        },
+      });
+    });
+    this.logger.warn(
+      `KYB halted by sanctions: merchant=${merchantId} subject=${halt.subjectKind}/${halt.subjectLabel} status=${halt.result.status} provider=${halt.result.provider}`,
+    );
   }
 
   private async generateSlug(legalName: string): Promise<string> {

@@ -946,3 +946,62 @@ export const outboxEvents = pgTable(
 export type OutboxEventRow = typeof outboxEvents.$inferSelect;
 export type NewOutboxEventRow = typeof outboxEvents.$inferInsert;
 export type OutboxStatus = 'pending' | 'sent' | 'failed' | 'dead';
+
+/* ---------- sanctions_screen_log ----------
+ *
+ * Append-only OFAC SDN screening evidence (migration 0015). Every
+ * `SanctionsScreen.screen` / `screenEntity` call lands one row here;
+ * the application role has no UPDATE/DELETE on this table. See
+ * apps/partner-portal/drizzle/0015_sanctions_screen_log.sql for the
+ * regulatory rationale (BSA 5y retention) and constraint details.
+ *
+ * The Drizzle type here is read-by-app / write-by-app; the trigger +
+ * role grants on the SQL side enforce the append-only contract that
+ * Drizzle itself cannot express.
+ */
+export const sanctionsScreenLog = pgTable(
+  'sanctions_screen_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Routing key for partner queries. NULLABLE because the consumer
+     *  CIP flow (post-MVP) also writes here without a merchant
+     *  context. */
+    merchantId: text('merchant_id'),
+    /** 'entity' | 'beneficial_owner' | 'principal' | 'consumer'. */
+    subjectKind: text('subject_kind').notNull(),
+    /** Opaque id of the subject record. NOT a FK — the subject row
+     *  may be crypto-shredded under RTBF while the evidence remains. */
+    subjectId: text('subject_id'),
+    /** sha256(normalised legal name) — dedupe key for the re-screen
+     *  cron; plaintext name NEVER lands in this table. */
+    legalNameHash: text('legal_name_hash').notNull(),
+    /** 'mock-ofac' | 'lexisnexis-bridger' | 'complyadvantage' | 'ofac-direct'. */
+    provider: text('provider').notNull(),
+    /** OFAC SDN snapshot id. Required on all non-error rows (DB CHECK). */
+    listVersion: text('list_version'),
+    /** 'cleared' | 'review' | 'match' | 'error' (DB CHECK). */
+    status: text('status').notNull(),
+    /** Vendor match metadata. `[]` on cleared rows so a missing
+     *  column is never read as "no matches". */
+    matchesJson: jsonb('matches_json')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    /** Operator-facing failure reason. Required when status='error'
+     *  (DB CHECK). */
+    errorReason: text('error_reason'),
+    /** When the upstream computed this result. ISO timestamp from the
+     *  adapter response — NOT the DB write time. */
+    screenedAt: timestamp('screened_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    merchantIdx: index('sanctions_screen_log_merchant_idx').on(t.merchantId, t.screenedAt),
+    subjectIdx: index('sanctions_screen_log_subject_idx').on(t.subjectKind, t.subjectId),
+    dedupeIdx: index('sanctions_screen_log_dedupe_idx').on(t.legalNameHash, t.listVersion),
+    /** Partial index — predicate declared in the SQL migration. */
+    openHaltsIdx: index('sanctions_screen_log_open_halts_idx').on(t.status, t.screenedAt),
+  }),
+);
+
+export type SanctionsScreenLogRow = typeof sanctionsScreenLog.$inferSelect;
+export type NewSanctionsScreenLogRow = typeof sanctionsScreenLog.$inferInsert;
