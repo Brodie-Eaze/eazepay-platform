@@ -19,7 +19,12 @@
  *   to notification events directly.
  */
 
-const STORE_KEY = 'eazepay_notifications_v1';
+// v2: bumped from v1 to invalidate the buggy first-cut seed which
+// wrote 5 entries with identical "1 min ago" timestamps and a
+// duplicate cross-section entry. Browsers that opened the v1 panel
+// during the broken window will get a fresh seed with backdated
+// timestamps + exclusive section assignment.
+const STORE_KEY = 'eazepay_notifications_v2';
 const MAX_PER_RECIPIENT = 200;
 
 export type NotificationKind =
@@ -113,6 +118,9 @@ export interface PushInput {
   title: string;
   body: string;
   href?: string;
+  /** Override the default `now` timestamp. Used by seed fixtures so
+   *  demo notifications don't all show as "1 min ago". */
+  createdAt?: string;
 }
 
 export function pushNotification(input: PushInput): Notification {
@@ -124,7 +132,7 @@ export function pushNotification(input: PushInput): Notification {
     title: input.title,
     body: input.body,
     href: input.href,
-    createdAt: new Date().toISOString(),
+    createdAt: input.createdAt ?? new Date().toISOString(),
     readAt: null,
   };
   const list = all[input.recipient] ?? [];
