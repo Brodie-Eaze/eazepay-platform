@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -93,7 +93,7 @@ jobs:
 
       - name: Setup pnpm
         if: steps.detect.outputs.partner-portal == 'true'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
         if: steps.detect.outputs.partner-portal == 'true'
@@ -197,7 +197,7 @@ jobs:
       # follow-up once the baseline is clean and the .trivyignore
       # pattern is mirrored as a pnpm-audit allowlist.
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node
         uses: actions/setup-node@v4
