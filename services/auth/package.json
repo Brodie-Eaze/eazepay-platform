@@ -8,6 +8,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
