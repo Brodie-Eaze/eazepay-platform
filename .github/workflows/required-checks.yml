@@ -1,0 +1,64 @@
+name: Required checks
+
+# Single-purpose green-baseline gate. This workflow exists so the
+# branch-protection rule has one stable check name to require on PRs to
+# `main`. It runs the two signals that must be green before AWS cutover:
+#   1. `pnpm -w typecheck` — every workspace project
+#   2. `pnpm -w test`      — every workspace test target
+#
+# Why a separate workflow (not a job in ci.yml):
+#   • Branch protection requires an exact check name. Co-locating with
+#     the existing `affected`-style ci.yml jobs would couple this gate
+#     to Nx affected analysis, which we explicitly want to bypass here.
+#   • Affected-based runs can skip a project that is broken on `main`
+#     when the PR doesn't touch it. The required check must run the
+#     full workspace every time so regressions surface immediately.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  green-baseline:
+    name: Typecheck + Test (all projects)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Prisma client must be generated before any tsc run because the
+      # api + services import named members (PrismaClient, enums) from
+      # @prisma/client. Without `prisma generate` the package exports
+      # nothing and ~800 typecheck errors cascade across the monorepo.
+      - name: Generate Prisma client
+        run: pnpm --filter @eazepay/api exec prisma generate
+
+      - name: Typecheck (all projects)
+        run: pnpm -w typecheck
+
+      - name: Test (all projects)
+        run: pnpm -w test

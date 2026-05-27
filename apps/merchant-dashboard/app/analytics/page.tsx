@@ -69,7 +69,9 @@ export default function AnalyticsPage() {
             <CardBody>
               <div className="space-y-2">
                 {conversionFunnel.map((s, i) => {
-                  const pct = (s.value / conversionFunnel[0].value) * 100;
+                  // noUncheckedIndexedAccess: funnel is a statically-defined
+                  // non-empty array in lib/mock-data.
+                  const pct = (s.value / conversionFunnel[0]!.value) * 100;
                   return (
                     <div key={s.label}>
                       <div className="flex items-center justify-between text-[13px] mb-1">

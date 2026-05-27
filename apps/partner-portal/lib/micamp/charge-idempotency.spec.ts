@@ -62,7 +62,8 @@ describe('lib/micamp/client — charge() idempotency header', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [, init] = fetchMock.mock.calls[0];
+    // noUncheckedIndexedAccess: assertion above guarantees calls[0] exists.
+    const [, init] = fetchMock.mock.calls[0]!;
     expect(init.headers['Idempotency-Key']).toBe('idem_unit_test_key');
   });
 
