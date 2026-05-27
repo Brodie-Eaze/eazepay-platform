@@ -94,8 +94,10 @@ export default function MerchantOverview() {
             <CardBody>
               <div className="space-y-3">
                 {conversionFunnel.map((step, i) => {
-                  const prev = i > 0 ? conversionFunnel[i - 1].value : conversionFunnel[0].value;
-                  const pct = (step.value / conversionFunnel[0].value) * 100;
+                  // noUncheckedIndexedAccess: i in [0, length), and funnel is a
+                  // statically-defined non-empty array in lib/mock-data.
+                  const prev = i > 0 ? conversionFunnel[i - 1]!.value : conversionFunnel[0]!.value;
+                  const pct = (step.value / conversionFunnel[0]!.value) * 100;
                   const dropPct = i > 0 ? ((prev - step.value) / prev) * 100 : 0;
                   return (
                     <div key={step.label}>

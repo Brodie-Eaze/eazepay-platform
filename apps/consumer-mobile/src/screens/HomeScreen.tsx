@@ -57,9 +57,9 @@ export default function HomeScreen({ navigation }: Props) {
   const load = async () => {
     if (!client) return;
     try {
-      const r = (await client['request']('GET', '/v1/applications')) as {
-        items?: Application[];
-      } & Application[];
+      const r = (await client['request']('GET', '/v1/applications')) as
+        | { items?: Application[] }
+        | Application[];
       const items = Array.isArray(r) ? r : (r.items ?? []);
       setApps(items);
       setError(null);

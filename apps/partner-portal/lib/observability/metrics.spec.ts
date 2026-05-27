@@ -83,9 +83,13 @@ describe('lib/observability/metrics', () => {
     expect(keys).toEqual([
       'applications.created',
       'decisions.computed',
+      'decision.mode.normal',
+      'decision.mode.fallback_internal',
+      'decision.mode.failed_persisted_to_dlq',
       'webhook.queued',
       'webhook.duplicate',
       'webhook.rejected',
+      'webhook.handler.not_implemented',
       'provisioning.completed',
       'provisioning.failed',
       'migration.completed',

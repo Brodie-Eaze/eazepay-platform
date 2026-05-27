@@ -71,7 +71,12 @@ export type MetricName =
   | 'provisioning.completed'
   | 'provisioning.failed'
   | 'migration.completed'
-  | 'migration.failed';
+  | 'migration.failed'
+  /* SEC-201: dashboard counter for callers hitting the legacy
+   * {userId, newPassword} payload shape after the welcome-token
+   * migration. Already bumped at the route handler; listing it here
+   * closes the catalogue so the snapshot exposes it on cold start. */
+  | 'welcome.legacy_userid_attempt';
 
 /**
  * All known metric names. Snapshot returns these in a stable order with
@@ -93,6 +98,7 @@ const KNOWN_METRICS: ReadonlyArray<MetricName> = [
   'provisioning.failed',
   'migration.completed',
   'migration.failed',
+  'welcome.legacy_userid_attempt',
 ];
 
 const COUNTERS = new Map<MetricName, number>();
