@@ -31,6 +31,7 @@
  */
 
 import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import {
   createHmacWebhookVerifier,
   IntegrationErrorException,
@@ -40,6 +41,11 @@ import {
 } from '@eazepay/integrations-core';
 import { safeLog } from '../safe-log';
 import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
+
+// Re-exported for back-compat; the canonical declaration lives in
+// @eazepay/shared-types/webhook-events alongside the Zod schema that
+// the worker uses to fail-loud on malformed deliveries.
+export type { HighsaleWebhookEvent } from '@eazepay/shared-types';
 
 /** Per-call timeouts. Sub-account create is provisioning-grade (HighSale
  *  stands up a downstream agency child + Pixie embed — routinely 5–15s);
@@ -67,16 +73,28 @@ export interface CreateSubAccountRequest {
   brand: 'medpay' | 'tradepay' | 'coachpay' | 'ai_funding';
 }
 
-export interface CreateSubAccountResponse {
-  ok: boolean;
-  subAccountId: string;
-  pixieEmbedUrl: string;
+/**
+ * Response schemas are declared as Zod first; TypeScript types are
+ * derived via `z.infer<>`. Single source of truth — a parse failure at
+ * the JSON boundary throws `IntegrationErrorException({ kind: 'MalformedResponse' })`
+ * so an upstream contract drift surfaces in the inbox / metrics tile
+ * rather than corrupting downstream state via an unchecked `as` cast.
+ */
+export const BureauTypeSchema = z.enum(['fico8', 'vantage']);
+export const BillingCadenceSchema = z.enum(['weekly', 'biweekly', 'monthly']);
+
+export const CreateSubAccountResponseSchema = z.object({
+  ok: z.boolean(),
+  subAccountId: z.string().min(1),
+  pixieEmbedUrl: z.string().min(1),
   /** Per-sub-account API key for direct pulls. */
-  apiKey: string;
-  configuredBureau: BureauType;
-  billingCadence: 'weekly' | 'biweekly' | 'monthly';
-  probationUntil: string;
-}
+  apiKey: z.string().min(1),
+  configuredBureau: BureauTypeSchema,
+  billingCadence: BillingCadenceSchema,
+  probationUntil: z.string().min(1),
+});
+
+export type CreateSubAccountResponse = z.infer<typeof CreateSubAccountResponseSchema>;
 
 export interface PrequalRequest {
   subAccountId: string;
@@ -109,27 +127,49 @@ export interface PrequalRequest {
   clientReference?: string;
 }
 
-export interface PrequalResponse {
-  ok: boolean;
-  pullId: string;
-  bureau: BureauType;
+export const PrequalResponseSchema = z.object({
+  ok: z.boolean(),
+  pullId: z.string().min(1),
+  bureau: BureauTypeSchema,
   /** 'soft' for pre-qual, 'hard' for funding. Pre-qual is ALWAYS soft. */
-  pullKind: 'soft';
+  pullKind: z.literal('soft'),
   /** Credit tier our routing layer ranks against — A through D. */
-  tier: 'A' | 'B' | 'C' | 'D';
+  tier: z.enum(['A', 'B', 'C', 'D']),
   /** Approximate FICO band, 5-point granularity. NULL on thin file. */
-  ficoBand: number | null;
+  ficoBand: z.number().nullable(),
   /** Estimated max approved amount in cents, based on pre-qual data. */
-  estimatedMaxCents: number;
+  estimatedMaxCents: z.number().int().nonnegative(),
   /** Debt-to-income, as a fraction. NULL on insufficient data. */
-  dti: number | null;
+  dti: z.number().nullable(),
   /** Open trade lines, derived from the bureau pull. */
-  openTradelines: number | null;
+  openTradelines: z.number().int().nullable(),
   /** Per-pull cost charged by HighSale at wholesale, in cents.
    * We retail at 300 (= $3 USD). */
-  wholesaleCostCents: number;
+  wholesaleCostCents: z.number().int().nonnegative(),
   /** Frozen bureau snapshot for audit / regulator replay. */
-  snapshotJson: string;
+  snapshotJson: z.string(),
+});
+
+export type PrequalResponse = z.infer<typeof PrequalResponseSchema>;
+
+/**
+ * Parse a JSON response body against a Zod schema, converting parse
+ * failures into the canonical `IntegrationErrorException({ kind:
+ * 'MalformedResponse' })` so route handlers + workers see a uniform
+ * failure shape regardless of which adapter raised it.
+ */
+function parseHighsaleResponse<T>(schema: z.ZodType<T>, body: unknown, endpoint: string): T {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    throw new IntegrationErrorException({
+      provider: PARTNER,
+      endpoint,
+      kind: 'MalformedResponse',
+      message: `HighSale ${endpoint} response did not match schema`,
+      detail: result.error.message,
+    });
+  }
+  return result.data;
 }
 
 /* ---------- env wiring ---------- */
@@ -176,7 +216,11 @@ export async function createSubAccount(
     if (!res.ok) {
       throw new Error(`HighSale sub-account create failed: ${res.status}`);
     }
-    return (await res.json()) as CreateSubAccountResponse;
+    return parseHighsaleResponse(
+      CreateSubAccountResponseSchema,
+      await res.json(),
+      'createSubAccount',
+    );
   }
 
   // Synthetic happy-path. Probation window = 90 days.
@@ -227,7 +271,7 @@ export async function runPrequal(req: PrequalRequest): Promise<PrequalResponse> 
     if (!res.ok) {
       throw new Error(`HighSale pre-qual failed: ${res.status}`);
     }
-    return (await res.json()) as PrequalResponse;
+    return parseHighsaleResponse(PrequalResponseSchema, await res.json(), 'runPrequal');
   }
 
   // Synthetic pre-qual — deterministic per (email, requested amount).
@@ -300,13 +344,9 @@ export function verifyHighsaleSignature(
   return highsaleVerifier.verifySignature(rawBody, signatureHeader);
 }
 
-export type HighsaleWebhookEvent =
-  | { type: 'pull.completed'; pullId: string; subAccountId: string; tier: 'A' | 'B' | 'C' | 'D' }
-  | { type: 'pull.failed'; pullId: string; subAccountId: string; reason: string }
-  | { type: 'subaccount.suspended'; subAccountId: string; reason: string }
-  | { type: 'milly.invoice.issued'; subAccountId: string; amountCents: number; periodEnd: string }
-  | { type: 'milly.invoice.paid'; subAccountId: string; amountCents: number }
-  | { type: 'milly.invoice.failed'; subAccountId: string; amountCents: number; reason: string };
+/* HighsaleWebhookEvent is exported at the top of this file via re-export
+ * from @eazepay/shared-types — the canonical schema lives there next to
+ * the Zod discriminated union used by the worker. */
 
 /* ---------- SoftPullProvider adapter ---------- */
 

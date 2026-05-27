@@ -37,6 +37,13 @@
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
+import {
+  HighsaleWebhookEventSchema,
+  MicampWebhookEventSchema,
+  type HighsaleWebhookEvent,
+  type MicampWebhookEvent,
+} from '@eazepay/shared-types';
+import { IntegrationErrorException } from '@eazepay/integrations-core';
 import { getDb, hasDb, schema } from '../db';
 import type { Db } from '../db';
 import { incrementMetric } from '../observability/metrics';
@@ -55,6 +62,29 @@ import { handleLenderInboxRow, isLenderProvider } from './lender-webhook-handler
  * operator signal. The whole point of the fail-loud posture is to make
  * partner state-sync gaps loud + early.
  */
+/**
+ * Thrown when an inbound webhook body fails Zod parse against the
+ * provider's discriminated-union schema. Extends
+ * `IntegrationErrorException(MalformedResponse)` so the DLQ surface
+ * treats it identically to a malformed integration RESPONSE (per
+ * Builder F's fail-loud pattern) — same kind, same provider attribution,
+ * same operator runbook. The handler dispatch path raises this in lieu
+ * of an unchecked `Record<string, unknown>` switch that would silently
+ * accept any shape.
+ */
+export class MalformedWebhookError extends IntegrationErrorException {
+  constructor(provider: 'micamp' | 'highsale', eventType: string, detail: string) {
+    super({
+      provider,
+      endpoint: `webhook:${eventType || 'unknown'}`,
+      kind: 'MalformedResponse',
+      message: `malformed_webhook_payload:${provider}:${eventType || 'unknown'}`,
+      detail,
+    });
+    this.name = 'MalformedWebhookError';
+  }
+}
+
 export class NotImplementedError extends Error {
   readonly code = 'handler_not_implemented' as const;
   readonly meta: { provider: string; eventType: string };
@@ -402,9 +432,43 @@ async function dispatchEvent(
   }
 }
 
+/**
+ * Parse a webhook body against a provider's discriminated-union schema
+ * before dispatch. The wire format from both providers is `{ type, ...fields }`
+ * so we merge `type` into the body to drive Zod's discriminator. Parse
+ * failure → `MalformedWebhookError` → terminal DLQ entry (Builder F
+ * fail-loud).
+ *
+ * We can't validate `type` against the union's literals here (Zod's
+ * discriminatedUnion does that internally), so any unknown event type
+ * also lands as a malformed payload — which is correct: an event type
+ * the contract doesn't list is, by definition, a contract drift.
+ */
+function parseWebhookEvent<T>(
+  provider: 'micamp' | 'highsale',
+  eventType: string,
+  body: Record<string, unknown>,
+  schema: { safeParse: (v: unknown) => { success: true; data: T } | { success: false; error: { message: string } } },
+): T {
+  const result = schema.safeParse({ ...body, type: eventType });
+  if (!result.success) {
+    throw new MalformedWebhookError(provider, eventType, result.error.message);
+  }
+  return result.data;
+}
+
+/**
+ * Exhaustiveness helper — if a new variant is added to the schema
+ * without a handler branch, the `never` narrowing fails at compile
+ * time. Safer than a runtime default-case alone.
+ */
+function assertNever(x: never): never {
+  throw new Error(`unhandled_webhook_variant:${JSON.stringify(x)}`);
+}
+
 async function handleMicamp(
   eventType: string,
-  _body: Record<string, unknown>,
+  body: Record<string, unknown>,
   row: InboxRow,
 ): Promise<void> {
   // Fail-loud stubs. Each TODO below names the downstream wiring;
@@ -412,57 +476,69 @@ async function handleMicamp(
   // the inbox so a real partner event (e.g. `loan.funded`) cannot
   // vanish under a silent ack. See file header for the posture.
   void row;
-  switch (eventType) {
+  const event: MicampWebhookEvent = parseWebhookEvent(
+    'micamp',
+    eventType,
+    body,
+    MicampWebhookEventSchema,
+  );
+  switch (event.type) {
     case 'mid.underwriting.approved':
       // TODO(orchestrator): UPDATE mids SET provisioning_status='active', micamp_mid=$1, rate_card_json=$2 WHERE id=$3
-      throw new NotImplementedError('micamp', eventType);
+      throw new NotImplementedError('micamp', event.type);
     case 'mid.underwriting.rejected':
       // TODO(orchestrator): UPDATE mids SET provisioning_status='rejected' WHERE id=$1; INSERT INTO audit_log ...
-      throw new NotImplementedError('micamp', eventType);
+      throw new NotImplementedError('micamp', event.type);
     case 'mid.post_underwriting':
       // TODO(orchestrator): UPDATE mids SET provisioning_status='underwriting_post', post_underwriting_at=now() WHERE id=$1
-      throw new NotImplementedError('micamp', eventType);
+      throw new NotImplementedError('micamp', event.type);
     case 'payment.captured':
       // TODO(orchestrator): UPDATE mids SET volume_cents_to_date = volume_cents_to_date + $1 WHERE id=$2
-      throw new NotImplementedError('micamp', eventType);
+      throw new NotImplementedError('micamp', event.type);
     case 'payment.refunded':
       // TODO(orchestrator): UPDATE mids SET volume_cents_to_date = GREATEST(0, volume_cents_to_date - $1) WHERE id=$2
-      throw new NotImplementedError('micamp', eventType);
+      throw new NotImplementedError('micamp', event.type);
     case 'settlement.paid':
       // TODO(orchestrator): UPDATE mids SET last_settled_at=$1 WHERE id=$2
-      throw new NotImplementedError('micamp', eventType);
+      throw new NotImplementedError('micamp', event.type);
     default:
-      throw new Error(`unknown_event_type:micamp:${eventType}`);
+      return assertNever(event);
   }
 }
 
 async function handleHighsale(
   eventType: string,
-  _body: Record<string, unknown>,
+  body: Record<string, unknown>,
   row: InboxRow,
 ): Promise<void> {
   void row;
-  switch (eventType) {
+  const event: HighsaleWebhookEvent = parseWebhookEvent(
+    'highsale',
+    eventType,
+    body,
+    HighsaleWebhookEventSchema,
+  );
+  switch (event.type) {
     case 'pull.completed':
       // TODO(orchestrator): INSERT INTO decisions ...; fan out to lender marketplace
-      throw new NotImplementedError('highsale', eventType);
+      throw new NotImplementedError('highsale', event.type);
     case 'pull.failed':
       // TODO(orchestrator): UPDATE applications SET status='declined', mark FCRA reason
-      throw new NotImplementedError('highsale', eventType);
+      throw new NotImplementedError('highsale', event.type);
     case 'subaccount.suspended':
       // TODO(orchestrator): UPDATE partners SET status='throttled'; INSERT INTO audit_log
-      throw new NotImplementedError('highsale', eventType);
+      throw new NotImplementedError('highsale', event.type);
     case 'milly.invoice.issued':
       // TODO(billing): wire to invoicing.ts to persist + render in partner dashboard
-      throw new NotImplementedError('highsale', eventType);
+      throw new NotImplementedError('highsale', event.type);
     case 'milly.invoice.paid':
       // TODO(billing): mark invoice settled
-      throw new NotImplementedError('highsale', eventType);
+      throw new NotImplementedError('highsale', event.type);
     case 'milly.invoice.failed':
       // TODO(ops): extend probation, Slack alert
-      throw new NotImplementedError('highsale', eventType);
+      throw new NotImplementedError('highsale', event.type);
     default:
-      throw new Error(`unknown_event_type:highsale:${eventType}`);
+      return assertNever(event);
   }
 }
 
