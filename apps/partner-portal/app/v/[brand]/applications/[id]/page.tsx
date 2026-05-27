@@ -123,7 +123,8 @@ interface LiveStatusBody {
 }
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
-import { applications, type ApplicationRow } from '../../../../../lib/master-data';
+import { type ApplicationRow } from '../../../../../lib/master-data';
+import { expandedApplications } from '../../../../../lib/seeded-applications';
 import {
   readSubmittedAppsForPartner,
   readCurrentPartnerIdFromDemoCookie,
@@ -630,7 +631,13 @@ export default function DealDetailPage() {
   if (!brand) notFound();
   const spec = BRANDS[brand];
 
-  const seedApp = applications.find((a) => a.id === id);
+  // Look up against the EXPANDED dataset (master-data 10+15 historical
+  // PLUS the 420 generated Sprint-H realistic-data rows). The list page
+  // also reads expandedApplications, so an ID rendered in the table
+  // resolves here. Before this fix the detail page only checked the
+  // hand-curated `applications` array, so every click on a generated
+  // row 404'd.
+  const seedApp = expandedApplications.find((a) => a.id === id);
   const app = seedApp ?? submittedApp;
   // Before the fix this branch fired for any submitted-app click +
   // bounced the user to root not-found.tsx → master OS via "Go home".
