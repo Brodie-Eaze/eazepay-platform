@@ -5,5 +5,6 @@ export * from './pii.types.js';
 export * from './internal/pii-vault.service.js';
 export * from './ports/key-manager.port.js';
 export * from './ports/kyc-provider.port.js';
+export * from './adapters/aws-kms-key-manager.adapter.js';
 export * from './dto/update-profile.dto.js';
 export * from './dto/start-kyc.dto.js';

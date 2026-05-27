@@ -65,13 +65,33 @@ const EnvSchema = z
       .int()
       .positive()
       .default(60 * 60 * 24 * 30), // 30d
-    KEY_MANAGER: z.enum(['local', 'kms']).default('local'),
+    /**
+     * `local` for dev (KEK from `LOCAL_KEK_HEX`); `aws-kms` for the
+     * production AWS KMS path. `kms` is kept as a back-compat alias
+     * for `aws-kms` so any pre-cutover env files keep working.
+     *
+     * Hardened-env note: the schema does NOT pin this to `aws-kms` in
+     * production yet — that flip belongs to the AWS cutover PR that
+     * flips PR #170's boot guard. Until then a misconfigured prod
+     * deploy will surface at first PII write via the LocalKeyManager
+     * guard rather than at boot.
+     */
+    KEY_MANAGER: z.enum(['local', 'kms', 'aws-kms']).default('local'),
     /** 32-byte (64 hex chars) KEK for LocalKeyManager. Generate via:
      *  openssl rand -hex 32. Required when KEY_MANAGER=local. */
     LOCAL_KEK_HEX: z
       .string()
       .regex(/^[0-9a-fA-F]{64}$/, 'must be 64 hex chars (32 bytes)')
       .optional(),
+    /** Full KMS key ARN or alias (e.g. `alias/eazepay-kek-prod`).
+     *  Required when KEY_MANAGER=aws-kms (and the `kms` alias). The
+     *  adapter constructor enforces presence at first use — module
+     *  load stays safe for non-AWS-KMS deploys. */
+    KMS_KEK_KEY_ID: z.string().min(1).optional(),
+    /** Optional AWS region override for the KMS client. The SDK
+     *  default credential chain reads `AWS_REGION` / instance metadata
+     *  when this is unset. */
+    AWS_REGION: z.string().min(1).optional(),
     KYC_PROVIDER: z.enum(['mock', 'alloy', 'persona']).default('mock'),
     ESIGN_PROVIDER: z.enum(['mock', 'docusign', 'dropbox_sign']).default('mock'),
     KYB_PROVIDER: z.enum(['mock', 'middesk', 'alloy']).default('mock'),
