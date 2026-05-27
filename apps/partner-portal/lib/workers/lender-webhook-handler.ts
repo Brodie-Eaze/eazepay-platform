@@ -37,6 +37,7 @@
 
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { toBps, toCents, type BasisPoints, type Cents } from '@eazepay/shared-types';
 import { getDb, schema } from '../db';
 import { SAMPLE_LENDERS, type SampleLender } from '../api-v1/shared';
 import {
@@ -59,10 +60,25 @@ const EventBaseSchema = z.object({
 });
 
 const OfferSchema = z.object({
-  amount_cents: z.number().int().nonnegative().optional(),
-  apr_bps: z.number().int().nonnegative().optional(),
+  amount_cents: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .transform((n) => (n === undefined ? undefined : toCents(n))),
+  apr_bps: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .transform((n) => (n === undefined ? undefined : toBps(n))),
   term_months: z.number().int().nonnegative().optional(),
-  monthly_payment_cents: z.number().int().nonnegative().optional(),
+  monthly_payment_cents: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .transform((n) => (n === undefined ? undefined : toCents(n))),
   expires_at: z.string().datetime({ offset: true }).optional(),
 });
 
@@ -412,10 +428,10 @@ async function upsertOffer(
     lender: SampleLender;
     decision: string;
     offer?: {
-      amount_cents?: number;
-      apr_bps?: number;
+      amount_cents?: Cents;
+      apr_bps?: BasisPoints;
       term_months?: number;
-      monthly_payment_cents?: number;
+      monthly_payment_cents?: Cents;
       expires_at?: string;
     };
     declinedReason?: string;

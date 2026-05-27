@@ -18,6 +18,7 @@
  * keeps the demo path alive while the migration lands.
  */
 
+import type { Cents } from '@eazepay/shared-types';
 import {
   readSubmittedApps,
   readSubmittedAppsForPartner,
@@ -36,7 +37,7 @@ export type ApiApplicationRow = {
   partnerId: string;
   consumer: string;
   consumerEmail: string;
-  amountCents: number;
+  amountCents: Cents;
   tier: string | null;
   selectedLender: string | null;
   status: 'submitted' | 'in_review' | 'approved' | 'funded' | 'declined';

@@ -42,6 +42,7 @@
  * production architecture.
  */
 
+import { toCentsRound, type Cents } from '@eazepay/shared-types';
 import type { CreditTier } from './marketplace-data';
 
 const STORAGE_KEY = 'eazepay_submitted_apps_v1';
@@ -77,7 +78,7 @@ export interface SubmittedApp {
   /** Display name composed at write time — first + last. */
   customer: string;
   customerEmail: string;
-  amountCents: number;
+  amountCents: Cents;
   tier: CreditTier;
   lender: string;
   status: SubmittedAppStatus;
@@ -134,7 +135,15 @@ export function readSubmittedApps(): SubmittedApp[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidApp);
+    // Re-brand on read: amountCents is a structural number on the wire,
+    // but the in-memory contract is `Cents` (bounds-checked). Bouncing
+    // through `toCentsRound` enforces the same invariants that the write
+    // path enforces, so a corrupt localStorage payload can't poison the
+    // type system.
+    return parsed.filter(isValidApp).map((a) => ({
+      ...a,
+      amountCents: toCentsRound(a.amountCents),
+    }));
   } catch {
     return [];
   }
@@ -229,7 +238,7 @@ export function submitApplicationToApi(input: {
   consumerLast: string;
   consumerEmail: string;
   consumerPhone: string;
-  amountCents: number;
+  amountCents: Cents;
   tier?: CreditTier;
   selectedLender?: string;
   requestId: string;
@@ -286,7 +295,7 @@ export interface LegacyApplicationRow {
   customerEmail: string;
   partner: string;
   product: 'med-pay' | 'trade-pay' | 'coach-pay';
-  amountCents: number;
+  amountCents: Cents;
   fico: number;
   lender: string;
   status: 'submitted' | 'in_review' | 'approved' | 'funded' | 'declined';

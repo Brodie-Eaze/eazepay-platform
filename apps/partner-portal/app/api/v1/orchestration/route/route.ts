@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { toCents, type Cents } from '@eazepay/shared-types';
 import {
   idFor,
   offerFor,
@@ -21,7 +22,12 @@ import {
 const BodySchema = z.object({
   application_id: z.string().min(1),
   brand: z.enum(['tradepay', 'medpay', 'coachpay', 'direct']),
-  amount_cents: z.number().int().min(50_000).max(15_000_000),
+  amount_cents: z
+    .number()
+    .int()
+    .min(50_000)
+    .max(15_000_000)
+    .transform((n): Cents => toCents(n)),
   term_months: z.number().int().min(6).max(144).default(48),
   tier: z.enum(['prime_plus', 'prime', 'near_prime', 'sub_prime']).default('prime'),
   mode: z.enum(['parallel', 'waterfall', 'hybrid']).default('hybrid'),

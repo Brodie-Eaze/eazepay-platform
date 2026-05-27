@@ -13,6 +13,7 @@
  * page at `/lender-marketplace/[id]`.
  */
 
+import { applyBps, toBps, toCents, type BasisPoints, type Cents } from '@eazepay/shared-types';
 import { marketplaceLenders, type MarketplaceLenderRow } from './marketplace-data';
 
 export type ApiHealth = 'healthy' | 'degraded' | 'down' | 'unwired';
@@ -20,13 +21,32 @@ export type ApiHealth = 'healthy' | 'degraded' | 'down' | 'unwired';
 export interface LenderEconomics {
   /** Origination kickback in basis points of funded amount.
    * 250 = 2.5% of every funded loan returned to us. */
-  kickbackBps: number;
+  kickbackBps: BasisPoints;
   /** Per-funded-loan flat fee in cents, on top of the bps. */
-  perLoanFeeCents: number;
+  perLoanFeeCents: Cents;
   /** Exclusivity carve-out — text description if applicable. */
   exclusivityTerms: string | null;
   /** Volume tier bonuses, if any. JSON-ish for now. */
   volumeBonus: string | null;
+}
+
+/**
+ * Compute the total kickback cents we earn on a funded loan.
+ *
+ *   total = applyBps(fundedCents, kickbackBps) + perLoanFeeCents
+ *
+ * Exported so the billing + finance dashboards funnel through one
+ * formula. Prior to branding, several call sites multiplied
+ * `funded * kickbackBps` directly — a value 10_000× too large
+ * because `kickbackBps` is bps, not a fraction. The branded type
+ * makes that mistake a compile-time error.
+ */
+export function computeKickbackCents(input: {
+  fundedCents: Cents;
+  economics: Pick<LenderEconomics, 'kickbackBps' | 'perLoanFeeCents'>;
+}): Cents {
+  const bpsCut = applyBps(input.fundedCents, input.economics.kickbackBps);
+  return toCents(bpsCut + input.economics.perLoanFeeCents);
 }
 
 export interface LenderIntegration {
@@ -59,8 +79,8 @@ export interface LenderDossier {
 
 const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & LenderNotes>> = {
   ml_eng_helia_med: {
-    kickbackBps: 280,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(280),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'healthy',
     lastSyncAt: '2026-05-26T03:14:00Z',
     p95LatencyMs: 412,
@@ -71,8 +91,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     ownerExternal: 'Marc Tessier @ Helia',
   },
   ml_eng_sageheal: {
-    kickbackBps: 220,
-    perLoanFeeCents: 500,
+    kickbackBps: toBps(220),
+    perLoanFeeCents: toCents(500),
     apiHealth: 'healthy',
     lastSyncAt: '2026-05-26T03:14:00Z',
     p95LatencyMs: 689,
@@ -82,8 +102,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     ownerInternal: 'Steven (Trutopia)',
   },
   ml_eng_orion_trade: {
-    kickbackBps: 195,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(195),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'healthy',
     lastSyncAt: '2026-05-26T03:14:00Z',
     p95LatencyMs: 528,
@@ -93,8 +113,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     ownerInternal: 'Brodie',
   },
   ml_eng_kestrel_trade: {
-    kickbackBps: 240,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(240),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'degraded',
     lastSyncAt: '2026-05-25T18:42:00Z',
     p95LatencyMs: 1842,
@@ -105,8 +125,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     freeform: 'Latency creep over last 14d. Open ticket #8214 with their integrations team.',
   },
   ml_eng_atlas_coach: {
-    kickbackBps: 310,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(310),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'healthy',
     lastSyncAt: '2026-05-26T03:14:00Z',
     p95LatencyMs: 357,
@@ -116,8 +136,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     ownerInternal: 'Brodie',
   },
   ml_eng_clearpath_coach: {
-    kickbackBps: 260,
-    perLoanFeeCents: 250,
+    kickbackBps: toBps(260),
+    perLoanFeeCents: toCents(250),
     apiHealth: 'healthy',
     lastSyncAt: '2026-05-26T03:14:00Z',
     p95LatencyMs: 482,
@@ -127,8 +147,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     ownerInternal: 'Brodie',
   },
   ml_eng_summit_premier: {
-    kickbackBps: 175,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(175),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'healthy',
     lastSyncAt: '2026-05-26T03:14:00Z',
     p95LatencyMs: 612,
@@ -138,8 +158,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     ownerInternal: 'Brodie',
   },
   ml_in_buzzpay: {
-    kickbackBps: 0, // we are BuzzPay — no kickback, we earn full lender economics
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(0), // we are BuzzPay — no kickback, we earn full lender economics
+    perLoanFeeCents: toCents(0),
     apiHealth: 'unwired',
     lastSyncAt: null,
     p95LatencyMs: null,
@@ -151,8 +171,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
       'House lender — Phase 2 capitalization required ($2M-$5M debt facility) before live. Becomes cross-vertical default lender post tape-proof.',
   },
   ml_in_us_bank: {
-    kickbackBps: 320,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(320),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'unwired',
     lastSyncAt: null,
     p95LatencyMs: null,
@@ -163,8 +183,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     freeform: 'Demo-gated. Awaiting EazePay demo → NDA → API docs.',
   },
   ml_in_engine_tech: {
-    kickbackBps: 290,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(290),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'unwired',
     lastSyncAt: null,
     p95LatencyMs: null,
@@ -175,8 +195,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
     freeform: 'Engine.tech (MoneyLion). Meeting not yet booked.',
   },
   ml_in_queen_street: {
-    kickbackBps: 240,
-    perLoanFeeCents: 0,
+    kickbackBps: toBps(240),
+    perLoanFeeCents: toCents(0),
     apiHealth: 'unwired',
     lastSyncAt: null,
     p95LatencyMs: null,
@@ -190,8 +210,8 @@ const ECONOMICS: Record<string, Partial<LenderEconomics & LenderIntegration & Le
 };
 
 const DEFAULT_ECONOMICS: LenderEconomics = {
-  kickbackBps: 200,
-  perLoanFeeCents: 0,
+  kickbackBps: toBps(200),
+  perLoanFeeCents: toCents(0),
   exclusivityTerms: null,
   volumeBonus: null,
 };

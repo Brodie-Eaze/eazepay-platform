@@ -23,6 +23,8 @@
  * ADR-0012 on the money type).
  */
 
+import { toCents, toCentsRound, type Cents } from '@eazepay/shared-types';
+
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
 
 /** Fee % keyed by canonical vertical / product label. */
@@ -116,18 +118,18 @@ export interface InvoiceComputeInput {
    * Net cents funded in the invoicing period. This is the merchant's
    * gross funded volume for the period — the source of the fee.
    */
-  fundedNetCents: number;
+  fundedNetCents: Cents;
 }
 
 export interface ComputedInvoice {
   partnerId: string;
-  grossFundedCents: number;
+  grossFundedCents: Cents;
   feePct: number;
   /** True when this fee came from a per-merchant override; false when
    *  it came from the vertical default. UI uses this to badge the
    *  row. */
   overridden: boolean;
-  feeAmountCents: number;
+  feeAmountCents: Cents;
 }
 
 export function computeInvoiceForPartner(input: InvoiceComputeInput): ComputedInvoice {
@@ -136,7 +138,7 @@ export function computeInvoiceForPartner(input: InvoiceComputeInput): ComputedIn
   const feePct = overridden
     ? overrides[input.partnerId]!
     : VERTICAL_FEE_PCT[productToVertical(input.product)];
-  const feeAmountCents = Math.round(input.fundedNetCents * feePct);
+  const feeAmountCents = toCentsRound(input.fundedNetCents * feePct);
   return {
     partnerId: input.partnerId,
     grossFundedCents: input.fundedNetCents,
@@ -161,7 +163,7 @@ export type PaymentMethod = 'ach' | 'wire' | 'card' | 'check' | 'other';
 
 export interface InvoicePayment {
   id: string;
-  amountCents: number;
+  amountCents: Cents;
   paidAt: string; // ISO date
   method: PaymentMethod;
   reference?: string;
@@ -200,7 +202,7 @@ export interface ConfirmRecord {
 
 export interface InvoiceOverride {
   status?: InvoiceStatus;
-  customFeeCents?: number;
+  customFeeCents?: Cents;
   dueDate?: string; // ISO YYYY-MM-DD
   voidedAt?: string;
   voidReason?: string;
@@ -237,7 +239,7 @@ function parsePayments(input: unknown): InvoicePayment[] | undefined {
     }
     out.push({
       id: p.id,
-      amountCents: Math.round(p.amountCents),
+      amountCents: toCentsRound(p.amountCents),
       paidAt: p.paidAt,
       method: p.method as PaymentMethod,
       reference: typeof p.reference === 'string' ? p.reference : undefined,
@@ -317,7 +319,7 @@ export function readInvoiceOverrides(): Record<string, InvoiceOverride> {
         next.status = ov.status as InvoiceStatus;
       }
       if (typeof ov.customFeeCents === 'number' && Number.isFinite(ov.customFeeCents)) {
-        next.customFeeCents = ov.customFeeCents;
+        next.customFeeCents = toCentsRound(ov.customFeeCents);
       }
       if (typeof ov.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ov.dueDate)) {
         next.dueDate = ov.dueDate;
@@ -377,7 +379,7 @@ export function appendActivity(invoiceNo: string, entry: Omit<InvoiceActivity, '
 
 export interface RecordPaymentInput {
   invoiceNo: string;
-  amountCents: number;
+  amountCents: Cents;
   paidAt: string; // ISO date
   method: PaymentMethod;
   reference?: string;
@@ -390,7 +392,7 @@ export interface RecordPaymentInput {
 export function recordPayment(input: RecordPaymentInput): InvoicePayment {
   const payment: InvoicePayment = {
     id: rid('pay'),
-    amountCents: Math.max(0, Math.round(input.amountCents)),
+    amountCents: toCents(Math.max(0, Math.round(input.amountCents))),
     paidAt: input.paidAt,
     method: input.method,
     reference: input.reference,
@@ -442,9 +444,9 @@ export function setDueDate(invoiceNo: string, dueDate: string, by: string): void
 export function totalPaidCents(
   invoiceNo: string,
   overrides?: Record<string, InvoiceOverride>,
-): number {
+): Cents {
   const o = overrides ?? readInvoiceOverrides();
-  return (o[invoiceNo]?.payments ?? []).reduce((s, p) => s + p.amountCents, 0);
+  return toCents((o[invoiceNo]?.payments ?? []).reduce((s, p) => s + p.amountCents, 0));
 }
 
 /* ──────────────────────────────────────────────────────────────────

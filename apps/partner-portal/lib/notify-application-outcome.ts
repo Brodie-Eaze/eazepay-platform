@@ -145,7 +145,10 @@ export async function notifyApplicationOutcome(args: {
 
     /* Prefer the amount on the bound / funded offer over the original
      * apply-page amount when present — the lender's offer amount can
-     * differ if they counter-offered. */
+     * differ if they counter-offered. Both paths produce a branded
+     * `Cents | null`; `formatMoney` accepts the wider `number` because
+     * `Cents` is structurally a number — the brand exists at compile
+     * time only. */
     let amountCents: number | null = null;
     if (eventType === 'offer.bound' || eventType === 'loan.funded') {
       const acceptedOffer = await db
@@ -154,7 +157,7 @@ export async function notifyApplicationOutcome(args: {
         .where(eq(offers.applicationId, applicationId))
         .limit(5);
       const bound = acceptedOffer.find((o) => o.amountCents != null);
-      if (bound) amountCents = bound.amountCents;
+      if (bound && bound.amountCents != null) amountCents = bound.amountCents;
     }
     const amountLabel = formatMoney(amountCents ?? app.amountCents);
     const statusLabel = statusLabelFor(eventType, decision);

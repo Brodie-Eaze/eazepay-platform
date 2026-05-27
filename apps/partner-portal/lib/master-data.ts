@@ -22,6 +22,8 @@
  * realistic-looking dashboard during development.
  */
 
+import { toCents, type Cents } from '@eazepay/shared-types';
+
 export type Niche = 'coaching' | 'medical' | 'trades' | 'dental' | 'consumer';
 // Aligned with the canonical BRANDS source-of-truth in @eazepay/shared-types.
 // No spaces (MedPay, not "Med Pay") and vertical merchants get their vertical
@@ -40,7 +42,7 @@ export interface PartnerSummary {
   status: ApprovalStatus;
   approvedOn?: string;
   fundedCount: number;
-  netCents: number;
+  netCents: Cents;
 }
 
 export const partners: PartnerSummary[] = [
@@ -55,7 +57,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-04-02',
     fundedCount: 9,
-    netCents: 312_400_00,
+    netCents: toCents(312_400_00),
   },
   {
     id: 'p_helio',
@@ -68,7 +70,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-03-18',
     fundedCount: 7,
-    netCents: 261_950_00,
+    netCents: toCents(261_950_00),
   },
   {
     id: 'p_orion',
@@ -81,7 +83,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-03-12',
     fundedCount: 5,
-    netCents: 198_700_00,
+    netCents: toCents(198_700_00),
   },
   {
     id: 'p_brio',
@@ -94,7 +96,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-03-05',
     fundedCount: 6,
-    netCents: 184_220_00,
+    netCents: toCents(184_220_00),
   },
   {
     id: 'p_kindred',
@@ -107,7 +109,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-02-22',
     fundedCount: 4,
-    netCents: 76_500_00,
+    netCents: toCents(76_500_00),
   },
   {
     id: 'p_summit',
@@ -120,7 +122,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-02-14',
     fundedCount: 3,
-    netCents: 64_200_00,
+    netCents: toCents(64_200_00),
   },
   {
     id: 'p_meridian',
@@ -133,7 +135,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-01-30',
     fundedCount: 3,
-    netCents: 47_100_00,
+    netCents: toCents(47_100_00),
   },
   {
     id: 'p_riverside',
@@ -146,7 +148,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2026-01-12',
     fundedCount: 2,
-    netCents: 39_800_00,
+    netCents: toCents(39_800_00),
   },
   {
     id: 'p_demo',
@@ -159,7 +161,7 @@ export const partners: PartnerSummary[] = [
     status: 'approved',
     approvedOn: '2025-12-04',
     fundedCount: 14,
-    netCents: 218_950_00,
+    netCents: toCents(218_950_00),
   },
 ];
 

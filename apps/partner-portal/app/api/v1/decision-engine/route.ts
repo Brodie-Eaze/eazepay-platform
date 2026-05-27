@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { toCents, type Cents } from '@eazepay/shared-types';
 import { evaluateDecision } from '@/lib/decision-engine';
 import type { Brand } from '@/lib/api-v1/shared';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
@@ -27,8 +28,16 @@ const BodySchema = z.object({
     ficoBand: z.number().int().nullable(),
     dti: z.number().nullable(),
     openTradelines: z.number().int().nullable(),
-    amountCents: z.number().int().positive(),
-    annualIncomeCents: z.number().int().nonnegative(),
+    amountCents: z
+      .number()
+      .int()
+      .positive()
+      .transform((n): Cents => toCents(n)),
+    annualIncomeCents: z
+      .number()
+      .int()
+      .nonnegative()
+      .transform((n): Cents => toCents(n)),
     state: z.string().length(2),
     brand: z.enum(['medpay', 'tradepay', 'coachpay', 'direct']),
   }),

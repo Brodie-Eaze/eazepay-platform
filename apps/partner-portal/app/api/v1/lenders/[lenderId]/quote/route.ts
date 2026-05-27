@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
+import { toCents, type Cents } from '@eazepay/shared-types';
 import {
   offerFor,
   problem,
@@ -38,7 +39,12 @@ const BodySchema = z.object({
   snapshot_hash: z.string().min(1),
   applicant: ApplicantSchema,
   request: z.object({
-    amount_cents: z.number().int().min(50_000).max(15_000_000),
+    amount_cents: z
+      .number()
+      .int()
+      .min(50_000)
+      .max(15_000_000)
+      .transform((n): Cents => toCents(n)),
     term_months: z.number().int().min(6).max(144),
     category: z.string().optional(),
   }),

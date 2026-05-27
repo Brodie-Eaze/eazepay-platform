@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { toBps, toCents, type BasisPoints, type Cents } from '@eazepay/shared-types';
 
 /**
  * Shared helpers for the public lender-facing `/api/v1/*` endpoints.
@@ -255,9 +256,9 @@ interface SampleLenderDef {
   readonly integration_type: string;
   readonly brands: readonly Brand[];
   readonly serves_tiers: readonly LenderTier[];
-  readonly min_amount_cents: number;
-  readonly max_amount_cents: number;
-  readonly apr_band_bps: { readonly min: number; readonly max: number };
+  readonly min_amount_cents: Cents;
+  readonly max_amount_cents: Cents;
+  readonly apr_band_bps: { readonly min: BasisPoints; readonly max: BasisPoints };
   readonly sla_p95_ms: number;
   readonly webhook_url: string;
   readonly status: string;
@@ -271,9 +272,9 @@ export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
     integration_type: 'API',
     brands: ['tradepay', 'medpay', 'coachpay', 'direct'],
     serves_tiers: ['prime_plus', 'prime', 'near_prime'],
-    min_amount_cents: 500_00,
-    max_amount_cents: 80_000_00,
-    apr_band_bps: { min: 599, max: 1799 },
+    min_amount_cents: toCents(500_00),
+    max_amount_cents: toCents(80_000_00),
+    apr_band_bps: { min: toBps(599), max: toBps(1799) },
     sla_p95_ms: 612,
     webhook_url: 'https://buzzpay.example.com/webhooks/eazepay',
     status: 'active',
@@ -285,9 +286,9 @@ export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
     integration_type: 'API',
     brands: ['medpay'],
     serves_tiers: ['prime_plus', 'prime', 'near_prime'],
-    min_amount_cents: 1_000_00,
-    max_amount_cents: 50_000_00,
-    apr_band_bps: { min: 690, max: 1499 },
+    min_amount_cents: toCents(1_000_00),
+    max_amount_cents: toCents(50_000_00),
+    apr_band_bps: { min: toBps(690), max: toBps(1499) },
     sla_p95_ms: 489,
     webhook_url: 'https://helia.example.com/webhooks/eazepay',
     status: 'active',
@@ -299,9 +300,9 @@ export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
     integration_type: 'API',
     brands: ['tradepay', 'medpay', 'coachpay'],
     serves_tiers: ['prime_plus'],
-    min_amount_cents: 2_000_00,
-    max_amount_cents: 150_000_00,
-    apr_band_bps: { min: 549, max: 999 },
+    min_amount_cents: toCents(2_000_00),
+    max_amount_cents: toCents(150_000_00),
+    apr_band_bps: { min: toBps(549), max: toBps(999) },
     sla_p95_ms: 743,
     webhook_url: 'https://summit.example.com/webhooks/eazepay',
     status: 'active',
@@ -313,9 +314,9 @@ export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
     integration_type: 'API',
     brands: ['tradepay'],
     serves_tiers: ['prime', 'near_prime', 'sub_prime'],
-    min_amount_cents: 500_00,
-    max_amount_cents: 35_000_00,
-    apr_band_bps: { min: 999, max: 2499 },
+    min_amount_cents: toCents(500_00),
+    max_amount_cents: toCents(35_000_00),
+    apr_band_bps: { min: toBps(999), max: toBps(2499) },
     sla_p95_ms: 824,
     webhook_url: 'https://kestrel.example.com/webhooks/eazepay',
     status: 'active',
@@ -327,9 +328,9 @@ export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
     integration_type: 'API',
     brands: ['coachpay'],
     serves_tiers: ['prime_plus', 'prime'],
-    min_amount_cents: 1_000_00,
-    max_amount_cents: 25_000_00,
-    apr_band_bps: { min: 749, max: 1199 },
+    min_amount_cents: toCents(1_000_00),
+    max_amount_cents: toCents(25_000_00),
+    apr_band_bps: { min: toBps(749), max: toBps(1199) },
     sla_p95_ms: 567,
     webhook_url: 'https://atlas.example.com/webhooks/eazepay',
     status: 'active',
@@ -338,14 +339,30 @@ export const SAMPLE_LENDERS: readonly SampleLenderDef[] = [
 
 export type SampleLender = (typeof SAMPLE_LENDERS)[number];
 
+export interface OfferQuote {
+  readonly offer_id: string;
+  readonly application_id: string;
+  readonly lender_product_id: string;
+  readonly lender: string;
+  readonly lender_of_record: string;
+  readonly amount_cents: Cents;
+  readonly term_months: number;
+  readonly apr_bps: BasisPoints;
+  readonly fee_cents: Cents;
+  readonly monthly_payment_cents: Cents;
+  readonly approval_likelihood: number;
+  readonly valid_until: string;
+}
+
 /** Build an offer for a given lender + amount — used by the offers + route endpoints. */
-export function offerFor(lender: SampleLender, amountCents: number, termMonths = 48) {
-  const aprMid = Math.round((lender.apr_band_bps.min + lender.apr_band_bps.max) / 2);
+export function offerFor(lender: SampleLender, amountCents: Cents, termMonths = 48): OfferQuote {
+  const aprMid = toBps(Math.round((lender.apr_band_bps.min + lender.apr_band_bps.max) / 2));
   const aprMonthly = aprMid / 100 / 12 / 100;
-  const monthly =
+  const monthly = toCents(
     aprMonthly === 0
       ? Math.round(amountCents / termMonths)
-      : Math.round((amountCents * aprMonthly) / (1 - Math.pow(1 + aprMonthly, -termMonths)));
+      : Math.round((amountCents * aprMonthly) / (1 - Math.pow(1 + aprMonthly, -termMonths))),
+  );
   return {
     offer_id: idFor('off', lender.id + amountCents + termMonths),
     application_id: idFor('app', lender.id + amountCents),
@@ -355,7 +372,7 @@ export function offerFor(lender: SampleLender, amountCents: number, termMonths =
     amount_cents: amountCents,
     term_months: termMonths,
     apr_bps: aprMid,
-    fee_cents: 0,
+    fee_cents: toCents(0),
     monthly_payment_cents: monthly,
     approval_likelihood: lender.id === 'lp_buzzpay_prime' ? 0.92 : 0.78,
     valid_until: new Date(Date.now() + 30 * 60 * 1000).toISOString(),

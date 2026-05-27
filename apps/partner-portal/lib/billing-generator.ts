@@ -11,6 +11,7 @@
  * Each draft invoice records its `derivedFrom` so the audit log can
  * answer "where did this number come from?".
  */
+import { addCents, toCents, type Cents } from '@eazepay/shared-types';
 import { partners as MASTER_PARTNERS } from './master-data';
 import {
   computeInvoiceForPartner,
@@ -31,9 +32,9 @@ export interface GeneratedInvoice {
   vertical: string;
   periodId: string;
   periodLabel: string;
-  grossFundedCents: number;
+  grossFundedCents: Cents;
   feePct: number;
-  feeAmountCents: number;
+  feeAmountCents: Cents;
   dueDate: string;
   status: 'draft' | 'sent';
 }
@@ -42,13 +43,13 @@ export interface GeneratePreview {
   toCreate: number;
   alreadyExists: number;
   paused: number;
-  totalFeeCents: number;
+  totalFeeCents: Cents;
   perMerchant: Array<{
     partnerId: string;
     merchant: string;
     invoiceNo: string;
-    grossFundedCents: number;
-    feeAmountCents: number;
+    grossFundedCents: Cents;
+    feeAmountCents: Cents;
     alreadyExists: boolean;
     paused: boolean;
   }>;
@@ -69,7 +70,7 @@ export function previewGenerate(period: Period): GeneratePreview {
   let toCreate = 0;
   let alreadyExists = 0;
   let paused = 0;
-  let totalFeeCents = 0;
+  let totalFeeCents: Cents = toCents(0);
   for (const p of MASTER_PARTNERS) {
     const cfg = getBillingConfig(p.id);
     const invoiceNo = invoiceNoFor(period.id, p.id);
@@ -84,7 +85,7 @@ export function previewGenerate(period: Period): GeneratePreview {
     else if (existed) alreadyExists++;
     else {
       toCreate++;
-      totalFeeCents += computed.feeAmountCents;
+      totalFeeCents = addCents(totalFeeCents, computed.feeAmountCents);
     }
     perMerchant.push({
       partnerId: p.id,

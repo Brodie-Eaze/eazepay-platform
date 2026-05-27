@@ -41,6 +41,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { toCents, type Cents } from '@eazepay/shared-types';
 import {
   getDb,
   hasDb,
@@ -62,7 +63,12 @@ const PostBody = z.object({
   consumerLast: z.string().min(1).max(80),
   consumerEmail: z.string().email().max(254),
   consumerPhone: z.string().min(10).max(32),
-  amountCents: z.number().int().positive().max(100_000_000),
+  amountCents: z
+    .number()
+    .int()
+    .positive()
+    .max(100_000_000)
+    .transform((n): Cents => toCents(n)),
   tier: z.enum(['prime_plus', 'prime', 'near_prime', 'sub_prime', 'no_match']).optional(),
   selectedLender: z.string().max(120).optional(),
   requestId: z.string().min(8).max(128),

@@ -33,6 +33,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { BasisPoints, Cents } from '@eazepay/shared-types';
 
 /* ---------- enums ---------- */
 
@@ -141,7 +142,7 @@ export const applications = pgTable(
     consumerEmail: text('consumer_email').notNull(),
     consumerPhone: text('consumer_phone').notNull(),
     /** Loan amount in cents to keep currency math integer-safe. */
-    amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
+    amountCents: bigint('amount_cents', { mode: 'number' }).$type<Cents>().notNull(),
     tier: text('tier'),
     selectedLender: text('selected_lender'),
     status: applicationStatusEnum('status').notNull().default('submitted'),
@@ -236,10 +237,10 @@ export const offers = pgTable(
     lenderName: text('lender_name'),
     /** approved | counter | declined | ineligible */
     decision: text('decision').notNull(),
-    amountCents: bigint('amount_cents', { mode: 'number' }),
-    aprBps: integer('apr_bps'),
+    amountCents: bigint('amount_cents', { mode: 'number' }).$type<Cents>(),
+    aprBps: integer('apr_bps').$type<BasisPoints>(),
     termMonths: integer('term_months'),
-    monthlyPaymentCents: bigint('monthly_payment_cents', { mode: 'number' }),
+    monthlyPaymentCents: bigint('monthly_payment_cents', { mode: 'number' }).$type<Cents>(),
     /** Set when the consumer (or admin) selects this offer. NULL until then. */
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
     /** Lender-provided expiry. After this, accept attempts are rejected. */
@@ -302,14 +303,14 @@ export const lenders = pgTable(
      * shape varies per lender — stored as JSON-encoded text. */
     eligibilityRulesJson: text('eligibility_rules_json'),
     /** Origination kickback in basis points of funded amount. */
-    kickbackBps: integer('kickback_bps').notNull().default(0),
+    kickbackBps: integer('kickback_bps').$type<BasisPoints>().notNull().default(0 as BasisPoints),
     /** Webhook endpoint we POST to for application submission. */
     webhookUrl: text('webhook_url'),
     /** Webhook secret for HMAC verification on inbound callbacks. */
     webhookSecret: text('webhook_secret'),
     /** Minimum / maximum loan size envelope, in integer cents. */
-    minAmountCents: bigint('min_amount_cents', { mode: 'number' }),
-    maxAmountCents: bigint('max_amount_cents', { mode: 'number' }),
+    minAmountCents: bigint('min_amount_cents', { mode: 'number' }).$type<Cents>(),
+    maxAmountCents: bigint('max_amount_cents', { mode: 'number' }).$type<Cents>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -449,7 +450,10 @@ export const mids = pgTable(
     postUnderwritingAt: timestamp('post_underwriting_at', { withTimezone: true }),
     /** Rolling total of processing volume (cents) used to trigger the
      * pre→post underwriting flip. */
-    volumeCentsToDate: bigint('volume_cents_to_date', { mode: 'number' }).notNull().default(0),
+    volumeCentsToDate: bigint('volume_cents_to_date', { mode: 'number' })
+      .$type<Cents>()
+      .notNull()
+      .default(0 as Cents),
     /** Last settlement timestamp from the MiCamp webhook. */
     lastSettledAt: timestamp('last_settled_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

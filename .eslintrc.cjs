@@ -58,6 +58,45 @@ module.exports = {
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
     'no-console': ['warn', { allow: ['warn', 'error'] }],
+    /*
+     * Branded-money guard.
+     *
+     * The `Cents` and `BasisPoints` types in `@eazepay/shared-types`
+     * carry runtime invariants (non-negative integer cents; bps in
+     * 0..10_000) that are enforced ONLY by the `toCents(n)` /
+     * `toBps(n)` constructors. A bare `as Cents` / `as BasisPoints`
+     * cast bypasses those checks and re-introduces exactly the class
+     * of bug branding exists to close (cents/bps confusion, fractional
+     * cents leaking into ledger writes, negative cents in a column the
+     * schema treats as a magnitude).
+     *
+     * The rule below catches the literal text. It is intentionally a
+     * syntactic check — TypeScript will allow a structural `number`
+     * to be passed into a branded slot once and only once when it
+     * flows through a `toX()` call. Every other coercion site must
+     * stop at code review.
+     */
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "TSAsExpression[typeAnnotation.typeName.name='Cents']",
+        message:
+          "Don't cast to `Cents` directly. Use `toCents(n)` from @eazepay/shared-types — it enforces the non-negative integer invariant. If you genuinely need to bypass (e.g. a schema default), prefix the line with `// eslint-disable-next-line no-restricted-syntax` and explain why.",
+      },
+      {
+        selector: "TSAsExpression[typeAnnotation.typeName.name='BasisPoints']",
+        message:
+          "Don't cast to `BasisPoints` directly. Use `toBps(n)` from @eazepay/shared-types — it enforces the 0..10_000 range invariant.",
+      },
+      {
+        selector: "TSTypeAssertion[typeAnnotation.typeName.name='Cents']",
+        message: "Don't use `<Cents>x` casts. Use `toCents(n)` from @eazepay/shared-types.",
+      },
+      {
+        selector: "TSTypeAssertion[typeAnnotation.typeName.name='BasisPoints']",
+        message: "Don't use `<BasisPoints>x` casts. Use `toBps(n)` from @eazepay/shared-types.",
+      },
+    ],
   },
   overrides: [
     {
@@ -67,6 +106,33 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'no-console': 'off',
+      },
+    },
+    {
+      /*
+       * The money module itself is the ONE place `as Cents` / `as BasisPoints`
+       * is legitimate — the `toCents` / `toBps` constructors and the zod
+       * boundary schemas brand their checked output here, and nowhere
+       * else gets to mint a branded value.
+       */
+      files: ['libs/shared-types/src/money.ts'],
+      rules: {
+        'no-restricted-syntax': 'off',
+      },
+    },
+    {
+      /*
+       * Drizzle column defaults need a literal-shaped value that matches
+       * the column's `$type<...>` brand. The `0 as Cents` /
+       * `0 as BasisPoints` casts here are the only sanctioned uses of
+       * the unbranded constant `0` flowing into a money column — the
+       * runtime value is always 0, so the invariant (cents ≥ 0, bps in
+       * 0..10_000) holds trivially and a `toCents(0)` constructor call
+       * would still produce the same result.
+       */
+      files: ['apps/partner-portal/lib/db/schema.ts'],
+      rules: {
+        'no-restricted-syntax': 'off',
       },
     },
   ],

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { toCents } from '@eazepay/shared-types';
 
 /**
  * Specs for the decision engine (Tasks #44, #47, #49).
@@ -59,8 +60,8 @@ const basePrequal: PrequalInputs = {
   ficoBand: 760,
   dti: 0.25,
   openTradelines: 6,
-  amountCents: 10_000_00,
-  annualIncomeCents: 120_000_00,
+  amountCents: toCents(10_000_00),
+  annualIncomeCents: toCents(120_000_00),
   state: 'CA',
   brand: 'medpay',
 };
@@ -183,13 +184,16 @@ describe('decision-engine', () => {
     });
 
     it('maps amount_outside_envelope:* with too-small request → LOAN_AMOUNT_TOO_SMALL', () => {
-      const out = internalReasonToRegB('amount_outside_envelope:100000-5000000', 50_000);
+      const out = internalReasonToRegB('amount_outside_envelope:100000-5000000', toCents(50_000));
       expect(out.regBReasonCode).toBe('LOAN_AMOUNT_TOO_SMALL');
       expect(out.principalReasonText).toBe('Loan amount below minimum');
     });
 
     it('maps amount_outside_envelope:* with too-large request → LOAN_AMOUNT_TOO_LARGE', () => {
-      const out = internalReasonToRegB('amount_outside_envelope:100000-5000000', 10_000_000);
+      const out = internalReasonToRegB(
+        'amount_outside_envelope:100000-5000000',
+        toCents(10_000_000),
+      );
       expect(out.regBReasonCode).toBe('LOAN_AMOUNT_TOO_LARGE');
       expect(out.principalReasonText).toBe('Loan amount above maximum');
     });

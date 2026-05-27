@@ -46,6 +46,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
+import { toBps, toCents, type BasisPoints, type Cents } from '@eazepay/shared-types';
 import { hasDb, getDb, schema } from './db';
 import { safeLog } from './safe-log';
 import { SAMPLE_LENDERS, type Brand, type LenderTier } from './api-v1/shared';
@@ -62,9 +63,9 @@ export interface PrequalInputs {
   dti: number | null;
   openTradelines: number | null;
   /** Loan size requested by the consumer, in cents. */
-  amountCents: number;
+  amountCents: Cents;
   /** Annual income in cents (self-reported, validated by bureau). */
-  annualIncomeCents: number;
+  annualIncomeCents: Cents;
   /** 2-letter US state. */
   state: string;
   brand: Brand;
@@ -105,9 +106,9 @@ export interface RankedLender {
    * Model Form C-1. NULL only when `included: true`. */
   principalReasonText: string | null;
   /** Estimated APR band the consumer would see, in basis points. */
-  estimatedAprBps: number | null;
+  estimatedAprBps: BasisPoints | null;
   /** Estimated max approval amount, in cents. */
-  estimatedMaxCents: number | null;
+  estimatedMaxCents: Cents | null;
 }
 
 /**
@@ -203,7 +204,7 @@ const REG_B_PRINCIPAL_TEXT: Record<RegBReasonCode, string> = {
  */
 export function internalReasonToRegB(
   code: string,
-  requestedAmountCents?: number,
+  requestedAmountCents?: Cents,
 ): { regBReasonCode: RegBReasonCode; principalReasonText: string } {
   if (code.startsWith('brand_mismatch:')) {
     return {
@@ -288,11 +289,11 @@ const TIER_BASE_SCORE: Record<PrequalInputs['tier'], number> = {
   D: 38,
 };
 
-const APR_BY_TIER_BPS: Record<PrequalInputs['tier'], number> = {
-  A: 999,
-  B: 1499,
-  C: 2199,
-  D: 2999,
+const APR_BY_TIER_BPS: Record<PrequalInputs['tier'], BasisPoints> = {
+  A: toBps(999),
+  B: toBps(1499),
+  C: toBps(2199),
+  D: toBps(2999),
 };
 
 /** Build an excluded `RankedLender` row from an internal reason code,
@@ -302,7 +303,7 @@ const APR_BY_TIER_BPS: Record<PrequalInputs['tier'], number> = {
 function excludedLender(
   lender: (typeof SAMPLE_LENDERS)[number],
   reasonCode: string,
-  requestedAmountCents: number,
+  requestedAmountCents: Cents,
 ): RankedLender {
   const regB = internalReasonToRegB(reasonCode, requestedAmountCents);
   return {
@@ -387,7 +388,7 @@ function scoreLender(lender: (typeof SAMPLE_LENDERS)[number], inputs: PrequalInp
     regBReasonCode: null,
     principalReasonText: null,
     estimatedAprBps: APR_BY_TIER_BPS[inputs.tier],
-    estimatedMaxCents: Math.min(inputs.amountCents, lender.max_amount_cents),
+    estimatedMaxCents: toCents(Math.min(inputs.amountCents, lender.max_amount_cents)),
   };
 }
 
