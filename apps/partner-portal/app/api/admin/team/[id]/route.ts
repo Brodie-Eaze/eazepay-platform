@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/server-guards';
 import { enforceOrigin } from '@/lib/origin-guard';
+import { writeAuditLog } from '@/lib/audit-log';
 
 /**
  * Per-member update / remove. Proxies to backend.
@@ -81,16 +82,54 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (optimisticBffAllowed()) return NextResponse.json({ ok: true });
     return unauthorized();
   }
+
+  /* SOC2 CC8.1: role / status / displayName mutations all flow through
+   * here. We can't read the prior state from the BFF (data lives in the
+   * backend), so the audit row captures the requested change as `after`
+   * and a separate `team.member.role_changed` action when a role field
+   * is present so reviewers can filter on it directly. */
+  const action: 'team.member.role_changed' | 'team.member.updated' =
+    parsed.data.role !== undefined ? 'team.member.role_changed' : 'team.member.updated';
+  const auditBase = {
+    actor: guard.actor,
+    action,
+    targetType: 'team_member' as const,
+    targetId: params.id,
+    payload: { requestedChange: parsed.data },
+    req,
+  };
+
   try {
     const res = await fetch(`${API_URL}/v1/admin/team/${encodeURIComponent(params.id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(parsed.data),
     });
-    if (!res.ok)
-      return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });
-    return NextResponse.json(await res.json());
-  } catch {
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      await writeAuditLog({
+        ...auditBase,
+        outcome: 'failed',
+        payload: { ...auditBase.payload, status: res.status, error: body },
+      });
+      return NextResponse.json(body, { status: res.status });
+    }
+    const body = await res.json();
+    await writeAuditLog({
+      ...auditBase,
+      outcome: 'success',
+      payload: { ...auditBase.payload, after: body },
+    });
+    return NextResponse.json(body);
+  } catch (err) {
+    await writeAuditLog({
+      ...auditBase,
+      outcome: 'failed',
+      payload: {
+        ...auditBase.payload,
+        error: err instanceof Error ? err.message : 'unknown',
+      },
+    });
     return backendUnreachable();
   }
 }
@@ -109,15 +148,38 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (optimisticBffAllowed()) return NextResponse.json({ ok: true });
     return unauthorized();
   }
+
+  /* SOC2 CC8.1: removal is destructive — audit both outcomes. */
+  const auditBase = {
+    actor: guard.actor,
+    action: 'team.member.removed' as const,
+    targetType: 'team_member' as const,
+    targetId: params.id,
+    req,
+  };
+
   try {
     const res = await fetch(`${API_URL}/v1/admin/team/${encodeURIComponent(params.id)}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok)
-      return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      await writeAuditLog({
+        ...auditBase,
+        outcome: 'failed',
+        payload: { status: res.status, error: body },
+      });
+      return NextResponse.json(body, { status: res.status });
+    }
+    await writeAuditLog({ ...auditBase, outcome: 'success' });
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (err) {
+    await writeAuditLog({
+      ...auditBase,
+      outcome: 'failed',
+      payload: { error: err instanceof Error ? err.message : 'unknown' },
+    });
     return backendUnreachable();
   }
 }

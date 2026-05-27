@@ -78,7 +78,7 @@ const KNOWN_DEMO_PRESETS: ReadonlySet<string> = new Set<string>([
 export type BrandAccessResult =
   | {
       allowed: true;
-      via: 'demo_operator' | 'demo_brand_match' | 'real_session_deferred' | 'account_brand_match';
+      via: 'demo_operator' | 'demo_brand_match' | 'account_brand_match';
     }
   | {
       allowed: false;
@@ -87,7 +87,10 @@ export type BrandAccessResult =
         | 'unknown_brand_slug'
         | 'demo_preset_unknown'
         | 'demo_brand_mismatch'
-        | 'account_brand_mismatch';
+        | 'account_brand_mismatch'
+        /** F-006: `eazepay_at` cookie present but verifier stub returned
+         *  invalid. Treated as no-access until /v1/me is wired. */
+        | 'real_session_unverified';
     };
 
 export interface BrandAccessInputs {
@@ -102,6 +105,24 @@ export interface BrandAccessInputs {
    *  the HMAC before passing the brand. An account session that owns
    *  brand A cannot view brand B — strict 1:1 match. */
   verifiedAccountBrand: string | null;
+}
+
+/** F-006: per-process latch so we don't spam logs under sustained
+ *  attacker probing or once the cookie genuinely arrives in prod. */
+let _realSessionUnverifiedWarnEmitted = false;
+function emitRealSessionUnverifiedWarnOnce(brandSlug: string): void {
+  if (_realSessionUnverifiedWarnEmitted) return;
+  _realSessionUnverifiedWarnEmitted = true;
+  // eslint-disable-next-line no-console
+  console.warn(
+    JSON.stringify({
+      level: 'warn',
+      event: 'brand_access.real_session_unverified',
+      msg: 'Real-session brand-ownership check is not wired; cookie present but treated as no-access.',
+      brand: brandSlug,
+      hint: 'Wire /v1/me JWT verification + merchantBrands claim before shipping real sessions.',
+    }),
+  );
 }
 
 export function brandCodeFromSlug(slug: string): BrandCode | null {
@@ -130,17 +151,15 @@ export function resolveBrandAccess(
   }
 
   if (inputs.hasRealSession) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        event: 'brand_access.real_session_deferred',
-        msg: 'Real-session brand-ownership check is not yet wired to the backend. Allowing.',
-        brand: brandSlug,
-        hint: 'Implement /v1/me brand claims and update brand-access.ts before shipping real sessions.',
-      }),
-    );
-    return { allowed: true, via: 'real_session_deferred' };
+    /* F-006: previously this branch returned `allowed:true` with a
+     * `real_session_deferred` breadcrumb. That meant any caller who
+     * could plant a non-empty `eazepay_at` cookie silently bypassed
+     * the brand-ownership gate. Until /v1/me returns verified
+     * `merchantBrands` claims and this resolver consumes them, real
+     * sessions MUST fail closed. Emit a one-shot per-process warning
+     * so the signal is visible when real tokens start arriving. */
+    emitRealSessionUnverifiedWarnOnce(brandSlug);
+    return { allowed: false, reason: 'real_session_unverified' };
   }
 
   const preset = inputs.verifiedDemoPreset;

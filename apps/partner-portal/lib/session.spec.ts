@@ -66,10 +66,44 @@ describe('session', () => {
       });
     });
 
-    it('treats real session as deferred + emits breadcrumb', async () => {
-      const ctx = await getSessionContext(mockReq({ eazepay_at: 'jwt-payload' }));
-      expect(ctx).toEqual({ mode: 'real', placeholder: true });
-      expect(warnSpy).toHaveBeenCalled();
+    it('F-006: rejects unverifiable eazepay_at cookie (no silent elevation)', async () => {
+      // Pre-fix, any non-empty `eazepay_at` cookie returned
+      // {mode:'real', placeholder:true} — operator-equivalent visibility
+      // for anyone who could plant a cookie. The verifier stub now
+      // returns invalid, so the resolver must fall through to mode:none.
+      const ctx = await getSessionContext(mockReq({ eazepay_at: 'attacker-planted' }));
+      expect(ctx).toEqual({ mode: 'none' });
+    });
+
+    it('F-006: repeated eazepay_at requests do not throw + remain no-session', async () => {
+      // Warn is per-process latched (we don't want to spam under
+      // sustained attacker probing). Behavioural contract: every call
+      // still resolves to mode:none.
+      for (let i = 0; i < 5; i++) {
+        const ctx = await getSessionContext(mockReq({ eazepay_at: `probe-${i}` }));
+        expect(ctx).toEqual({ mode: 'none' });
+      }
+    });
+
+    it('F-006: eazepay_at + valid demo cookie falls through to demo session', async () => {
+      const signed = await signDemoPreset('medpay', 60);
+      const ctx = await getSessionContext(
+        mockReq({ eazepay_at: 'attacker-planted', eazepay_demo: signed }),
+      );
+      expect(ctx).toEqual({
+        mode: 'demo',
+        preset: 'medpay',
+        isOperator: false,
+        brand: 'medpay',
+      });
+    });
+  });
+
+  describe('verifyAccessToken (F-006 stub)', () => {
+    it('returns {valid:false} for any token until /v1/me is wired', async () => {
+      const { verifyAccessToken } = await import('./session');
+      expect(await verifyAccessToken('anything')).toEqual({ valid: false });
+      expect(await verifyAccessToken('')).toEqual({ valid: false });
     });
   });
 

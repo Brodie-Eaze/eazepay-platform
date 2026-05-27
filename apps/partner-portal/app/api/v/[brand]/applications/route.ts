@@ -212,6 +212,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
     incrementMetric('applications.created');
   }
 
+  /* F-001: a duplicate request_id replay must NOT echo `partnerId` or
+   * `createdAt`. This endpoint is public (no session — the consumer
+   * apply page is unauthenticated), so a caller who guessed someone
+   * else's request_id would otherwise harvest the owning partner id
+   * and original submission timestamp. The fresh-insert path can still
+   * return the full row because the caller is the originator of the
+   * request_id (they chose it client-side). */
+  if (!inserted[0]) {
+    return NextResponse.json(
+      {
+        id: row.id,
+        status: row.status,
+        duplicate: true,
+      },
+      { status: 201 },
+    );
+  }
+
   return NextResponse.json(
     {
       id: row.id,
@@ -219,7 +237,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
       partnerId: row.partnerId,
       status: row.status,
       createdAt: row.createdAt,
-      duplicate: !inserted[0], // true if returned from the conflict re-fetch
+      duplicate: false,
     },
     { status: 201 },
   );

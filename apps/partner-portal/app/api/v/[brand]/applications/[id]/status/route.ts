@@ -27,14 +27,19 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import {
   applications as masterApplications,
+  partners as masterPartners,
   type ApplicationRow,
 } from '../../../../../../../lib/master-data';
 import { findInviteByApplicationId } from '../../../../../../../lib/consumer-invites-store';
 import { marketplaceLenders } from '../../../../../../../lib/marketplace-data';
-import { requireSession } from '../../../../../../../lib/session';
+import {
+  allowedPartnerIdsForBrand,
+  getSessionContext,
+  requireSession,
+} from '../../../../../../../lib/session';
 import { getDb, hasDb } from '../../../../../../../lib/db';
 import {
   applicationEvents as applicationEventsTable,
@@ -355,6 +360,51 @@ function detailForSynthStage(stage: LiveStatus, applicationId: string, i: number
 
 /* ─── Handler ──────────────────────────────────────────────────────── */
 
+type BrandSlug = 'medpay' | 'tradepay' | 'coachpay';
+
+const BRAND_TO_SYNTH_PRODUCT: Record<BrandSlug, ApplicationRow['product']> = {
+  medpay: 'med-pay',
+  tradepay: 'trade-pay',
+  coachpay: 'coach-pay',
+};
+
+const BRAND_TO_PARTNER_PRODUCT: Record<BrandSlug, 'MedPay' | 'TradePay' | 'CoachPay'> = {
+  medpay: 'MedPay',
+  tradepay: 'TradePay',
+  coachpay: 'CoachPay',
+};
+
+/**
+ * F-001: bridge the synth-row `partner` display name to the canonical
+ * `partner_id` so we can apply the same partner-scope filter as the DB
+ * path. Returns null when the partner is not in the brand's roster —
+ * collapses to 404 at the caller (no existence leak).
+ */
+function partnerIdForSynthRow(row: ApplicationRow, brand: BrandSlug): string | null {
+  const wantedProduct = BRAND_TO_PARTNER_PRODUCT[brand];
+  const match = masterPartners.find(
+    (p) =>
+      p.legalName === row.partner &&
+      (p.product === wantedProduct || p.product === 'Multi-brand'),
+  );
+  return match?.id ?? null;
+}
+
+/* F-001: single 404 shape used for every cross-tenant / not-found case.
+ * Differentiating "not found" from "exists but not yours" leaks the id
+ * space to an enumerating attacker — same 404, same body. */
+function notFound(): NextResponse {
+  return NextResponse.json(
+    {
+      type: 'about:blank',
+      title: 'Not Found',
+      status: 404,
+      code: 'application_not_found',
+    },
+    { status: 404 },
+  );
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ brand: string; id: string }> },
@@ -362,8 +412,8 @@ export async function GET(
   const fail = await requireSession(req);
   if (fail) return fail;
 
-  const { brand, id } = await params;
-  const brandParsed = BrandEnum.safeParse(brand);
+  const { brand: brandSlug, id } = await params;
+  const brandParsed = BrandEnum.safeParse(brandSlug);
   if (!brandParsed.success) {
     return NextResponse.json(
       {
@@ -371,16 +421,28 @@ export async function GET(
         title: 'Bad Request',
         status: 400,
         code: 'unknown_brand',
-        detail: `Unknown brand "${brand}".`,
+        detail: `Unknown brand "${brandSlug}".`,
       },
       { status: 400 },
     );
   }
+  const brand: BrandSlug = brandParsed.data;
+
+  /* F-001: derive partner scope from the verified session — NEVER from
+   * the URL or request body. Previously this route only checked that
+   * "some" session existed (`requireSession`) and then queried the DB
+   * by id alone; a signed-in MedPay merchant could read any TradePay
+   * application by guessing the uuid. We now constrain every lookup to
+   * `(brand match AND partnerId IN allowed)` and return 404 (not 403)
+   * on miss so the wire response is identical to "doesn't exist". */
+  const session = await getSessionContext(req);
+  const allowed = allowedPartnerIdsForBrand(session, brand);
+  if (allowed.length === 0) return notFound();
 
   /* ── Try the DB-backed real path first ── */
   if (hasDb()) {
     try {
-      const built = await buildResponseFromDb(id);
+      const built = await buildResponseFromDb(id, brand, allowed);
       if (built) return NextResponse.json(built);
     } catch (err) {
       /* Swallow + fall through to synth so the UI keeps animating even
@@ -390,13 +452,21 @@ export async function GET(
     }
   }
 
-  /* ── Synthetic fallback (demo applications) ── */
-  const invite = await findInviteByApplicationId(id);
+  /* ── Synthetic fallback (demo applications) ──
+   * F-001: gate the synth path with the same brand + partner scope as
+   * the DB path. Without this, the synth fallback continued to leak the
+   * status of any demo application id regardless of caller visibility. */
   const row = masterApplications.find((a) => a.id === id);
+  if (!row) return notFound();
+  if (row.product !== BRAND_TO_SYNTH_PRODUCT[brand]) return notFound();
+  const rowPartnerId = partnerIdForSynthRow(row, brand);
+  if (!rowPartnerId || !allowed.includes(rowPartnerId)) return notFound();
+
+  const invite = await findInviteByApplicationId(id);
 
   let consumerFirstName = invite?.consumerFirstName ?? '';
   let consumerLastInitial = maskLastName(invite?.consumerLastName);
-  if (!consumerFirstName && row?.customer) {
+  if (!consumerFirstName && row.customer) {
     const parts = row.customer.split(/\s+/);
     consumerFirstName = parts[0] ?? '';
     consumerLastInitial = maskLastName(parts[1]);
@@ -406,6 +476,9 @@ export async function GET(
   const offers = buildOffersSynth(id, stage, row);
   const timeline = buildTimelineSynth(id, stage);
 
+  /* F-001: `source: 'synthetic'|'db'` was a backend-state oracle that
+   * lets a caller learn which storage path served the response. Drop it
+   * — the DB and synth answers must be indistinguishable. */
   return NextResponse.json({
     applicationId: id,
     status: stage,
@@ -418,17 +491,30 @@ export async function GET(
       lastInitial: consumerLastInitial,
     },
     lastUpdatedAt: new Date().toISOString(),
-    source: 'synthetic',
   });
 }
 
-async function buildResponseFromDb(applicationId: string) {
+async function buildResponseFromDb(
+  applicationId: string,
+  brand: BrandSlug,
+  allowedPartnerIds: string[],
+) {
   const db = getDb();
 
+  /* F-001: scope the lookup to (id AND brand AND partner_id IN allowed)
+   * so a guessed uuid that belongs to a different tenant cannot be
+   * read. Returning the row to .limit(1) is fine — the filter happens
+   * inside the query, not after. */
   const appRows = await db
     .select()
     .from(applicationsTable)
-    .where(eq(applicationsTable.id, applicationId))
+    .where(
+      and(
+        eq(applicationsTable.id, applicationId),
+        eq(applicationsTable.brand, brand),
+        inArray(applicationsTable.partnerId, allowedPartnerIds),
+      ),
+    )
     .limit(1);
   const app = appRows[0];
   if (!app) return null;
@@ -464,6 +550,5 @@ async function buildResponseFromDb(applicationId: string) {
     offers: offerRows.map(mapOfferRow),
     consumerContact: { firstName, lastInitial },
     lastUpdatedAt: (app.updatedAt ?? new Date()).toISOString(),
-    source: 'db',
   };
 }
