@@ -578,6 +578,10 @@ function assertNoMasterLeaks(groups: NavGroup[], brandSlug: string): void {
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname() || '/';
   const router = useRouter();
+  // Hoisted above the cmd-K paletteCommands useMemo so palette
+  // scoping can branch on it. Also used downstream for sidebar /
+  // topbar rendering.
+  const activeBrand = brandFromPath(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Recent items + pinned saved views are both localStorage-backed,
   // so we re-read them on every palette open and on `storage` events
@@ -630,28 +634,57 @@ export function Shell({ children }: { children: ReactNode }) {
   // three sidebar arrangements + the live lender + partner roster.
   // Hoisted above the NAKED_ROUTES early-return so React Hook order
   // stays stable across renders.
+  /**
+   * Cmd-K palette commands. Scoped by current context so a partner
+   * doesn't see master/admin items, and the admin doesn't see every
+   * brand's per-vertical menu.
+   *
+   *   - In a brand portal (/v/<brand>/*)  → that brand's groups only,
+   *                                          plus Lenders + Partners
+   *                                          (still useful to jump
+   *                                          across the platform)
+   *   - In the admin pack (/admin/*,
+   *     /lender-marketplace*)             → admin groups + master
+   *                                          groups (operator might
+   *                                          want to bounce back)
+   *   - Everywhere else (operator master) → master + admin + lenders
+   *                                          + partners
+   *
+   * Each NavGroup becomes its own palette section header (Command
+   * Centre / Partners / Pipeline / etc) so we don't need a redundant
+   * subtitle on every row repeating the group name. This was the
+   * "format is all over the place" complaint — every row looked
+   * identical because the subtitle just echoed the section above.
+   */
   const paletteCommands = useMemo<CommandPaletteCommand[]>(() => {
     const out: CommandPaletteCommand[] = [];
-    const pushGroup = (section: string, gs: NavGroup[]) => {
+    const pushGroups = (gs: NavGroup[]) => {
       for (const g of gs) {
+        const groupLabel = g.label ?? 'Other';
         for (const it of g.items) {
           if (!it.href || /^https?:/.test(it.href)) continue;
           out.push({
-            id: `${section}:${it.href}`,
-            section,
+            id: `${groupLabel}:${it.href}`,
+            // Each NavGroup is its own section header — no redundant
+            // subtitle echoing the group on every row.
+            section: groupLabel,
             label: it.label,
-            description: g.label,
             href: it.href,
             icon: it.icon,
           });
         }
       }
     };
-    pushGroup('Master', masterGroups);
-    pushGroup('Admin', adminGroups);
-    pushGroup('MedPay', verticalGroups('medpay'));
-    pushGroup('TradePay', verticalGroups('tradepay'));
-    pushGroup('CoachPay', verticalGroups('coachpay'));
+    if (activeBrand) {
+      pushGroups(verticalGroups(activeBrand));
+    } else if (isAdminPath(pathname)) {
+      pushGroups(adminGroups);
+      pushGroups(masterGroups);
+    } else {
+      pushGroups(masterGroups);
+      pushGroups(adminGroups);
+    }
+    // Lenders + Partners always available (cross-context jump).
     for (const l of marketplaceLenders) {
       out.push({
         id: `lender:${l.id}`,
@@ -675,13 +708,15 @@ export function Shell({ children }: { children: ReactNode }) {
       });
     }
     return out;
-  }, []);
+  }, [activeBrand, pathname]);
 
   if (NAKED_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))) {
     return <>{children}</>;
   }
 
-  const activeBrand = brandFromPath(pathname);
+  // activeBrand was hoisted to the top of Shell so the cmd-K palette
+  // can scope its commands by brand context. Re-using same value here
+  // for the sidebar resolution below.
   // Three-way sidebar resolution:
   //   1. /v/<brand>/*           → verticalGroups(brand)   (per-brand merchant)
   //   2. /admin/* or /lender-*  → adminGroups             (platform engineering)
