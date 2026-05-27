@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@eazepay/api-client": "workspace:*",
+    "@eazepay/integrations-core": "workspace:*",
     "@eazepay/service-email": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",

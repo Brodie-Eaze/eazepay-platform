@@ -7,19 +7,37 @@
  * runs through MiCamp, owned by Steven on our side, with Frank @
  * Dappit handling the global payfac expansion.
  *
- * What this client owns:
- *   • MID auto-provisioning — pre-underwriting → post-underwriting
- *   • Payment processing dispatch (charge / refund / capture)
- *   • Settlement reporting
- *   • Webhook signature verification
+ * What this adapter owns:
+ *   - MID auto-provisioning — pre-underwriting -> post-underwriting
+ *   - Payment processing dispatch (charge / refund / capture)
+ *   - Settlement reporting
+ *   - Webhook signature verification (delegates the HMAC primitive to
+ *     the shared verifier in @eazepay/integrations-core; we keep the
+ *     secret + fail-loud-on-prod-load guard local).
  *
  * Wire to real MiCamp by setting MICAMP_API_KEY + MICAMP_API_URL.
  * Without those env vars every method returns a synthetic happy-path
  * response so the rest of the platform can be developed against a
  * stable contract before the real integration lands.
+ *
+ * REFACTOR NOTE (refactor/integration-adapter-interfaces):
+ *   This module now implements the `MerchantProcessor` port from
+ *   @eazepay/integrations-core via the `createMicampClient()` factory.
+ *   The named top-level exports (`provisionMid`, `charge`, ...) are
+ *   preserved as thin wrappers so existing tests + the orchestrator
+ *   keep working. Route handlers consume the interface via
+ *   `apps/partner-portal/lib/integrations/registry.ts` — they no
+ *   longer import the concrete module. `WebhookVerificationResult` is
+ *   re-exported (back-compat) but its canonical home is the core lib.
  */
 
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import {
+  createHmacWebhookVerifier,
+  IntegrationErrorException,
+  type BalanceSnapshot,
+  type MerchantProcessor,
+  type WebhookVerificationResult,
+} from '@eazepay/integrations-core';
 import { safeLog } from '../safe-log';
 import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
 
@@ -127,13 +145,6 @@ export interface SettlementReport {
 const MICAMP_API_URL = process.env.MICAMP_API_URL ?? '';
 const MICAMP_API_KEY = process.env.MICAMP_API_KEY ?? '';
 const MICAMP_WEBHOOK_SECRET = process.env.MICAMP_WEBHOOK_SECRET ?? '';
-
-/**
- * SEC-002 — webhook signature freshness window. Anything older than 5
- * minutes is rejected to defeat replay of a captured-and-stored
- * signature. Mirrors the Stripe `tolerance` default.
- */
-const WEBHOOK_FRESHNESS_SECONDS = 300;
 
 /**
  * SEC-002 — module-load assertion. In production a missing
@@ -308,20 +319,28 @@ export async function settlementReport(
 /* ---------- webhooks ---------- */
 
 /**
- * SEC-002 — structured verification result. Callers log the `reason`
- * to safe-log so we have an audit trail of WHY a signature was
- * rejected (replayed timestamp vs. tampered body vs. unsigned).
+ * SEC-002 — structured verification result.
+ *
+ * Re-exported here for back-compat with any consumer that previously
+ * imported the type from this module. The canonical definition now
+ * lives in `@eazepay/integrations-core`; HighSale + Trutopia import it
+ * directly from the core lib (not via cross-import from this file).
  */
-export type WebhookVerificationReason =
-  | 'missing_secret'
-  | 'missing_signature'
-  | 'bad_signature'
-  | 'stale_timestamp'
-  | 'malformed';
+export type {
+  WebhookVerificationReason,
+  WebhookVerificationResult,
+} from '@eazepay/integrations-core';
 
-export type WebhookVerificationResult =
-  | { valid: true }
-  | { valid: false; reason: WebhookVerificationReason };
+/**
+ * Module-scoped HMAC verifier. The shared helper handles every
+ * fail-closed branch (missing_signature / malformed / stale_timestamp
+ * / bad_signature). The `missing_secret` branch is handled below so we
+ * can preserve the legacy INSECURE_ALLOW warning log + the
+ * refuse-to-load production guard above.
+ */
+const micampVerifier = createHmacWebhookVerifier({
+  secret: MICAMP_WEBHOOK_SECRET,
+});
 
 /**
  * Constant-time HMAC verification on inbound MiCamp webhooks.
@@ -331,15 +350,15 @@ export type WebhookVerificationResult =
  * which the real provider also uses).
  *
  * SEC-002 — fail-closed behaviour:
- *   • Production with no MICAMP_WEBHOOK_SECRET → impossible (module
+ *   - Production with no MICAMP_WEBHOOK_SECRET -> impossible (module
  *     load threw above). This branch only fires in non-production.
- *   • Non-prod with no secret → `valid: false` (was: `true`) UNLESS the
- *     operator explicitly opts in via MICAMP_WEBHOOK_INSECURE_ALLOW=true,
- *     in which case we STILL return invalid but log a warning every
- *     time so it's visible in the dev console.
- *   • Stale timestamp (> 5 min) → reject. Defeats replay of a captured
- *     signature.
- *   • Bad / missing fields → reject with a specific reason so the
+ *   - Non-prod with no secret -> `valid: false` UNLESS the operator
+ *     explicitly opts in via MICAMP_WEBHOOK_INSECURE_ALLOW=true, in
+ *     which case we STILL return invalid but log a warning every time
+ *     so it's visible in the dev console.
+ *   - Stale timestamp (> 5 min) -> reject. Defeats replay of a
+ *     captured signature.
+ *   - Bad / missing fields -> reject with a specific reason so the
  *     route handler can audit-log it.
  */
 export function verifyWebhookSignature(
@@ -361,50 +380,7 @@ export function verifyWebhookSignature(
     return { valid: false, reason: 'missing_secret' };
   }
 
-  if (!signatureHeader) {
-    return { valid: false, reason: 'missing_signature' };
-  }
-
-  const parts = Object.fromEntries(
-    signatureHeader.split(',').map((kv) => {
-      const [k, v] = kv.split('=');
-      return [k?.trim() ?? '', v?.trim() ?? ''];
-    }),
-  );
-  const timestamp = parts.t;
-  const signature = parts.v1;
-  if (!timestamp || !signature) {
-    return { valid: false, reason: 'malformed' };
-  }
-
-  const tsNum = Number(timestamp);
-  if (!Number.isFinite(tsNum)) {
-    return { valid: false, reason: 'malformed' };
-  }
-  // Freshness window — 5 minutes either direction (clock skew tolerant).
-  if (Math.abs(Date.now() / 1000 - tsNum) > WEBHOOK_FRESHNESS_SECONDS) {
-    return { valid: false, reason: 'stale_timestamp' };
-  }
-
-  const payload = `${timestamp}.${rawBody}`;
-  const expected = createHmac('sha256', MICAMP_WEBHOOK_SECRET).update(payload).digest('hex');
-  if (expected.length !== signature.length) {
-    return { valid: false, reason: 'bad_signature' };
-  }
-  let expectedBuf: Buffer;
-  let sigBuf: Buffer;
-  try {
-    expectedBuf = Buffer.from(expected, 'hex');
-    sigBuf = Buffer.from(signature, 'hex');
-  } catch {
-    return { valid: false, reason: 'malformed' };
-  }
-  if (expectedBuf.length !== sigBuf.length) {
-    return { valid: false, reason: 'bad_signature' };
-  }
-  return timingSafeEqual(expectedBuf, sigBuf)
-    ? { valid: true }
-    : { valid: false, reason: 'bad_signature' };
+  return micampVerifier.verifySignature(rawBody, signatureHeader);
 }
 
 export type MicampWebhookEvent =
@@ -414,3 +390,67 @@ export type MicampWebhookEvent =
   | { type: 'payment.captured'; transactionId: string; midId: string; amountCents: number }
   | { type: 'payment.refunded'; transactionId: string; midId: string; amountCents: number }
   | { type: 'settlement.paid'; midId: string; payoutDate: string; netCents: number };
+
+/* ---------- MerchantProcessor adapter ---------- */
+
+/**
+ * Concrete shape of the MiCamp `MerchantProcessor` — re-exposes the
+ * adapter-owned request/response types into the generic interface.
+ * Consumers should prefer this alias over re-spelling the generics.
+ */
+export type MicampMerchantProcessor = MerchantProcessor<
+  ProvisionMidRequest,
+  ProvisionMidResponse,
+  ChargeRequest,
+  ChargeResponse,
+  SettlementReport
+>;
+
+export interface CreateMicampClientOptions {
+  /**
+   * Hooks for tests / canary harnesses. Defaults to the module-level
+   * functions (which themselves switch between synthetic + live based
+   * on env vars). Override individual methods to swap in a stub for
+   * one merchant while leaving the others on the real client.
+   */
+  provisionMid?: (req: ProvisionMidRequest) => Promise<ProvisionMidResponse>;
+  charge?: (req: ChargeRequest) => Promise<ChargeResponse>;
+  settlementReport?: (
+    midId: string,
+    period: { start: string; end: string },
+  ) => Promise<SettlementReport>;
+  /**
+   * Optional getBalance implementation. The current MiCamp wiring does
+   * NOT expose a balance endpoint — until Steven + Frank ship one, this
+   * defaults to throwing IntegrationError(kind: 'NotImplemented') so the
+   * canary harness surfaces the gap rather than fabricating data.
+   */
+  getBalance?: (midId: string) => Promise<BalanceSnapshot>;
+}
+
+/**
+ * Build a `MerchantProcessor` backed by MiCamp. The factory exists so
+ * the registry can hand back a per-merchant adapter (e.g. a stub for
+ * one merchant during canary while every other merchant stays on the
+ * real client) without route handlers needing to know which.
+ */
+export function createMicampClient(
+  opts: CreateMicampClientOptions = {},
+): MicampMerchantProcessor {
+  return {
+    provider: PARTNER,
+    provisionMid: opts.provisionMid ?? provisionMid,
+    charge: opts.charge ?? charge,
+    settlementReport: opts.settlementReport ?? settlementReport,
+    getBalance:
+      opts.getBalance ??
+      (async (midId: string): Promise<BalanceSnapshot> => {
+        throw new IntegrationErrorException({
+          provider: PARTNER,
+          endpoint: 'getBalance',
+          kind: 'NotImplemented',
+          message: `getBalance(${midId}) is not yet wired on the MiCamp adapter — pending Steven + Frank's payfac endpoint.`,
+        });
+      }),
+  };
+}

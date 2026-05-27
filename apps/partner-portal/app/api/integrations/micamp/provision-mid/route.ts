@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { provisionMid, type ProvisionMidRequest } from '@/lib/micamp/client';
+import { type ProvisionMidRequest } from '@/lib/micamp/client';
+import { getMerchantProcessor } from '@/lib/integrations/registry';
 import { assertPartnerOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { safeErrorResponse } from '@/lib/safe-error';
 import { enforceOrigin } from '@/lib/origin-guard';
@@ -99,7 +100,8 @@ export async function POST(req: NextRequest) {
   if (ownership) return ownership;
 
   try {
-    const result = await provisionMid(parsed.data as ProvisionMidRequest);
+    const processor = getMerchantProcessor(parsed.data.partnerId);
+    const result = await processor.provisionMid(parsed.data as ProvisionMidRequest);
     return NextResponse.json(result, { status: 202 });
   } catch (err) {
     // SEC-007: never echo `err.message` — MiCamp error bodies include

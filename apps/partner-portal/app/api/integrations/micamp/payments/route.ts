@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { charge, type ChargeRequest } from '@/lib/micamp/client';
+import { type ChargeRequest } from '@/lib/micamp/client';
+import { getMerchantProcessor } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { safeErrorResponse } from '@/lib/safe-error';
 import { enforceOrigin } from '@/lib/origin-guard';
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest) {
   if (ownership) return ownership;
 
   try {
-    const result = await charge(parsed.data as ChargeRequest);
+    const processor = getMerchantProcessor(guard.partnerId);
+    const result = await processor.charge(parsed.data as ChargeRequest);
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     // SEC-007: never echo upstream error text — MiCamp's 5xx bodies
