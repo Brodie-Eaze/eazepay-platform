@@ -1,6 +1,8 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import type { DynamicModule, Provider } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import type { PrismaClient } from '@prisma/client';
 import { LocalKeyManager } from './adapters/local-key-manager.adapter.js';
+import { KmsKeyManager } from './adapters/kms-key-manager.adapter.js';
 import { MockKycAdapter } from './adapters/mock-kyc.adapter.js';
 import { PiiVaultService } from './internal/pii-vault.service.js';
 import { PRISMA } from './internal/tokens.js';
@@ -31,12 +33,29 @@ export class UserModule {
       provide: KEY_MANAGER,
       useFactory: () => {
         if (options.keyManager === 'local') {
+          // LocalKeyManager is dev-only; the production refusal lives
+          // upstream in apps/api/src/config/env.ts so a misconfigured
+          // production deploy refuses to boot rather than reaching this
+          // factory with `keyManager='local'`. Defense-in-depth: the
+          // factory below would still succeed in non-prod, but production
+          // can never get here.
           if (!options.localKekHex) {
             throw new Error('UserModule: keyManager=local requires localKekHex');
           }
           return new LocalKeyManager(options.localKekHex);
         }
-        throw new Error('KMS KeyManager not yet implemented');
+        if (options.keyManager === 'kms') {
+          // STUB — see services/user/src/adapters/kms-key-manager.adapter.ts
+          // docstring + docs/runbooks/kek-rotation.md. The dispatch path
+          // is wired so a production boot with `KEY_MANAGER=kms` resolves
+          // to a real class; the real AWS KMS client lands in a follow-up
+          // infra task.
+          return new KmsKeyManager();
+        }
+        // Exhaustiveness — TypeScript enum guarantees we never reach
+        // here, but throwing keeps the boot loud on any future enum
+        // widening that forgets to update this factory.
+        throw new Error(`UserModule: unknown keyManager '${String(options.keyManager)}'`);
       },
     };
 

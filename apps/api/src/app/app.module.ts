@@ -104,6 +104,10 @@ const env = loadEnv();
       prismaToken: PrismaService,
       sink: env.AUDIT_SINK,
       localFsRoot: env.AUDIT_LOCAL_FS_ROOT,
+      // PE-AUDIT-01 — stub root for the S3 WORM adapter; mirrors S3
+      // PutObject key layout to a local directory until the real
+      // @aws-sdk/client-s3 wiring lands as an infra task.
+      s3StubRoot: env.AUDIT_S3_STUB_ROOT,
       cronLeader: env.CRON_LEADER,
       drainEnabled: env.AUDIT_DRAIN_ENABLED,
       isDevelopment: env.NODE_ENV === 'development',
