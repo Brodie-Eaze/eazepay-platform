@@ -124,7 +124,11 @@ interface LiveStatusBody {
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import { type ApplicationRow } from '../../../../../lib/master-data';
-import { expandedApplications } from '../../../../../lib/seeded-applications';
+// `expandedApplications` (~1MB) is now server-only. The detail page only
+// needs to look up a single id against the seeded fixture — we do that
+// via the JSON endpoint with TanStack Query (caches the lookup so a
+// rapid back-forward through deals is instant).
+import { useQuery } from '@tanstack/react-query';
 import {
   readSubmittedAppsForPartner,
   readCurrentPartnerIdFromDemoCookie,
@@ -632,18 +636,52 @@ export default function DealDetailPage() {
   const spec = BRANDS[brand];
 
   // Look up against the EXPANDED dataset (master-data 10+15 historical
-  // PLUS the 420 generated Sprint-H realistic-data rows). The list page
-  // also reads expandedApplications, so an ID rendered in the table
-  // resolves here. Before this fix the detail page only checked the
-  // hand-curated `applications` array, so every click on a generated
-  // row 404'd.
-  const seedApp = expandedApplications.find((a) => a.id === id);
-  const app = seedApp ?? submittedApp;
-  // Before the fix this branch fired for any submitted-app click +
-  // bounced the user to root not-found.tsx → master OS via "Go home".
-  // Two-part fix: lookup expansion above + brand-scoped not-found at
-  // /v/[brand]/not-found.tsx so the "Go home" stays inside /v/<brand>/.
-  if (!app) notFound();
+  // PLUS the 420 generated Sprint-H realistic-data rows). The expanded
+  // set lives server-side now (see seeded-applications.ts → 'server-only');
+  // we fetch the single matching row by id via the JSON endpoint.
+  const seedAppQuery = useQuery<{ item: ApplicationRow }>({
+    queryKey: ['admin', 'dashboard', 'application', id],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/dashboard/application/${encodeURIComponent(id)}`, {
+        credentials: 'include',
+      });
+      if (res.status === 404) {
+        // Distinguish "not seeded" from a network error — return a
+        // sentinel so the resolution below can still consider the
+        // submittedApp fallback.
+        return { item: null as unknown as ApplicationRow };
+      }
+      if (!res.ok) throw new Error(`application fetch failed: ${res.status}`);
+      return res.json();
+    },
+  });
+  const seedApp: ApplicationRow | undefined = seedAppQuery.data?.item ?? undefined;
+  const resolvedApp = seedApp ?? submittedApp;
+  // Once the seed query has settled and there's still no row, the id
+  // really is unknown — mirror the prior `if (!app) notFound()` path.
+  // `notFound()` throws, so it does NOT violate react-hooks/rules-of-
+  // hooks (it's an unconditional control transfer, not an early return).
+  if (seedAppQuery.isFetched && !resolvedApp) notFound();
+  // During the brief in-flight window the lookup hasn't resolved yet.
+  // We must keep calling the downstream hooks unconditionally to satisfy
+  // rules-of-hooks, so substitute a placeholder row that has the same
+  // shape as ApplicationRow. The JSX render at the bottom guards on
+  // `!hasResolvedApp` and returns null, so this placeholder never paints.
+  const hasResolvedApp = !!resolvedApp;
+  const app: ApplicationRow =
+    resolvedApp ??
+    ({
+      id,
+      customer: '',
+      customerEmail: '',
+      partner: '',
+      product: 'med-pay',
+      amountCents: 0,
+      fico: 0,
+      lender: '',
+      status: 'submitted',
+      date: '1970-01-01',
+    } as ApplicationRow);
 
   const highsale = lookupHighsaleSnapshot(app.id);
   const tier: CreditTier | null = highsale?.creditTier ?? null;
@@ -866,6 +904,12 @@ export default function DealDetailPage() {
       cell: (row) => <span className="font-mono text-[11px] text-fg-muted">{row.latencyMs}ms</span>,
     },
   ];
+
+  // Until the seed-row fetch settles, render nothing — every hook above
+  // ran with the placeholder app, but we don't want to paint that. The
+  // visual gap is invisible to operators because the surrounding layout
+  // chrome (header, breadcrumbs) already paints from Server Components.
+  if (!hasResolvedApp) return null;
 
   return (
     <>

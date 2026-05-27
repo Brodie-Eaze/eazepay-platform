@@ -1,6 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import {
   PageHeader,
   PageBody,
@@ -16,20 +17,12 @@ import {
 } from '@eazepay/ui/web';
 import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import { partners, applications, masterKpis } from '../lib/master-data';
-import { expandedApplications } from '../lib/seeded-applications';
-import {
-  applicationsByMonth,
-  applicationsByStatus,
-  applicationsInRange,
-  CREDIT_TIER_RANGES,
-  creditMix,
-  fundedVolumeByMonth,
-  priorWindow,
-  timeRangeToWindow,
-  totalFundedCents,
-  trendDelta,
-  type CreditTier,
-} from '../lib/dashboard-metrics';
+// NOTE: this page previously imported `expandedApplications` from
+// `../lib/seeded-applications` and aggregated KPIs in the browser.
+// The fixture is ~1MB; shipping it client-side regressed first-load
+// JS by that amount on every dashboard hit. We now fetch the pre-
+// aggregated snapshot from `/api/admin/dashboard/snapshot` (~5KB).
+import { CREDIT_TIER_RANGES, type CreditTier } from '../lib/dashboard-metrics';
 
 /**
  * Master Command Centre — direct port of the Lovable reference.
@@ -69,7 +62,28 @@ const CREDIT_TIER_RANGE_LABEL: Record<CreditTier, string> = {
   DeepSubprime: `${CREDIT_TIER_RANGES.DeepSubprime[0]}–${CREDIT_TIER_RANGES.DeepSubprime[1]}`,
 };
 
-const leaderboard = partners
+/** Empty-state placeholders while the snapshot loads. Keeps the JSX
+ *  below identical-shaped to the previous client-derived `live` object
+ *  so visual rendering is unchanged. */
+const EMPTY_SNAPSHOT = {
+  submitted: 0,
+  submittedDelta: 0,
+  approved: 0,
+  approvedDelta: 0,
+  funded: 0,
+  fundedDelta: 0,
+  declined: 0,
+  declinedDelta: 0,
+  inReview: 0,
+  inReviewDelta: 0,
+  fundedCents: 0,
+  fundedCentsDelta: 0,
+  monthlySubs: [] as Array<{ label: string; value: number }>,
+  monthlyFunded: [] as Array<{ label: string; value: number }>,
+  mix: [] as Array<{ name: CreditTier; range: string; count: number; pct: number }>,
+};
+
+const FALLBACK_LEADERBOARD = partners
   .slice(0, 5)
   .sort((a, b) => b.netCents - a.netCents)
   .map((p, i) => ({
@@ -81,65 +95,77 @@ const leaderboard = partners
     fundedCount: 38 - i * 7,
     approval: 87 - i * 6,
   }));
-const maxFunded = leaderboard[0]?.funded ?? 1;
 
 // ── Component ────────────────────────────────────────────────────────
 
-export default function CommandCenter() {
-  // ── Live snapshot ── derive every KPI + chart from expandedApplications.
-  // Range: rolling 6 months for charts, last 90 days vs prior 90 days
-  // for KPI deltas. Was hardcoded — user explicitly asked for live data.
-  const live = useMemo(() => {
-    const { fromIso, toIso } = timeRangeToWindow('90d');
-    const prior = priorWindow('90d');
-    const inWindow = applicationsInRange(expandedApplications, fromIso, toIso);
-    const inPrior = applicationsInRange(expandedApplications, prior.fromIso, prior.toIso);
-    const cur = applicationsByStatus(inWindow);
-    const pre = applicationsByStatus(inPrior);
-
-    const fundedCents = totalFundedCents(inWindow);
-    const fundedCentsPrior = totalFundedCents(inPrior);
-
-    // Charts read a wider window (6 months) so trend bars actually
-    // show a trend instead of mostly-zero columns.
-    const chartWindow = timeRangeToWindow('12m');
-    const monthlySubs = applicationsByMonth(
-      expandedApplications,
-      chartWindow.fromIso,
-      chartWindow.toIso,
-    );
-    const monthlyFunded = fundedVolumeByMonth(
-      expandedApplications,
-      chartWindow.fromIso,
-      chartWindow.toIso,
-    );
-    const mix = creditMix(inWindow);
-    const mixTotal = mix.reduce((s, m) => s + m.count, 0);
-    const mixWithPct = mix.map((m) => ({
-      ...m,
-      pct: mixTotal === 0 ? 0 : Math.round((m.count / mixTotal) * 100),
-    }));
-
-    // trendDelta returns { pct, direction }; KPI only needs pct.
-    const dp = (a: number, b: number) => trendDelta(a, b).pct;
-    return {
-      submitted: cur.total,
-      submittedDelta: dp(cur.total, pre.total),
-      approved: cur.approved,
-      approvedDelta: dp(cur.approved, pre.approved),
-      funded: cur.funded,
-      fundedDelta: dp(cur.funded, pre.funded),
-      declined: cur.declined,
-      declinedDelta: dp(cur.declined, pre.declined),
-      inReview: cur.in_review,
-      inReviewDelta: dp(cur.in_review, pre.in_review),
-      fundedCents,
-      fundedCentsDelta: dp(fundedCents, fundedCentsPrior),
-      monthlySubs,
-      monthlyFunded,
-      mix: mixWithPct,
+interface SnapshotResponse {
+  scope: 'master';
+  snapshot: {
+    cur: { total: number; approved: number; funded: number; declined: number; in_review: number };
+    deltas: {
+      submitted: number;
+      approved: number;
+      funded: number;
+      declined: number;
+      inReview: number;
+      fundedCents: number;
     };
-  }, []);
+    fundedCents: number;
+    monthlySubs: Array<{ label: string; value: number }>;
+    monthlyFunded: Array<{ label: string; value: number }>;
+    mix: Array<{ name: CreditTier; range: string; count: number; pct: number }>;
+  };
+  leaderboard: Array<{
+    rank: number;
+    partnerId: string;
+    name: string;
+    funded: number;
+    apps: number;
+    fundedCount: number;
+    approval: number;
+  }>;
+}
+
+export default function CommandCenter() {
+  // ── Live snapshot ── fetched from /api/admin/dashboard/snapshot.
+  // Replaces a previous in-browser aggregation over a ~1MB fixture
+  // (`expandedApplications`), which has now been gated behind
+  // `'server-only'` so it can never leak back into the client bundle.
+  const snapshotQuery = useQuery<SnapshotResponse>({
+    queryKey: ['admin', 'dashboard', 'snapshot', 'master'],
+    queryFn: async () => {
+      const res = await fetch('/api/admin/dashboard/snapshot?scope=master', {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`snapshot fetch failed: ${res.status}`);
+      return (await res.json()) as SnapshotResponse;
+    },
+  });
+
+  const live = useMemo(() => {
+    const snap = snapshotQuery.data?.snapshot;
+    if (!snap) return EMPTY_SNAPSHOT;
+    return {
+      submitted: snap.cur.total,
+      submittedDelta: snap.deltas.submitted,
+      approved: snap.cur.approved,
+      approvedDelta: snap.deltas.approved,
+      funded: snap.cur.funded,
+      fundedDelta: snap.deltas.funded,
+      declined: snap.cur.declined,
+      declinedDelta: snap.deltas.declined,
+      inReview: snap.cur.in_review,
+      inReviewDelta: snap.deltas.inReview,
+      fundedCents: snap.fundedCents,
+      fundedCentsDelta: snap.deltas.fundedCents,
+      monthlySubs: snap.monthlySubs,
+      monthlyFunded: snap.monthlyFunded,
+      mix: snap.mix,
+    };
+  }, [snapshotQuery.data]);
+
+  const leaderboard = snapshotQuery.data?.leaderboard ?? FALLBACK_LEADERBOARD;
+  const maxFunded = leaderboard[0]?.funded ?? 1;
 
   // Y-axis tick ceiling so bars don't blow past the gridline. Rounded
   // up to a nice number above the actual max so the chart breathes.
