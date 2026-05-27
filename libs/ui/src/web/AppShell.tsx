@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { cn } from './cn';
 import { Logo } from './Logo';
 import { ChevronDownIcon, SearchIcon, MenuIcon, XIcon } from './Icon';
+import { BackButton } from './BackButton';
 import { MotionStagger } from './Motion';
 
 export interface NavItem {
@@ -479,6 +480,12 @@ export const PageHeader: FC<{
   };
   return (
     <div className={cn('px-4 sm:px-7 pt-5 pb-4', className)}>
+      {/* Back chip — always rendered (auto-hides on '/'). Operators
+          asked for a consistent way to retreat from any page without
+          hunting for the sidebar or the browser's own back button. */}
+      <div className="mb-2 -mt-0.5">
+        <BackButton />
+      </div>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav
           aria-label="Breadcrumb"

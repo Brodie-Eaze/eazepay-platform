@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { PublicFooter } from './PublicFooter';
 
 /**
  * Naked-route chrome for the public trust pages. Renders a minimal top
@@ -42,7 +41,9 @@ export function PublicPageShell({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">{children}</div>
       </main>
-      <PublicFooter />
+      {/* PublicFooter dropped per user request — top-nav links already
+          expose Status / Security / Changelog / API. The duplicate at
+          the bottom of every page was noise. */}
     </div>
   );
 }
