@@ -410,7 +410,7 @@ async function upsertOffer(
   args: {
     applicationId: string;
     lender: SampleLender;
-    decision: string;
+    decision: schema.OfferDecision;
     offer?: {
       amount_cents?: number;
       apr_bps?: number;
