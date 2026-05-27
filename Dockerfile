@@ -2,10 +2,12 @@
 #
 # EazePay partner-portal — production image for Railway.
 #
-# Three-stage build:
-#   1. deps     — install pnpm workspace deps with the lockfile
-#   2. builder  — produce the Next.js standalone bundle
-#   3. runner   — minimal runtime image (~150MB) that runs `node server.js`
+# Two-stage build:
+#   1. builder  — install deps + produce the Next.js standalone bundle
+#                 (single stage avoids the libs/*/node_modules symlink-
+#                 overwrite class of bugs that broke earlier multi-stage
+#                 attempts)
+#   2. runner   — minimal runtime image (~150MB) that runs `node server.js`
 #
 # Why standalone: Next.js writes a self-contained server.js + the only
 # node_modules it actually traced, so we avoid shipping the 1GB+ pnpm
@@ -14,26 +16,7 @@
 # resolve correctly inside the container.
 
 # ─────────────────────────────────────────────────────────────────────
-# 1. deps — install pnpm + workspace dependencies
-# ─────────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS deps
-WORKDIR /repo
-
-RUN apk add --no-cache libc6-compat \
-  && corepack enable \
-  && corepack prepare pnpm@9.12.0 --activate
-
-# Copy only the files needed for a deterministic install.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
-COPY apps/partner-portal/package.json apps/partner-portal/
-COPY libs ./libs
-
-# Install workspace deps. We use --frozen-lockfile so Railway builds
-# fail loud if package.json + lockfile drift.
-RUN pnpm install --frozen-lockfile --filter=@eazepay/partner-portal...
-
-# ─────────────────────────────────────────────────────────────────────
-# 2. builder — produce the Next.js standalone output
+# 1. builder — install + build in a single stage
 # ─────────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /repo
@@ -42,27 +25,26 @@ RUN apk add --no-cache libc6-compat \
   && corepack enable \
   && corepack prepare pnpm@9.12.0 --activate
 
-# Bring in the full repo source FIRST, then layer installed node_modules
-# ON TOP. Order matters: if we copied libs/ from deps before `COPY . .`,
-# the source copy would overwrite libs/ui/node_modules (pnpm's symlinks
-# to motion, cmdk, radix, etc.) — which is exactly how Railway builds
-# started failing with "Module not found: 'motion/react'".
+# Copy the entire repo (node_modules + .next + dist + .git etc. are
+# stripped by .dockerignore). Single COPY means there is no second
+# layer that can wipe out pnpm's symlinks in libs/*/node_modules.
 COPY . .
-COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/partner-portal/node_modules ./apps/partner-portal/node_modules
-COPY --from=deps /repo/libs/ui/node_modules ./libs/ui/node_modules
-COPY --from=deps /repo/libs/shared-types/node_modules ./libs/shared-types/node_modules
-COPY --from=deps /repo/libs/shared-utils/node_modules ./libs/shared-utils/node_modules
-COPY --from=deps /repo/libs/api-client/node_modules ./libs/api-client/node_modules
+
+# Install with --frozen-lockfile so package.json + lockfile drift fails
+# loud. Use --filter=@eazepay/partner-portal... so we only install the
+# deps needed for the partner-portal app + its workspace deps (not the
+# whole monorepo).
+RUN pnpm install --frozen-lockfile --filter=@eazepay/partner-portal...
 
 # Build the partner-portal app. `output: 'standalone'` in next.config.mjs
 # writes the trim-down bundle to apps/partner-portal/.next/standalone.
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_PHASE=phase-production-build
 RUN pnpm --filter @eazepay/partner-portal build
 
 # ─────────────────────────────────────────────────────────────────────
-# 3. runner — minimal runtime
+# 2. runner — minimal runtime
 # ─────────────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
