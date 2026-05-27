@@ -29,12 +29,42 @@ import type { SessionContext } from '../session';
 
 type GlobalWithPool = typeof globalThis & {
   __ezpPgPool?: Pool;
+  __ezpPgMigrationPool?: Pool;
 };
 
 const globalForPool = globalThis as GlobalWithPool;
 
 function resolveConnectionString(): string | null {
   return process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? null;
+}
+
+/**
+ * Connection string for structural DDL / migrations. In production
+ * this should hold credentials for `eazepay_migration_role` (BYPASSRLS,
+ * privileged DDL grants). Falls back to DATABASE_URL in local dev where
+ * there is typically only one role. ONLY `scripts/migrate.ts` should
+ * use this — see `getMigrationDb()`.
+ */
+function resolveMigrationConnectionString(): string | null {
+  return (
+    process.env.MIGRATION_DATABASE_URL ??
+    process.env.DATABASE_URL ??
+    process.env.POSTGRES_URL ??
+    null
+  );
+}
+
+/**
+ * Optional Postgres role to SET on every checked-out app-pool
+ * connection. In deployed envs set this to `eazepay_service_role` so
+ * the BFF runs constrained by RLS + the append-only REVOKEs from
+ * `0019_append_only_grants.sql`, even if the connection string itself
+ * was provisioned with a higher-privileged role. Defense in depth: a
+ * mis-configured DATABASE_URL can't accidentally hand the app a role
+ * that can mutate audit_log.
+ */
+function resolveAppRole(): string | null {
+  return process.env.DATABASE_APP_ROLE ?? null;
 }
 
 /**
@@ -45,14 +75,8 @@ export function hasDb(): boolean {
   return Boolean(resolveConnectionString());
 }
 
-function buildPool(): Pool {
-  const connectionString = resolveConnectionString();
-  if (!connectionString) {
-    throw new Error(
-      'DATABASE_URL is not set. Add a Postgres service in Railway (it injects DATABASE_URL automatically) or export POSTGRES_URL locally.',
-    );
-  }
-  return new Pool({
+function buildPool(connectionString: string, appRole: string | null): Pool {
+  const pool = new Pool({
     connectionString,
     /* Tighter pool ceiling than the Postgres default — leaves room
      * for the migrate / seed scripts to grab connections too. Tune
@@ -67,11 +91,39 @@ function buildPool(): Pool {
      * honoured without code changes. */
     ssl: connectionString.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
   });
+
+  if (appRole) {
+    /* Switch every freshly-checked-out connection to the constrained
+     * app role. SET ROLE persists for the session, which is the scope
+     * we want: the connection stays constrained for every checkout
+     * until it's evicted. Validate the identifier defensively so an
+     * env-var injection can't smuggle SQL. */
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(appRole)) {
+      throw new Error(
+        `DATABASE_APP_ROLE must be a bare Postgres identifier; got: ${JSON.stringify(appRole)}`,
+      );
+    }
+    pool.on('connect', (client) => {
+      client.query(`SET ROLE "${appRole}"`).catch((err) => {
+        // Surface loudly — silently falling back to a privileged role
+        // would defeat the purpose of the REVOKEs in 0019.
+        console.error('[db] failed to SET ROLE', appRole, err);
+      });
+    });
+  }
+
+  return pool;
 }
 
 function getPool(): Pool {
   if (!globalForPool.__ezpPgPool) {
-    globalForPool.__ezpPgPool = buildPool();
+    const connectionString = resolveConnectionString();
+    if (!connectionString) {
+      throw new Error(
+        'DATABASE_URL is not set. Add a Postgres service in Railway (it injects DATABASE_URL automatically) or export POSTGRES_URL locally.',
+      );
+    }
+    globalForPool.__ezpPgPool = buildPool(connectionString, resolveAppRole());
   }
   return globalForPool.__ezpPgPool;
 }
@@ -79,16 +131,46 @@ function getPool(): Pool {
 export type Db = NodePgDatabase<typeof schema>;
 
 let cachedDb: Db | null = null;
+let cachedMigrationDb: Db | null = null;
 
 /**
  * Get the Drizzle client. Throws if DATABASE_URL is not configured —
  * callers that need graceful degradation should call `hasDb()` first.
+ *
+ * Returns a client bound to the constrained app role (when
+ * `DATABASE_APP_ROLE` is set). This client CANNOT update/delete
+ * audit_log / application_events / decisions — see 0019_append_only_grants.
  */
 export function getDb(): Db {
   if (!cachedDb) {
     cachedDb = drizzle(getPool(), { schema, logger: false });
   }
   return cachedDb;
+}
+
+/**
+ * Get a Drizzle client privileged for structural DDL and migrations.
+ * Bound to `MIGRATION_DATABASE_URL` (or DATABASE_URL in local dev) and
+ * does NOT SET ROLE down to the constrained app role.
+ *
+ * ONLY `scripts/migrate.ts` should call this. Importing it from a
+ * route handler is a code smell — file a PR review comment.
+ */
+export function getMigrationDb(): Db {
+  if (!cachedMigrationDb) {
+    const connectionString = resolveMigrationConnectionString();
+    if (!connectionString) {
+      throw new Error(
+        'MIGRATION_DATABASE_URL (or DATABASE_URL) is not set. Cannot run migrations.',
+      );
+    }
+    if (!globalForPool.__ezpPgMigrationPool) {
+      // Migration pool: privileged, NO SET ROLE.
+      globalForPool.__ezpPgMigrationPool = buildPool(connectionString, null);
+    }
+    cachedMigrationDb = drizzle(globalForPool.__ezpPgMigrationPool, { schema, logger: false });
+  }
+  return cachedMigrationDb;
 }
 
 export { schema };
