@@ -854,3 +854,42 @@ export const welcomeTokens = pgTable(
 
 export type WelcomeToken = typeof welcomeTokens.$inferSelect;
 export type NewWelcomeToken = typeof welcomeTokens.$inferInsert;
+
+/* ---------- consent_receipts ----------
+ *
+ * Durable, append-only FCRA §604(a)(2) consent receipts. Pre-fix the
+ * store was a process-local `new Map()` in lib/consumer-consent.ts —
+ * the rows did not survive replica restarts and were invisible to the
+ * prequal verifier when a different replica handled the pull.
+ *
+ * Append-only is enforced at the application layer (no UPDATE helper
+ * exported from `lib/db/consent-receipts.ts`) and at the DB role level
+ * by the 0011 migration's REVOKE statements.
+ */
+export const consentReceipts = pgTable(
+  'consent_receipts',
+  {
+    /** Server-minted UUID — opaque audit-chain pointer the consumer
+     *  apply flow carries into the HighSale prequal call. */
+    id: text('id').primaryKey(),
+    applicationId: text('application_id').notNull(),
+    sessionId: text('session_id'),
+    partnerId: text('partner_id'),
+    brand: text('brand').notNull(),
+    disclosureVersion: text('disclosure_version').notNull(),
+    capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
+    capturedIp: text('captured_ip').notNull(),
+    capturedUserAgent: text('captured_user_agent'),
+    signatureHash: text('signature_hash').notNull(),
+    rawText: text('raw_text').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    applicationIdx: index('consent_receipts_application_idx').on(t.applicationId),
+    sessionIdx: index('consent_receipts_session_idx').on(t.sessionId),
+    capturedAtIdx: index('consent_receipts_captured_at_idx').on(t.capturedAt),
+  }),
+);
+
+export type ConsentReceiptRow = typeof consentReceipts.$inferSelect;
+export type NewConsentReceiptRow = typeof consentReceipts.$inferInsert;
