@@ -10,6 +10,9 @@ import {
   type CommandPaletteCommand,
   StatusPill,
   HomeIcon,
+  KeyIcon,
+  CrownIcon,
+  FlagIcon,
   QueueIcon,
   ChartIcon,
   PackageIcon,
@@ -98,51 +101,84 @@ const NextLink = ({
 );
 
 /**
- * Master Command Centre menu — Sprint I IA rationalization. Collapsed
- * 9 groups / 24 items into 3 groups / 11 items. Full rationale in
- * docs/ia-rationalization.md.
+ * Master Command Centre menu — restored to the 9-group structure
+ * (per user request on 2026-05-27). Sprint I had collapsed it to 3
+ * groups; Brodie preferred the explicit-section layout. Two specific
+ * sections intentionally NOT restored even in the rollback:
  *
- *   WORK     — operator's daily queue (commands, applications, billing)
- *   NETWORK  — relationships (partners, lenders, products)
- *   TOOLS    — set-it-and-forget surfaces (AI, dev, settings)
+ *   - "Services" section (EAZE Affiliate / Marketing Consult / Sales
+ *     Recruitment) — placeholders, never wired to real product
+ *   - "AMALA Foundation" link — external charity, different company
  *
- * Killed: AMALA Foundation (different company), EAZE Affiliate /
- * Marketing Consult / Sales Recruitment (placeholders, not platform
- * features). Moved to the topbar "More" menu: Control Panel,
- * Marketplace, Sandbox, API Keys, Documentation, Admin shortcuts.
+ * Result: 7 groups instead of the pre-Sprint-I 9. Everything else
+ * (Command Centre, Partners, Pipeline, Lender Network, Submit
+ * Application, Products, Developer, Account) restored verbatim.
  *
- * Submit-Application duplication: the three per-brand submit links are
- * now reached via /applications/new (brand-selector page).
- *
- * Lender Network + Partner Access merge: a single "Lender Access" item
- * targets /lender-marketplace; the per-partner override grid lives
- * inside that surface as a tab.
+ * The topbar `<MoreMenu />` (added by Sprint I to house items that
+ * were moved out of the sidebar) is now redundant — those items are
+ * back in the sidebar where they belong. MoreMenu render is gated to
+ * not show when masterGroups already contains those items.
  */
 const masterGroups: NavGroup[] = [
   {
-    label: 'Work',
+    label: 'Command Centre',
     items: [
       { href: '/', label: 'Command Center', icon: <GaugeIcon /> },
-      { href: '/applications', label: 'Applications', icon: <DocIcon /> },
-      { href: '/onboarding-pipeline', label: 'Pipeline', icon: <SendIcon /> },
-      { href: '/invoices', label: 'Billing', icon: <DollarIcon /> },
+      { href: '/control-panel', label: 'Control Panel', icon: <SettingsIcon /> },
       { href: '/reports', label: 'Reports', icon: <ChartIcon /> },
       { href: '/insights', label: 'Insights', icon: <SparkIcon /> },
     ],
   },
   {
-    label: 'Network',
+    label: 'Partners',
     items: [
-      { href: '/partners', label: 'Partners', icon: <UsersIcon /> },
-      { href: '/lender-marketplace', label: 'Lender Access', icon: <BankIcon /> },
-      { href: '/products', label: 'Products', icon: <PackageIcon /> },
+      { href: '/onboarding-pipeline', label: 'Business Onboarding', icon: <SendIcon /> },
+      { href: '/partners', label: 'Partner Directory', icon: <UsersIcon /> },
     ],
   },
   {
-    label: 'Tools',
+    label: 'Pipeline',
+    items: [{ href: '/invoices', label: 'Billing', icon: <DollarIcon /> }],
+  },
+  {
+    label: 'Lender Network',
+    items: [
+      { href: '/lender-marketplace', label: 'Lender Network', icon: <BankIcon /> },
+      { href: '/lender-marketplace/access', label: 'Partner Access', icon: <KeyIcon /> },
+    ],
+  },
+  {
+    label: 'Submit Application',
+    items: [
+      { href: '/applications', label: 'All Applications', icon: <DocIcon /> },
+      { href: '/submit/coach-pay', label: 'CoachPay Application', icon: <SendIcon /> },
+      { href: '/submit/med-pay', label: 'MedPay Application', icon: <HeartPulseIcon /> },
+      { href: '/submit/trade-pay', label: 'TradePay Application', icon: <BankIcon /> },
+    ],
+  },
+  {
+    label: 'Products',
+    items: [
+      { href: '/coach-pay', label: 'CoachPay', icon: <CrownIcon /> },
+      { href: '/trade-pay', label: 'TradePay', icon: <BankIcon /> },
+      { href: '/eaze-med-pay', label: 'MedPay', icon: <HeartPulseIcon /> },
+      { href: '/eaze-processing', label: 'EAZE Processing', icon: <CardIcon /> },
+      { href: '/dialerpay', label: 'DialerPay', icon: <PhoneIcon /> },
+      { href: '/ez-check', label: 'EZ Check', icon: <ShieldIcon /> },
+    ],
+  },
+  {
+    label: 'Developer',
+    items: [
+      { href: '/docs', label: 'Documentation', icon: <DocIcon /> },
+      { href: '/sandbox', label: 'Sandbox', icon: <FlagIcon /> },
+      { href: '/api-keys', label: 'API Keys', icon: <KeyIcon /> },
+    ],
+  },
+  {
+    label: 'Account',
     items: [
       { href: '/eaze-ai', label: 'EAZE AI', icon: <RobotIcon /> },
-      { href: '/docs', label: 'Developer', icon: <DocIcon /> },
       { href: '/settings', label: 'Settings', icon: <SettingsIcon /> },
     ],
   },
@@ -739,7 +775,12 @@ export function Shell({ children }: { children: ReactNode }) {
               sidebar during Sprint I's IA cleanup (Control Panel,
               Marketplace, Sandbox, API Keys, Admin shortcuts). Master
               surface only; hidden inside per-brand portals. */}
-            {!activeBrand && <MoreMenu />}
+            {/* MoreMenu hidden: 2026-05-27 sidebar restore put Control
+                Panel / Sandbox / API Keys / Docs back as first-class
+                sidebar items, so the topbar overflow menu is now
+                duplication. Component kept in tree as a no-op for
+                quick re-enable if the sidebar shrinks again. */}
+            {false && !activeBrand && <MoreMenu />}
             <span data-tour-id="nav-help" className="inline-flex">
               <Button size="sm" variant="ghost">
                 Help
