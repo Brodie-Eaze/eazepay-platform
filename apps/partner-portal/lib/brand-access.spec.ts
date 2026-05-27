@@ -117,21 +117,20 @@ describe('brand-access', () => {
       warnSpy.mockRestore();
     });
 
-    it('allows real session as deferred and emits a structured breadcrumb', () => {
+    it('F-006: real-session cookie is DENIED (no silent bypass)', () => {
       const result = resolveBrandAccess('medpay', {
         hasRealSession: true,
         verifiedDemoPreset: null,
         verifiedAccountBrand: null,
       });
-      expect(result).toEqual({ allowed: true, via: 'real_session_deferred' });
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      const arg = warnSpy.mock.calls[0]?.[0];
-      const parsed = JSON.parse(arg as string);
-      expect(parsed.event).toBe('brand_access.real_session_deferred');
-      expect(parsed.brand).toBe('medpay');
+      // Pre-fix: { allowed:true, via:'real_session_deferred' } — an
+      // attacker with a planted cookie silently passed every brand
+      // gate. Now denied with a distinct reason so dashboards can
+      // alert on it.
+      expect(result).toEqual({ allowed: false, reason: 'real_session_unverified' });
     });
 
-    it('real-session bypass still denies an unknown brand slug', () => {
+    it('F-006: real-session bypass still denies an unknown brand slug first', () => {
       const result = resolveBrandAccess('attacker', {
         hasRealSession: true,
         verifiedDemoPreset: null,

@@ -92,6 +92,33 @@ export type SessionContext =
   | { mode: 'none' };
 
 /**
+ * F-006: stub for real-session access-token verification.
+ *
+ * Pre-fix, any non-empty `eazepay_at` cookie was treated as a valid
+ * real session and granted operator-equivalent visibility. An attacker
+ * who could plant the cookie (XSS, malicious extension, dev-host MITM)
+ * silently elevated.
+ *
+ * Until the backend `/v1/me` endpoint is wired with real JWT
+ * verification + claim extraction (merchantId, brand, role), this stub
+ * returns `{valid:false}` for every token. The session resolver treats
+ * that as "no session" and the request fails closed. When the real
+ * verifier lands, replace the body of this function; call sites do not
+ * need to change.
+ */
+export async function verifyAccessToken(
+  _token: string,
+): Promise<{ valid: false } | { valid: true; claims: Record<string, unknown> }> {
+  return { valid: false };
+}
+
+/** One-shot warning the first time a real `eazepay_at` cookie arrives
+ *  in this process, so operators see the signal in prod logs the moment
+ *  real-token rollout begins. Per-process — not per-request — to avoid
+ *  log floods under sustained attacker probing. */
+let _realTokenWarnEmitted = false;
+
+/**
  * Resolve the session for a given BFF request. Verifies the demo cookie
  * signature before trusting its value (SEC-103). Async because HMAC
  * verification uses Web Crypto subtle.
@@ -114,16 +141,33 @@ export async function getSessionContext(req: NextRequest): Promise<SessionContex
 
   const at = req.cookies.get('eazepay_at')?.value;
   if (at) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        event: 'session.real_deferred',
-        msg: 'Real-session context resolution is not yet wired to /v1/me. Treating as operator.',
-        hint: 'Implement /v1/me brand claims + update lib/session.ts before shipping real sessions.',
-      }),
-    );
-    return { mode: 'real', placeholder: true };
+    /* F-006: presence of `eazepay_at` is NOT proof of identity. The
+     * previous code returned `{mode:'real', placeholder:true}` for any
+     * non-empty value — an attacker who could plant the cookie silently
+     * elevated to operator. We MUST verify via verifyAccessToken and
+     * fail closed on invalid until the real verifier is wired. */
+    const verified = await verifyAccessToken(at);
+    if (!verified.valid) {
+      if (!_realTokenWarnEmitted) {
+        _realTokenWarnEmitted = true;
+        // eslint-disable-next-line no-console
+        console.warn(
+          JSON.stringify({
+            level: 'warn',
+            event: 'session.real_token_unverified',
+            msg: 'eazepay_at cookie present but verifyAccessToken stub returned invalid. Treating as no-session.',
+            hint: 'Wire /v1/me JWT verification in lib/session.verifyAccessToken before shipping real sessions.',
+          }),
+        );
+      }
+      // Fall through to demo-cookie resolution; if no demo cookie is
+      // also present, the function returns {mode:'none'} below.
+    } else {
+      // Real verifier is live and the token validates. Until claims are
+      // typed and threaded through SessionContext, keep the placeholder
+      // shape so existing call sites continue to compile.
+      return { mode: 'real', placeholder: true };
+    }
   }
 
   const signed = req.cookies.get('eazepay_demo')?.value;

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/server-guards';
 import { enforceOrigin } from '@/lib/origin-guard';
+import { writeAuditLog } from '@/lib/audit-log';
 
 /**
  * Internal-team list + invite. Proxies to backend `/v1/admin/team`
@@ -99,6 +100,24 @@ export async function POST(req: NextRequest) {
     if (optimisticBffAllowed()) return NextResponse.json({ ok: true });
     return unauthorized();
   }
+
+  /* SOC2 CC8.1: every team-membership mutation MUST land in audit_log.
+   * Payload includes the invitation target email + requested role so a
+   * reviewer can reconstruct the change without joining other tables.
+   * Email is the invitation target itself — redacting it would defeat
+   * the audit's purpose — but it is not free-form user PII. */
+  const auditBase = {
+    actor: guard.actor,
+    action: 'team.member.added' as const,
+    targetType: 'team_member' as const,
+    payload: {
+      email: parsed.data.email,
+      role: parsed.data.role,
+      displayName: parsed.data.displayName,
+    },
+    req,
+  };
+
   try {
     const res = await fetch(`${API_URL}/v1/admin/team`, {
       method: 'POST',
@@ -106,10 +125,34 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(parsed.data),
     });
     if (!res.ok) {
-      return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });
+      const body = await res.json().catch(() => ({}));
+      await writeAuditLog({
+        ...auditBase,
+        targetId: null,
+        outcome: 'failed',
+        payload: { ...auditBase.payload, status: res.status, error: body },
+      });
+      return NextResponse.json(body, { status: res.status });
     }
-    return NextResponse.json(await res.json());
-  } catch {
+    const body = await res.json();
+    const memberId = typeof body?.id === 'string' ? body.id : null;
+    await writeAuditLog({
+      ...auditBase,
+      targetId: memberId,
+      outcome: 'success',
+      payload: { ...auditBase.payload, after: body },
+    });
+    return NextResponse.json(body);
+  } catch (err) {
+    await writeAuditLog({
+      ...auditBase,
+      targetId: null,
+      outcome: 'failed',
+      payload: {
+        ...auditBase.payload,
+        error: err instanceof Error ? err.message : 'unknown',
+      },
+    });
     // Backend unreachable. Don't lie: return 502 so the client doesn't
     // think the invite landed.
     return NextResponse.json(

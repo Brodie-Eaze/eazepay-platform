@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { listMigrations, seedMigrationQueue, queueMigration } from '@/lib/orchestrator/migration';
 import { requireAdmin } from '@/lib/server-guards';
 import { enforceOrigin } from '@/lib/origin-guard';
+import { writeAuditLog } from '@/lib/audit-log';
 
 /**
  * GET  /api/admin/migrations            — list all migration runs
@@ -49,10 +50,74 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  /* SOC2 CC8.1: migration queueing is privileged infra mutation —
+   * audit both the bulk and single-id paths. The orchestrator already
+   * writes its own `migration.queue` row from queueMigration (lib/
+   * orchestrator/migration.ts) but those rows carry the
+   * ORCHESTRATOR_ACTOR identity. The admin-route audit row captures
+   * WHO triggered the queue from the BFF, which is the SOC2-relevant
+   * actor for evidence purposes. */
+  const auditBase = {
+    actor: guard.actor,
+    action: 'migration.queued' as const,
+    targetType: 'customer_migration' as const,
+    req,
+  };
+
   if ('sourceCustomerIds' in parsed.data) {
-    const records = await seedMigrationQueue(parsed.data.sourceCustomerIds);
-    return NextResponse.json({ queued: records.length, records });
+    try {
+      const records = await seedMigrationQueue(parsed.data.sourceCustomerIds);
+      await writeAuditLog({
+        ...auditBase,
+        targetId: null,
+        outcome: 'success',
+        payload: {
+          mode: 'bulk',
+          requestedCount: parsed.data.sourceCustomerIds.length,
+          queuedCount: records.length,
+          recordIds: records.map((r) => r.id),
+        },
+      });
+      return NextResponse.json({ queued: records.length, records });
+    } catch (err) {
+      await writeAuditLog({
+        ...auditBase,
+        targetId: null,
+        outcome: 'failed',
+        payload: {
+          mode: 'bulk',
+          requestedCount: parsed.data.sourceCustomerIds.length,
+          error: err instanceof Error ? err.message : 'unknown',
+        },
+      });
+      throw err;
+    }
   }
-  const record = await queueMigration(parsed.data.sourceCustomerId);
-  return NextResponse.json(record, { status: 202 });
+
+  try {
+    const record = await queueMigration(parsed.data.sourceCustomerId);
+    await writeAuditLog({
+      ...auditBase,
+      targetId: record.id,
+      outcome: 'success',
+      payload: {
+        mode: 'single',
+        sourceCustomerId: parsed.data.sourceCustomerId,
+        after: record,
+      },
+    });
+    return NextResponse.json(record, { status: 202 });
+  } catch (err) {
+    await writeAuditLog({
+      ...auditBase,
+      targetId: null,
+      outcome: 'failed',
+      payload: {
+        mode: 'single',
+        sourceCustomerId: parsed.data.sourceCustomerId,
+        error: err instanceof Error ? err.message : 'unknown',
+      },
+    });
+    throw err;
+  }
 }
