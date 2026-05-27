@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { signDemoPreset } from '../../../../lib/demo-cookie';
+import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
 
 /**
  * Sign-in proxy. The browser never talks to the backend directly so we
@@ -98,6 +99,46 @@ function isDemoFallbackAllowed(): boolean {
 
 const DEMO_TTL_SECONDS = 60 * 60; // 1h, matches the dedicated demo route
 
+/**
+ * SEC-203 rate-limit thresholds. Two buckets:
+ *   1. Per-IP (10/min): a single botnet node can't gallop through more
+ *      than 10 attempts per minute. Sized to absorb a real user fat-
+ *      fingering the form (~3 attempts) while still cutting any
+ *      meaningful credential-stuffing run.
+ *   2. Per-identifier (5/min): a distributed attacker rotating IPs
+ *      against ONE known-target account is throttled here. 5/min ≤
+ *      300/hr — too slow to brute even a 6-char password.
+ * Both buckets share the same in-process edge-rate-limit store but
+ * are bucket-prefixed so the counters don't collide. The 429 body
+ * intentionally does NOT vary based on which bucket fired — that
+ * would leak whether the identifier exists.
+ */
+const LOGIN_IP_LIMIT = 10;
+const LOGIN_ID_LIMIT = 5;
+const LOGIN_WINDOW_MS = 60_000;
+
+function rateLimited429(retryAfterMs: number): Response {
+  // SEC-203: the 429 body is identifier-agnostic so an attacker cannot
+  // tell whether they tripped the per-IP cap or the per-identifier cap
+  // (the latter would confirm the email exists in our system).
+  return new Response(
+    JSON.stringify({
+      type: 'about:blank',
+      title: 'Too Many Requests',
+      status: 429,
+      code: 'rate_limited',
+      detail: 'Too many sign-in attempts. Wait a minute and try again.',
+    }),
+    {
+      status: 429,
+      headers: {
+        'Content-Type': 'application/json',
+        'Retry-After': Math.ceil(Math.max(retryAfterMs, 1_000) / 1000).toString(),
+      },
+    },
+  );
+}
+
 export async function POST(req: NextRequest) {
   // SEC note — `/api/auth/login` is intentionally NOT wrapped with the
   // CSRF double-submit guard. CSRF protects against an attacker forcing
@@ -110,6 +151,16 @@ export async function POST(req: NextRequest) {
   // CSRF-exempt by default. The Lax cookie is the load-bearing
   // protection; the CSRF token guards state-changing routes that act
   // on an existing session (see `/api/integrations/brand/apply`).
+
+  // SEC-203: per-IP rate limit BEFORE body parse. Cheap rejection path
+  // for a botnet hammering this endpoint — no JSON parse, no Zod cost.
+  const xff = req.headers.get('x-forwarded-for') ?? '';
+  const clientIp = xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  const ipRl = enforceEdgeRateLimit(`auth-login-ip:${clientIp}`, LOGIN_IP_LIMIT, LOGIN_WINDOW_MS);
+  if (!ipRl.allowed) {
+    return rateLimited429(ipRl.retryAfterMs);
+  }
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
@@ -127,6 +178,21 @@ export async function POST(req: NextRequest) {
   }
 
   const { identifier, password, remember } = parsed.data;
+
+  // SEC-203: per-identifier rate limit. Defends against a distributed
+  // attacker rotating IPs against one target account (the per-IP cap
+  // doesn't help when the IPs differ). Lowercased so the bucket is
+  // identifier-canonical — 'Alice@example.com' and 'alice@example.com'
+  // share the same counter.
+  const idRl = enforceEdgeRateLimit(
+    `auth-login-id:${identifier.toLowerCase()}`,
+    LOGIN_ID_LIMIT,
+    LOGIN_WINDOW_MS,
+  );
+  if (!idRl.allowed) {
+    return rateLimited429(idRl.retryAfterMs);
+  }
+
   const forwarded = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? undefined;
   const userAgent = req.headers.get('user-agent') ?? undefined;
 

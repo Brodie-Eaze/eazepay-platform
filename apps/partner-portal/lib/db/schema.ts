@@ -800,3 +800,39 @@ export const partnerHighsaleSubaccounts = pgTable(
 
 export type PartnerHighsaleSubaccount = typeof partnerHighsaleSubaccounts.$inferSelect;
 export type NewPartnerHighsaleSubaccount = typeof partnerHighsaleSubaccounts.$inferInsert;
+
+/* ---------- welcome_tokens ----------
+ *
+ * Single-use, expiring tokens for the /welcome/<brand>?t=<token>
+ * set-password flow and the future password-reset flow. See
+ * `drizzle/0010_welcome_tokens.sql` for the migration docblock that
+ * explains the SEC-201 account-takeover this closes.
+ *
+ * Read paths use `consumeWelcomeToken` (atomic UPDATE ... RETURNING)
+ * exclusively — never SELECT-then-UPDATE — so the single-use guarantee
+ * is enforced by Postgres, not by the application layer.
+ */
+export const welcomeTokens = pgTable(
+  'welcome_tokens',
+  {
+    /** 32-byte hex string from crypto.randomBytes — the URL-borne secret. */
+    token: text('token').primaryKey(),
+    userId: text('user_id').notNull(),
+    /** 'welcome' for initial set-password, 'reset' for future reset flow. */
+    kind: text('kind').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    /** NULL until first successful consume; flips atomically on use. */
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userKindConsumedIdx: index('welcome_tokens_user_kind_consumed_idx').on(
+      t.userId,
+      t.kind,
+      t.consumedAt,
+    ),
+  }),
+);
+
+export type WelcomeToken = typeof welcomeTokens.$inferSelect;
+export type NewWelcomeToken = typeof welcomeTokens.$inferInsert;
