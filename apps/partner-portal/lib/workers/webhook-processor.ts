@@ -30,6 +30,10 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { getDb, hasDb, schema } from '../db';
 import type { Db } from '../db';
 import { safeLog } from '../safe-log';
+import {
+  handleLenderInboxRow,
+  isLenderProvider,
+} from './lender-webhook-handler';
 
 /** Max rows the worker drains per tick. Keeps each invocation bounded
  * so a backlog doesn't lock a connection for minutes. BullMQ will
@@ -41,7 +45,15 @@ const BATCH_LIMIT = 50;
  * 5 matches the BullMQ default attempt count we'll wire in Task #50. */
 const MAX_ATTEMPTS = 5;
 
-type Provider = 'micamp' | 'highsale' | 'trutopia';
+/**
+ * Built-in providers with hand-rolled dispatch tables. Lenders are
+ * handled separately — the route writes the canonical lender id
+ * (e.g. `lp_buzzpay_prime`) into `webhook_inbox.provider`, and the
+ * dispatcher routes any matching row to `handleLenderInboxRow`.
+ * Widened to `string` here so we don't need to enumerate every lender
+ * id in this type; the dispatcher's `isLenderProvider` is the gate.
+ */
+type Provider = string;
 
 interface InboxRow {
   id: string;
@@ -277,6 +289,12 @@ async function dispatchEvent(
   body: Record<string, unknown>,
   row: InboxRow,
 ): Promise<void> {
+  // Lender slugs (e.g. `lp_buzzpay_prime`) live in their own dispatch
+  // module — checked FIRST so a lender id never accidentally matches
+  // a built-in provider literal.
+  if (isLenderProvider(provider)) {
+    return handleLenderInboxRow({ provider, rawBody: row.rawBody });
+  }
   switch (provider) {
     case 'micamp':
       return handleMicamp(eventType, body, row);
