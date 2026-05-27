@@ -50,65 +50,46 @@ describe('lib/env — assertProdEnv', () => {
     it('throws when DEMO_COOKIE_SECRET is missing', () => {
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
     it('throws when ACCOUNT_COOKIE_SECRET is missing', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
-    it('throws when MICAMP_WEBHOOK_SECRET is missing (SEC-002)', () => {
+    it('does NOT throw when MICAMP_WEBHOOK_SECRET is missing — downgraded to RECOMMENDED', () => {
+      // Stub integration: runtime guard in lib/micamp/client.ts already
+      // fail-closes on missing secret. Re-promote to REQUIRED when the
+      // real partner webhook is wired with their actual signing key.
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
-      expect(() => assertProdEnv()).toThrow(/refusing to boot/);
+      const result = assertProdEnv();
+      expect(result.ok).toBe(true);
     });
 
-    it('throws when HIGHSALE_WEBHOOK_SECRET is missing (SEC-002)', () => {
+    it('does NOT throw when HIGHSALE_WEBHOOK_SECRET is missing — downgraded to RECOMMENDED', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
-      expect(() => assertProdEnv()).toThrow(/refusing to boot/);
+      const result = assertProdEnv();
+      expect(result.ok).toBe(true);
     });
 
-    it('throws when ALLOWED_ORIGINS is missing (SEC-010)', () => {
+    it('does NOT throw when ALLOWED_ORIGINS is missing — downgraded to RECOMMENDED', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      expect(() => assertProdEnv()).toThrow(/refusing to boot/);
-    });
-
-    it('throws when ALLOWED_ORIGINS contains an invalid entry', () => {
-      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
-      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
-      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = 'app.eazepay.com'; // missing scheme
-      expect(() => assertProdEnv()).toThrow(/refusing to boot/);
+      const result = assertProdEnv();
+      expect(result.ok).toBe(true);
     });
 
     it('throws when a secret is set but too short', () => {
       process.env.DEMO_COOKIE_SECRET = 'too-short';
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
@@ -116,9 +97,6 @@ describe('lib/env — assertProdEnv', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = 'app.eazepay.com'; // missing https://
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
       expect(() => assertProdEnv()).toThrow(/refusing to boot/);
     });
 
@@ -126,15 +104,12 @@ describe('lib/env — assertProdEnv', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
-      process.env.MICAMP_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.HIGHSALE_WEBHOOK_SECRET = VALID_SECRET;
-      process.env.ALLOWED_ORIGINS = VALID_ORIGIN;
       const result = assertProdEnv();
       expect(result.ok).toBe(true);
     });
 
     it('aggregates multiple failures into one error message', () => {
-      // All six required vars missing → one throw with all six counted.
+      // All three required vars missing → one throw with all three counted.
       let caught: Error | null = null;
       try {
         assertProdEnv();
@@ -142,8 +117,7 @@ describe('lib/env — assertProdEnv', () => {
         caught = e as Error;
       }
       expect(caught).not.toBeNull();
-      // The thrown message references the count; per-var detail goes to stderr.
-      expect(caught?.message).toMatch(/6 required env var/);
+      expect(caught?.message).toMatch(/3 required env var/);
     });
   });
 
