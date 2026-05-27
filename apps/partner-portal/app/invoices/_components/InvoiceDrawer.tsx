@@ -141,7 +141,14 @@ function Summary({ invoice }: { invoice: DrawerInvoice }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <Stat label="Gross funded" value={fmtUsd(invoice.grossFundedCents)} />
-      <Stat label="Fee" value={`${fmtPct(invoice.feePct)} · ${fmtUsd(invoice.feeAmountCents)}`} />
+      {/* Fee split into primary (amount) + sub (% rate) so the card
+          stops overflowing on small invoice values where the combined
+          string `6.00% · $18,744.00` exceeded the card width. */}
+      <Stat
+        label="Fee"
+        value={fmtUsd(invoice.feeAmountCents)}
+        sub={`${fmtPct(invoice.feePct)} rate`}
+      />
       <Stat label="Paid" value={fmtUsd(paid)} />
       <Stat label="Balance" value={fmtUsd(balance)} emphasis={balance > 0 ? 'amber' : 'emerald'} />
     </div>
@@ -151,10 +158,13 @@ function Summary({ invoice }: { invoice: DrawerInvoice }) {
 function Stat({
   label,
   value,
+  sub,
   emphasis,
 }: {
   label: string;
   value: string;
+  /** Optional sub-line shown beneath the main value (smaller + muted). */
+  sub?: string;
   emphasis?: 'amber' | 'emerald';
 }) {
   const tone =
@@ -164,9 +174,14 @@ function Stat({
         ? 'text-emerald-700'
         : 'text-fg';
   return (
-    <div className="rounded-lg border border-border bg-bg-elevated px-3 py-2">
-      <p className="text-[10px] uppercase tracking-wider font-semibold text-fg-muted">{label}</p>
-      <p className={`mt-1 text-[14px] font-semibold tabular-nums ${tone}`}>{value}</p>
+    <div className="rounded-lg border border-border bg-bg-elevated px-3 py-2 min-w-0">
+      <p className="text-[10px] uppercase tracking-wider font-semibold text-fg-muted truncate">
+        {label}
+      </p>
+      <p className={`mt-1 text-[14px] font-semibold tabular-nums ${tone} truncate`} title={value}>
+        {value}
+      </p>
+      {sub && <p className="text-[10.5px] text-fg-muted tabular-nums mt-0.5 truncate">{sub}</p>}
     </div>
   );
 }
@@ -187,12 +202,16 @@ function DueDateEditor({
       <h3 className="text-[11px] uppercase tracking-wider font-semibold text-fg-muted mb-2">
         Due date
       </h3>
-      <div className="flex items-center gap-2">
+      {/* items-stretch + h-9 on both controls so the date input and
+          Save button share an identical height — was misaligned because
+          the native date input picked up its own UA padding and the
+          ghost button had a smaller intrinsic height. */}
+      <div className="flex items-stretch gap-2 h-9">
         <input
           type="date"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className={fieldInputCn + ' max-w-[180px]'}
+          className={fieldInputCn + ' max-w-[180px] h-full'}
           aria-label="Due date"
         />
         <Button
