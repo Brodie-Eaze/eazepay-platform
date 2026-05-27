@@ -317,10 +317,20 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                         </span>
                       )}
                     </span>
+                    {/* Enter-key hint, only visible on the currently-
+                        selected row. Was previously a "Go" pill on
+                        every row, which created visual noise — each
+                        item looked identical. */}
                     {item.href && (
-                      <span className="text-[10px] uppercase tracking-wider text-fg-muted shrink-0">
-                        Go
-                      </span>
+                      <kbd
+                        className={cn(
+                          'text-[10px] font-mono text-fg-muted border border-border rounded px-1.5 py-0.5 shrink-0',
+                          'opacity-0 aria-selected:opacity-100 data-[selected=true]:opacity-100',
+                        )}
+                        aria-hidden
+                      >
+                        ↵
+                      </kbd>
                     )}
                   </Command.Item>
                 ))}
