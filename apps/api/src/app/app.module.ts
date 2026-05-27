@@ -34,6 +34,7 @@ import { PaymentContractedHookAdapter } from './contracted-hook.adapter.js';
 import { ApplicationLinkController } from './application-link.controller.js';
 import { ESignWebhookController } from './esign-webhook.controller.js';
 import { HighsaleWebhookController } from './highsale-webhook.controller.js';
+import { OutboxDispatchController } from './outbox-dispatch.controller.js';
 import { ObjectStorageModule } from './object-storage.module.js';
 import { DevStorageController } from './dev-storage.controller.js';
 import { ConsumerDocumentDownloadController } from './document-download.controller.js';
@@ -268,6 +269,7 @@ const env = loadEnv();
     ApplicationLinkController,
     ESignWebhookController,
     HighsaleWebhookController,
+    OutboxDispatchController,
     ConsumerDocumentDownloadController,
     ...(env.OBJECT_STORAGE === 'local-fs' ? [DevStorageController] : []),
   ],

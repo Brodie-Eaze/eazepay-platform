@@ -1,10 +1,9 @@
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@prisma/client';
 import { type Prisma } from '@prisma/client';
 import { Conflict, NotFound } from '@eazepay/shared-utils';
 import type { LoanId, PaymentMethodId, UserId } from '@eazepay/shared-types';
-import { NOTIFY_PORT, type NotifyPort } from '@eazepay/service-notification';
-import { WEBHOOK_PUBLISHER, type WebhookPublisher } from '@eazepay/service-webhook';
+import { enqueueOutboxPrisma } from '@eazepay/integrations-core';
 import { PRISMA } from './internal/tokens.js';
 import {
   PAYMENT_PROVIDER,
@@ -32,45 +31,75 @@ import {
  */
 @Injectable()
 export class PaymentService {
-  private readonly logger = new Logger(PaymentService.name);
-
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(PAYMENT_PROVIDER) private readonly provider: PaymentProvider,
     @Inject(BANK_ACCOUNT_PROVIDER) private readonly bank: BankAccountProvider,
-    @Optional() @Inject(NOTIFY_PORT) private readonly notify?: NotifyPort,
-    @Optional() @Inject(WEBHOOK_PUBLISHER) private readonly webhooks?: WebhookPublisher,
   ) {}
 
-  private async fireWebhook(input: {
-    eventType: string;
-    eventId: string;
-    subjectType: string;
-    subjectId: string;
-    merchantId: string | null;
-    payload: Record<string, unknown>;
-  }): Promise<void> {
-    if (!this.webhooks || !input.merchantId) return;
-    try {
-      await this.webhooks.publish(input);
-    } catch (err) {
-      this.logger.error({ err, eventType: input.eventType }, 'webhook publish failed');
-    }
+  // Reg E silent-drop fix — notify + webhook side-effects MUST be
+  // enqueued inside the same Postgres transaction as the business
+  // write (Transaction / Repayment / Loan state change). The pre-fix
+  // path was fire-and-forget (`void this.notify.notify(...)`) which
+  // meant a process crash, network blip, or downstream 5xx between
+  // the commit and the notify call left the consumer with no
+  // notification of a failed debit — a clear Reg E
+  // error-resolution gap. enqueueOutboxPrisma(tx, ...) writes a row
+  // into outbox_events atomically with the business write; the drain
+  // worker in apps/partner-portal/lib/workers/outbox-drain.ts picks
+  // it up and dispatches with retry until the side-effect lands or
+  // the operator sees it on the DLQ tile.
+  private enqueueNotify(
+    tx: Prisma.TransactionClient,
+    input: {
+      userId: string;
+      templateKey: string;
+      payload?: Record<string, unknown>;
+      subjectType?: string;
+      subjectId?: string;
+    },
+  ): Promise<{ id: string }> {
+    return enqueueOutboxPrisma(tx, {
+      kind: 'notification.send',
+      payload: {
+        kind: 'notification.send',
+        userId: input.userId,
+        templateKey: input.templateKey,
+        payload: input.payload ?? {},
+        ...(input.subjectType !== undefined ? { subjectType: input.subjectType } : {}),
+        ...(input.subjectId !== undefined ? { subjectId: input.subjectId } : {}),
+      },
+    });
   }
 
-  private async fireNotify(input: {
-    userId: string;
-    templateKey: string;
-    payload?: Record<string, unknown>;
-    subjectType?: string;
-    subjectId?: string;
-  }): Promise<void> {
-    if (!this.notify) return;
-    try {
-      await this.notify.notify(input);
-    } catch (err) {
-      this.logger.error({ err, templateKey: input.templateKey }, 'notify failed');
-    }
+  private enqueueWebhook(
+    tx: Prisma.TransactionClient,
+    input: {
+      eventType: string;
+      eventId: string;
+      subjectType: string;
+      subjectId: string;
+      merchantId: string | null;
+      payload: Record<string, unknown>;
+    },
+  ): Promise<{ id: string } | null> {
+    // Merchant-less events have no fan-out target (see
+    // WebhookService.publish — returns a no-op with merchantId=null).
+    // Skip the enqueue so the drain queue isn't padded with rows
+    // that can only ever no-op on dispatch.
+    if (!input.merchantId) return Promise.resolve(null);
+    return enqueueOutboxPrisma(tx, {
+      kind: 'webhook.outbound',
+      payload: {
+        kind: 'webhook.outbound',
+        eventType: input.eventType,
+        eventId: input.eventId,
+        subjectType: input.subjectType,
+        subjectId: input.subjectId,
+        merchantId: input.merchantId,
+        payload: input.payload,
+      },
+    });
   }
 
   // ----- payment method CRUD -----
@@ -359,6 +388,15 @@ export class PaymentService {
       amountCents: remainingDue,
     });
 
+    // Merchant scope captured before the tx so the outbox enqueues
+    // inside the tx don't need a second SELECT.
+    const merchantId = r.loan.application?.merchantId ?? null;
+
+    // For the success branch we report the post-collection remaining
+    // count to the consumer. The count is computed inside the tx so
+    // the value is consistent with the repayment.update above (the
+    // just-paid row is excluded, mirroring the pre-fix
+    // `status: { not: 'paid' }` filter).
     await this.prisma.$transaction(async (tx) => {
       const txRow = await tx.transaction.create({
         data: {
@@ -407,63 +445,69 @@ export class PaymentService {
           },
         },
       });
-    });
 
-    // Notify the consumer. Reason code surfaces to the user on failure
-    // (with neutral language); reg E error-resolution UX deep-links from
-    // the message body.
-    const merchantId = r.loan.application?.merchantId ?? null;
-    if (result.status === 'succeeded') {
-      const remaining = await this.prisma.repayment.count({
-        where: { loanId: r.loanId, status: { not: 'paid' } },
-      });
-      await this.fireNotify({
-        userId: r.loan.userId,
-        templateKey: 'payment.repayment.collected',
-        payload: {
-          amountCents: remainingDue.toString(),
-          remainingPayments: remaining,
-        },
-        subjectType: 'Repayment',
-        subjectId: r.id,
-      });
-      await this.fireWebhook({
-        eventType: 'loan.repayment.collected',
-        eventId: `loan.repayment.collected:${r.id}`,
-        subjectType: 'Repayment',
-        subjectId: r.id,
-        merchantId,
-        payload: {
-          loanId: r.loanId,
-          repaymentId: r.id,
-          amountCents: remainingDue.toString(),
-        },
-      });
-    } else if (result.status === 'failed') {
-      await this.fireNotify({
-        userId: r.loan.userId,
-        templateKey: 'payment.repayment.failed',
-        payload: {
-          amountCents: remainingDue.toString(),
-          reasonCode: result.reasonCode,
-        },
-        subjectType: 'Repayment',
-        subjectId: r.id,
-      });
-      await this.fireWebhook({
-        eventType: 'loan.repayment.failed',
-        eventId: `loan.repayment.failed:${r.id}:${result.providerRef}`,
-        subjectType: 'Repayment',
-        subjectId: r.id,
-        merchantId,
-        payload: {
-          loanId: r.loanId,
-          repaymentId: r.id,
-          amountCents: remainingDue.toString(),
-          reasonCode: result.reasonCode,
-        },
-      });
-    }
+      // Reg E silent-drop fix — notify + webhook MUST land
+      // atomically with the business write. If the tx rolls back
+      // (e.g. constraint violation, unique-key collision on retry,
+      // pool exhaustion), the outbox row rolls back with it and no
+      // ghost notification fires. If it commits, the drain worker
+      // will deliver — failure modes downstream surface on the DLQ
+      // tile instead of disappearing silently.
+      if (result.status === 'succeeded') {
+        const remaining = await tx.repayment.count({
+          where: { loanId: r.loanId, status: { not: 'paid' } },
+        });
+        await this.enqueueNotify(tx, {
+          userId: r.loan.userId,
+          templateKey: 'payment.repayment.collected',
+          payload: {
+            amountCents: remainingDue.toString(),
+            remainingPayments: remaining,
+          },
+          subjectType: 'Repayment',
+          subjectId: r.id,
+        });
+        await this.enqueueWebhook(tx, {
+          eventType: 'loan.repayment.collected',
+          eventId: `loan.repayment.collected:${r.id}`,
+          subjectType: 'Repayment',
+          subjectId: r.id,
+          merchantId,
+          payload: {
+            loanId: r.loanId,
+            repaymentId: r.id,
+            amountCents: remainingDue.toString(),
+          },
+        });
+      } else if (result.status === 'failed') {
+        // THE Reg E gap closed: pre-fix this was fire-and-forget;
+        // a process crash between commit and notify left the
+        // consumer with no record of a failed debit attempt.
+        await this.enqueueNotify(tx, {
+          userId: r.loan.userId,
+          templateKey: 'payment.repayment.failed',
+          payload: {
+            amountCents: remainingDue.toString(),
+            reasonCode: result.reasonCode,
+          },
+          subjectType: 'Repayment',
+          subjectId: r.id,
+        });
+        await this.enqueueWebhook(tx, {
+          eventType: 'loan.repayment.failed',
+          eventId: `loan.repayment.failed:${r.id}:${result.providerRef}`,
+          subjectType: 'Repayment',
+          subjectId: r.id,
+          merchantId,
+          payload: {
+            loanId: r.loanId,
+            repaymentId: r.id,
+            amountCents: remainingDue.toString(),
+            reasonCode: result.reasonCode,
+          },
+        });
+      }
+    });
 
     return result;
   }
@@ -550,7 +594,15 @@ export class PaymentService {
     },
     result: ProviderResult,
   ): Promise<void> {
-    let firstPaymentDateIso: string | null = null;
+    // Merchant scope captured before the tx so the in-tx enqueue
+    // does not pay a SELECT round-trip per call. Application is
+    // already in 'funding' here so this lookup is cheap and stable.
+    const appForMerchant = await this.prisma.application.findUnique({
+      where: { id: loan.applicationId },
+      select: { merchantId: true },
+    });
+    const merchantId = appForMerchant?.merchantId ?? null;
+
     await this.prisma.$transaction(async (tx) => {
       await tx.transaction.create({
         data: {
@@ -571,7 +623,7 @@ export class PaymentService {
 
       if (result.status === 'succeeded') {
         const firstPaymentDate = this.firstPaymentDateFromNow();
-        firstPaymentDateIso = firstPaymentDate.toISOString().slice(0, 10);
+        const firstPaymentDateIso = firstPaymentDate.toISOString().slice(0, 10);
         await tx.loan.update({
           where: { id: loan.id },
           data: {
@@ -602,6 +654,33 @@ export class PaymentService {
             after: { providerRef: result.providerRef },
           },
         });
+
+        // Reg E silent-drop fix — see collectRepayment for the
+        // detailed comment. Same invariant: notify + webhook are
+        // enqueued INSIDE the tx so they roll back atomically with
+        // the loan/application state if the commit fails.
+        await this.enqueueNotify(tx, {
+          userId: loan.userId,
+          templateKey: 'application.funded',
+          payload: {
+            principalCents: loan.principalCents.toString(),
+            firstPaymentDate: firstPaymentDateIso,
+          },
+          subjectType: 'Loan',
+          subjectId: loan.id,
+        });
+        await this.enqueueWebhook(tx, {
+          eventType: 'application.funded',
+          eventId: `application.funded:${loan.applicationId}`,
+          subjectType: 'Application',
+          subjectId: loan.applicationId,
+          merchantId,
+          payload: {
+            loanId: loan.id,
+            principalCents: loan.principalCents.toString(),
+            firstPaymentDate: firstPaymentDateIso,
+          },
+        });
       } else if (result.status === 'failed') {
         // Roll application status back so a retry is possible. The Loan
         // row stays funding_pending (it never moved).
@@ -619,55 +698,24 @@ export class PaymentService {
             after: { providerRef: result.providerRef, reasonCode: result.reasonCode },
           },
         });
+
+        await this.enqueueNotify(tx, {
+          userId: loan.userId,
+          templateKey: 'application.funding_failed',
+          payload: { reasonCode: result.reasonCode },
+          subjectType: 'Loan',
+          subjectId: loan.id,
+        });
+        await this.enqueueWebhook(tx, {
+          eventType: 'application.funding_failed',
+          eventId: `application.funding_failed:${loan.applicationId}:${result.providerRef}`,
+          subjectType: 'Application',
+          subjectId: loan.applicationId,
+          merchantId,
+          payload: { reasonCode: result.reasonCode, loanId: loan.id },
+        });
       }
     });
-
-    // Notify post-commit. Failure here doesn't roll back disbursement.
-    const appForMerchant = await this.prisma.application.findUnique({
-      where: { id: loan.applicationId },
-      select: { merchantId: true },
-    });
-    const merchantId = appForMerchant?.merchantId ?? null;
-    if (result.status === 'succeeded') {
-      await this.fireNotify({
-        userId: loan.userId,
-        templateKey: 'application.funded',
-        payload: {
-          principalCents: loan.principalCents.toString(),
-          firstPaymentDate: firstPaymentDateIso,
-        },
-        subjectType: 'Loan',
-        subjectId: loan.id,
-      });
-      await this.fireWebhook({
-        eventType: 'application.funded',
-        eventId: `application.funded:${loan.applicationId}`,
-        subjectType: 'Application',
-        subjectId: loan.applicationId,
-        merchantId,
-        payload: {
-          loanId: loan.id,
-          principalCents: loan.principalCents.toString(),
-          firstPaymentDate: firstPaymentDateIso,
-        },
-      });
-    } else if (result.status === 'failed') {
-      await this.fireNotify({
-        userId: loan.userId,
-        templateKey: 'application.funding_failed',
-        payload: { reasonCode: result.reasonCode },
-        subjectType: 'Loan',
-        subjectId: loan.id,
-      });
-      await this.fireWebhook({
-        eventType: 'application.funding_failed',
-        eventId: `application.funding_failed:${loan.applicationId}:${result.providerRef}`,
-        subjectType: 'Application',
-        subjectId: loan.applicationId,
-        merchantId,
-        payload: { reasonCode: result.reasonCode, loanId: loan.id },
-      });
-    }
   }
 
   /**
