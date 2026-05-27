@@ -1,4 +1,5 @@
 'use client';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import {
   PageHeader,
@@ -15,6 +16,20 @@ import {
 } from '@eazepay/ui/web';
 import { formatCurrencyCents } from '@eazepay/shared-utils/format-currency';
 import { partners, applications, masterKpis } from '../lib/master-data';
+import { expandedApplications } from '../lib/seeded-applications';
+import {
+  applicationsByMonth,
+  applicationsByStatus,
+  applicationsInRange,
+  CREDIT_TIER_RANGES,
+  creditMix,
+  fundedVolumeByMonth,
+  priorWindow,
+  timeRangeToWindow,
+  totalFundedCents,
+  trendDelta,
+  type CreditTier,
+} from '../lib/dashboard-metrics';
 
 /**
  * Master Command Centre — direct port of the Lovable reference.
@@ -37,35 +52,22 @@ import { partners, applications, masterKpis } from '../lib/master-data';
  * TanStack query against `useApi`.
  */
 
-// ── Local mock helpers ──────────────────────────────────────────────
-const monthlySubmissions: Array<{ label: string; value: number }> = [
-  { label: 'Dec', value: 250 },
-  { label: 'Jan', value: 810 },
-  { label: 'Feb', value: 1000 },
-  { label: 'Mar', value: 630 },
-  { label: 'Apr', value: 0 },
-  { label: 'May', value: 0 },
-];
-
-const fundedVolume: Array<{ label: string; value: number }> = [
-  { label: 'Dec', value: 7500 },
-  { label: 'Jan', value: 17000 },
-  { label: 'Feb', value: 22000 },
-  { label: 'Mar', value: 4000 },
-  { label: 'Apr', value: 0 },
-  { label: 'May', value: 0 },
-];
-
 // Donut palette — navy → light grey ramp. Matches the rest of the
 // platform's navy + grey + light grey colour discipline; no accent
 // indigo / violet / green outside of explicit semantic signals
 // (green = up delta, red = down delta).
-const creditInsights = [
-  { name: 'Prime', range: '700–850', pct: 18, color: '#0d1530' }, // navy
-  { name: 'NearPrime', range: '640–699', pct: 14, color: '#1e3a8a' }, // deep navy-blue
-  { name: 'Subprime', range: '580–639', pct: 6, color: '#94a3b8' }, // slate-400
-  { name: 'DeepSubprime', range: '300–579', pct: 6, color: '#cbd5e1' }, // slate-300
-];
+const CREDIT_TIER_COLOURS: Record<CreditTier, string> = {
+  Prime: '#0d1530',
+  NearPrime: '#1e3a8a',
+  Subprime: '#94a3b8',
+  DeepSubprime: '#cbd5e1',
+};
+const CREDIT_TIER_RANGE_LABEL: Record<CreditTier, string> = {
+  Prime: `${CREDIT_TIER_RANGES.Prime[0]}–${CREDIT_TIER_RANGES.Prime[1]}`,
+  NearPrime: `${CREDIT_TIER_RANGES.NearPrime[0]}–${CREDIT_TIER_RANGES.NearPrime[1]}`,
+  Subprime: `${CREDIT_TIER_RANGES.Subprime[0]}–${CREDIT_TIER_RANGES.Subprime[1]}`,
+  DeepSubprime: `${CREDIT_TIER_RANGES.DeepSubprime[0]}–${CREDIT_TIER_RANGES.DeepSubprime[1]}`,
+};
 
 const leaderboard = partners
   .slice(0, 5)
@@ -84,6 +86,81 @@ const maxFunded = leaderboard[0]?.funded ?? 1;
 // ── Component ────────────────────────────────────────────────────────
 
 export default function CommandCenter() {
+  // ── Live snapshot ── derive every KPI + chart from expandedApplications.
+  // Range: rolling 6 months for charts, last 90 days vs prior 90 days
+  // for KPI deltas. Was hardcoded — user explicitly asked for live data.
+  const live = useMemo(() => {
+    const { fromIso, toIso } = timeRangeToWindow('90d');
+    const prior = priorWindow('90d');
+    const inWindow = applicationsInRange(expandedApplications, fromIso, toIso);
+    const inPrior = applicationsInRange(expandedApplications, prior.fromIso, prior.toIso);
+    const cur = applicationsByStatus(inWindow);
+    const pre = applicationsByStatus(inPrior);
+
+    const fundedCents = totalFundedCents(inWindow);
+    const fundedCentsPrior = totalFundedCents(inPrior);
+
+    // Charts read a wider window (6 months) so trend bars actually
+    // show a trend instead of mostly-zero columns.
+    const chartWindow = timeRangeToWindow('12m');
+    const monthlySubs = applicationsByMonth(
+      expandedApplications,
+      chartWindow.fromIso,
+      chartWindow.toIso,
+    );
+    const monthlyFunded = fundedVolumeByMonth(
+      expandedApplications,
+      chartWindow.fromIso,
+      chartWindow.toIso,
+    );
+    const mix = creditMix(inWindow);
+    const mixTotal = mix.reduce((s, m) => s + m.count, 0);
+    const mixWithPct = mix.map((m) => ({
+      ...m,
+      pct: mixTotal === 0 ? 0 : Math.round((m.count / mixTotal) * 100),
+    }));
+
+    // trendDelta returns { pct, direction }; KPI only needs pct.
+    const dp = (a: number, b: number) => trendDelta(a, b).pct;
+    return {
+      submitted: cur.total,
+      submittedDelta: dp(cur.total, pre.total),
+      approved: cur.approved,
+      approvedDelta: dp(cur.approved, pre.approved),
+      funded: cur.funded,
+      fundedDelta: dp(cur.funded, pre.funded),
+      declined: cur.declined,
+      declinedDelta: dp(cur.declined, pre.declined),
+      inReview: cur.in_review,
+      inReviewDelta: dp(cur.in_review, pre.in_review),
+      fundedCents,
+      fundedCentsDelta: dp(fundedCents, fundedCentsPrior),
+      monthlySubs,
+      monthlyFunded,
+      mix: mixWithPct,
+    };
+  }, []);
+
+  // Y-axis tick ceiling so bars don't blow past the gridline. Rounded
+  // up to a nice number above the actual max so the chart breathes.
+  const subsMax = Math.max(...live.monthlySubs.map((d) => d.value), 4);
+  const subsCeil = niceCeil(subsMax);
+  const subsTicks = [
+    subsCeil,
+    Math.round(subsCeil * 0.75),
+    Math.round(subsCeil * 0.5),
+    Math.round(subsCeil * 0.25),
+    0,
+  ];
+  const fundedCeil = niceCeil(Math.max(...live.monthlyFunded.map((d) => d.value), 100));
+  const fundedTicks = [
+    fundedCeil,
+    Math.round(fundedCeil * 0.75),
+    Math.round(fundedCeil * 0.5),
+    Math.round(fundedCeil * 0.25),
+    0,
+  ];
+
   return (
     <>
       <PageHeader
@@ -94,39 +171,53 @@ export default function CommandCenter() {
       <PageBody>
         {/* ── KPI grid (6 cards) ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <Kpi label="Submitted" value="478" delta={12} />
-          <Kpi label="Approved" value="70" delta={5} />
-          <Kpi label="Funded" value="68" delta={8} />
+          <Kpi
+            label="Submitted"
+            value={live.submitted.toLocaleString()}
+            delta={live.submittedDelta}
+          />
+          <Kpi label="Approved" value={live.approved.toLocaleString()} delta={live.approvedDelta} />
+          <Kpi label="Funded" value={live.funded.toLocaleString()} delta={live.fundedDelta} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Kpi
             label="Total Funded"
-            value={formatCurrencyCents(masterKpis.totalFundedCents).replace(',000,000', 'M')}
-            delta={22}
+            value={compactDollars(live.fundedCents)}
+            delta={live.fundedCentsDelta}
             icon={<DollarIcon size={14} />}
           />
-          <Kpi label="Declined" value="12" delta={-15} icon={<XIcon size={14} />} />
-          <Kpi label="In Review" value="8" delta={10} icon={<ClockIcon size={14} />} />
+          <Kpi
+            label="Declined"
+            value={live.declined.toLocaleString()}
+            delta={live.declinedDelta}
+            icon={<XIcon size={14} />}
+          />
+          <Kpi
+            label="In Review"
+            value={live.inReview.toLocaleString()}
+            delta={live.inReviewDelta}
+            icon={<ClockIcon size={14} />}
+          />
         </div>
 
         {/* ── 3-up chart row ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <ChartCard title="Monthly Submissions" subtitle="Application volume over time">
+          <ChartCard title="Monthly Submissions" subtitle="Application volume — last 12 months">
             <BarChartGrey
-              data={monthlySubmissions}
-              yTicks={[1000, 750, 500, 250, 0]}
+              data={live.monthlySubs.map((d) => ({ label: d.label, value: d.value }))}
+              yTicks={subsTicks}
               yFormat={(v) => v.toString()}
             />
           </ChartCard>
-          <ChartCard title="Funded Volume" subtitle="Monthly funded amount">
+          <ChartCard title="Funded Volume" subtitle="Monthly funded amount — last 12 months">
             <BarChartGrey
-              data={fundedVolume}
-              yTicks={[22000, 16500, 11000, 5500, 0]}
+              data={live.monthlyFunded.map((d) => ({ label: d.label, value: d.value / 100 }))}
+              yTicks={fundedTicks.map((v) => Math.round(v / 100))}
               yFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
             />
           </ChartCard>
           <ChartCard title="Credit Insights">
-            <CreditDonut />
+            <CreditDonut mix={live.mix} />
           </ChartCard>
         </div>
 
@@ -314,11 +405,23 @@ function BarChartGrey({
   );
 }
 
-function CreditDonut() {
-  const total = creditInsights.reduce((s, c) => s + c.pct, 0);
+function CreditDonut({
+  mix,
+}: {
+  mix: Array<{ name: CreditTier; range: string; count: number; pct: number }>;
+}) {
+  const rows = mix.map((m) => ({
+    name: m.name,
+    range: CREDIT_TIER_RANGE_LABEL[m.name],
+    pct: m.pct,
+    count: m.count,
+    color: CREDIT_TIER_COLOURS[m.name],
+  }));
+  const total = rows.reduce((s, c) => s + c.pct, 0) || 1;
+  const totalCount = rows.reduce((s, c) => s + c.count, 0);
   const center = 75;
   let cum = 0;
-  const segments = creditInsights.map((c) => {
+  const segments = rows.map((c) => {
     const start = (cum / total) * Math.PI * 2 - Math.PI / 2;
     cum += c.pct;
     const end = (cum / total) * Math.PI * 2 - Math.PI / 2;
@@ -353,7 +456,7 @@ function CreditDonut() {
             className="fill-fg"
             style={{ fontSize: '24px', fontWeight: 700, letterSpacing: '-0.02em' }}
           >
-            35
+            {totalCount}
           </text>
         </svg>
       </div>
@@ -365,7 +468,7 @@ function CreditDonut() {
         <span className="col-span-2 text-right">%</span>
       </div>
       <ul className="space-y-1.5">
-        {creditInsights.map((c) => (
+        {rows.map((c) => (
           <li key={c.name} className="grid grid-cols-12 items-center text-[13px]">
             <span className="col-span-6 flex items-center gap-2 min-w-0">
               <span className="size-2 rounded-full shrink-0" style={{ background: c.color }} />
@@ -399,4 +502,24 @@ function formatFunded(cents: number): string {
   if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`;
   if (dollars >= 1_000) return `$${Math.round(dollars / 1_000)}K`;
   return `$${dollars}`;
+}
+
+/** Compact KPI dollar formatter — $1.2M / $340K / $87 — for the
+ *  Total Funded card. Same shape as formatFunded but rounds harder
+ *  so the KPI doesn't trail decimals. */
+function compactDollars(cents: number): string {
+  const dollars = cents / 100;
+  if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(2)}M`;
+  if (dollars >= 1_000) return `$${Math.round(dollars / 1_000)}K`;
+  return `$${Math.round(dollars).toLocaleString()}`;
+}
+
+/** Round a number up to a "nice" axis ceiling (1, 2, 5 × 10^n). */
+function niceCeil(n: number): number {
+  if (n <= 0) return 1;
+  const exp = Math.floor(Math.log10(n));
+  const base = Math.pow(10, exp);
+  const frac = n / base;
+  const nice = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10;
+  return nice * base;
 }
