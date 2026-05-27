@@ -30,6 +30,7 @@ import { getConnection } from './index';
 import { processInboxRow } from '../workers/webhook-processor';
 import { safeLog } from '../safe-log';
 import { recordTerminalFailure } from './dlq';
+import { injectTraceContext, runWithTraceContext, withSpan } from '../observability/tracing';
 
 export const WEBHOOKS_QUEUE_NAME = 'webhook-inbox';
 
@@ -41,6 +42,12 @@ export interface WebhookInboxJobData {
   /** webhook_inbox.id — the worker re-fetches the row at start so the
    *  raw provider payload stays out of Redis. */
   inboxId: string;
+  /** W3C TraceContext propagation — `traceparent` (and optionally
+   *  `tracestate`) injected by the producer so the worker can parent
+   *  its dispatch span on the enqueue span. Restored via
+   *  `runWithTraceContext` in `processWebhookJob`. */
+  traceparent?: string;
+  tracestate?: string;
 }
 
 let cachedQueue: Queue<WebhookInboxJobData> | null = null;
@@ -69,7 +76,18 @@ export function getWebhooksQueue(): Queue<WebhookInboxJobData> {
  */
 export async function enqueueWebhookInbox(inboxId: string): Promise<void> {
   const queue = getWebhooksQueue();
-  await queue.add('webhook-inbox-row', { inboxId }, { jobId: inboxId });
+  // Capture the active OTel context (HTTP-side span set up by the
+  // webhook route handler) into the job data so the worker can parent
+  // its dispatch span on this enqueue span. W3C TraceContext keys only
+  // (traceparent + tracestate). When no span is active the carrier
+  // stays empty and the job is enqueued normally.
+  const carrier: Record<string, string> = {};
+  injectTraceContext(carrier);
+  await queue.add(
+    'webhook-inbox-row',
+    { inboxId, traceparent: carrier.traceparent, tracestate: carrier.tracestate },
+    { jobId: inboxId },
+  );
   safeLog.info({ event: 'queue.webhooks.enqueued', inboxId });
 }
 
@@ -113,6 +131,23 @@ export function startWebhooksWorker(): Worker<WebhookInboxJobData> {
 }
 
 export async function processWebhookJob(job: Job<WebhookInboxJobData>): Promise<void> {
-  const { inboxId } = job.data;
-  await processInboxRow(inboxId);
+  const { inboxId, traceparent, tracestate } = job.data;
+  // Restore the producer-side OTel context (set by enqueueWebhookInbox)
+  // so the dispatch span parents on the route handler's enqueue span.
+  // The empty-carrier path is a no-op — no parent, span becomes a root.
+  const carrier: Record<string, string> = {};
+  if (traceparent) carrier.traceparent = traceparent;
+  if (tracestate) carrier.tracestate = tracestate;
+  await runWithTraceContext(carrier, () =>
+    withSpan(
+      'webhook.inbox.process',
+      {
+        'business.inbox_id': inboxId,
+        'messaging.system': 'bullmq',
+        'messaging.destination.name': WEBHOOKS_QUEUE_NAME,
+        'messaging.bullmq.job.attempts_made': job.attemptsMade,
+      },
+      () => processInboxRow(inboxId),
+    ),
+  );
 }

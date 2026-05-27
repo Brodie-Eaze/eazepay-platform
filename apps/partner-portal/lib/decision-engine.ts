@@ -48,6 +48,7 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { hasDb, getDb, schema } from './db';
 import { safeLog } from './safe-log';
+import { withSpan } from './observability/tracing';
 import { SAMPLE_LENDERS, type Brand, type LenderTier } from './api-v1/shared';
 import { incrementMetric } from './observability/metrics';
 
@@ -442,6 +443,17 @@ export function isProfileTooThinForInternalScorer(p: PrequalInputs): boolean {
 }
 
 export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResult> {
+  return withSpan(
+    'decision.evaluate',
+    {
+      'business.application_id': opts.applicationId,
+      'business.engine': selectEngine(opts),
+    },
+    () => evaluateDecisionInner(opts),
+  );
+}
+
+async function evaluateDecisionInner(opts: EvaluateOpts): Promise<DecisionResult> {
   const t0 = Date.now();
   // `let` (Task #44b) so the catch block can reassign on fallback.
   let engine: 'trutopia' | 'internal' | 'fallback' = selectEngine(opts);
@@ -803,4 +815,3 @@ async function tryMarkApplicationStatus(
     });
   }
 }
-

@@ -41,6 +41,7 @@ import {
 } from '@eazepay/integrations-core';
 import { safeLog } from '../safe-log';
 import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
+import { withSpan } from '../observability/tracing';
 
 /** Per-call timeouts. provision = known-slow (real MiCamp underwriting
  *  takes 5–20s); charge = money path, must fail fast so a hung partner
@@ -222,6 +223,19 @@ const PROVISIONING_STEPS = [
 ] as const;
 
 export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionMidResponse> {
+  return withSpan(
+    'micamp.provisionMid',
+    {
+      'business.partner_id': req.partnerId,
+      'partner.provider': PARTNER,
+      'partner.endpoint': 'provisionMid',
+      'partner.live': isMicampLive(),
+    },
+    () => provisionMidInner(req),
+  );
+}
+
+async function provisionMidInner(req: ProvisionMidRequest): Promise<ProvisionMidResponse> {
   if (isMicampLive()) {
     const res = await fetchWithTimeout(
       `${MICAMP_API_URL}/v1/merchants`,
@@ -260,6 +274,21 @@ export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionM
 /* ---------- charges ---------- */
 
 export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
+  return withSpan(
+    'micamp.charge',
+    {
+      'business.mid_id': req.midId,
+      'business.application_id': req.applicationId,
+      'business.amount_cents': req.amountCents,
+      'partner.provider': PARTNER,
+      'partner.endpoint': 'charge',
+      'partner.live': isMicampLive(),
+    },
+    () => chargeInner(req),
+  );
+}
+
+async function chargeInner(req: ChargeRequest): Promise<ChargeResponse> {
   if (isMicampLive()) {
     // Idempotency-Key header is REQUIRED — retrying a 5xx without it
     // would double-charge the consumer. The type system enforces the
@@ -306,6 +335,22 @@ export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
 /* ---------- settlement ---------- */
 
 export async function settlementReport(
+  midId: string,
+  period: { start: string; end: string },
+): Promise<SettlementReport> {
+  return withSpan(
+    'micamp.settlementReport',
+    {
+      'business.mid_id': midId,
+      'partner.provider': PARTNER,
+      'partner.endpoint': 'settlementReport',
+      'partner.live': isMicampLive(),
+    },
+    () => settlementReportInner(midId, period),
+  );
+}
+
+async function settlementReportInner(
   midId: string,
   period: { start: string; end: string },
 ): Promise<SettlementReport> {
@@ -452,9 +497,7 @@ export interface CreateMicampClientOptions {
  * one merchant during canary while every other merchant stays on the
  * real client) without route handlers needing to know which.
  */
-export function createMicampClient(
-  opts: CreateMicampClientOptions = {},
-): MicampMerchantProcessor {
+export function createMicampClient(opts: CreateMicampClientOptions = {}): MicampMerchantProcessor {
   return {
     provider: PARTNER,
     provisionMid: opts.provisionMid ?? provisionMid,

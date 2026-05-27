@@ -134,23 +134,62 @@ export function redactForLog(value: unknown, depth = 0, seen = new WeakSet()): u
   return out;
 }
 
+/**
+ * OTel trace correlation — every log line gets `traceId` + `spanId` when
+ * a span is active so a Honeycomb/SigNoz trace can be cross-referenced
+ * against the log stream by id. Imported lazily to avoid pulling the
+ * OTel API graph in environments where the SDK never starts (CI, edge
+ * runtime). The helper returns `null` when no provider is registered or
+ * no span is active; we just skip the fields in that case.
+ *
+ * `partner_id` is also surfaced when the caller threads it via the
+ * payload — `safeLog.info({ ..., partnerId: '...' })` is rewritten to a
+ * top-level `partner_id` key here so dashboards keying off the
+ * canonical name don't have to handle both spellings.
+ */
+import { currentTraceContext } from './observability/tracing';
+
+function correlationFields(): Record<string, string> {
+  const ctx = currentTraceContext();
+  if (!ctx) return {};
+  return { traceId: ctx.traceId, spanId: ctx.spanId };
+}
+
+function liftPartnerId(payload: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!payload) return payload;
+  // Accept any of the common spellings; surface them all as the
+  // canonical `partner_id` so dashboard queries don't need to UNION.
+  const candidate = payload.partner_id ?? payload.partnerId ?? payload.brandId ?? payload.brand_id;
+  if (typeof candidate === 'string' && candidate.length > 0) {
+    return { partner_id: candidate, ...payload };
+  }
+  return payload;
+}
+
+function envelope(level: 'info' | 'warn' | 'error', payload: unknown): string {
+  const record = liftPartnerId(toRecord(payload));
+  return JSON.stringify({
+    level,
+    timestamp: new Date().toISOString(),
+    service: 'eazepay-partner-portal',
+    ...correlationFields(),
+    ...(record ?? { payload: REDACTED }),
+  });
+}
+
 /** Lightweight log surface that pre-redacts every payload. */
 export const safeLog = {
   info(payload: unknown): void {
     // eslint-disable-next-line no-console
-    console.log(JSON.stringify({ level: 'info', ...(toRecord(payload) ?? { payload: REDACTED }) }));
+    console.log(envelope('info', payload));
   },
   warn(payload: unknown): void {
     // eslint-disable-next-line no-console
-    console.warn(
-      JSON.stringify({ level: 'warn', ...(toRecord(payload) ?? { payload: REDACTED }) }),
-    );
+    console.warn(envelope('warn', payload));
   },
   error(payload: unknown): void {
     // eslint-disable-next-line no-console
-    console.error(
-      JSON.stringify({ level: 'error', ...(toRecord(payload) ?? { payload: REDACTED }) }),
-    );
+    console.error(envelope('error', payload));
   },
 } as const;
 
