@@ -41,7 +41,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
-import { getDb, hasDb } from '../../../../../lib/db';
+import {
+  getDb,
+  hasDb,
+  withTenantContext,
+  withRawTenantContext,
+  SYNTHETIC_OPERATOR_CONTEXT,
+} from '../../../../../lib/db';
 import { applicationEvents, applications, partners } from '../../../../../lib/db/schema';
 import { getSessionContext, allowedPartnerIdsForBrand } from '../../../../../lib/session';
 import { UNATTRIBUTED_PARTNER_ID } from '../../../../../lib/submitted-applications';
@@ -148,7 +154,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
    * original outside the transaction. The event is NOT re-written on
    * a duplicate post — the original 'created' event still anchors the
    * chain. */
-  const inserted = await db.transaction(async (tx) => {
+  /* Tenant context for the public apply POST is the synthetic
+   * operator: the BFF resolves attribution server-side from the body's
+   * partnerId after validating it against the partners directory
+   * (above). The consumer is not authenticated, so we cannot derive a
+   * partner-scoped GUC. The RLS policy in 0013 explicitly allows
+   * role='operator' to insert into applications + application_events. */
+  const inserted = await withRawTenantContext(SYNTHETIC_OPERATOR_CONTEXT, async (tx) => {
     const appRows = await tx
       .insert(applications)
       .values({
@@ -284,13 +296,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ bran
   if (status) conditions.push(eq(applications.status, status));
   if (cursor) conditions.push(lt(applications.createdAt, new Date(cursor)));
 
-  const db = getDb();
-  const rows = await db
-    .select()
-    .from(applications)
-    .where(and(...conditions))
-    .orderBy(desc(applications.createdAt))
-    .limit(limit + 1);
+  /* Tenant-scoped read: every SELECT is wrapped in a transaction
+   * that binds the RLS GUCs from the session. App-layer
+   * `inArray(partner_id, allowed)` is the fast filter; the RLS policy
+   * is the backstop that ensures a missing predicate still can't
+   * exfiltrate other partners' rows. */
+  const rows = await withTenantContext(session, async (tx) => {
+    return tx
+      .select()
+      .from(applications)
+      .where(and(...conditions))
+      .orderBy(desc(applications.createdAt))
+      .limit(limit + 1);
+  });
 
   const items = rows.slice(0, limit);
   const nextCursor = rows.length > limit ? items[items.length - 1]?.createdAt.toISOString() : null;

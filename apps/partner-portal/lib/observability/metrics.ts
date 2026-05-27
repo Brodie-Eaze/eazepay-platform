@@ -50,6 +50,13 @@
 export type MetricName =
   | 'applications.created'
   | 'decisions.computed'
+  /* Decision-mode breakdown (Task #44 fail-closed contract). The
+   * aggregate `decisions.computed` continues to count work; these
+   * three counters expose the mix so the dashboard can surface a
+   * spike in failed_persisted_to_dlq before it turns into a backlog. */
+  | 'decision.mode.normal'
+  | 'decision.mode.fallback_internal'
+  | 'decision.mode.failed_persisted_to_dlq'
   | 'webhook.queued'
   | 'webhook.duplicate'
   | 'webhook.rejected'
@@ -72,6 +79,9 @@ export type MetricName =
 const KNOWN_METRICS: ReadonlyArray<MetricName> = [
   'applications.created',
   'decisions.computed',
+  'decision.mode.normal',
+  'decision.mode.fallback_internal',
+  'decision.mode.failed_persisted_to_dlq',
   'webhook.queued',
   'webhook.duplicate',
   'webhook.rejected',

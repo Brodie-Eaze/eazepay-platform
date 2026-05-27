@@ -39,8 +39,9 @@ import {
   allowedPartnerIdsForBrand,
   getSessionContext,
   requireSession,
+  type SessionContext,
 } from '../../../../../../../lib/session';
-import { getDb, hasDb } from '../../../../../../../lib/db';
+import { hasDb, withTenantContext } from '../../../../../../../lib/db';
 import {
   applicationEvents as applicationEventsTable,
   applications as applicationsTable,
@@ -442,7 +443,13 @@ export async function GET(
   /* ── Try the DB-backed real path first ── */
   if (hasDb()) {
     try {
-      const built = await buildResponseFromDb(id, brand, allowed);
+      /* Defence-in-depth: the app-layer (brand + allowed partner_ids)
+       * filter inside buildResponseFromDb is the primary IDOR check
+       * (F-001). The RLS policy on applications/offers/application_events
+       * (migration 0013) is the backstop — even if a future refactor
+       * forgets the inArray, the session-bound GUC means the SELECT
+       * still returns zero rows for a guessed cross-tenant id. */
+      const built = await buildResponseFromDb(id, brand, allowed, session);
       if (built) return NextResponse.json(built);
     } catch (err) {
       /* Swallow + fall through to synth so the UI keeps animating even
@@ -498,38 +505,47 @@ async function buildResponseFromDb(
   applicationId: string,
   brand: BrandSlug,
   allowedPartnerIds: string[],
+  session: SessionContext,
 ) {
-  const db = getDb();
-
-  /* F-001: scope the lookup to (id AND brand AND partner_id IN allowed)
-   * so a guessed uuid that belongs to a different tenant cannot be
-   * read. Returning the row to .limit(1) is fine — the filter happens
-   * inside the query, not after. */
-  const appRows = await db
-    .select()
-    .from(applicationsTable)
-    .where(
-      and(
-        eq(applicationsTable.id, applicationId),
-        eq(applicationsTable.brand, brand),
-        inArray(applicationsTable.partnerId, allowedPartnerIds),
-      ),
-    )
-    .limit(1);
-  const app = appRows[0];
+  /* F-001 + RLS: all three reads happen inside one tenant-scoped
+   * transaction. The explicit (id AND brand AND partner_id IN allowed)
+   * filter is the app-layer IDOR check; the RLS policy bound by
+   * `withTenantContext` is the durable backstop that fires even if a
+   * future refactor drops one of those predicates.
+   *
+   * Returning `null` from the SELECT-by-id miss correctly handles both
+   * "the row doesn't exist" and "the row exists but RLS / app-filter
+   * hid it from this session" — both fall through to the synthetic
+   * path so the wire response stays identical (no oracle). */
+  const { app, events, offerRows } = await withTenantContext(session, async (tx) => {
+    const appRows = await tx
+      .select()
+      .from(applicationsTable)
+      .where(
+        and(
+          eq(applicationsTable.id, applicationId),
+          eq(applicationsTable.brand, brand),
+          inArray(applicationsTable.partnerId, allowedPartnerIds),
+        ),
+      )
+      .limit(1);
+    const appRow = appRows[0];
+    if (!appRow) {
+      return { app: null, events: [] as ApplicationEvent[], offerRows: [] as Offer[] };
+    }
+    const eventRows = await tx
+      .select()
+      .from(applicationEventsTable)
+      .where(eq(applicationEventsTable.applicationId, applicationId))
+      .orderBy(asc(applicationEventsTable.createdAt));
+    const oRows = await tx
+      .select()
+      .from(offersTable)
+      .where(eq(offersTable.applicationId, applicationId))
+      .orderBy(asc(offersTable.createdAt));
+    return { app: appRow, events: eventRows, offerRows: oRows };
+  });
   if (!app) return null;
-
-  const events = await db
-    .select()
-    .from(applicationEventsTable)
-    .where(eq(applicationEventsTable.applicationId, applicationId))
-    .orderBy(asc(applicationEventsTable.createdAt));
-
-  const offerRows = await db
-    .select()
-    .from(offersTable)
-    .where(eq(offersTable.applicationId, applicationId))
-    .orderBy(asc(offersTable.createdAt));
 
   const stage = deriveLiveStageFromDb(app, events, offerRows);
   /* Prefer the invite record for consumer name when present (handles

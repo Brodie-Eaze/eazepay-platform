@@ -45,6 +45,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
 import { hasDb, getDb, schema } from './db';
 import { safeLog } from './safe-log';
 import { SAMPLE_LENDERS, type Brand, type LenderTier } from './api-v1/shared';
@@ -109,6 +110,40 @@ export interface RankedLender {
   estimatedMaxCents: number | null;
 }
 
+/**
+ * Decision mode — the contract the orchestrator branches on.
+ *
+ *   normal
+ *     A decision was computed and persisted. Caller proceeds to offers.
+ *
+ *   fallback_internal
+ *     Trutopia upstream failed, but the consumer's profile carried
+ *     enough signal that the internal rule-based scorer can produce a
+ *     defensible offer-ranking result. Caller proceeds to offers; the
+ *     persisted row is labelled engine='internal' with engineFallback=true.
+ *     Acceptable for offer-ranking (which is not sanctions-blocking).
+ *
+ *   failed_persisted_to_dlq
+ *     Either:
+ *       (a) Trutopia upstream failed AND the consumer profile was too
+ *           thin for the internal scorer to produce a meaningful
+ *           ranking (no FICO, no DTI, no tradelines), OR
+ *       (b) The decision was computed but the DB transaction failed —
+ *           payload was written to the file-backed DLQ, caller MUST NOT
+ *           proceed to offers because there is no canonical decision row.
+ *     The application's status is moved to 'failed_decisioning' (case a)
+ *     or 'failed_persisted_to_dlq' (case b) so an operator can pick it
+ *     up from the queue. Fail-CLOSED is the correct posture here:
+ *     under FCRA we cannot synthesise a decline reason without ranking
+ *     evidence, and we cannot synthesise an approval without identity
+ *     verification.
+ */
+export type DecisionMode = 'normal' | 'fallback_internal' | 'failed_persisted_to_dlq';
+
+/** Top-level status surfaced to the orchestrator. `failed` is paired
+ *  with decisionMode='failed_persisted_to_dlq' on every error path. */
+export type DecisionStatus = 'ok' | 'failed';
+
 export interface DecisionResult {
   decisionId: string;
   engine: 'trutopia' | 'internal' | 'fallback';
@@ -116,6 +151,14 @@ export interface DecisionResult {
   /** True when the persisted `engine` reflects a fallback from another
    * engine (e.g. Trutopia upstream failed → internal scorer ran). */
   engineFallback: boolean;
+  /** New fail-closed contract — orchestrator branches on this. */
+  decisionMode: DecisionMode;
+  /** 'ok' for normal + fallback_internal; 'failed' for DLQ path. */
+  status: DecisionStatus;
+  /** Free-form machine code describing why a failed result failed.
+   *  Examples: 'upstream_unavailable', 'thin_file_no_fallback',
+   *  'persist_failed'. NULL on normal/fallback_internal. */
+  detail: string | null;
   rankedLenders: RankedLender[];
   eligibleCount: number;
   excludedCount: number;
@@ -383,6 +426,21 @@ function selectEngine(opts: EvaluateOpts): 'trutopia' | 'internal' | 'fallback' 
  * before the user perceives a hang. Trutopia's published p99 is 612ms. */
 const TRUTOPIA_TIMEOUT_MS = 800;
 
+/**
+ * Heuristic for "consumer wholly unknown" — used by the fail-CLOSED
+ * branch when Trutopia is unreachable. If the prequal profile carries
+ * no FICO band, no DTI, AND no tradeline count, the internal rule-based
+ * scorer's output is little more than a coin flip dressed up as a
+ * propensity score. Returning it as an offer-ranking decision would
+ * mislead the consumer; better to mark the application as
+ * `failed_decisioning` and route it to an operator queue.
+ *
+ * Exported so the orchestrator and tests can call it directly.
+ */
+export function isProfileTooThinForInternalScorer(p: PrequalInputs): boolean {
+  return p.ficoBand == null && p.dti == null && p.openTradelines == null;
+}
+
 export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResult> {
   const t0 = Date.now();
   // `let` (Task #44b) so the catch block can reassign on fallback.
@@ -390,7 +448,16 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
   let engineVersion = engine === 'trutopia' ? 'trutopia_cloud_v1' : 'internal_v1';
   let engineFallback = false;
 
-  let rankedLenders: RankedLender[];
+  // Task #44b (fail-CLOSED rewrite): the catch block no longer
+  // unconditionally falls back to the internal scorer. If Trutopia
+  // fails AND the consumer profile is too thin to score, we short-
+  // circuit to the failed_persisted_to_dlq branch — the orchestrator
+  // moves the application to `failed_decisioning` and the consumer
+  // never sees a synthetic decline or a synthetic approve.
+  let rankedLenders: RankedLender[] = [];
+  let trutopiaFailed = false;
+  let trutopiaFailureDetail: string | null = null;
+
   if (engine === 'trutopia') {
     try {
       const res = await fetch(`${process.env.TRUTOPIA_ENGINE_URL}/v1/decide`, {
@@ -409,12 +476,7 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
       const body = (await res.json()) as { rankedLenders: RankedLender[] };
       rankedLenders = body.rankedLenders;
     } catch (err) {
-      // Task #44b — relabel the persisted record so the audit row tells
-      // the truth about which engine actually produced the decision.
-      engine = 'internal';
-      engineVersion = 'internal_v1_fallback_from_trutopia';
-      engineFallback = true;
-
+      trutopiaFailed = true;
       // Task #49 — distinguish timeouts from other failures for the
       // monitoring dashboard. An AbortError is a SLA-breach signal;
       // other errors are typically network/5xx noise.
@@ -422,6 +484,7 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
         err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError');
       if (isTimeout) {
         metrics.trutopiaTimeout += 1;
+        trutopiaFailureDetail = 'upstream_timeout';
         safeLog.warn({
           event: 'trutopia.timeout',
           applicationId: opts.applicationId,
@@ -429,6 +492,7 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
         });
       } else {
         metrics.trutopiaFailure += 1;
+        trutopiaFailureDetail = 'upstream_unavailable';
         safeLog.warn({
           event: 'trutopia.failure',
           applicationId: opts.applicationId,
@@ -436,6 +500,26 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
         });
       }
 
+      if (isProfileTooThinForInternalScorer(opts.prequal)) {
+        // Fail-CLOSED: no meaningful internal-scorer result is
+        // possible. Skip the offer-ranking fallback entirely.
+        return await failClosed({
+          opts,
+          t0,
+          decisionId: randomUUID(),
+          detail: 'thin_file_no_fallback',
+          underlyingDetail: trutopiaFailureDetail,
+          applicationStatus: 'failed_decisioning',
+        });
+      }
+
+      // Profile is rich enough that the internal rule-based scorer
+      // produces a defensible offer-ranking. This is the legacy
+      // `engineFallback=true` path, now explicitly labelled
+      // decisionMode='fallback_internal'.
+      engine = 'internal';
+      engineVersion = 'internal_v1_fallback_from_trutopia';
+      engineFallback = true;
       rankedLenders = runInternalEngine(opts.prequal);
     }
   } else {
@@ -453,6 +537,12 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
   // so the DB-returned id (also a UUID, but typed as plain text by
   // Drizzle) can be reassigned without a template-literal mismatch.
   let decisionId: string = randomUUID();
+
+  // Default to the fallback-internal decisionMode when Trutopia failed
+  // but we still computed a ranked list; default to normal otherwise.
+  // The persist branch may override to 'failed_persisted_to_dlq'.
+  let decisionMode: DecisionMode = trutopiaFailed ? 'fallback_internal' : 'normal';
+  let persistFailed = false;
 
   if (shouldPersist) {
     try {
@@ -484,6 +574,7 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
             decisionId: row.id,
             engine,
             engineFallback,
+            decisionMode,
             eligibleCount: included.length,
             topPropensityScore: topScore,
           }),
@@ -496,6 +587,8 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
       // Task #44a — DO NOT swallow. A regulator replay must be able to
       // reconstruct every decision; if Postgres is down the payload
       // goes to a file-backed DLQ so an operator can replay on recovery.
+      persistFailed = true;
+      decisionMode = 'failed_persisted_to_dlq';
       metrics.decisionPersistDlq += 1;
       const errMessage = err instanceof Error ? err.message : String(err);
       const errName = err instanceof Error ? err.name : 'UnknownError';
@@ -506,6 +599,7 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
         applicationId: opts.applicationId,
         engine,
         engineFallback,
+        decisionMode,
         error: errMessage,
         errorName: errName,
       });
@@ -523,6 +617,7 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
               engine,
               engineVersion,
               engineFallback,
+              decisionMode,
               inputsJson: JSON.stringify(opts.prequal),
               rankedLendersJson: JSON.stringify(rankedLenders),
               eligibleLenderCount: included.length,
@@ -547,20 +642,36 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
           error: dlqErr instanceof Error ? dlqErr.message : String(dlqErr),
         });
       }
+
+      // Mark the parent application as failed_persisted_to_dlq so the
+      // operator queue surfaces it. Best-effort: the same DB outage that
+      // triggered the persist failure may take this write down too;
+      // when it does, the DLQ file still carries the applicationId so
+      // the replay worker can drive the status transition on recovery.
+      await tryMarkApplicationStatus(
+        opts.applicationId,
+        'failed_persisted_to_dlq',
+        'persist_failed',
+      );
     }
   }
 
   // Platform-wide decision counter for /admin/observability. Bumped on
-  // every completed evaluation regardless of engine (internal /
-  // trutopia / fallback) — the dashboard's "decisions computed" tile
-  // counts work done, not engine selection.
+  // every completed evaluation regardless of engine — the dashboard's
+  // "decisions computed" tile counts work done, not engine selection.
   incrementMetric('decisions.computed');
+  // decision.mode.* — per-mode breakdown for the new fail-closed
+  // contract. The orchestrator branches on the same field.
+  incrementMetric(`decision.mode.${decisionMode}` as const);
 
   return {
     decisionId,
     engine,
     engineVersion,
     engineFallback,
+    decisionMode,
+    status: persistFailed ? 'failed' : 'ok',
+    detail: persistFailed ? 'persist_failed' : null,
     rankedLenders,
     eligibleCount: included.length,
     excludedCount: excluded.length,
@@ -568,3 +679,128 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
     latencyMs,
   };
 }
+
+/* ---------- fail-CLOSED helpers ---------- */
+
+/**
+ * Return the failed_persisted_to_dlq result for the "Trutopia down +
+ * profile too thin to score internally" branch. Writes the DLQ entry
+ * and marks the application status `failed_decisioning`, then returns
+ * a DecisionResult that tells the orchestrator NOT to proceed to
+ * offers. No synthetic decline, no synthetic approve.
+ */
+async function failClosed(input: {
+  opts: EvaluateOpts;
+  t0: number;
+  decisionId: string;
+  detail: string;
+  underlyingDetail: string | null;
+  applicationStatus: 'failed_decisioning' | 'failed_persisted_to_dlq';
+}): Promise<DecisionResult> {
+  const { opts, t0, decisionId, detail, underlyingDetail, applicationStatus } = input;
+  const latencyMs = Date.now() - t0;
+
+  metrics.decisionPersistDlq += 1;
+  safeLog.error({
+    event: 'decision.fail_closed',
+    decisionId,
+    applicationId: opts.applicationId,
+    detail,
+    underlyingDetail,
+    applicationStatus,
+  });
+
+  try {
+    const dlqDir = join(process.cwd(), 'dlq', 'decisions');
+    mkdirSync(dlqDir, { recursive: true });
+    const dlqPath = join(dlqDir, `${decisionId}.json`);
+    writeFileSync(
+      dlqPath,
+      JSON.stringify(
+        {
+          decisionId,
+          applicationId: opts.applicationId,
+          engine: 'trutopia',
+          engineVersion: 'trutopia_cloud_v1',
+          engineFallback: false,
+          decisionMode: 'failed_persisted_to_dlq',
+          status: 'failed',
+          detail,
+          underlyingDetail,
+          applicationStatus,
+          inputsJson: JSON.stringify(opts.prequal),
+          rankedLendersJson: JSON.stringify([]),
+          latencyMs,
+          timestamp: new Date().toISOString(),
+        },
+        null,
+        2,
+      ),
+    );
+  } catch (dlqErr) {
+    safeLog.error({
+      event: 'decision.fail_closed.dlq_write_failed',
+      decisionId,
+      applicationId: opts.applicationId,
+      error: dlqErr instanceof Error ? dlqErr.message : String(dlqErr),
+    });
+  }
+
+  await tryMarkApplicationStatus(opts.applicationId, applicationStatus, detail);
+
+  incrementMetric('decisions.computed');
+  incrementMetric('decision.mode.failed_persisted_to_dlq');
+
+  return {
+    decisionId,
+    engine: 'trutopia',
+    engineVersion: 'trutopia_cloud_v1',
+    engineFallback: false,
+    decisionMode: 'failed_persisted_to_dlq',
+    status: 'failed',
+    detail,
+    rankedLenders: [],
+    eligibleCount: 0,
+    excludedCount: 0,
+    topPropensityScore: null,
+    latencyMs,
+  };
+}
+
+/**
+ * Best-effort UPDATE of `applications.status`. Swallows errors — the
+ * caller has already routed the payload to the DLQ, which carries the
+ * applicationId so a replay worker can complete the status transition
+ * on Postgres recovery.
+ */
+async function tryMarkApplicationStatus(
+  applicationId: string,
+  status: 'failed_decisioning' | 'failed_persisted_to_dlq',
+  reason: string,
+): Promise<void> {
+  if (!hasDb()) return;
+  try {
+    const db = getDb();
+    await db.transaction(async (tx) => {
+      await tx
+        .update(schema.applications)
+        .set({ status })
+        .where(eq(schema.applications.id, applicationId));
+      await tx.insert(schema.applicationEvents).values({
+        applicationId,
+        type: 'status_changed',
+        toStatus: status,
+        payload: JSON.stringify({ reason, source: 'decision_engine.fail_closed' }),
+        actor: 'decision_engine',
+      });
+    });
+  } catch (err) {
+    safeLog.error({
+      event: 'decision.fail_closed.status_update_failed',
+      applicationId,
+      status,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
