@@ -21,6 +21,16 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { safeLog } from '../safe-log';
+import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
+
+/** Per-call timeouts. provision = known-slow (real MiCamp underwriting
+ *  takes 5–20s); charge = money path, must fail fast so a hung partner
+ *  doesn't pin a Next.js worker holding the consumer's session;
+ *  settlement = bulk-ish data, 10s ceiling. */
+const TIMEOUT_PROVISION_MS = 30_000;
+const TIMEOUT_CHARGE_MS = 5_000;
+const TIMEOUT_SETTLEMENT_MS = 10_000;
+const PARTNER = 'micamp' as const;
 
 /* ---------- types ---------- */
 
@@ -180,14 +190,18 @@ const PROVISIONING_STEPS = [
 
 export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionMidResponse> {
   if (isMicampLive()) {
-    const res = await fetch(`${MICAMP_API_URL}/v1/merchants`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${MICAMP_API_KEY}`,
+    const res = await fetchWithTimeout(
+      `${MICAMP_API_URL}/v1/merchants`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${MICAMP_API_KEY}`,
+        },
+        body: JSON.stringify(req),
       },
-      body: JSON.stringify(req),
-    });
+      { timeoutMs: TIMEOUT_PROVISION_MS, partner: PARTNER, endpoint: 'provisionMid' },
+    );
     if (!res.ok) {
       throw new Error(`MiCamp provisioning failed: ${res.status}`);
     }
@@ -218,14 +232,18 @@ export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionM
 
 export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
   if (isMicampLive()) {
-    const res = await fetch(`${MICAMP_API_URL}/v1/charges`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${MICAMP_API_KEY}`,
+    const res = await fetchWithTimeout(
+      `${MICAMP_API_URL}/v1/charges`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${MICAMP_API_KEY}`,
+        },
+        body: JSON.stringify(req),
       },
-      body: JSON.stringify(req),
-    });
+      { timeoutMs: TIMEOUT_CHARGE_MS, partner: PARTNER, endpoint: 'charge' },
+    );
     if (!res.ok) {
       throw new Error(`MiCamp charge failed: ${res.status}`);
     }
@@ -259,11 +277,12 @@ export async function settlementReport(
   period: { start: string; end: string },
 ): Promise<SettlementReport> {
   if (isMicampLive()) {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${MICAMP_API_URL}/v1/merchants/${midId}/settlements?start=${period.start}&end=${period.end}`,
       {
         headers: { Authorization: `Bearer ${MICAMP_API_KEY}` },
       },
+      { timeoutMs: TIMEOUT_SETTLEMENT_MS, partner: PARTNER, endpoint: 'settlementReport' },
     );
     if (!res.ok) {
       throw new Error(`MiCamp settlement fetch failed: ${res.status}`);

@@ -23,6 +23,15 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { safeLog } from '../safe-log';
 import type { WebhookVerificationResult } from '../micamp/client';
+import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
+
+/** Per-call timeouts. Sub-account create is provisioning-grade (HighSale
+ *  stands up a downstream agency child + Pixie embed — routinely 5–15s);
+ *  prequal is a soft-pull credit query and must fail fast so the apply
+ *  form doesn't hang the consumer. */
+const TIMEOUT_SUBACCOUNT_MS = 30_000;
+const TIMEOUT_PREQUAL_MS = 5_000;
+const PARTNER = 'highsale' as const;
 
 /* ---------- types ---------- */
 
@@ -139,14 +148,18 @@ export async function createSubAccount(
   req: CreateSubAccountRequest,
 ): Promise<CreateSubAccountResponse> {
   if (isHighsaleLive()) {
-    const res = await fetch(`${HIGHSALE_API_URL}/agency/v1/sub-accounts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Agency-Key': HIGHSALE_AGENCY_KEY,
+    const res = await fetchWithTimeout(
+      `${HIGHSALE_API_URL}/agency/v1/sub-accounts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Agency-Key': HIGHSALE_AGENCY_KEY,
+        },
+        body: JSON.stringify(req),
       },
-      body: JSON.stringify(req),
-    });
+      { timeoutMs: TIMEOUT_SUBACCOUNT_MS, partner: PARTNER, endpoint: 'createSubAccount' },
+    );
     if (!res.ok) {
       throw new Error(`HighSale sub-account create failed: ${res.status}`);
     }
@@ -184,16 +197,20 @@ function syntheticTier(email: string): { tier: 'A' | 'B' | 'C' | 'D'; ficoBand: 
 
 export async function runPrequal(req: PrequalRequest): Promise<PrequalResponse> {
   if (isHighsaleLive()) {
-    const res = await fetch(`${HIGHSALE_API_URL}/sub/v1/prequal`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${HIGHSALE_AGENCY_KEY}`,
-        'X-Sub-Account': req.subAccountId,
-        'X-Idempotency-Key': req.requestId,
+    const res = await fetchWithTimeout(
+      `${HIGHSALE_API_URL}/sub/v1/prequal`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${HIGHSALE_AGENCY_KEY}`,
+          'X-Sub-Account': req.subAccountId,
+          'X-Idempotency-Key': req.requestId,
+        },
+        body: JSON.stringify(req),
       },
-      body: JSON.stringify(req),
-    });
+      { timeoutMs: TIMEOUT_PREQUAL_MS, partner: PARTNER, endpoint: 'runPrequal' },
+    );
     if (!res.ok) {
       throw new Error(`HighSale pre-qual failed: ${res.status}`);
     }
