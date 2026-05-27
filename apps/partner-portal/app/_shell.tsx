@@ -156,17 +156,10 @@ const masterGroups: NavGroup[] = [
       { href: '/submit/trade-pay', label: 'TradePay Application', icon: <BankIcon /> },
     ],
   },
-  {
-    label: 'Products',
-    items: [
-      { href: '/coach-pay', label: 'CoachPay', icon: <CrownIcon /> },
-      { href: '/trade-pay', label: 'TradePay', icon: <BankIcon /> },
-      { href: '/eaze-med-pay', label: 'MedPay', icon: <HeartPulseIcon /> },
-      { href: '/eaze-processing', label: 'EAZE Processing', icon: <CardIcon /> },
-      { href: '/dialerpay', label: 'DialerPay', icon: <PhoneIcon /> },
-      { href: '/ez-check', label: 'EZ Check', icon: <ShieldIcon /> },
-    ],
-  },
+  // PRODUCTS section intentionally NOT in masterGroups — admins don't
+  // need a per-brand product nav (they manage all brands from /partners
+  // + /lender-marketplace). Per-brand portals keep their own Products
+  // navigation via `verticalGroups(brand)` below.
   {
     label: 'Developer',
     items: [
