@@ -104,14 +104,29 @@ export async function POST(req: NextRequest) {
   const ip = clientIp;
   const userAgent = req.headers.get('user-agent') ?? 'unknown';
 
-  const receipt = storeConsentReceipt({
-    applicationId: body.applicationId,
-    sessionId: body.sessionId,
-    disclosureVersion: body.disclosureVersion,
-    consentText: body.consentText,
-    ip,
-    userAgent,
-  });
+  // P0 fix — DB-first persistence; 503 on persistence failure.
+  let receipt;
+  try {
+    receipt = await storeConsentReceipt({
+      applicationId: body.applicationId,
+      sessionId: body.sessionId,
+      disclosureVersion: body.disclosureVersion,
+      consentText: body.consentText,
+      ip,
+      userAgent,
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'consent_persistence_unavailable',
+        detail: 'Consent receipt could not be persisted. Please retry shortly.',
+      },
+      { status: 503 },
+    );
+  }
 
   // SEC-006 (Task #45): the receipt id is the audit-chain pointer the
   // consumer apply flow MUST carry forward into the prequal soft-pull
@@ -182,6 +197,20 @@ export async function GET(req: NextRequest) {
   if (!applicationId) {
     return NextResponse.json({ ok: false, error: 'applicationId_required' }, { status: 400 });
   }
-  const matches = listConsentReceiptsForApplication(applicationId);
-  return NextResponse.json({ ok: true, receipts: matches });
+  // P0 fix — DB-first read; 503 on persistence failure.
+  try {
+    const matches = await listConsentReceiptsForApplication(applicationId);
+    return NextResponse.json({ ok: true, receipts: matches });
+  } catch {
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'consent_persistence_unavailable',
+        detail: 'Consent receipts could not be read. Please retry shortly.',
+      },
+      { status: 503 },
+    );
+  }
 }

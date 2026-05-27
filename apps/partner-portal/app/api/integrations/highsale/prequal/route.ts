@@ -104,16 +104,16 @@ async function writeFcraAuditLog(input: {
   userAgent: string;
 }): Promise<void> {
   if (!hasDb()) {
-    // Local dev / DATABASE_URL not provisioned — keep the audit
-    // intent visible in logs even when the DB write is impossible.
-    safeLog.info({
-      event: 'audit_log.fcra.soft_pull.skipped_no_db',
+    // P0 fix — a missing FCRA audit row is a regulatory violation,
+    // not "log and continue". Throw so the caller returns 503.
+    safeLog.error({
+      event: 'audit_log.fcra.soft_pull.db_unavailable',
       applicationId: input.applicationId,
       consentReceiptId: input.consentReceiptId,
       pullId: input.pullId,
       tier: input.tier,
     });
-    return;
+    throw new Error('fcra_audit_log_unavailable');
   }
   try {
     const db = getDb();
@@ -252,11 +252,50 @@ export async function POST(req: NextRequest) {
   const ownership = await assertResourceOwnership(guard, body.subAccountId, 'subaccount');
   if (ownership) return ownership;
 
-  // SEC-006: verify FCRA consent BEFORE any state-changing call. Order
-  // matters — Zod (400) and ownership (403) come first because they're
-  // constant-cost; the FCRA verifier hits the receipt store and we don't
-  // want a malformed body probing it.
-  const verdict = verifyFCRAConsent(body.consentReceiptId, body.applicationId);
+  // P0 fix — FAIL CLOSED when the durable audit store is unavailable.
+  // Pre-fix this route silently logged
+  // `audit_log.fcra.soft_pull.skipped_no_db` and ran the pull anyway.
+  // A soft pull without a persisted audit row is an FCRA §604(a)(2)
+  // violation.
+  if (!hasDb()) {
+    safeLog.error({
+      event: 'highsale.prequal.db_unavailable',
+      applicationId: body.applicationId,
+    });
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'fcra_audit_unavailable',
+        detail: 'Pre-qualification is temporarily unavailable. Please retry shortly.',
+      },
+      { status: 503 },
+    );
+  }
+
+  // SEC-006: verify FCRA consent BEFORE any state-changing call.
+  let verdict;
+  try {
+    verdict = await verifyFCRAConsent(body.consentReceiptId, body.applicationId);
+  } catch (err) {
+    safeLog.error({
+      event: 'highsale.prequal.consent_verify_threw',
+      applicationId: body.applicationId,
+      consentReceiptId: body.consentReceiptId,
+      msg: err instanceof Error ? err.message : 'unknown',
+    });
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Service Unavailable',
+        status: 503,
+        code: 'fcra_audit_unavailable',
+        detail: 'Pre-qualification is temporarily unavailable. Please retry shortly.',
+      },
+      { status: 503 },
+    );
+  }
   if (!verdict.valid) {
     safeLog.warn({
       event: 'highsale.prequal.consent_verify_failed',

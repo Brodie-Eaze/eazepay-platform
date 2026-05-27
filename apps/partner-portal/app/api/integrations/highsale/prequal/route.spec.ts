@@ -72,7 +72,7 @@ async function buildRequest(body: Record<string, unknown>): Promise<NextRequest>
   });
 }
 
-function freshReceipt(): ConsentReceipt {
+async function freshReceipt(): Promise<ConsentReceipt> {
   return storeConsentReceipt({
     applicationId: APP_ID,
     sessionId: SESSION_ID,
@@ -91,7 +91,7 @@ describe('POST /api/integrations/highsale/prequal — FCRA consent gate', () => 
   });
 
   it('200 — valid consent receipt + matching applicationId runs the soft pull', async () => {
-    const receipt = freshReceipt();
+    const receipt = await freshReceipt();
     const res = await POST(
       await buildRequest(buildBody({ consentReceiptId: receipt.id, applicationId: APP_ID })),
     );
@@ -123,7 +123,7 @@ describe('POST /api/integrations/highsale/prequal — FCRA consent gate', () => 
   });
 
   it('412 wrong_application — receipt exists but applicationId mismatches', async () => {
-    const receipt = freshReceipt();
+    const receipt = await freshReceipt();
     const res = await POST(
       await buildRequest(
         buildBody({ consentReceiptId: receipt.id, applicationId: 'app_someone_elses' }),
@@ -140,7 +140,7 @@ describe('POST /api/integrations/highsale/prequal — FCRA consent gate', () => 
     // re-inserting via the store (`storeConsentReceipt` always stamps
     // server-now, so we override directly via the store internals to
     // simulate a >30d-old row coming back from the future Postgres table).
-    const receipt = freshReceipt();
+    const receipt = await freshReceipt();
     const staleMs = Date.now() - (FCRA_CONSENT_MAX_AGE_MS + 60_000);
     // Mutating the stored receipt is acceptable in tests because the
     // store reference is the same Map the verifier reads from. In
@@ -157,7 +157,7 @@ describe('POST /api/integrations/highsale/prequal — FCRA consent gate', () => 
   });
 
   it('412 wrong_disclosure_version — receipt pinned to an older disclosure', async () => {
-    const receipt = storeConsentReceipt({
+    const receipt = await storeConsentReceipt({
       applicationId: APP_ID,
       sessionId: SESSION_ID,
       // Anything other than the current constant triggers the check.
