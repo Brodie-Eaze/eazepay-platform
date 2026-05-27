@@ -44,7 +44,10 @@ import {
   type SubmittedAppBrand,
 } from '../../../../lib/submitted-applications';
 import { fetchApplicationsForPartner } from '../../../../lib/applications-client';
-import { expandedApplications } from '../../../../lib/seeded-applications';
+// `expandedApplications` is now server-only (the ~1MB seeded fixture was
+// being shipped into this route's client bundle). We fetch only the
+// rows for this (partner, product) pair via the JSON endpoint.
+import { useQuery } from '@tanstack/react-query';
 import { creditTierFor, type CreditTier } from '../../../../lib/dashboard-metrics';
 
 /* ─── Live-tracking shapes — mirror the BFF status route response.
@@ -240,14 +243,25 @@ export default function VerticalApplicationsPage() {
     () => (code ? applicationsForPartner(currentPartnerId).filter((a) => a.product === code) : []),
     [code, currentPartnerId],
   );
-  const expandedRows = useMemo(() => {
-    if (!code || !partnerName) return [] as ApplicationRow[];
-    const seen = new Set(seedRows.map((r) => r.id));
-    return expandedApplications.filter(
-      (a) => a.partner === partnerName && a.product === code && !seen.has(a.id),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, partnerName]);
+  // Was: `expandedApplications.filter(...)` over the full ~1MB fixture.
+  // Now: fetch only the rows for this (partner, product) pair from the
+  // server, with the already-seen ids excluded.
+  const seenIdsCsv = useMemo(() => seedRows.map((r) => r.id).join(','), [seedRows]);
+  const expandedRowsQuery = useQuery<{ items: ApplicationRow[] }>({
+    enabled: !!(code && partnerName),
+    queryKey: ['admin', 'dashboard', 'applications-for-partner', partnerName, code, seenIdsCsv],
+    queryFn: async () => {
+      const url =
+        `/api/admin/dashboard/applications-for-partner` +
+        `?partner=${encodeURIComponent(partnerName)}` +
+        `&product=${encodeURIComponent(code ?? '')}` +
+        `&exclude=${encodeURIComponent(seenIdsCsv)}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(`apps-for-partner fetch failed: ${res.status}`);
+      return res.json();
+    },
+  });
+  const expandedRows: ApplicationRow[] = expandedRowsQuery.data?.items ?? [];
   // Default sort: newest first by `date`. ISO-8601 date strings sort
   // lexicographically equivalent to chronological order, so we can
   // skip a Date parse on every comparison.

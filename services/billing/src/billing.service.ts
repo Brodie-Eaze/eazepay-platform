@@ -219,8 +219,17 @@ export class BillingService {
     let alreadyExistsCount = 0;
     let pausedCount = 0;
 
+    // ── PERF: previously this loop called `grossFundedCentsForPeriod`
+    // once per merchant sequentially (N+1: 500 merchants = 500 round-
+    // trips). Now we resolve the whole period in a single bulk query
+    // and read from the Map in O(1) per merchant.
+    const grossByMerchant = await this.activity.grossFundedCentsForPeriodBulk(
+      period.start,
+      period.end,
+    );
+
     for (const m of merchants) {
-      const gross = await this.activity.grossFundedCentsForPeriod(m.id, period.start, period.end);
+      const gross = grossByMerchant.get(m.id) ?? 0n;
       const feeBps = effectiveFeeBpsFor(m.brand);
       const amount = (gross * BigInt(feeBps)) / 10000n;
       const existed = existingByMerchant.has(m.id);
@@ -271,6 +280,21 @@ export class BillingService {
     let skippedPaused = 0;
     let skippedExisting = 0;
 
+    // ── PERF: bulk gross-volume resolution (one query, not N).
+    const grossByMerchant = await this.activity.grossFundedCentsForPeriodBulk(
+      period.start,
+      period.end,
+    );
+
+    // First pass: filter + decide which merchants need invoice creation.
+    // We do this synchronously so skip counters stay deterministic.
+    type Job = {
+      merchantId: string;
+      brand: string | null | undefined;
+      gross: bigint;
+      cfg: (typeof configs)[number] | undefined;
+    };
+    const jobs: Job[] = [];
     for (const m of merchants) {
       if (existingByMerchant.has(m.id)) {
         skippedExisting++;
@@ -281,12 +305,27 @@ export class BillingService {
         skippedPaused++;
         continue;
       }
-      const gross = await this.activity.grossFundedCentsForPeriod(m.id, period.start, period.end);
+      const gross = grossByMerchant.get(m.id) ?? 0n;
       if (gross === 0n) continue;
-      const feeBps = effectiveFeeBpsFor(m.brand);
-      const amount = (gross * BigInt(feeBps)) / 10000n;
-      const invoiceNo = buildInvoiceNo(periodId, m.id);
-      const status: 'draft' | 'sent' = cfg?.autoSend ? 'sent' : 'draft';
+      jobs.push({ merchantId: m.id, brand: m.brand, gross, cfg });
+    }
+
+    // Second pass: fan out the per-merchant transactions with a bounded
+    // concurrency cap of 25. Sequential ran each $transaction back-to-
+    // back (e.g. 200 jobs × ~30ms = ~6s); 25-way parallelism brings
+    // wall-clock down ~25x while keeping the Prisma pool from being
+    // saturated by a single endpoint. Concurrency is intentionally
+    // conservative — billing generation runs cron-style off the hot
+    // checkout path, but it shares the same pool.
+    const CONCURRENCY = 25;
+    const runJob = async (job: Job): Promise<string> => {
+      const feeBps = effectiveFeeBpsFor(job.brand);
+      const amount = (job.gross * BigInt(feeBps)) / 10000n;
+      const invoiceNo = buildInvoiceNo(periodId, job.merchantId);
+      const status: 'draft' | 'sent' = job.cfg?.autoSend ? 'sent' : 'draft';
+      const m = { id: job.merchantId, brand: job.brand };
+      const gross = job.gross;
+      const cfg = job.cfg;
       await this.prisma.$transaction(async (tx) => {
         const inv = await tx.invoice.create({
           data: {
@@ -345,8 +384,25 @@ export class BillingService {
           });
         }
       });
-      created.push(invoiceNo);
-    }
+      return invoiceNo;
+    };
+
+    // Bounded-parallel runner. Lightweight inline semaphore so we don't
+    // pull p-limit just for this; same semantics: at most CONCURRENCY
+    // jobs in flight, preserves return order.
+    const results: string[] = new Array(jobs.length);
+    let cursor = 0;
+    const workers: Promise<void>[] = [];
+    const worker = async () => {
+      for (;;) {
+        const idx = cursor++;
+        if (idx >= jobs.length) return;
+        results[idx] = await runJob(jobs[idx]!);
+      }
+    };
+    for (let i = 0; i < Math.min(CONCURRENCY, jobs.length); i++) workers.push(worker());
+    await Promise.all(workers);
+    for (const r of results) if (r) created.push(r);
 
     return { created, skipped: { paused: skippedPaused, existing: skippedExisting } };
   }

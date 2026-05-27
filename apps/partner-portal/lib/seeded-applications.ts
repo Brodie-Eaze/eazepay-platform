@@ -12,10 +12,15 @@
  *   mulberry32 (tiny, fast, MIT) so the demo is stable across reloads and
  *   doesn't pull in a faker dependency.
  *
- *   Dashboards (/v/[brand], /admin, /reports) read `expandedApplications`.
- *   Per-partner detail pages still read `applications` from master-data so
- *   no existing partner page changes its on-screen counts.
+ *   SERVER-ONLY: this fixture is ~1MB stringified. Importing it from any
+ *   client component would ship the entire row set in the browser bundle.
+ *   The `'server-only'` import makes that a build error. Client pages
+ *   must go through `/api/admin/dashboard/*` for pre-aggregated KPIs or
+ *   small filtered row sets.
+ *
+ *   Pre-aggregated selectors live in `seeded-applications-server.ts`.
  */
+import 'server-only';
 import { applications, type ApplicationRow, partners } from './master-data';
 
 /* ─── PRNG ──────────────────────────────────────────────────────────── */

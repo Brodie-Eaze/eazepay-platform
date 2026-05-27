@@ -27,21 +27,15 @@ import {
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
 import { applications, type ApplicationRow } from '../../../lib/master-data';
-import { expandedApplications } from '../../../lib/seeded-applications';
+// NOTE: `expandedApplications` (the ~1MB seeded fixture) is now
+// server-only. The per-brand dashboard fetches its pre-aggregated KPIs
+// via `/api/admin/dashboard/snapshot?scope=partner&...` and its
+// "Recent Applications" rows via `/api/admin/dashboard/recent-applications`.
+// This shaves ~1MB off the route's client bundle.
+import { useQuery } from '@tanstack/react-query';
 import { currentPartnerForBrand, partnerShareOfBrand } from '../../../lib/partner-profile';
 import { PartnerTour } from '../../../components/PartnerTour';
-import {
-  applicationsByMonth,
-  applicationsByStatus,
-  applicationsInRange,
-  creditMix,
-  fundedVolumeByMonth,
-  monthKeyToWindow,
-  priorWindow,
-  timeRangeToWindow,
-  totalFundedCents,
-  trendDelta,
-} from '../../../lib/dashboard-metrics';
+import { monthKeyToWindow } from '../../../lib/dashboard-metrics';
 
 /**
  * Brand portal — Dashboard.
@@ -745,47 +739,73 @@ export default function BrandHomePage() {
    * channel subscriptions are scoped to a follow-on sprint. */
   const [pulseKey, setPulseKey] = useState(0);
 
-  /* ─── Live snapshot derived from expandedApplications ──────────────── */
-  const liveSnapshot = useMemo(() => {
-    if (!partner) return null;
-    const { fromIso, toIso } = timeRangeToWindow(range);
-    const prior = priorWindow(range);
-
-    const partnerRows = expandedApplications.filter((a) => a.partner === partner.legalName);
-    if (partnerRows.length === 0) return null;
-
-    const inWindow = applicationsInRange(partnerRows, fromIso, toIso);
-    const inPrior = applicationsInRange(partnerRows, prior.fromIso, prior.toIso);
-    const cur = applicationsByStatus(inWindow);
-    const pre = applicationsByStatus(inPrior);
-
-    const submittedDelta = trendDelta(cur.total, pre.total);
-    const approvedDelta = trendDelta(cur.approved, pre.approved);
-    const fundedDelta = trendDelta(cur.funded, pre.funded);
-    const declinedDelta = trendDelta(cur.declined, pre.declined);
-
-    const fundedCents = totalFundedCents(inWindow);
-    const fundedCentsPrior = totalFundedCents(inPrior);
-    const fundedCentsDelta = trendDelta(fundedCents, fundedCentsPrior);
-
-    const monthlySubs = applicationsByMonth(partnerRows, fromIso, toIso);
-    const monthlyFunded = fundedVolumeByMonth(partnerRows, fromIso, toIso);
-    const mix = creditMix(inWindow);
-
-    return {
-      cur,
-      submittedDelta,
-      approvedDelta,
-      fundedDelta,
-      declinedDelta,
-      fundedCents,
-      fundedCentsDelta,
-      inReview: cur.in_review,
-      monthlySubs,
-      monthlyFunded,
-      mix,
+  /* ─── Live snapshot fetched from /api/admin/dashboard/snapshot ─────── */
+  // Previously derived in-browser by filtering the ~420-row fixture
+  // (`expandedApplications`). That import has been moved server-only;
+  // we now fetch the pre-aggregated payload (~5KB) instead.
+  const partnerLegalName = partner?.legalName ?? '';
+  const snapshotQuery = useQuery<{
+    snapshot: {
+      cur: { total: number; approved: number; funded: number; declined: number; in_review: number };
+      deltas: {
+        submitted: number;
+        approved: number;
+        funded: number;
+        declined: number;
+        inReview: number;
+        fundedCents: number;
+      };
+      fundedCents: number;
+      monthlySubs: Array<{ label: string; value: number; monthKey: string }>;
+      monthlyFunded: Array<{ label: string; value: number; monthKey: string }>;
+      mix: Array<{
+        name: 'Prime' | 'NearPrime' | 'Subprime' | 'DeepSubprime';
+        range: string;
+        count: number;
+        pct: number;
+      }>;
+      partnerHasRows?: boolean;
     };
-  }, [partner, range]);
+  }>({
+    enabled: !!partner,
+    queryKey: ['admin', 'dashboard', 'snapshot', 'partner', partnerLegalName, range],
+    queryFn: async () => {
+      const url = `/api/admin/dashboard/snapshot?scope=partner&partner=${encodeURIComponent(
+        partnerLegalName,
+      )}&range=${range}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(`snapshot fetch failed: ${res.status}`);
+      return res.json();
+    },
+  });
+
+  /** Reshape the server payload to the legacy `liveSnapshot` contract
+   *  so the rendering JSX below does not need to change. Returns null
+   *  when the partner has no seeded rows (matches old behaviour →
+   *  the page falls back to the scaled `snapshot` numbers). */
+  const liveSnapshot = useMemo(() => {
+    const data = snapshotQuery.data?.snapshot;
+    if (!data) return null;
+    if (data.partnerHasRows === false) return null;
+    const toDelta = (signedPct: number) => ({
+      pct: Math.abs(signedPct),
+      direction:
+        signedPct > 0 ? ('up' as const) : signedPct < 0 ? ('down' as const) : ('flat' as const),
+    });
+    return {
+      cur: data.cur,
+      submittedDelta: toDelta(data.deltas.submitted),
+      approvedDelta: toDelta(data.deltas.approved),
+      fundedDelta: toDelta(data.deltas.funded),
+      declinedDelta: toDelta(data.deltas.declined),
+      fundedCents: data.fundedCents,
+      fundedCentsDelta: toDelta(data.deltas.fundedCents),
+      inReview: data.cur.in_review,
+      monthlySubs: data.monthlySubs,
+      monthlyFunded: data.monthlyFunded,
+      mix: data.mix,
+    };
+  }, [snapshotQuery.data]);
 
   /**
    * The dashboard snapshot, scaled down from brand-aggregate to the
@@ -856,22 +876,44 @@ export default function BrandHomePage() {
   const urlInReview = `${baseList}?status=in_review${rangeQs}`;
   const urlTotalFunded = `${baseList}?status=funded${rangeQs}`;
 
-  // Recent applications — scoped to the signed-in partner. Filter
-  // master-data + synthesised rows by partner.legalName (the `partner`
-  // string field on ApplicationRow). Both datasets are pre-tagged.
-  const recent = useMemo(() => {
-    if (!partner) return [];
+  // Recent applications — scoped to the signed-in partner.
+  // master-data + synthesised rows stay client-side (small, hand-curated
+  // arrays). The seeded-fixture slice now arrives via
+  // /api/admin/dashboard/recent-applications so we don't ship the full
+  // ~1MB fixture into the browser.
+  const seedExcludeIds = useMemo(() => {
+    if (!partner) return [] as string[];
     const synth = synthesisedFor(productBrand);
     const fromMaster = applications.filter((a) => a.partner === partner.legalName);
     const fromSynth = synth.filter((a) => a.partner === partner.legalName);
-    const fromSeeded = expandedApplications.filter(
-      (a) => a.partner === partner.legalName && !fromMaster.includes(a) && !fromSynth.includes(a),
-    );
+    return [...fromMaster, ...fromSynth].map((a) => a.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partner, productBrand]);
+
+  const recentSeededQuery = useQuery<{ items: ApplicationRow[] }>({
+    enabled: !!partner,
+    queryKey: ['admin', 'dashboard', 'recent-applications', partnerLegalName, productBrand],
+    queryFn: async () => {
+      const url =
+        `/api/admin/dashboard/recent-applications?partner=${encodeURIComponent(partnerLegalName)}` +
+        `&limit=6&exclude=${encodeURIComponent(seedExcludeIds.join(','))}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(`recent fetch failed: ${res.status}`);
+      return res.json();
+    },
+  });
+
+  const recent = useMemo(() => {
+    if (!partner) return [] as ApplicationRow[];
+    const synth = synthesisedFor(productBrand);
+    const fromMaster = applications.filter((a) => a.partner === partner.legalName);
+    const fromSynth = synth.filter((a) => a.partner === partner.legalName);
+    const fromSeeded = recentSeededQuery.data?.items ?? [];
     return [...fromSynth, ...fromMaster, ...fromSeeded]
       .slice()
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .slice(0, 6);
-  }, [partner, productBrand]);
+  }, [partner, productBrand, recentSeededQuery.data]);
 
   // Donut palette. Prime gets the brand accent so each portal feels
   // tinted without recolouring the whole chart.
