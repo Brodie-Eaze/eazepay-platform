@@ -448,6 +448,18 @@ importers:
       '@eazepay/ui':
         specifier: workspace:*
         version: link:../../libs/ui
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.1
+      '@opentelemetry/auto-instrumentations-node':
+        specifier: ^0.55.0
+        version: 0.55.3(@opentelemetry/api@1.9.1)
+      '@opentelemetry/exporter-trace-otlp-http':
+        specifier: ^0.57.0
+        version: 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/sdk-node':
+        specifier: ^0.57.0
+        version: 0.57.2(@opentelemetry/api@1.9.1)
       '@tanstack/react-query':
         specifier: ^5.0.0
         version: 5.100.10(react@18.3.1)
@@ -14121,7 +14133,7 @@ snapshots:
   '@types/pg@8.6.1':
     dependencies:
       '@types/node': 20.19.39
-      pg-protocol: 1.13.0
+      pg-protocol: 1.14.0
       pg-types: 2.2.0
 
   '@types/prop-types@15.7.15': {}

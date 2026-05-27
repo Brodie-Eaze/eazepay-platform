@@ -148,6 +148,34 @@ const RECOMMENDED: ReadonlyArray<RecommendedVar> = [
     degradationMode:
       'application read/write APIs return 503 and dashboards fall back to localStorage',
   },
+  // ────────────────────────────────────────────────────────────────────
+  // OpenTelemetry (production-readiness P0 — partner-portal is the
+  // actually-deployed app; without these env vars there are zero
+  // distributed traces across webhook dispatch / decision engine /
+  // MiCamp calls). Helpers in lib/observability/tracing.ts degrade to
+  // no-op spans when OTEL_EXPORTER_OTLP_ENDPOINT is unset — the app
+  // keeps running, but the trace-by-id link in every safeLog line goes
+  // missing and a partner complaint of "the charge took 12 seconds"
+  // has no upstream span to point at.
+  // ────────────────────────────────────────────────────────────────────
+  {
+    name: 'OTEL_EXPORTER_OTLP_ENDPOINT',
+    degradationMode: 'no distributed traces',
+  },
+  {
+    name: 'OTEL_SERVICE_NAME',
+    degradationMode: 'no distributed traces (defaults to eazepay-partner-portal)',
+  },
+  {
+    name: 'OTEL_TRACES_SAMPLER',
+    degradationMode:
+      'no distributed traces (defaults to parentbased_always_on — fine until traffic exceeds collector budget)',
+  },
+  {
+    name: 'OTEL_TRACES_SAMPLER_ARG',
+    degradationMode:
+      'no distributed traces (defaults to 1.0 = 100% sampling; dial down after the first fortnight)',
+  },
 ];
 
 let evaluated = false;

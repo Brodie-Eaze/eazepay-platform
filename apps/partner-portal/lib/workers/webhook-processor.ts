@@ -47,6 +47,7 @@ import { IntegrationErrorException } from '@eazepay/integrations-core';
 import { getDb, hasDb, schema } from '../db';
 import type { Db } from '../db';
 import { incrementMetric } from '../observability/metrics';
+import { withSpan } from '../observability/tracing';
 import { safeLog } from '../safe-log';
 import { handleLenderInboxRow, isLenderProvider } from './lender-webhook-handler';
 
@@ -252,6 +253,10 @@ export async function processInboxRow(inboxId: string): Promise<void> {
  *   a handler bugfix.
  */
 export async function processInbox(): Promise<ProcessInboxResult> {
+  return withSpan('webhook.outbox.drain', {}, () => processInboxInner());
+}
+
+async function processInboxInner(): Promise<ProcessInboxResult> {
   if (!hasDb()) {
     safeLog.warn({ event: 'webhook.processor.db_unavailable' });
     return { scanned: 0, done: 0, failed: 0, skipped: 0 };
@@ -414,22 +419,38 @@ async function dispatchEvent(
   body: Record<string, unknown>,
   row: InboxRow,
 ): Promise<void> {
-  // Lender slugs (e.g. `lp_buzzpay_prime`) live in their own dispatch
-  // module — checked FIRST so a lender id never accidentally matches
-  // a built-in provider literal.
-  if (isLenderProvider(provider)) {
-    return handleLenderInboxRow({ provider, rawBody: row.rawBody });
-  }
-  switch (provider) {
-    case 'micamp':
-      return handleMicamp(eventType, body, row);
-    case 'highsale':
-      return handleHighsale(eventType, body, row);
-    case 'trutopia':
-      return handleTrutopia(eventType, body, row);
-    default:
-      throw new Error(`unknown_provider:${provider}`);
-  }
+  // Wrap every handler dispatch in a span so a hung MiCamp or HighSale
+  // handler shows up in the trace timeline rather than as a generic
+  // BullMQ job duration. Attributes are deliberately bounded —
+  // provider + eventType are both members of the integration catalogue
+  // (4 providers × ~10 events) so cardinality stays well inside budget.
+  return withSpan(
+    'webhook.handler.dispatch',
+    {
+      'business.provider': provider,
+      'business.event_type': eventType,
+      'business.event_id': row.eventId,
+      'business.inbox_id': row.id,
+    },
+    async () => {
+      // Lender slugs (e.g. `lp_buzzpay_prime`) live in their own dispatch
+      // module — checked FIRST so a lender id never accidentally matches
+      // a built-in provider literal.
+      if (isLenderProvider(provider)) {
+        return handleLenderInboxRow({ provider, rawBody: row.rawBody });
+      }
+      switch (provider) {
+        case 'micamp':
+          return handleMicamp(eventType, body, row);
+        case 'highsale':
+          return handleHighsale(eventType, body, row);
+        case 'trutopia':
+          return handleTrutopia(eventType, body, row);
+        default:
+          throw new Error(`unknown_provider:${provider}`);
+      }
+    },
+  );
 }
 
 /**
