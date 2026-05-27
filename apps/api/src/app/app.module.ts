@@ -62,6 +62,8 @@ const env = loadEnv();
       prismaToken: PrismaService,
       keyManager: env.KEY_MANAGER,
       localKekHex: env.LOCAL_KEK_HEX,
+      kmsKeyId: env.KMS_KEK_KEY_ID,
+      kmsRegion: env.AWS_REGION,
       kycProvider: env.KYC_PROVIDER,
       isDevelopment: env.NODE_ENV === 'development',
     }),
