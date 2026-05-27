@@ -19,6 +19,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
+import { safeLog } from './safe-log';
+
 export type InviteBrand = 'medpay' | 'tradepay' | 'coachpay';
 
 export interface InvitePrefill {
@@ -114,8 +116,17 @@ async function persist() {
   try {
     await fs.mkdir(path.dirname(STORE_FILE), { recursive: true });
     await fs.writeFile(STORE_FILE, JSON.stringify(Array.from(invites.values()), null, 2), 'utf-8');
-  } catch {
-    /* Best-effort — in-memory map is still authoritative for this run. */
+  } catch (err) {
+    // SILENT-FAIL FIX: in-memory map is authoritative for THIS process,
+    // but on restart every invite minted since the last successful
+    // write is lost. Log loudly + continue — throwing would mask the
+    // mutation's success behind a 500.
+    safeLog.error({
+      event: 'invites_store.persist_failed',
+      storeFile: STORE_FILE,
+      inviteCount: invites.size,
+      err,
+    });
   }
 }
 

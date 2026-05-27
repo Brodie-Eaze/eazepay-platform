@@ -113,8 +113,21 @@ export async function fetchApplicationsForPartner(
       source: 'api',
       rows: body.items.map((r) => apiRowToLegacy(r, legalName)),
     };
-  } catch {
-    // Network failure — fall back to localStorage.
+  } catch (err) {
+    // SILENT-FAIL FIX: network failure → fall back to localStorage so the
+    // dashboard renders SOMETHING, BUT log loudly. Pre-fix the operator
+    // had no signal that the API was unreachable — the page just showed
+    // demo data as if everything were healthy.
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'applications_client.partner_fetch_failed',
+        brand,
+        partnerId,
+        msg: err instanceof Error ? err.message : 'unknown',
+      }),
+    );
     return { source: 'local', rows: localPartnerRows(brand, partnerId, legalName) };
   }
 }
@@ -161,7 +174,19 @@ export async function fetchApplicationsForAdmin(opts?: {
         apiRowToLegacy(r, findPartner(r.partnerId)?.legalName ?? r.partnerId),
       ),
     };
-  } catch {
+  } catch (err) {
+    // SILENT-FAIL FIX: see note on fetchPartnerApplications — log the
+    // network failure so an unreachable API is debuggable.
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'applications_client.admin_fetch_failed',
+        brand: opts?.brand,
+        status: opts?.status,
+        msg: err instanceof Error ? err.message : 'unknown',
+      }),
+    );
     return { source: 'local', rows: localAdminRows(opts) };
   }
 }
@@ -249,7 +274,19 @@ export async function fetchAdminSubmittedApps(opts?: {
     }
     const body = (await res.json()) as ApiResponse;
     return { source: 'api', rows: body.items.map(apiRowToSubmittedApp) };
-  } catch {
+  } catch (err) {
+    // SILENT-FAIL FIX: log the network failure (see note on
+    // fetchPartnerApplications).
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'applications_client.admin_submitted_fetch_failed',
+        brand: opts?.brand,
+        status: opts?.status,
+        msg: err instanceof Error ? err.message : 'unknown',
+      }),
+    );
     return { source: 'local', rows: localAdminSubmittedApps(opts) };
   }
 }
