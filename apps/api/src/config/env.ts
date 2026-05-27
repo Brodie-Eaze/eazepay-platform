@@ -114,8 +114,25 @@ const EnvSchema = z
       .union([z.boolean(), z.enum(['true', 'false', '1', '0'])])
       .transform((v) => v === true || v === 'true' || v === '1')
       .default(false),
-    /** Audit sink: 'local-fs' for dev, 'dynamodb' in prod. */
-    AUDIT_SINK: z.enum(['local-fs', 'dynamodb']).default('local-fs'),
+    /**
+     * Audit sink: 'local-fs' for dev, 's3' (Object Lock, WORM) in prod.
+     *
+     * 'dynamodb' was the previous prod target but DynamoDB alone does
+     * not meet SOC2 CC7.2 WORM-archive requirements — the production
+     * topology pipes drained rows into S3 with Object Lock in
+     * compliance mode (1-year minimum retention, root-cannot-delete).
+     * DynamoDB stays in the design as a hot tier in front of S3 but
+     * is no longer the canonical sink the auditor reviews.
+     *
+     * The S3 adapter currently lives as a stub at
+     * services/audit/src/adapters/s3-worm.adapter.ts — see that file's
+     * docstring + docs/runbooks/kek-rotation.md.
+     */
+    AUDIT_SINK: z.enum(['local-fs', 'dynamodb', 's3']).default('local-fs'),
+    /** Local directory the S3 stub adapter writes to, mimicking the
+     *  shape of a real S3 PUT (key + body). Dev-only — production
+     *  swaps in the real S3 client. */
+    AUDIT_S3_STUB_ROOT: z.string().default('./dlq/audit-s3-pending'),
     AUDIT_LOCAL_FS_ROOT: z.string().default('./tmp/audit-sink'),
     /** Per-process flag for the audit-drain cron. */
     AUDIT_DRAIN_ENABLED: z
@@ -278,6 +295,49 @@ const EnvSchema = z
     // the lockdown must match prod.
     const isHardened = env.NODE_ENV === 'production' || env.NODE_ENV === 'staging';
     if (!isHardened) return;
+
+    // PE-KEK-01: KEY_MANAGER must be `kms` in production. The
+    // LocalKeyManager loads its 32-byte KEK from env / disk, which is
+    // an unacceptable key-storage posture for SOC2 CC6.1 + PCI DSS 3.5
+    // (key material must live in an HSM / KMS managed boundary, not
+    // alongside the application). Pre-fix, env.ts only emitted a
+    // console.warn and allowed boot; this refuses boot outright.
+    //
+    // Staging is intentionally NOT included here — staging may run
+    // against a sandbox KMS or use LocalKeyManager with a rotated
+    // staging-only KEK, depending on the deploy. Operators flip this
+    // explicitly per environment via `KEY_MANAGER=kms`.
+    if (env.NODE_ENV === 'production' && env.KEY_MANAGER !== 'kms') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['KEY_MANAGER'],
+        message:
+          'KEY_MANAGER must be `kms` when NODE_ENV=production. ' +
+          'LocalKeyManager stores the KEK on disk / in env, which fails ' +
+          'SOC2 CC6.1 and PCI DSS 3.5. See docs/runbooks/kek-rotation.md.',
+      });
+    }
+
+    // PE-AUDIT-01: AUDIT_SINK must be `s3` in production. The
+    // local-fs sink writes JSON-lines to a pod-local disk — neither
+    // durable nor immutable, and lost on the next deploy. SOC2 CC7.2
+    // (audit log integrity) requires an immutable, WORM-grade sink
+    // (S3 Object Lock in compliance mode). Pre-fix, env.ts allowed
+    // any value through and the AuditModule factory threw at runtime
+    // AFTER boot succeeded — meaning a misconfigured production
+    // instance would serve traffic with audit drains silently failing.
+    if (env.NODE_ENV === 'production' && env.AUDIT_SINK !== 's3') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['AUDIT_SINK'],
+        message:
+          'AUDIT_SINK must be `s3` when NODE_ENV=production. ' +
+          'local-fs writes to ephemeral pod disk and dynamodb alone ' +
+          'does not satisfy SOC2 CC7.2 WORM-archive requirements. ' +
+          'See docs/runbooks/kek-rotation.md (sibling runbook for ' +
+          'audit-sink rotation lands in a follow-up).',
+      });
+    }
 
     // SEC-031: a mock e-sign provider in production would let anyone
     // with a `dev-mock` literal flip envelope status to `signed`.
