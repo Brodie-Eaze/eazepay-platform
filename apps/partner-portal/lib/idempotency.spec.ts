@@ -19,7 +19,9 @@ describe('lib/idempotency', () => {
     const k3 = deriveImplicitKey(['partner_b', 'body_hash_1']);
     expect(k1).toBe(k2);
     expect(k1).not.toBe(k3);
-    expect(k1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(k1).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
   });
 
   it('newIdempotencyKey returns a UUIDv4-shaped value', () => {
