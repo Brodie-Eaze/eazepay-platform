@@ -174,17 +174,25 @@ export type NewApplication = typeof applications.$inferInsert;
  * admin status-change action writes here too. Regulators replay this
  * table to verify the decision trail (Reg B adverse-action timing,
  * FCRA dispute response windows).
+ *
+ * Append-only enforcement (see `0019_append_only_grants.sql`):
+ *   • UPDATE / DELETE / TRUNCATE REVOKEd from the app role.
+ *   • FK to applications is ON DELETE SET NULL (NOT cascade) — the
+ *     audit trail must survive RTBF deletion of the parent row.
+ *     application_id is therefore nullable.
  */
 export const applicationEvents = pgTable(
   'application_events',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    /** FK → applications.id ON DELETE CASCADE. Events are meaningless
-     *  without their parent application — cascading the delete keeps
-     *  the table tidy for test fixtures + GDPR RTBF. */
-    applicationId: uuid('application_id')
-      .notNull()
-      .references(() => applications.id, { onDelete: 'cascade' }),
+    /** FK → applications.id ON DELETE SET NULL. Originally CASCADE,
+     *  changed in 0019 because a CASCADE on the parent destroys the
+     *  audit trail — exactly the path you must NOT have on a
+     *  regulator-replay table. Nullable so the FK can clear it on
+     *  parent delete. */
+    applicationId: uuid('application_id').references(() => applications.id, {
+      onDelete: 'set null',
+    }),
     type: applicationEventTypeEnum('type').notNull(),
     fromStatus: applicationStatusEnum('from_status'),
     toStatus: applicationStatusEnum('to_status'),
