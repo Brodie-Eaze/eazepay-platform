@@ -56,7 +56,12 @@ export type MetricName =
   | 'provisioning.completed'
   | 'provisioning.failed'
   | 'migration.completed'
-  | 'migration.failed';
+  | 'migration.failed'
+  /** SEC-201 — POST /api/account/set-password with the legacy
+   *  {userId, newPassword} body shape. Non-zero means a client (likely
+   *  a stale welcome email or a probing attacker) is still hitting the
+   *  pre-fix surface; investigate before removing the rejection branch. */
+  | 'welcome.legacy_userid_attempt';
 
 /**
  * All known metric names. Snapshot returns these in a stable order with
@@ -74,6 +79,7 @@ const KNOWN_METRICS: ReadonlyArray<MetricName> = [
   'provisioning.failed',
   'migration.completed',
   'migration.failed',
+  'welcome.legacy_userid_attempt',
 ];
 
 const COUNTERS = new Map<MetricName, number>();

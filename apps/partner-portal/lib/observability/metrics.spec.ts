@@ -90,6 +90,7 @@ describe('lib/observability/metrics', () => {
       'provisioning.failed',
       'migration.completed',
       'migration.failed',
+      'welcome.legacy_userid_attempt',
     ]);
   });
 });

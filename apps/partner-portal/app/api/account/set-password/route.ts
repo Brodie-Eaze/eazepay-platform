@@ -7,19 +7,26 @@
  * cookie, returns the brand portal URL the caller should redirect to.
  *
  * Security posture:
+ *   - SEC-201: callers MUST send a single-use welcome token; we no
+ *     longer accept a raw `userId`. The token is minted at welcome-
+ *     email send (see /api/integrations/brand/apply) and consumed
+ *     atomically here — a second POST of the same token fails with
+ *     410 Gone, so a stolen welcome URL can be used at most once
+ *     and (after the user clicks the legit email) zero times. The
+ *     legacy `{userId, newPassword}` body is rejected with 400 +
+ *     `token_required`; the rejection bumps the
+ *     `welcome.legacy_userid_attempt` counter so we can spot stale
+ *     callers (and active probing) on the observability dashboard.
  *   - CSRF: the welcome page renders a form that includes the CSRF
  *     token via the standard double-submit pattern. enforceCsrf
  *     guards this route.
- *   - Rate limit: edge-rate-limit 5/min/IP. Wrong userId loops are
+ *   - Rate limit: edge-rate-limit 5/min/IP. Wrong token loops are
  *     bounded; a real recipient typing wrong fields a few times still
  *     gets through.
  *   - Zod strict: unknown fields reject with 400.
  *   - Password policy: ≥12 chars + 1 upper + 1 lower + 1 digit + 1
  *     symbol. Matches the apps/api password policy so the rules don't
  *     drift across surfaces.
- *   - Idempotent: setting a password on an already-active account
- *     hashes + rotates the password. Useful for the "forgot which
- *     password I picked during onboarding" recovery path.
  *
  * Why this isn't /v1/auth/* on apps/api: apps/api is not deployed
  * yet. When it is, this route proxies to /v1/auth/account-set-password
@@ -31,6 +38,8 @@ import { enforceCsrf } from '../../../../lib/csrf.js';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
 import { getAccount, setAccountPassword, type AccountBrand } from '../../../../lib/accounts-store';
 import { ACCOUNT_COOKIE, signAccountSession } from '../../../../lib/account-cookie';
+import { consumeWelcomeToken } from '../../../../lib/welcome-tokens';
+import { incrementMetric } from '../../../../lib/observability/metrics';
 
 const PasswordSchema = z
   .string()
@@ -43,16 +52,40 @@ const PasswordSchema = z
 
 const BodySchema = z
   .object({
-    userId: z.string().uuid(),
+    /** 32-byte hex welcome token (64 chars). */
+    token: z.string().regex(/^[0-9a-f]{64}$/, 'must be a 64-char hex token'),
     newPassword: PasswordSchema,
   })
   .strict();
 
+/**
+ * Detect the pre-fix `{userId, newPassword}` shape so we can return a
+ * specific error code (rather than the generic Zod failure) and bump
+ * the legacy-call counter. We do NOT process this body — that's the
+ * whole point of the SEC-201 fix.
+ */
+function isLegacyUserIdShape(raw: unknown): boolean {
+  return (
+    typeof raw === 'object' &&
+    raw !== null &&
+    'userId' in (raw as Record<string, unknown>) &&
+    !('token' in (raw as Record<string, unknown>))
+  );
+}
+
 function problem(status: number, code: string, detail?: string): NextResponse {
+  const title =
+    status === 400
+      ? 'Bad Request'
+      : status === 401
+        ? 'Unauthorized'
+        : status === 410
+          ? 'Gone'
+          : 'Forbidden';
   return NextResponse.json(
     {
       type: 'about:blank',
-      title: status === 400 ? 'Bad Request' : status === 401 ? 'Unauthorized' : 'Forbidden',
+      title,
       status,
       code,
       ...(detail ? { detail } : {}),
@@ -87,6 +120,28 @@ export async function POST(req: NextRequest) {
   }
 
   const raw = await req.json().catch(() => null);
+
+  // SEC-201: reject the legacy {userId, newPassword} shape explicitly
+  // BEFORE the Zod parse so the caller gets a meaningful code and
+  // the dashboard counter ticks. Strict Zod would otherwise fold this
+  // into a generic invalid_payload.
+  if (isLegacyUserIdShape(raw)) {
+    incrementMetric('welcome.legacy_userid_attempt');
+    // eslint-disable-next-line no-console
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        event: 'account.set_password.legacy_userid_attempt',
+        ip: clientIp,
+      }),
+    );
+    return problem(
+      400,
+      'token_required',
+      'This endpoint now requires a single-use welcome token. Request a fresh welcome email.',
+    );
+  }
+
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
@@ -101,31 +156,52 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const account = await getAccount(parsed.data.userId);
+  // SEC-201: atomic single-use consume. A null return covers all three
+  // failure modes — unknown / consumed / expired — and we deliberately
+  // collapse them into one response so the caller cannot distinguish
+  // "expired" from "already used" (that distinction would let an
+  // attacker probe for which tokens have been redeemed).
+  const consumed = await consumeWelcomeToken(parsed.data.token);
+  if (!consumed) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        event: 'account.set_password.token_invalid',
+        ip: clientIp,
+      }),
+    );
+    return problem(
+      410,
+      'token_invalid',
+      'This welcome link has expired or already been used. Request a fresh welcome email.',
+    );
+  }
+
+  const account = await getAccount(consumed.userId);
   if (!account) {
-    // Don't leak whether the userId is unknown vs suspended — return
-    // a generic 404 either way. Operator can dig in via the audit
-    // breadcrumb.
     // eslint-disable-next-line no-console
     console.warn(
       JSON.stringify({
         level: 'warn',
         event: 'account.set_password.userId_unknown',
-        userId: parsed.data.userId,
+        userId: consumed.userId,
         ip: clientIp,
       }),
     );
-    return problem(404, 'account_not_found');
+    // The token resolved but the account is gone — treat the same as
+    // "token invalid" to the caller; the operator sees the breadcrumb.
+    return problem(410, 'token_invalid');
   }
   if (account.status === 'suspended') {
     return problem(403, 'account_suspended');
   }
 
   const updated = await setAccountPassword({
-    userId: parsed.data.userId,
+    userId: consumed.userId,
     newPassword: parsed.data.newPassword,
   });
-  if (!updated) return problem(404, 'account_not_found');
+  if (!updated) return problem(410, 'token_invalid');
 
   // Mint a signed session cookie + return the brand portal URL.
   const session = await signAccountSession(
