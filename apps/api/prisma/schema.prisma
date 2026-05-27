@@ -1820,3 +1820,45 @@ model EmailDispatch {
   @@index([idempotencyKey])
   @@map("email_dispatch")
 }
+
+// Transactional outbox — Prisma side.
+//
+// The physical table is created by Drizzle migration
+// `apps/partner-portal/drizzle/0014_outbox.sql`; this model only
+// describes it to Prisma so NestJS services (`services/payment`,
+// `services/webhook`, `services/notification`) can INSERT rows
+// inside their Prisma transactions. Both apps point at the SAME
+// `DATABASE_URL` Postgres, so the rows are visible to the single
+// drain worker in `apps/partner-portal/lib/workers/outbox-drain.ts`.
+//
+// Column names MUST mirror the SQL migration exactly. Do not let
+// Prisma rename them via `prisma migrate dev` — the mutable column
+// set (status, attempts, last_error, sent_at, next_attempt_at) is
+// granted to the service role by migration 0014; renaming would
+// drop the grant.
+//
+// Append-only invariants (DELETE blocked, UPDATE blocked on
+// id/kind/payload_json/created_at) are enforced by the
+// `outbox_events_guard` trigger from migration 0014, not by Prisma.
+model OutboxEvent {
+  id            String    @id @default(uuid()) @db.Uuid
+  /// Dispatch discriminator. Closed union lives in
+  /// `@eazepay/shared-types` (`OutboxKind`).
+  kind          String
+  /// Handler payload, jsonb. Schema is per-kind; the drain worker
+  /// owns parsing. Verbatim — callers must not stash raw PII.
+  payloadJson   Json      @map("payload_json")
+  /// 'pending' | 'sent' | 'failed' | 'dead' — CHECK-constrained in SQL.
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  sentAt        DateTime? @map("sent_at") @db.Timestamptz(6)
+  nextAttemptAt DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+
+  // Index names match the Drizzle migration so `prisma migrate diff`
+  // is a no-op against a database that already ran 0014_outbox.sql.
+  @@index([status, nextAttemptAt], map: "outbox_events_pending_due_idx")
+  @@index([kind, createdAt], map: "outbox_events_kind_created_idx")
+  @@map("outbox_events")
+}
