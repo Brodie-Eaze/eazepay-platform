@@ -30,6 +30,7 @@
       "@eazepay/shared-utils": ["libs/shared-utils/src/index.ts"],
       "@eazepay/shared-utils/*": ["libs/shared-utils/src/*"],
       "@eazepay/api-client": ["libs/api-client/src/index.ts"],
+      "@eazepay/integrations-core": ["libs/integrations-core/src/index.ts"],
       "@eazepay/ui": ["libs/ui/src/index.ts"],
       "@eazepay/ui/tokens": ["libs/ui/src/tokens/index.ts"],
       "@eazepay/ui/web": ["libs/ui/src/components/web/index.ts"],

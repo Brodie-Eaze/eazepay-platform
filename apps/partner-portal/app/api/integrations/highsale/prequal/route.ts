@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { runPrequal, type PrequalRequest } from '@/lib/highsale/client';
+import { type PrequalRequest } from '@/lib/highsale/client';
+import { getSoftPullProvider } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { verifyFCRAConsent } from '@/lib/consumer-consent';
 import { hasDb, getDb, schema } from '@/lib/db';
@@ -287,7 +288,8 @@ export async function POST(req: NextRequest) {
       requestId: body.requestId,
       clientReference: verdict.receiptId,
     };
-    const result = await runPrequal(upstream);
+    const provider = getSoftPullProvider(guard.partnerId);
+    const result = await provider.runPrequal(upstream);
 
     // Audit row is the FCRA "permissible purpose" evidence. Downstream
     // regulators read this table to verify every soft pull had a

@@ -1,0 +1,21 @@
+{
+  "name": "integrations-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/integrations-core/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:integrations"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p libs/integrations-core/tsconfig.json --noEmit"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/integrations-core/src --max-warnings=0"
+      }
+    }
+  }
+}

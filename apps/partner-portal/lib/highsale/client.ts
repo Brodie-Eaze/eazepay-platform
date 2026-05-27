@@ -5,11 +5,11 @@
  * Solutions (today) and MedPay (July 1). We operate as an AGENCY
  * account — every client signed onto AI Funding / MedPay becomes a
  * sub-account underneath us, which gives us:
- *   • Collective usage view across all clients
- *   • Subscription + throttle controls
- *   • Wholesale → retail margin on every pre-qual pull
- *     (retail $3/pool · wholesale slides 1k:$260 → 25k:$1.10)
- *   • Auto-billing via Milly (bi-weekly / monthly / weekly probation)
+ *   - Collective usage view across all clients
+ *   - Subscription + throttle controls
+ *   - Wholesale -> retail margin on every pre-qual pull
+ *     (retail $3/pool · wholesale slides 1k:$260 -> 25k:$1.10)
+ *   - Auto-billing via Milly (bi-weekly / monthly / weekly probation)
  *
  * Pixie (smart form + smart routing) sits inside HighSale as a
  * feature clients configure within their own file — it is NOT a
@@ -18,11 +18,27 @@
  * Wire to real HighSale by setting HIGHSALE_AGENCY_KEY +
  * HIGHSALE_API_URL. Without those env vars every method returns a
  * synthetic happy-path response.
+ *
+ * REFACTOR NOTE (refactor/integration-adapter-interfaces):
+ *   This module now implements the `SoftPullProvider` port from
+ *   @eazepay/integrations-core via the `createHighsaleClient()`
+ *   factory. The `WebhookVerificationResult` type previously came in
+ *   via a cross-import from `../micamp/client` (app->app sideways
+ *   coupling); it now lives in `@eazepay/integrations-core` and is
+ *   imported from there by every adapter. The named top-level exports
+ *   (`createSubAccount`, `runPrequal`, `verifyHighsaleSignature`) are
+ *   preserved for back-compat with existing tests + the orchestrator.
  */
 
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash } from 'node:crypto';
+import {
+  createHmacWebhookVerifier,
+  IntegrationErrorException,
+  type SoftPullProvider,
+  type SoftPullSnapshot,
+  type WebhookVerificationResult,
+} from '@eazepay/integrations-core';
 import { safeLog } from '../safe-log';
-import type { WebhookVerificationResult } from '../micamp/client';
 import { fetchWithTimeout } from '../integrations/fetch-with-timeout';
 
 /** Per-call timeouts. Sub-account create is provisioning-grade (HighSale
@@ -121,9 +137,6 @@ export interface PrequalResponse {
 const HIGHSALE_API_URL = process.env.HIGHSALE_API_URL ?? '';
 const HIGHSALE_AGENCY_KEY = process.env.HIGHSALE_AGENCY_KEY ?? '';
 const HIGHSALE_WEBHOOK_SECRET = process.env.HIGHSALE_WEBHOOK_SECRET ?? '';
-
-/** SEC-002 — see micamp/client.ts for rationale. */
-const WEBHOOK_FRESHNESS_SECONDS = 300;
 
 // SEC-002 hard floor: fail-closed at RUNTIME if the secret is unset in
 // production. We do NOT throw during `next build` (NEXT_PHASE is set by
@@ -252,6 +265,16 @@ export async function runPrequal(req: PrequalRequest): Promise<PrequalResponse> 
 /* ---------- webhook verification ---------- */
 
 /**
+ * Module-scoped HMAC verifier. The shared helper in
+ * @eazepay/integrations-core handles every fail-closed branch except
+ * `missing_secret`, which stays here so we can preserve the legacy
+ * INSECURE_ALLOW warning log + the refuse-to-load production guard.
+ */
+const highsaleVerifier = createHmacWebhookVerifier({
+  secret: HIGHSALE_WEBHOOK_SECRET,
+});
+
+/**
  * SEC-002 — fail-closed signature verification for inbound HighSale +
  * Milly webhooks. Mirrors `verifyWebhookSignature` in lib/micamp/client.ts;
  * see that module for the full contract. Returns a structured result so
@@ -274,49 +297,7 @@ export function verifyHighsaleSignature(
     return { valid: false, reason: 'missing_secret' };
   }
 
-  if (!signatureHeader) {
-    return { valid: false, reason: 'missing_signature' };
-  }
-
-  const parts = Object.fromEntries(
-    signatureHeader.split(',').map((kv) => {
-      const [k, v] = kv.split('=');
-      return [k?.trim() ?? '', v?.trim() ?? ''];
-    }),
-  );
-  const timestamp = parts.t;
-  const signature = parts.v1;
-  if (!timestamp || !signature) {
-    return { valid: false, reason: 'malformed' };
-  }
-
-  const tsNum = Number(timestamp);
-  if (!Number.isFinite(tsNum)) {
-    return { valid: false, reason: 'malformed' };
-  }
-  if (Math.abs(Date.now() / 1000 - tsNum) > WEBHOOK_FRESHNESS_SECONDS) {
-    return { valid: false, reason: 'stale_timestamp' };
-  }
-
-  const payload = `${timestamp}.${rawBody}`;
-  const expected = createHmac('sha256', HIGHSALE_WEBHOOK_SECRET).update(payload).digest('hex');
-  if (expected.length !== signature.length) {
-    return { valid: false, reason: 'bad_signature' };
-  }
-  let expectedBuf: Buffer;
-  let sigBuf: Buffer;
-  try {
-    expectedBuf = Buffer.from(expected, 'hex');
-    sigBuf = Buffer.from(signature, 'hex');
-  } catch {
-    return { valid: false, reason: 'malformed' };
-  }
-  if (expectedBuf.length !== sigBuf.length) {
-    return { valid: false, reason: 'bad_signature' };
-  }
-  return timingSafeEqual(expectedBuf, sigBuf)
-    ? { valid: true }
-    : { valid: false, reason: 'bad_signature' };
+  return highsaleVerifier.verifySignature(rawBody, signatureHeader);
 }
 
 export type HighsaleWebhookEvent =
@@ -326,3 +307,56 @@ export type HighsaleWebhookEvent =
   | { type: 'milly.invoice.issued'; subAccountId: string; amountCents: number; periodEnd: string }
   | { type: 'milly.invoice.paid'; subAccountId: string; amountCents: number }
   | { type: 'milly.invoice.failed'; subAccountId: string; amountCents: number; reason: string };
+
+/* ---------- SoftPullProvider adapter ---------- */
+
+export type HighsaleSoftPullProvider = SoftPullProvider<
+  CreateSubAccountRequest,
+  CreateSubAccountResponse,
+  PrequalRequest,
+  PrequalResponse
+>;
+
+export interface CreateHighsaleClientOptions {
+  /**
+   * Hooks for tests / canary harnesses. Defaults to the module-level
+   * functions (which themselves switch between synthetic + live based
+   * on env vars). Override individual methods to swap in a stub for one
+   * sub-account while leaving the others on the real client.
+   */
+  createSubAccount?: (req: CreateSubAccountRequest) => Promise<CreateSubAccountResponse>;
+  runPrequal?: (req: PrequalRequest) => Promise<PrequalResponse>;
+  /**
+   * Optional getSnapshot implementation. The current HighSale wiring
+   * does NOT expose a snapshot-by-pullId endpoint — until it does, this
+   * defaults to throwing IntegrationError(kind: 'NotImplemented') so
+   * the canary harness + regulator replay tooling surface the gap
+   * rather than fabricating data.
+   */
+  getSnapshot?: (pullId: string) => Promise<SoftPullSnapshot>;
+}
+
+/**
+ * Build a `SoftPullProvider` backed by HighSale. The factory exists so
+ * the registry can hand back a per-partner adapter (e.g. a stub for one
+ * partner during canary) without route handlers needing to know which.
+ */
+export function createHighsaleClient(
+  opts: CreateHighsaleClientOptions = {},
+): HighsaleSoftPullProvider {
+  return {
+    provider: PARTNER,
+    createSubAccount: opts.createSubAccount ?? createSubAccount,
+    runPrequal: opts.runPrequal ?? runPrequal,
+    getSnapshot:
+      opts.getSnapshot ??
+      (async (pullId: string): Promise<SoftPullSnapshot> => {
+        throw new IntegrationErrorException({
+          provider: PARTNER,
+          endpoint: 'getSnapshot',
+          kind: 'NotImplemented',
+          message: `getSnapshot(${pullId}) is not yet wired on the HighSale adapter — pending the snapshot-by-id endpoint.`,
+        });
+      }),
+  };
+}

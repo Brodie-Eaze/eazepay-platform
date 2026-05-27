@@ -12,7 +12,8 @@
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@eazepay/integrations-core": ["../../libs/integrations-core/src/index.ts"]
     }
   },
   "include": [

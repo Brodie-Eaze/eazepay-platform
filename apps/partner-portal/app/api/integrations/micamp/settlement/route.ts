@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { settlementReport } from '@/lib/micamp/client';
+import { getMerchantProcessor } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { safeErrorResponse } from '@/lib/safe-error';
 
@@ -68,7 +68,8 @@ export async function GET(req: NextRequest) {
   const start = parsed.data.start ?? startFallback.toISOString().slice(0, 10);
 
   try {
-    const report = await settlementReport(parsed.data.midId, { start, end });
+    const processor = getMerchantProcessor(guard.partnerId);
+    const report = await processor.settlementReport(parsed.data.midId, { start, end });
     return NextResponse.json(report);
   } catch (err) {
     // SEC-007: never echo upstream error text. GETs leak fewer cycles

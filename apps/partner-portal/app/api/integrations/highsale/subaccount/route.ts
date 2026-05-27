@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { createSubAccount, type CreateSubAccountRequest } from '@/lib/highsale/client';
+import { type CreateSubAccountRequest } from '@/lib/highsale/client';
+import { getSoftPullProvider } from '@/lib/integrations/registry';
 import { assertPartnerOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { safeErrorResponse } from '@/lib/safe-error';
 import { enforceOrigin } from '@/lib/origin-guard';
@@ -109,7 +110,8 @@ export async function POST(req: NextRequest) {
   if (ownership) return ownership;
 
   try {
-    const result = await createSubAccount(parsed.data as CreateSubAccountRequest);
+    const provider = getSoftPullProvider(parsed.data.partnerId);
+    const result = await provider.createSubAccount(parsed.data as CreateSubAccountRequest);
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     // SEC-007: never echo `err.message` to the wire — upstream API errors
