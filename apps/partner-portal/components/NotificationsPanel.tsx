@@ -29,7 +29,7 @@
  * Sprint A's `<MotionSlide>` can drop in later by replacing the
  * inner wrapper.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatTime } from '@eazepay/shared-utils/format-time';
 import { EmptyState } from '@eazepay/ui/web';
@@ -114,7 +114,6 @@ interface NotificationsPanelProps {
 export function NotificationsPanel({ recipient, open, onClose }: NotificationsPanelProps) {
   const [items, setItems] = useState<Notification[]>([]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Refresh from the store. Mirror of NotificationBell — same 5s
   // poll + cross-tab `storage` listener so the panel and badge agree.
@@ -144,27 +143,18 @@ export function NotificationsPanel({ recipient, open, onClose }: NotificationsPa
     setItems(listNotifications(recipient, 200));
   }, [recipient]);
 
-  // Close on Escape + click-outside.
+  // Close on Escape only. Backdrop click-to-close is wired directly
+  // on the backdrop element below — much more reliable than a window
+  // mousedown listener which kept getting re-registered when onClose
+  // identity changed each render, and could fire mid-toggle on the
+  // bell button causing the panel to stay open / not close cleanly.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    const onClick = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) onClose();
-    };
     window.addEventListener('keydown', onKey);
-    // Defer click handler so the click that opens the panel doesn't
-    // immediately close it.
-    const t = window.setTimeout(() => {
-      window.addEventListener('mousedown', onClick);
-    }, 0);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('mousedown', onClick);
-      window.clearTimeout(t);
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
   const grouped = useMemo(() => {
@@ -192,15 +182,18 @@ export function NotificationsPanel({ recipient, open, onClose }: NotificationsPa
 
   return (
     <>
-      {/* Backdrop — keeps focus visually centred on the panel. */}
+      {/* Backdrop — click anywhere outside the panel closes it.
+          aria-hidden so screen readers don't announce it; the panel
+          itself owns the dialog semantics. */}
       {open && (
-        <div
-          aria-hidden
-          className="fixed inset-0 z-40 bg-black/30 motion-safe:animate-in motion-safe:fade-in"
+        <button
+          type="button"
+          aria-label="Close notifications"
+          onClick={onClose}
+          className="fixed inset-0 z-40 bg-black/30 motion-safe:animate-in motion-safe:fade-in cursor-default"
         />
       )}
       <aside
-        ref={containerRef}
         role="dialog"
         aria-label="Notifications"
         aria-hidden={!open}
