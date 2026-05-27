@@ -44,8 +44,8 @@ import {
   type MicampWebhookEvent,
 } from '@eazepay/shared-types';
 import { IntegrationErrorException } from '@eazepay/integrations-core';
-import { getDb, hasDb, schema } from '../db';
-import type { Db } from '../db';
+import { hasDb, schema, SYSTEM_WEBHOOK_CONTEXT, withRawTenantContext } from '../db';
+import type { Db, TxHandle } from '../db';
 import { incrementMetric } from '../observability/metrics';
 import { withSpan } from '../observability/tracing';
 import { safeLog } from '../safe-log';
@@ -95,6 +95,15 @@ export class NotImplementedError extends Error {
     this.meta = { provider, eventType };
   }
 }
+
+/* SEC-RLS-2 — every DB call in this worker runs through
+ * `withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, ...)` so the RLS GUCs
+ * are bound to the transaction. The worker fires for both the
+ * admin-tick handler and the BullMQ webhook job; the synthetic operator
+ * context lets the trusted server-side actor write into RLS-protected
+ * tables once handlers ship, while keeping the GUC posture identical
+ * across call sites. `webhook_inbox` itself is platform-global today
+ * but the wrapper is forward-compatible if RLS is added later. */
 
 /** Max rows the worker drains per tick. Keeps each invocation bounded
  * so a backlog doesn't lock a connection for minutes. BullMQ will
@@ -166,48 +175,54 @@ export async function processInboxRow(inboxId: string): Promise<void> {
     safeLog.warn({ event: 'webhook.processor.db_unavailable', inboxId });
     return;
   }
-  const db = getDb();
-  const rows = await db
-    .select({
-      id: schema.webhookInbox.id,
-      provider: schema.webhookInbox.provider,
-      eventId: schema.webhookInbox.eventId,
-      eventType: schema.webhookInbox.eventType,
-      rawBody: schema.webhookInbox.rawBody,
-      attempts: schema.webhookInbox.attempts,
-      processingStatus: schema.webhookInbox.processingStatus,
-    })
-    .from(schema.webhookInbox)
-    .where(eq(schema.webhookInbox.id, inboxId))
-    .limit(1);
-  const row = rows[0];
-  if (!row) {
+  // SEC-RLS-2: bind operator-tier GUCs for the inbox lookup + claim.
+  const lookup = await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, async (tx) => {
+    const rows = await tx
+      .select({
+        id: schema.webhookInbox.id,
+        provider: schema.webhookInbox.provider,
+        eventId: schema.webhookInbox.eventId,
+        eventType: schema.webhookInbox.eventType,
+        rawBody: schema.webhookInbox.rawBody,
+        attempts: schema.webhookInbox.attempts,
+        processingStatus: schema.webhookInbox.processingStatus,
+      })
+      .from(schema.webhookInbox)
+      .where(eq(schema.webhookInbox.id, inboxId))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return { kind: 'not_found' as const };
+    if (row.processingStatus === 'done') return { kind: 'already_done' as const };
+    const claimed = await claimRow(tx, row.id);
+    if (!claimed) return { kind: 'claimed_by_other' as const, row };
+    return { kind: 'claimed' as const, row };
+  });
+
+  if (lookup.kind === 'not_found') {
     safeLog.warn({ event: 'webhook.processor.row_not_found', inboxId });
     return;
   }
-  if (row.processingStatus === 'done') {
-    // Already handled — likely a duplicate enqueue. No-op.
-    return;
-  }
-  const claimed = await claimRow(db, row.id);
-  if (!claimed) {
-    // Another worker grabbed it first (e.g. admin tick endpoint).
+  if (lookup.kind === 'already_done') return;
+  if (lookup.kind === 'claimed_by_other') {
     safeLog.info({
       event: 'webhook.processor.row_claimed_by_other',
       inboxId,
-      provider: row.provider,
+      provider: lookup.row.provider,
     });
     return;
   }
+  const row = lookup.row;
   try {
     const parsed = JSON.parse(row.rawBody) as Record<string, unknown>;
     await dispatchEvent(row.provider as Provider, row.eventType, parsed, row);
-    await markDone(db, row.id);
+    await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) => markDone(tx, row.id));
   } catch (err) {
     if (err instanceof NotImplementedError) {
       const { provider, eventType } = err.meta;
       const reason = `handler_not_implemented:${provider}:${eventType}`;
-      await markTerminalFailed(db, row.id, reason, row.attempts + 1);
+      await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+        markTerminalFailed(tx, row.id, reason, row.attempts + 1),
+      );
       incrementMetric('webhook.handler.not_implemented', { provider, eventType });
       safeLog.error({
         event: 'webhook.processor.handler_not_implemented',
@@ -224,7 +239,9 @@ export async function processInboxRow(inboxId: string): Promise<void> {
     }
     const reason = err instanceof Error ? err.message : String(err);
     const nextAttempts = row.attempts + 1;
-    await markFailed(db, row.id, reason, nextAttempts);
+    await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+      markFailed(tx, row.id, reason, nextAttempts),
+    );
     safeLog.error({
       event: 'webhook.processor.handler_failed',
       provider: row.provider,
@@ -261,21 +278,25 @@ async function processInboxInner(): Promise<ProcessInboxResult> {
     safeLog.warn({ event: 'webhook.processor.db_unavailable' });
     return { scanned: 0, done: 0, failed: 0, skipped: 0 };
   }
-  const db = getDb();
 
-  const rows = await db
-    .select({
-      id: schema.webhookInbox.id,
-      provider: schema.webhookInbox.provider,
-      eventId: schema.webhookInbox.eventId,
-      eventType: schema.webhookInbox.eventType,
-      rawBody: schema.webhookInbox.rawBody,
-      attempts: schema.webhookInbox.attempts,
-    })
-    .from(schema.webhookInbox)
-    .where(eq(schema.webhookInbox.processingStatus, 'pending'))
-    .orderBy(asc(schema.webhookInbox.receivedAt))
-    .limit(BATCH_LIMIT);
+  // SEC-RLS-2: GUC-bind the SELECT. Each row's claim + finalisation
+  // get their own txn below so a slow handler doesn't hold a row lock
+  // across the entire batch.
+  const rows = await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+    tx
+      .select({
+        id: schema.webhookInbox.id,
+        provider: schema.webhookInbox.provider,
+        eventId: schema.webhookInbox.eventId,
+        eventType: schema.webhookInbox.eventType,
+        rawBody: schema.webhookInbox.rawBody,
+        attempts: schema.webhookInbox.attempts,
+      })
+      .from(schema.webhookInbox)
+      .where(eq(schema.webhookInbox.processingStatus, 'pending'))
+      .orderBy(asc(schema.webhookInbox.receivedAt))
+      .limit(BATCH_LIMIT),
+  );
 
   const result: ProcessInboxResult = {
     scanned: rows.length,
@@ -285,7 +306,9 @@ async function processInboxInner(): Promise<ProcessInboxResult> {
   };
 
   for (const row of rows) {
-    const claimed = await claimRow(db, row.id);
+    const claimed = await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+      claimRow(tx, row.id),
+    );
     if (!claimed) {
       // Another worker grabbed it first. Move on — counters reflect this.
       result.skipped += 1;
@@ -295,13 +318,15 @@ async function processInboxInner(): Promise<ProcessInboxResult> {
     try {
       const parsed = JSON.parse(row.rawBody) as Record<string, unknown>;
       await dispatchEvent(row.provider as Provider, row.eventType, parsed, row);
-      await markDone(db, row.id);
+      await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) => markDone(tx, row.id));
       result.done += 1;
     } catch (err) {
       if (err instanceof NotImplementedError) {
         const { provider, eventType } = err.meta;
         const reason = `handler_not_implemented:${provider}:${eventType}`;
-        await markTerminalFailed(db, row.id, reason, row.attempts + 1);
+        await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+          markTerminalFailed(tx, row.id, reason, row.attempts + 1),
+        );
         incrementMetric('webhook.handler.not_implemented', { provider, eventType });
         result.failed += 1;
         safeLog.error({
@@ -315,7 +340,9 @@ async function processInboxInner(): Promise<ProcessInboxResult> {
         continue;
       }
       const reason = err instanceof Error ? err.message : String(err);
-      await markFailed(db, row.id, reason, row.attempts + 1);
+      await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+        markFailed(tx, row.id, reason, row.attempts + 1),
+      );
       result.failed += 1;
       safeLog.error({
         event: 'webhook.processor.handler_failed',
@@ -338,7 +365,7 @@ async function processInboxInner(): Promise<ProcessInboxResult> {
 
 /* ---------- internal: row lifecycle ---------- */
 
-async function claimRow(db: Db, id: string): Promise<boolean> {
+async function claimRow(db: Db | TxHandle, id: string): Promise<boolean> {
   const updated = await db
     .update(schema.webhookInbox)
     .set({ processingStatus: 'processing' })
@@ -347,7 +374,7 @@ async function claimRow(db: Db, id: string): Promise<boolean> {
   return updated.length === 1;
 }
 
-async function markDone(db: Db, id: string): Promise<void> {
+async function markDone(db: Db | TxHandle, id: string): Promise<void> {
   await db
     .update(schema.webhookInbox)
     .set({
@@ -365,7 +392,7 @@ async function markDone(db: Db, id: string): Promise<void> {
  * `failed` for ops review on the very first encounter.
  */
 async function markTerminalFailed(
-  db: Db,
+  db: Db | TxHandle,
   id: string,
   reason: string,
   nextAttempts: number,
@@ -381,7 +408,12 @@ async function markTerminalFailed(
     .where(eq(schema.webhookInbox.id, id));
 }
 
-async function markFailed(db: Db, id: string, reason: string, nextAttempts: number): Promise<void> {
+async function markFailed(
+  db: Db | TxHandle,
+  id: string,
+  reason: string,
+  nextAttempts: number,
+): Promise<void> {
   // Below MAX_ATTEMPTS: leave as 'pending' so the next tick retries.
   // At/above MAX_ATTEMPTS: mark 'failed' for ops review (eventual DLQ).
   const terminal = nextAttempts >= MAX_ATTEMPTS;
@@ -588,14 +620,16 @@ async function handleTrutopia(
  */
 export async function inboxBacklog(): Promise<{ pending: number; failed: number }> {
   if (!hasDb()) return { pending: 0, failed: 0 };
-  const db = getDb();
-  const rows = await db
-    .select({
-      status: schema.webhookInbox.processingStatus,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(schema.webhookInbox)
-    .groupBy(schema.webhookInbox.processingStatus);
+  // SEC-RLS-2: GUC-bound count even though webhook_inbox is non-RLS.
+  const rows = await withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, (tx) =>
+    tx
+      .select({
+        status: schema.webhookInbox.processingStatus,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(schema.webhookInbox)
+      .groupBy(schema.webhookInbox.processingStatus),
+  );
   let pending = 0;
   let failed = 0;
   for (const r of rows) {

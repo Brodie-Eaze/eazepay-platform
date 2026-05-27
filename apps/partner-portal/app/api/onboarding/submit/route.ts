@@ -44,7 +44,16 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getDb, hasDb } from '../../../../lib/db';
+/* SEC-RLS-2 — partner row is INSERTed inside
+ * `withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, ...)`. The caller has
+ * no session yet (the partner is being created in this very request),
+ * so we cannot derive a `withTenantContext(session, …)` mapping. The
+ * `partners` table is platform-global (not RLS-protected) today, so
+ * the consumer-tier GUC is harmless on the insert; if a future
+ * migration adds an `org-of-orgs` RLS layer to `partners`, this
+ * fails-CLOSED here rather than silently provisioning the partner
+ * into the wrong tenant. */
+import { hasDb, PUBLIC_CONSUMER_CONTEXT, withRawTenantContext } from '../../../../lib/db';
 import { partners } from '../../../../lib/db/schema';
 import { signAccountSession, ACCOUNT_COOKIE } from '../../../../lib/account-cookie';
 import { safeLog } from '../../../../lib/safe-log';
@@ -283,18 +292,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const primaryEmail = data.owners[0]?.email ?? '';
 
   try {
-    const db = getDb();
-    await db
-      .insert(partners)
-      .values({
-        id: partnerId,
-        brand,
-        legalName: data.legalName,
-        displayName: data.dba || data.legalName,
-        primaryContactEmail: primaryEmail,
-        status: 'pending',
-      })
-      .onConflictDoNothing({ target: partners.id });
+    await withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, (tx) =>
+      tx
+        .insert(partners)
+        .values({
+          id: partnerId,
+          brand,
+          legalName: data.legalName,
+          displayName: data.dba || data.legalName,
+          primaryContactEmail: primaryEmail,
+          status: 'pending', // operator review before they appear in admin tools
+        })
+        .onConflictDoNothing({ target: partners.id }),
+    );
   } catch (err) {
     safeLog.error({ event: 'onboarding.submit.db_insert_failed', err });
     return problem(

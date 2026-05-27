@@ -4,7 +4,15 @@ import { type PrequalRequest } from '@/lib/highsale/client';
 import { getSoftPullProvider } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { verifyFCRAConsent } from '@/lib/consumer-consent';
-import { hasDb, getDb, schema } from '@/lib/db';
+/* SEC-RLS-2 — the FCRA audit_log insert is wrapped in
+ * `withTenantContext` so the RLS GUC on audit_log binds to the session
+ * partner. The route already runs behind `requirePartnerSession`, so
+ * the session resolves to either role='partner' + the partner's id (a
+ * real account session) or role='operator' (a demo / admin override).
+ * Either way the audit row's target_id-based policy passes. Skipping
+ * the wrap would make the FCRA evidence write silently fail-CLOSED. */
+import { hasDb, schema, withTenantContext } from '@/lib/db';
+import { getSessionContext } from '@/lib/session';
 import { safeLog } from '@/lib/safe-log';
 import { safeErrorResponse } from '@/lib/safe-error';
 import { enforceOrigin } from '@/lib/origin-guard';
@@ -94,16 +102,19 @@ type PrequalBody = z.infer<typeof BodySchema>;
  * swap the raw drizzle insert for that helper so the actor/action
  * vocabulary is centralised.
  */
-async function writeFcraAuditLog(input: {
-  applicationId: string;
-  consentReceiptId: string;
-  disclosureVersion: string;
-  pullId: string;
-  bureau: string;
-  tier: string;
-  ip: string;
-  userAgent: string;
-}): Promise<void> {
+async function writeFcraAuditLog(
+  session: Awaited<ReturnType<typeof getSessionContext>>,
+  input: {
+    applicationId: string;
+    consentReceiptId: string;
+    disclosureVersion: string;
+    pullId: string;
+    bureau: string;
+    tier: string;
+    ip: string;
+    userAgent: string;
+  },
+): Promise<void> {
   if (!hasDb()) {
     // P0 fix — a missing FCRA audit row is a regulatory violation,
     // not "log and continue". Throw so the caller returns 503.
@@ -117,22 +128,25 @@ async function writeFcraAuditLog(input: {
     throw new Error('fcra_audit_log_unavailable');
   }
   try {
-    const db = getDb();
-    await db.insert(schema.auditLog).values({
-      actor: 'consumer:prequal',
-      action: 'credit_pull.soft',
-      targetType: 'application',
-      targetId: input.applicationId,
-      payloadJson: JSON.stringify({
-        consentReceiptId: input.consentReceiptId,
-        disclosureVersion: input.disclosureVersion,
-        bureau: input.bureau,
-        tier: input.tier,
-        pullId: input.pullId,
+    // SEC-RLS-2: insert runs inside `withTenantContext` so the RLS
+    // GUCs on `audit_log` are bound to this session's partner.
+    await withTenantContext(session, (tx) =>
+      tx.insert(schema.auditLog).values({
+        actor: 'consumer:prequal',
+        action: 'credit_pull.soft',
+        targetType: 'application',
+        targetId: input.applicationId,
+        payloadJson: JSON.stringify({
+          consentReceiptId: input.consentReceiptId,
+          disclosureVersion: input.disclosureVersion,
+          bureau: input.bureau,
+          tier: input.tier,
+          pullId: input.pullId,
+        }),
+        ipAddress: input.ip || null,
+        userAgent: input.userAgent || null,
       }),
-      ipAddress: input.ip || null,
-      userAgent: input.userAgent || null,
-    });
+    );
   } catch (err) {
     safeLog.error({
       event: 'audit_log.fcra.soft_pull.write_failed',
@@ -333,7 +347,8 @@ export async function POST(req: NextRequest) {
     // Audit row is the FCRA "permissible purpose" evidence. Downstream
     // regulators read this table to verify every soft pull had a
     // captured authorization on file.
-    await writeFcraAuditLog({
+    const session = await getSessionContext(req);
+    await writeFcraAuditLog(session, {
       applicationId: body.applicationId,
       consentReceiptId: verdict.receiptId,
       disclosureVersion: verdict.disclosureVersion,

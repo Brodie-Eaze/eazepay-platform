@@ -20,7 +20,8 @@
  */
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 // --- mocks --------------------------------------------------------
 
@@ -82,7 +83,23 @@ function makeDbMock() {
 vi.mock('../../../../../../lib/db', () => ({
   hasDb: () => true,
   getDb: () => makeDbMock(),
+  // SEC-RLS-2: the route now runs the SELECT + UPDATE + INSERT inside
+  // `withTenantContext(...)`. The unit test substitutes a passthrough
+  // that just invokes the callback with the same db mock — the GUC
+  // binding is exercised in the dedicated RLS spec
+  // (`lib/db/tenant-rls.spec.ts`) that runs against a real Postgres.
+  withTenantContext: async (_session: unknown, fn: (tx: unknown) => Promise<unknown>) =>
+    fn(makeDbMock()),
   schema: {},
+}));
+
+vi.mock('../../../../../../lib/session', () => ({
+  getSessionContext: async () => ({
+    mode: 'demo',
+    preset: 'master',
+    isOperator: true,
+    brand: null,
+  }),
 }));
 
 vi.mock('../../../../../../lib/db/schema', () => ({
@@ -222,10 +239,7 @@ describe('POST /api/admin/partners/[id]/status', () => {
 
   it('400 — missing reason is rejected (audit needs the justification)', async () => {
     seedPartner();
-    const res = (await POST(
-      buildReq({ status: 'suspended' }),
-      ctx(),
-    )) as NextResponse;
+    const res = (await POST(buildReq({ status: 'suspended' }), ctx())) as NextResponse;
     expect(res.status).toBe(400);
     expect(dbState.auditInserts).toHaveLength(0);
   });

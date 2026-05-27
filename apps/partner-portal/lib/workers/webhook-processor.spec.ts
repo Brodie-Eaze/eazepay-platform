@@ -51,6 +51,14 @@ vi.mock('../db', async () => {
     ...real,
     hasDb: () => hasDbMock(),
     getDb: () => dbMock,
+    // SEC-RLS-2: the worker now drives every DB call through
+    // `withRawTenantContext(SYSTEM_WEBHOOK_CONTEXT, …)`. The unit
+    // test substitutes a passthrough that invokes the callback with
+    // the same dbMock — the actual GUC binding is exercised in the
+    // dedicated RLS spec (`lib/db/tenant-rls.spec.ts`) under a live
+    // Postgres testcontainer.
+    withRawTenantContext: async (_ctx: unknown, fn: (tx: unknown) => Promise<unknown>) =>
+      fn(dbMock),
   };
 });
 
