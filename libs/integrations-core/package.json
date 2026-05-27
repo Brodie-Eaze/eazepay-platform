@@ -7,5 +7,19 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@eazepay/shared-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "peerDependenciesMeta": {
+    "@prisma/client": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0"
   }
 }

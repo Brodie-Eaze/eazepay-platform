@@ -35,27 +35,23 @@
  */
 
 import { sql } from 'drizzle-orm';
+import type { OutboxKind, OutboxPayload } from '@eazepay/shared-types';
 import { schema } from './db';
 import type { TxHandle } from './db';
 import { safeLog } from './safe-log';
 
-/**
- * The canonical outbox-kind vocabulary. STUB handlers exist for each
- * of these in `lib/workers/outbox-drain.ts`; real wiring lands in the
- * follow-up tasks (W1.2 notifications, W1.4 audit-log).
- *
- * Closed union forces every call site through TypeScript, which
- * keeps the kind→handler map honest. Adding a new kind is a two-step
- * change: extend this union, then register a handler in the drain
- * worker.
- */
-export type OutboxKind = 'notification.send' | 'webhook.outbound' | 'audit.log';
+// `OutboxKind` + `OutboxPayload` are owned by `@eazepay/shared-types`
+// because the Prisma-side enqueue helper in
+// `libs/integrations-core/src/outbox-prisma.ts` writes the same table
+// and must agree on the discriminator vocabulary. Adding a new kind
+// is a coordinated change — see the doc-block in shared-types/outbox.
+export type { OutboxKind } from '@eazepay/shared-types';
 
 export interface EnqueueOutboxInput {
   kind: OutboxKind;
   /** Handler-specific payload. The drain worker re-parses per `kind`;
    *  the table stores it verbatim as jsonb. */
-  payload: Record<string, unknown>;
+  payload: OutboxPayload;
 }
 
 export interface EnqueueOutboxResult {

@@ -4,3 +4,4 @@ export * from './primitives.js';
 export * from './brands.js';
 export * from './taxonomy.js';
 export * from './webhook-events.js';
+export * from './outbox.js';
