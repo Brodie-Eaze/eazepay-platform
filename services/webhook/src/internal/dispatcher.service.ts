@@ -6,7 +6,7 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import type { PrismaClient } from '@prisma/client';
+import { Prisma, type PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { DelayedError, Worker, type Job, type ConnectionOptions } from 'bullmq';
 import type { Redis } from 'ioredis';
@@ -100,24 +100,51 @@ export class WebhookDispatcher {
    * WebhookDelivery.status field, which the worker updates inline.
    */
   async drain(): Promise<{ attempted: number; enqueued: number }> {
-    const candidates = await this.prisma.webhookDelivery.findMany({
-      where: {
-        status: 'pending',
-        OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: new Date() } }],
-        endpoint: { status: 'active' },
-      },
-      include: { endpoint: { select: { merchantId: true } } },
-      orderBy: { createdAt: 'asc' },
-      take: BATCH_SIZE,
-    });
+    // Per-subject in-order delivery (fix/webhook-per-subject-ordering).
+    //
+    // The drain selects due, pending deliveries on active endpoints,
+    // BUT must NOT pick a row if an earlier-sequenced sibling for the
+    // same subject_id is still in {pending, in_flight}. Without this
+    // guard, parallel workers (concurrency = WORKER_CONCURRENCY × N
+    // replicas) can deliver `application.funded` before
+    // `application.approved` for the same application.
+    //
+    // Rows with NULL subject_id (no anchor) are independent and not
+    // gated by the predicate. Terminal states (delivered, failed,
+    // dead_letter) never gate later rows — failed clients (4xx) and
+    // exhausted retries unblock the subject's queue.
+    //
+    // Prisma doesn't compose correlated NOT EXISTS subqueries, so this
+    // is $queryRaw. Order: by sequence so heads-of-line drain first
+    // and per-subject delivery order matches publish order.
+    const candidates = await this.prisma.$queryRaw<
+      Array<{ id: string; endpoint_id: string; merchant_id: string }>
+    >(Prisma.sql`
+      SELECT wd.id, wd.endpoint_id, ep.merchant_id
+        FROM webhook_deliveries wd
+        JOIN webhook_endpoints  ep ON ep.id = wd.endpoint_id
+       WHERE wd.status = 'pending'
+         AND ep.status = 'active'
+         AND (wd.next_attempt_at IS NULL OR wd.next_attempt_at <= NOW())
+         AND NOT EXISTS (
+           SELECT 1
+             FROM webhook_deliveries e2
+            WHERE e2.subject_id IS NOT NULL
+              AND e2.subject_id = wd.subject_id
+              AND e2.sequence   < wd.sequence
+              AND e2.status IN ('pending', 'in_flight')
+         )
+       ORDER BY wd.sequence ASC
+       LIMIT ${BATCH_SIZE}
+    `);
 
     let enqueued = 0;
     for (const d of candidates) {
       try {
         await this.queue.enqueueDelivery({
           deliveryId: d.id,
-          merchantId: d.endpoint.merchantId,
-          endpointId: d.endpointId,
+          merchantId: d.merchant_id,
+          endpointId: d.endpoint_id,
         });
         enqueued++;
       } catch (err) {

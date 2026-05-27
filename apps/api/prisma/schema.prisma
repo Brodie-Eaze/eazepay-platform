@@ -1281,6 +1281,12 @@ model WebhookDelivery {
   /// Subject anchor — typically (Application, applicationId).
   subjectType String?         @map("subject_type")
   subjectId   String?         @map("subject_id")
+  /// Monotonically increasing per-row sequence. Used by the dispatcher
+  /// to enforce per-subject in-order delivery: a row is only eligible
+  /// for enqueue if no earlier-sequenced sibling for the same
+  /// subject_id is still {pending, in_flight}. Default + sequence
+  /// object created in migration 20260527_webhook_per_subject_ordering.
+  sequence    BigInt          @default(autoincrement())
   /// JSON payload as posted to the endpoint. Sensitive PII never lives
   /// here; payload references entity ids and the merchant fetches via
   /// authenticated APIs.
@@ -1299,6 +1305,7 @@ model WebhookDelivery {
   updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@unique([endpointId, eventId])
+  @@unique([sequence], map: "webhook_deliveries_sequence_key")
   @@index([status, nextAttemptAt])
   @@index([endpointId, createdAt])
   @@map("webhook_deliveries")
