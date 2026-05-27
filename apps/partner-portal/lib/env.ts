@@ -139,6 +139,25 @@ const RECOMMENDED: ReadonlyArray<RecommendedVar> = [
     name: 'RESEND_API_KEY',
     degradationMode: 'invite + invoice emails log to stdout instead of sending',
   },
+  // ────────────────────────────────────────────────────────────────────
+  // Outbox-drain HTTP bridge → NestJS apps/api (services/payment hands
+  // notification.send + webhook.outbound off to the drain via the
+  // transactional outbox; the drain POSTs each row to apps/api). When
+  // either env var is missing, the drain handler returns
+  // `{ok:false, error:'internal_bridge_unconfigured'}`, the row goes to
+  // `failed` and (after MAX_ATTEMPTS) `dead` on the DLQ tile — operator-
+  // visible failure mode beats a silent backlog. Deploy together.
+  // ────────────────────────────────────────────────────────────────────
+  {
+    name: 'INTERNAL_API_URL',
+    degradationMode:
+      'outbox drain cannot reach apps/api — notification.send + webhook.outbound rows pile up in `failed` then `dead`',
+  },
+  {
+    name: 'INTERNAL_OUTBOX_DISPATCH_SECRET',
+    degradationMode:
+      'outbox drain cannot authenticate to apps/api — same effect as above; rotate this in lock-step with apps/api',
+  },
   {
     name: 'STRIPE_SECRET_KEY',
     degradationMode: 'Stripe setup-fee endpoint returns a stub redirect (no charge)',

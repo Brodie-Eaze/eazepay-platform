@@ -11,8 +11,7 @@
   "dependencies": {
     "@eazepay/service-audit": "workspace:*",
     "@eazepay/service-auth": "workspace:*",
-    "@eazepay/service-notification": "workspace:*",
-    "@eazepay/service-webhook": "workspace:*",
+    "@eazepay/integrations-core": "workspace:*",
     "@eazepay/shared-types": "workspace:*",
     "@eazepay/shared-utils": "workspace:*",
     "@nestjs/common": "^10.4.0",

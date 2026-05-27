@@ -1198,18 +1198,15 @@ importers:
 
   services/payment:
     dependencies:
+      '@eazepay/integrations-core':
+        specifier: workspace:*
+        version: link:../../libs/integrations-core
       '@eazepay/service-audit':
         specifier: workspace:*
         version: link:../audit
       '@eazepay/service-auth':
         specifier: workspace:*
         version: link:../auth
-      '@eazepay/service-notification':
-        specifier: workspace:*
-        version: link:../notification
-      '@eazepay/service-webhook':
-        specifier: workspace:*
-        version: link:../webhook
       '@eazepay/shared-types':
         specifier: workspace:*
         version: link:../../libs/shared-types
