@@ -18,22 +18,55 @@
  *   • Soon: BullMQ repeatable job (Task #50) calls `processInbox()`
  *     every N seconds and emits per-row metrics.
  *
- * Handlers are STUBS. The dispatch skeleton is correct + idempotent;
- * the actual state mutations (mids, decisions, audit_log writes) are
- * downstream work tracked on each handler's TODO. A stub that logs +
- * returns ok is strictly safer than the pre-task behaviour (200 +
- * silent drop) — the inbox now keeps the raw payload so any future
- * handler can replay.
+ * Handlers are STUBS during the build-out window. The dispatch skeleton
+ * is correct + idempotent; the actual state mutations (mids, decisions,
+ * audit_log writes) are downstream work tracked on each handler's TODO.
+ *
+ * Stubs throw NotImplementedError → inbox row stays in `failed` for ops
+ * review. This is intentional fail-loud during the build-out window;
+ * safer than silent acks that mask real partner state-sync gaps. The
+ * earlier "log + return ok" posture was only defensible while the
+ * alternative was a crashing worker — now that the dispatch skeleton is
+ * stable, an unimplemented handler MUST surface in the DLQ so a partner
+ * event like MiCamp `loan.funded` cannot vanish without an operator
+ * seeing it. The catch path treats NotImplementedError as an immediate
+ * terminal failure (no backoff, no retries — retries can't help a
+ * handler that doesn't exist) and bumps
+ * `webhook.handler.not_implemented{provider,eventType}` so the
+ * observability tile counts the gap.
  */
 
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { getDb, hasDb, schema } from '../db';
 import type { Db } from '../db';
+import { incrementMetric } from '../observability/metrics';
 import { safeLog } from '../safe-log';
 import {
   handleLenderInboxRow,
   isLenderProvider,
 } from './lender-webhook-handler';
+
+/**
+ * Thrown by stub handlers that haven't been wired to their state
+ * mutations yet. The processor treats this as an immediate terminal
+ * failure: the inbox row is marked `failed` (not `pending`) with a
+ * structured `failure_reason`, no retry is scheduled, and the row
+ * shows up in the DLQ surface for an operator to triage.
+ *
+ * Why terminal-immediate: a handler that hasn't been implemented won't
+ * succeed on attempt 5 either, so burning retries just delays the
+ * operator signal. The whole point of the fail-loud posture is to make
+ * partner state-sync gaps loud + early.
+ */
+export class NotImplementedError extends Error {
+  readonly code = 'handler_not_implemented' as const;
+  readonly meta: { provider: string; eventType: string };
+  constructor(provider: string, eventType: string) {
+    super(`handler_not_implemented:${provider}:${eventType}`);
+    this.name = 'NotImplementedError';
+    this.meta = { provider, eventType };
+  }
+}
 
 /** Max rows the worker drains per tick. Keeps each invocation bounded
  * so a backlog doesn't lock a connection for minutes. BullMQ will
@@ -95,6 +128,10 @@ export function extractProviderEventId(payload: Record<string, unknown>): string
  *
  * If the row is not found (e.g. a job arrives after a hard rollback)
  * we return early without throwing — there's nothing to retry against.
+ *
+ * NotImplementedError is special-cased: the row is marked `failed`
+ * immediately (no retry budget consumed) and the
+ * `webhook.handler.not_implemented` metric is bumped for the DLQ tile.
  */
 export async function processInboxRow(inboxId: string): Promise<void> {
   if (!hasDb()) {
@@ -139,6 +176,24 @@ export async function processInboxRow(inboxId: string): Promise<void> {
     await dispatchEvent(row.provider as Provider, row.eventType, parsed, row);
     await markDone(db, row.id);
   } catch (err) {
+    if (err instanceof NotImplementedError) {
+      const { provider, eventType } = err.meta;
+      const reason = `handler_not_implemented:${provider}:${eventType}`;
+      await markTerminalFailed(db, row.id, reason, row.attempts + 1);
+      incrementMetric('webhook.handler.not_implemented', { provider, eventType });
+      safeLog.error({
+        event: 'webhook.processor.handler_not_implemented',
+        provider,
+        eventType,
+        eventId: row.eventId,
+        inboxId: row.id,
+        terminal: true,
+      });
+      // Re-throw so BullMQ marks the job failed and the DLQ listener
+      // sees the structured reason. No backoff/retry budget consumed
+      // for an unimplemented handler.
+      throw err;
+    }
     const reason = err instanceof Error ? err.message : String(err);
     const nextAttempts = row.attempts + 1;
     await markFailed(db, row.id, reason, nextAttempts);
@@ -211,6 +266,22 @@ export async function processInbox(): Promise<ProcessInboxResult> {
       await markDone(db, row.id);
       result.done += 1;
     } catch (err) {
+      if (err instanceof NotImplementedError) {
+        const { provider, eventType } = err.meta;
+        const reason = `handler_not_implemented:${provider}:${eventType}`;
+        await markTerminalFailed(db, row.id, reason, row.attempts + 1);
+        incrementMetric('webhook.handler.not_implemented', { provider, eventType });
+        result.failed += 1;
+        safeLog.error({
+          event: 'webhook.processor.handler_not_implemented',
+          provider,
+          eventType,
+          eventId: row.eventId,
+          inboxId: row.id,
+          terminal: true,
+        });
+        continue;
+      }
       const reason = err instanceof Error ? err.message : String(err);
       await markFailed(db, row.id, reason, row.attempts + 1);
       result.failed += 1;
@@ -255,6 +326,29 @@ async function markDone(db: Db, id: string): Promise<void> {
     .where(eq(schema.webhookInbox.id, id));
 }
 
+/**
+ * Mark a row as immediately terminal-failed regardless of attempts.
+ * Used when the failure mode is non-retryable (e.g. a stub handler
+ * that hasn't been implemented). Skips backoff, leaves the row in
+ * `failed` for ops review on the very first encounter.
+ */
+async function markTerminalFailed(
+  db: Db,
+  id: string,
+  reason: string,
+  nextAttempts: number,
+): Promise<void> {
+  await db
+    .update(schema.webhookInbox)
+    .set({
+      processingStatus: 'failed',
+      attempts: nextAttempts,
+      failureReason: reason.slice(0, 1024),
+      processedAt: new Date(),
+    })
+    .where(eq(schema.webhookInbox.id, id));
+}
+
 async function markFailed(db: Db, id: string, reason: string, nextAttempts: number): Promise<void> {
   // Below MAX_ATTEMPTS: leave as 'pending' so the next tick retries.
   // At/above MAX_ATTEMPTS: mark 'failed' for ops review (eventual DLQ).
@@ -273,15 +367,19 @@ async function markFailed(db: Db, id: string, reason: string, nextAttempts: numb
 /* ---------- dispatch table ---------- */
 
 /**
- * Per-provider event router. Each branch is a STUB that logs the
- * delivery and returns ok — the actual state mutations (DB writes
- * into `mids`, `decisions`, `audit_log`, etc.) are intentionally
- * deferred so we ship the inbox primitive without entangling Task #43
- * with the orchestrator + billing wiring.
+ * Per-provider event router. Each branch is a STUB that THROWS
+ * `NotImplementedError` until the persistence logic (writes into
+ * `mids`, `decisions`, `audit_log`, applications, etc.) is wired by
+ * the orchestrator team. The processor's catch path turns that into
+ * an immediate terminal `failed` row — no silent ack, no wasted
+ * retries — and bumps `webhook.handler.not_implemented` so the gap
+ * is visible on the observability tile.
  *
  * Adding real processing later is purely additive: replace the
- * `handle*` body with the persistence logic; the inbox row stays the
- * source of truth + replay fixture.
+ * `throw new NotImplementedError(...)` with the persistence logic and
+ * the row will be acked on the next delivery. The inbox row remains
+ * the source of truth + replay fixture, so historical `failed` rows
+ * can be re-driven through `processInbox()` once the handler ships.
  */
 async function dispatchEvent(
   provider: Provider,
@@ -312,32 +410,30 @@ async function handleMicamp(
   _body: Record<string, unknown>,
   row: InboxRow,
 ): Promise<void> {
-  // Stubs: log + return. Each TODO below is the downstream wiring.
+  // Fail-loud stubs. Each TODO below names the downstream wiring;
+  // until that lands, NotImplementedError → terminal `failed` row in
+  // the inbox so a real partner event (e.g. `loan.funded`) cannot
+  // vanish under a silent ack. See file header for the posture.
+  void row;
   switch (eventType) {
     case 'mid.underwriting.approved':
       // TODO(orchestrator): UPDATE mids SET provisioning_status='active', micamp_mid=$1, rate_card_json=$2 WHERE id=$3
-      logHandled(row);
-      return;
+      throw new NotImplementedError('micamp', eventType);
     case 'mid.underwriting.rejected':
       // TODO(orchestrator): UPDATE mids SET provisioning_status='rejected' WHERE id=$1; INSERT INTO audit_log ...
-      logHandled(row);
-      return;
+      throw new NotImplementedError('micamp', eventType);
     case 'mid.post_underwriting':
       // TODO(orchestrator): UPDATE mids SET provisioning_status='underwriting_post', post_underwriting_at=now() WHERE id=$1
-      logHandled(row);
-      return;
+      throw new NotImplementedError('micamp', eventType);
     case 'payment.captured':
       // TODO(orchestrator): UPDATE mids SET volume_cents_to_date = volume_cents_to_date + $1 WHERE id=$2
-      logHandled(row);
-      return;
+      throw new NotImplementedError('micamp', eventType);
     case 'payment.refunded':
       // TODO(orchestrator): UPDATE mids SET volume_cents_to_date = GREATEST(0, volume_cents_to_date - $1) WHERE id=$2
-      logHandled(row);
-      return;
+      throw new NotImplementedError('micamp', eventType);
     case 'settlement.paid':
       // TODO(orchestrator): UPDATE mids SET last_settled_at=$1 WHERE id=$2
-      logHandled(row);
-      return;
+      throw new NotImplementedError('micamp', eventType);
     default:
       throw new Error(`unknown_event_type:micamp:${eventType}`);
   }
@@ -348,31 +444,26 @@ async function handleHighsale(
   _body: Record<string, unknown>,
   row: InboxRow,
 ): Promise<void> {
+  void row;
   switch (eventType) {
     case 'pull.completed':
       // TODO(orchestrator): INSERT INTO decisions ...; fan out to lender marketplace
-      logHandled(row);
-      return;
+      throw new NotImplementedError('highsale', eventType);
     case 'pull.failed':
       // TODO(orchestrator): UPDATE applications SET status='declined', mark FCRA reason
-      logHandled(row);
-      return;
+      throw new NotImplementedError('highsale', eventType);
     case 'subaccount.suspended':
       // TODO(orchestrator): UPDATE partners SET status='throttled'; INSERT INTO audit_log
-      logHandled(row);
-      return;
+      throw new NotImplementedError('highsale', eventType);
     case 'milly.invoice.issued':
       // TODO(billing): wire to invoicing.ts to persist + render in partner dashboard
-      logHandled(row);
-      return;
+      throw new NotImplementedError('highsale', eventType);
     case 'milly.invoice.paid':
       // TODO(billing): mark invoice settled
-      logHandled(row);
-      return;
+      throw new NotImplementedError('highsale', eventType);
     case 'milly.invoice.failed':
       // TODO(ops): extend probation, Slack alert
-      logHandled(row);
-      return;
+      throw new NotImplementedError('highsale', eventType);
     default:
       throw new Error(`unknown_event_type:highsale:${eventType}`);
   }
@@ -385,21 +476,14 @@ async function handleTrutopia(
 ): Promise<void> {
   // Trutopia decision-engine callbacks. No event types are wired yet;
   // route is here so a new provider drop-in only touches this file.
-  logHandled(row);
-  // Unknown event types are NOT a hard error for Trutopia until the
-  // contract is finalised — accept + log so we don't loop a row that
-  // arrived a day before the handler ships.
-  void eventType;
-}
-
-function logHandled(row: InboxRow): void {
-  safeLog.info({
-    event: 'webhook.processor.handled',
-    provider: row.provider,
-    eventType: row.eventType,
-    eventId: row.eventId,
-    inboxId: row.id,
-  });
+  // Fail-loud: every Trutopia delivery is a NotImplementedError until
+  // the contract is finalised + a handler ships. The prior "accept +
+  // log so we don't loop a row" rationale was the silent-ack failure
+  // mode that this PR exists to remove — a Trutopia event arriving
+  // before its handler ships SHOULD land in the DLQ so an operator
+  // notices the timing mismatch.
+  void row;
+  throw new NotImplementedError('trutopia', eventType || 'unknown');
 }
 
 /* ---------- helpers used by the inbox routes ---------- */
