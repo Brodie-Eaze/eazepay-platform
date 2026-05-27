@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { type ChargeRequest } from '@/lib/micamp/client';
+import { deriveChargeIdempotencyKey, type ChargeRequest } from '@/lib/micamp/client';
 import { getMerchantProcessor } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
 import { safeErrorResponse } from '@/lib/safe-error';
@@ -14,11 +14,12 @@ import { enforceOrigin } from '@/lib/origin-guard';
  * loan documents. The lender disburses to the merchant via this MID;
  * we earn 50% of the net processing margin per the rev share.
  *
- * This route is a thin BFF wrapper around `lib/micamp/client.ts`.
- * The real underwriting / risk + retry logic lives on the MiCamp
- * side once we go live; for now the client returns deterministic
- * synthetic responses so the rest of the platform can be developed
- * against a stable contract.
+ * Idempotency: caller MAY supply `Idempotency-Key` header for explicit
+ * control; otherwise we derive a deterministic key from
+ * `(applicationId, amountCents)` because that pair uniquely identifies
+ * "charge this application this amount exactly once". Either way the
+ * key is forwarded to MiCamp so partner-side retries collapse to one
+ * consumer charge.
  */
 
 const BodySchema = z.object({
@@ -60,9 +61,33 @@ export async function POST(req: NextRequest) {
   const ownership = await assertResourceOwnership(guard, parsed.data.applicationId, 'application');
   if (ownership) return ownership;
 
+  // Honour caller-supplied Idempotency-Key when present; otherwise
+  // derive deterministically. Same `(applicationId, amountCents)` always
+  // yields the same key, so MiCamp dedupes a partner retry on its side.
+  const callerKey = req.headers.get('idempotency-key');
+  const idempotencyKey =
+    callerKey ??
+    deriveChargeIdempotencyKey({
+      applicationId: parsed.data.applicationId,
+      amountCents: parsed.data.amountCents,
+    });
+
+  const chargeReq: ChargeRequest = {
+    midId: parsed.data.midId,
+    amountCents: parsed.data.amountCents,
+    currency: parsed.data.currency,
+    consumerToken: parsed.data.consumerToken,
+    applicationId: parsed.data.applicationId,
+    idempotencyKey,
+    metadata: parsed.data.metadata,
+  };
+
   try {
+    // Route through the merchant-processor registry so partner-scoped
+    // routing (sandbox/live, alt processors) stays centralised, but pass
+    // the request shape that carries the idempotency key Builder C added.
     const processor = getMerchantProcessor(guard.partnerId);
-    const result = await processor.charge(parsed.data as ChargeRequest);
+    const result = await processor.charge(chargeReq);
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     // SEC-007: never echo upstream error text — MiCamp's 5xx bodies

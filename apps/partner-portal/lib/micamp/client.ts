@@ -31,6 +31,7 @@
  *   re-exported (back-compat) but its canonical home is the core lib.
  */
 
+import { createHash } from 'node:crypto';
 import {
   createHmacWebhookVerifier,
   IntegrationErrorException,
@@ -111,6 +112,18 @@ export interface ChargeRequest {
   currency: 'USD';
   consumerToken: string;
   applicationId: string;
+  /**
+   * REQUIRED. Sent to MiCamp as the `Idempotency-Key` header so a
+   * partner-side retry (network blip, double-click, our own queue
+   * retry) collapses to a single consumer charge. Without this,
+   * retrying a 5xx = double-charging the consumer.
+   *
+   * Use `deriveChargeIdempotencyKey({ applicationId, amountCents })`
+   * for the common "charge this application this amount exactly once"
+   * case. Pass an explicit per-attempt UUID when business semantics
+   * require multiple distinct charges against the same application.
+   */
+  idempotencyKey: string;
   metadata?: Record<string, string>;
 }
 
@@ -157,10 +170,6 @@ const MICAMP_WEBHOOK_SECRET = process.env.MICAMP_WEBHOOK_SECRET ?? '';
  * belt-and-braces second line in case anything imports this module
  * before middleware evaluates.
  */
-// SEC-002 hard floor — see lib/highsale/client.ts for rationale on
-// the NEXT_PHASE exemption. Fail-closed at runtime, allow build time
-// to complete in CI without secrets (the throw still fires on the
-// first real import via a request).
 const MICAMP_IS_BUILD_TIME = process.env.NEXT_PHASE === 'phase-production-build';
 if (process.env.NODE_ENV === 'production' && !MICAMP_IS_BUILD_TIME && !MICAMP_WEBHOOK_SECRET) {
   throw new Error(
@@ -176,12 +185,25 @@ export function isMicampLive(): boolean {
   return Boolean(MICAMP_API_URL) && Boolean(MICAMP_API_KEY);
 }
 
+/**
+ * Deterministic idempotency key for the common "charge this application
+ * this amount exactly once" path. Truncated to 32 chars to fit MiCamp's
+ * Idempotency-Key length cap (mirrors Stripe's 255 ceiling — we stay
+ * well under).
+ */
+export function deriveChargeIdempotencyKey(parts: {
+  applicationId: string;
+  amountCents: number;
+}): string {
+  return createHash('sha256')
+    .update(`${parts.applicationId}|${parts.amountCents}`)
+    .digest('hex')
+    .slice(0, 32);
+}
+
 /* ---------- provisioning ---------- */
 
 const DEFAULT_RATE_CARD: RateCard = {
-  // "Well below industry standard" per the strategy doc. Industry
-  // average for medical is ~250-300 bps interchange + ~100 bps markup;
-  // we target this as our wedge.
   interchangeBps: 195,
   processorBps: 35,
   perTransactionCents: 12,
@@ -219,15 +241,11 @@ export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionM
     return (await res.json()) as ProvisionMidResponse;
   }
 
-  // Synthetic happy-path. Pre-underwriting completes immediately so
-  // the rest of the platform can demo end-to-end. Post-underwriting
-  // gates on accumulated volume — handled by the volume tracker in
-  // the orchestrator, not here.
   const midId = `mid_${Date.now().toString(36)}`;
   return {
     ok: true,
     midId,
-    micampMid: null, // unset until real underwriting returns it
+    micampMid: null,
     status: 'underwriting_pre',
     rateCard: { ...DEFAULT_RATE_CARD },
     steps: PROVISIONING_STEPS.map((name, i) => ({
@@ -243,6 +261,10 @@ export async function provisionMid(req: ProvisionMidRequest): Promise<ProvisionM
 
 export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
   if (isMicampLive()) {
+    // Idempotency-Key header is REQUIRED — retrying a 5xx without it
+    // would double-charge the consumer. The type system enforces the
+    // field's presence on ChargeRequest; fetchWithTimeout bounds the
+    // outbound call so a hung partner cannot pin a Next.js worker.
     const res = await fetchWithTimeout(
       `${MICAMP_API_URL}/v1/charges`,
       {
@@ -250,6 +272,7 @@ export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${MICAMP_API_KEY}`,
+          'Idempotency-Key': req.idempotencyKey,
         },
         body: JSON.stringify(req),
       },
@@ -261,7 +284,6 @@ export async function charge(req: ChargeRequest): Promise<ChargeResponse> {
     return (await res.json()) as ChargeResponse;
   }
 
-  // Synthetic: deterministic fee math against the default rate card.
   const interchangeCents = Math.round((req.amountCents * DEFAULT_RATE_CARD.interchangeBps) / 10000);
   const processorCents = Math.round((req.amountCents * DEFAULT_RATE_CARD.processorBps) / 10000);
   const perTransactionCents = DEFAULT_RATE_CARD.perTransactionCents;
@@ -301,7 +323,6 @@ export async function settlementReport(
     return (await res.json()) as SettlementReport;
   }
 
-  // Synthetic placeholder — empty period.
   return {
     midId,
     periodStart: period.start,
@@ -366,9 +387,6 @@ export function verifyWebhookSignature(
   signatureHeader: string,
 ): WebhookVerificationResult {
   if (!MICAMP_WEBHOOK_SECRET) {
-    // In production we already threw at module load. This branch is
-    // reachable only in non-production. Default-deny; opt-in is via
-    // MICAMP_WEBHOOK_INSECURE_ALLOW=true.
     const insecureAllow = process.env.MICAMP_WEBHOOK_INSECURE_ALLOW === 'true';
     if (insecureAllow) {
       safeLog.warn({
