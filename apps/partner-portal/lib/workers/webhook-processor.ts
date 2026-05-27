@@ -41,32 +41,7 @@ import { getDb, hasDb, schema } from '../db';
 import type { Db } from '../db';
 import { incrementMetric } from '../observability/metrics';
 import { safeLog } from '../safe-log';
-import {
-  handleLenderInboxRow,
-  isLenderProvider,
-} from './lender-webhook-handler';
-
-/**
- * Thrown by stub handlers that haven't been wired to their state
- * mutations yet. The processor treats this as an immediate terminal
- * failure: the inbox row is marked `failed` (not `pending`) with a
- * structured `failure_reason`, no retry is scheduled, and the row
- * shows up in the DLQ surface for an operator to triage.
- *
- * Why terminal-immediate: a handler that hasn't been implemented won't
- * succeed on attempt 5 either, so burning retries just delays the
- * operator signal. The whole point of the fail-loud posture is to make
- * partner state-sync gaps loud + early.
- */
-export class NotImplementedError extends Error {
-  readonly code = 'handler_not_implemented' as const;
-  readonly meta: { provider: string; eventType: string };
-  constructor(provider: string, eventType: string) {
-    super(`handler_not_implemented:${provider}:${eventType}`);
-    this.name = 'NotImplementedError';
-    this.meta = { provider, eventType };
-  }
-}
+import { handleLenderInboxRow, isLenderProvider } from './lender-webhook-handler';
 
 /**
  * Thrown by stub handlers that haven't been wired to their state
