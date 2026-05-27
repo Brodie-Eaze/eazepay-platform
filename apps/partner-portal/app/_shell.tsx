@@ -52,7 +52,6 @@ import { formatTime } from '@eazepay/shared-utils/format-time';
 import { partnerOrg } from '../lib/mock-data';
 import { LiveActivityStrip } from '../components/LiveActivityStrip';
 import { NotificationBellAndPanel } from '../components/NotificationBellAndPanel';
-import { PublicFooter } from '../components/PublicFooter';
 import { partners as MASTER_PARTNERS_ROSTER } from '../lib/master-data';
 import { marketplaceLenders } from '../lib/marketplace-data';
 import { MoreMenu } from '../components/MoreMenu';
@@ -133,7 +132,14 @@ const masterGroups: NavGroup[] = [
     label: 'Partners',
     items: [
       { href: '/onboarding-pipeline', label: 'Business Onboarding', icon: <SendIcon /> },
-      { href: '/partners', label: 'Partner Directory', icon: <UsersIcon /> },
+      // Was '/partners' (simpler Partner Directory page with chevron
+      // expand). Per user feedback, the richer /control-panel view —
+      // 4 KPIs, search/niche/status filters, Open → button on each
+      // row that drills to the 7-tab partner detail — is the surface
+      // operators actually use to manage merchants. /partners route
+      // still exists for deep-linked bookmarks but the sidebar leads
+      // operators to the better-of-the-two.
+      { href: '/control-panel', label: 'Partners', icon: <UsersIcon /> },
     ],
   },
   {
@@ -855,12 +861,11 @@ export function Shell({ children }: { children: ReactNode }) {
             the pathname; LiveActivityStrip + PublicFooter stay
             mounted so they don't blink on every nav. */}
         <RouteTransition routeKey={pathname}>{children}</RouteTransition>
-        {/* Sprint E — trust signals. The footer rides inside the
-          AppShell main-content area so it appears under every
-          authenticated page (master / admin / per-brand) without
-          breaking the AppShell layout. Naked routes render their own
+        {/* PublicFooter intentionally NOT rendered inside the
+          authenticated shell — operators don't need Status / Security /
+          Changelog / API docs / Terms / Privacy chips at the bottom of
+          every internal page. Naked / marketing routes still get the
           footer via `PublicPageShell`. */}
-        <PublicFooter />
       </AppShell>
       {/* Global cmd-K command palette — mounted at the Shell root so
         it's available on every non-naked page. The palette manages
