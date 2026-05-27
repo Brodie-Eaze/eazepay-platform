@@ -345,12 +345,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const res = NextResponse.json(responseBody, { status: 201 });
 
   if (cookieValue) {
+    // SEC-206: SameSite=Strict to match the rest of the auth cookie
+    // surface (sign-in / accept-invite / set-password all mint Strict).
+    // Lax let a top-level cross-site GET present the just-minted
+    // session — Strict closes that vector. The onboarding flow lands
+    // the user on /welcome/submitted in the same browsing context, so
+    // Strict does not break navigation.
     res.cookies.set({
       name: ACCOUNT_COOKIE.name,
       value: cookieValue,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       maxAge: ACCOUNT_COOKIE.ttlSeconds,
     });

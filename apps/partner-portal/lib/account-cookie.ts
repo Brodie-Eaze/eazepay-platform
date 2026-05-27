@@ -8,10 +8,28 @@
  * coexist during the transition window (some demo tiles use the demo
  * cookie; a real signed-up business gets an account cookie).
  *
- * Cookie value format:
- *   `${userId}.${brand}.${partnerId}.${expiresAtEpochMs}.${hmacHex}`
+ * Cookie value format (v2, SEC-204):
+ *   `v2.${b64uUserId}.${b64uBrand}.${b64uPartnerId}.${expiresAtEpochMs}.${hmacHex}`
  *
- * Where `hmacHex = HMAC_SHA256(secret, '${userId}.${brand}.${partnerId}.${expiresAtEpochMs}')`.
+ * Where each field is base64url-encoded (no `=` padding, no `.` chars
+ * in the alphabet) so the field delimiter `.` is unambiguous, and
+ * `hmacHex = HMAC_SHA256(secret, '${b64uUserId}.${b64uBrand}.${b64uPartnerId}.${expiresAtEpochMs}')`.
+ *
+ * SEC-204 — canonicalization rationale
+ * ------------------------------------
+ * v1 of the cookie joined raw field values with `.` as a delimiter.
+ * That was canonicalization-fragile: if any field ever contained a
+ * literal `.` (a partner-id like `p.helio`, a future brand name with
+ * a dot, a user-id with email semantics), the parse split into the
+ * wrong number of fields and either rejected or — worse — accepted a
+ * tampered payload whose dot-rearrangement still validated. Base64url
+ * gives a delimiter-safe alphabet so the split is one-to-one with the
+ * fields, end of class of bug.
+ *
+ * Backwards compat: `readSignedAccountSession` accepts BOTH v1 and v2
+ * shapes during the rollout window. New cookies are minted as v2 only.
+ * Once all live sessions have rolled (8h TTL = same-day), v1 acceptance
+ * can be removed in a follow-up.
  *
  * ## Secret resolution
  *
@@ -87,6 +105,35 @@ function hexToBytes(hex: string): Uint8Array | null {
   return out;
 }
 
+/**
+ * Base64url encode a UTF-8 string. URL-safe alphabet (no `+`, `/`,
+ * `=`), so the literal `.` we use as a field delimiter never appears
+ * inside a field — eliminating the SEC-204 canonicalization gap.
+ */
+function b64uEncode(s: string): string {
+  const bytes = ENCODER.encode(s);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
+  // btoa is globally available in both edge runtime and Node 18+.
+  const b64 = btoa(bin);
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function b64uDecode(s: string): string | null {
+  if (!/^[A-Za-z0-9_-]*$/.test(s)) return null;
+  // Restore padding.
+  const pad = s.length % 4 === 0 ? '' : '='.repeat(4 - (s.length % 4));
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + pad;
+  try {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
 function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -106,10 +153,29 @@ export async function signAccountSession(
   ttlSeconds: number,
 ): Promise<string> {
   const expiresAtMs = Date.now() + ttlSeconds * 1000;
-  const payload = `${input.userId}.${input.brand}.${input.partnerId}.${expiresAtMs}`;
+  // SEC-204: encode each field as base64url before joining so the `.`
+  // delimiter is never ambiguous, regardless of the field's contents.
+  const payload = [
+    'v2',
+    b64uEncode(input.userId),
+    b64uEncode(input.brand),
+    b64uEncode(input.partnerId),
+    String(expiresAtMs),
+  ].join('.');
   const key = await getKey();
   const sig = await crypto.subtle.sign('HMAC', key, ENCODER.encode(payload));
   return `${payload}.${bytesToHex(sig)}`;
+}
+
+async function verifyAndExtract(payload: string, sigHex: string): Promise<boolean> {
+  const expectedSig = await (async () => {
+    const key = await getKey();
+    const sig = await crypto.subtle.sign('HMAC', key, ENCODER.encode(payload));
+    return new Uint8Array(sig);
+  })();
+  const providedSig = hexToBytes(sigHex);
+  if (!providedSig || !constantTimeEqual(expectedSig, providedSig)) return false;
+  return true;
 }
 
 export async function readSignedAccountSession(
@@ -122,27 +188,52 @@ export async function readSignedAccountSession(
   const sigHex = cookieValue.slice(lastDot + 1);
 
   const parts = payload.split('.');
-  if (parts.length !== 4) return null;
-  const [userId, brand, partnerId, expiresStr] = parts as [string, string, string, string];
-  if (!['medpay', 'tradepay', 'coachpay'].includes(brand)) return null;
-  const expiresAtMs = Number(expiresStr);
-  if (!Number.isFinite(expiresAtMs) || expiresAtMs <= 0) return null;
-  if (Date.now() >= expiresAtMs) return null;
 
-  const expectedSig = await (async () => {
-    const key = await getKey();
-    const sig = await crypto.subtle.sign('HMAC', key, ENCODER.encode(payload));
-    return new Uint8Array(sig);
-  })();
-  const providedSig = hexToBytes(sigHex);
-  if (!providedSig || !constantTimeEqual(expectedSig, providedSig)) return null;
+  // v2 shape — ['v2', b64uUserId, b64uBrand, b64uPartnerId, expiresMs]
+  if (parts.length === 5 && parts[0] === 'v2') {
+    const [, b64UserId, b64Brand, b64PartnerId, expiresStr] = parts as [
+      string,
+      string,
+      string,
+      string,
+      string,
+    ];
+    const userId = b64uDecode(b64UserId);
+    const brand = b64uDecode(b64Brand);
+    const partnerId = b64uDecode(b64PartnerId);
+    if (userId === null || brand === null || partnerId === null) return null;
+    if (!['medpay', 'tradepay', 'coachpay'].includes(brand)) return null;
+    const expiresAtMs = Number(expiresStr);
+    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= 0) return null;
+    if (Date.now() >= expiresAtMs) return null;
+    if (!(await verifyAndExtract(payload, sigHex))) return null;
+    return {
+      userId,
+      brand: brand as 'medpay' | 'tradepay' | 'coachpay',
+      partnerId,
+      expiresAtMs,
+    };
+  }
 
-  return {
-    userId,
-    brand: brand as 'medpay' | 'tradepay' | 'coachpay',
-    partnerId,
-    expiresAtMs,
-  };
+  // v1 shape — ['userId', 'brand', 'partnerId', 'expiresMs']. Kept for
+  // backwards compat during the 8h-TTL rollout window; remove in a
+  // follow-up once we're confident all minted v1 cookies have expired.
+  if (parts.length === 4) {
+    const [userId, brand, partnerId, expiresStr] = parts as [string, string, string, string];
+    if (!['medpay', 'tradepay', 'coachpay'].includes(brand)) return null;
+    const expiresAtMs = Number(expiresStr);
+    if (!Number.isFinite(expiresAtMs) || expiresAtMs <= 0) return null;
+    if (Date.now() >= expiresAtMs) return null;
+    if (!(await verifyAndExtract(payload, sigHex))) return null;
+    return {
+      userId,
+      brand: brand as 'medpay' | 'tradepay' | 'coachpay',
+      partnerId,
+      expiresAtMs,
+    };
+  }
+
+  return null;
 }
 
 export function _resetAccountCookieKeyCache(): void {

@@ -189,3 +189,22 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: 1
+
+      # SEC-210 — pnpm audit drift detector.
+      # Warn-only for now (continue-on-error: true) so we get visibility
+      # on new transitive HIGH/CRITICAL CVEs without breaking CI while
+      # we work through the existing debt. Flip to a hard gate in a
+      # follow-up once the baseline is clean and the .trivyignore
+      # pattern is mirrored as a pnpm-audit allowlist.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: pnpm audit (high+) — warn-only drift detector
+        continue-on-error: true
+        run: pnpm audit --audit-level high

@@ -45,17 +45,11 @@ const PROVIDER_BY_BRAND: Record<string, string> = {
   processing: 'mycamp',
 };
 
-/**
- * Originating client IP for rate-limit bucketing. Forwarded-for is the
- * canonical Vercel / Cloudflare / NLB header; trust the leftmost
- * address when present (typical CDN convention). Falls back to the
- * direct remote address Next exposes. Never trust a header the
- * consumer can mint themselves without a hop layer in front.
- */
-function pickClientIp(req: NextRequest): string {
-  const xff = req.headers.get('x-forwarded-for') ?? '';
-  return xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
-}
+// SEC-203: client IP comes from `resolveClientIp` which uses the
+// rightmost-trusted-hop walk of X-Forwarded-For + X-Real-IP fallback.
+// The leftmost-XFF approach we used before was trivially spoofable —
+// see lib/client-ip.ts for the threat model.
+import { resolveClientIp } from '../../../../../lib/client-ip.js';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3300';
 
@@ -118,7 +112,7 @@ export async function POST(req: NextRequest) {
   const csrfFail = enforceCsrf(req);
   if (csrfFail) return csrfFail;
 
-  const ip = pickClientIp(req);
+  const ip = resolveClientIp(req);
   const rl = enforceEdgeRateLimit(ip);
   if (!rl.allowed) {
     return new Response(
