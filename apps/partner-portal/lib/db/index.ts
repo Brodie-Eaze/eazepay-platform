@@ -206,21 +206,66 @@ export { schema };
  * which must insert an application row with a server-resolved
  * partnerId).
  *
- * TODO(SEC-RLS-2): wrap the remaining DB-touching routes
- *   (lender adapters, webhook handlers, marketplace + MID routes,
- *   audit-log writers, orchestrator persistence) in withTenantContext
- *   or withRawTenantContext as they're touched. This PR ships the
- *   policy enforcement + the helper + the four hot routes; the rest
- *   continue to work because RLS treats an unset GUC as fail-CLOSED,
- *   so the first un-wrapped route to read tenant data after this
- *   lands will return empty and trip its own alarms — the desired
- *   forcing function.
+ * SEC-RLS-2 (this PR): every remaining DB-touching route handler is
+ *   now wrapped — operator routes via `withTenantContext(session, ...)`,
+ *   HMAC-verified inbound webhooks via `withRawTenantContext(
+ *   SYSTEM_WEBHOOK_CONTEXT, ...)`, and unauthenticated public routes
+ *   that only touch non-RLS tables via `withRawTenantContext(
+ *   PUBLIC_CONSUMER_CONTEXT, ...)`. A grep-based fitness function in
+ *   CI fails any new `getDb()` call inside `app/api/` that isn't
+ *   reached via one of those wrappers.
  */
 
 export interface TenantContext {
   partnerId: string | null;
-  role: 'partner' | 'operator' | 'none';
+  /**
+   * Logical role bound to `app.role` GUC at txn start.
+   *
+   *   - 'operator' — sees all rows (admin endpoints, signature-verified
+   *     inbound webhooks that must persist into tenant tables).
+   *   - 'partner'  — sees only rows where partner_id = `partnerId`.
+   *   - 'consumer' — public unauthenticated actor. Matches NO policy
+   *     branch, so every read returns zero rows and every write is
+   *     blocked by RLS. Used by public routes that only touch non-RLS
+   *     tables (webhook_inbox ingestion, consent receipt acks) — the
+   *     GUC is still bound so a future migration that adds RLS to
+   *     those tables fails-CLOSED rather than silently leaking.
+   *   - 'none'     — fail-closed sentinel for unresolved sessions.
+   */
+  role: 'partner' | 'operator' | 'consumer' | 'none';
 }
+
+/**
+ * Synthetic identifier used in `partner_id` for actors that aren't a
+ * single partner — public consumer routes, webhook ingestors that
+ * persist a delivery before the target partner is resolved. The string
+ * starts with a double underscore so it can NEVER collide with a real
+ * partner_id (slug-prefixed `p_…`).
+ */
+export const UNATTRIBUTED_PARTNER_ID = '__unattributed__';
+
+/**
+ * Synthetic operator context for trusted server-side actors that aren't
+ * tied to a user session — HMAC-verified inbound webhooks from lenders,
+ * MiCamp, HighSale. The signature check IS the auth; the GUC binding
+ * lets the resulting writes into RLS-protected tenant tables succeed
+ * without smuggling a real user partnerId. Use sparingly; an audit row
+ * with actor='system:<provider>' must accompany every state change.
+ */
+export const SYSTEM_WEBHOOK_CONTEXT: TenantContext = {
+  partnerId: UNATTRIBUTED_PARTNER_ID,
+  role: 'operator',
+};
+
+/**
+ * Synthetic consumer context for public unauthenticated routes that
+ * only touch non-RLS tables (webhook_inbox ingest, consent receipt
+ * acks). Fails-CLOSED on any RLS-protected table by design.
+ */
+export const PUBLIC_CONSUMER_CONTEXT: TenantContext = {
+  partnerId: UNATTRIBUTED_PARTNER_ID,
+  role: 'consumer',
+};
 
 /**
  * Pure derivation of (partner_id, role) from a session. No I/O.
@@ -245,25 +290,19 @@ export function tenantContextFromSession(session: SessionContext): TenantContext
 }
 
 /**
- * Synthetic operator context for trusted server-side actors that aren't
- * tied to a user session — e.g. the public consumer apply POST route
- * (the BFF itself is the actor, resolving partner attribution server-
- * side) and webhook ingestors. Use sparingly; the audit trail must
- * make the synthetic actor explicit.
+ * @deprecated Use `SYSTEM_WEBHOOK_CONTEXT` (for HMAC-verified inbound
+ * webhooks) or build a one-off `{partnerId, role:'operator'}` literal.
+ * Kept as an alias for any caller that pinned the older name pre-
+ * SEC-RLS-2.
  */
-export const SYNTHETIC_OPERATOR_CONTEXT: TenantContext = {
-  partnerId: null,
-  role: 'operator',
-};
+export const SYNTHETIC_OPERATOR_CONTEXT: TenantContext = SYSTEM_WEBHOOK_CONTEXT;
 
 export type TxHandle = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 async function applyTenantGucs(tx: TxHandle, ctx: TenantContext): Promise<void> {
   // set_config(name, value, is_local=true) is the parameterised
   // equivalent of SET LOCAL — partner_id is never string-concatenated.
-  await tx.execute(
-    sql`SELECT set_config('app.current_partner_id', ${ctx.partnerId ?? ''}, true)`,
-  );
+  await tx.execute(sql`SELECT set_config('app.current_partner_id', ${ctx.partnerId ?? ''}, true)`);
   await tx.execute(sql`SELECT set_config('app.role', ${ctx.role}, true)`);
 }
 

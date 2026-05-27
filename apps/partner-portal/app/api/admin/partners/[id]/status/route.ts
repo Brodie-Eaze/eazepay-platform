@@ -41,14 +41,24 @@
  * RFC 7807 Problem Details on every error path.
  */
 
+/* SEC-RLS-2 — every DB write on this route runs inside
+ * `withTenantContext`. `requireAdmin` guarantees an operator session
+ * (role='operator'), which the audit_log RLS policy passes through;
+ * partners is not RLS-protected today but the wrapper guards against a
+ * future migration that flips it on without a policy review. The
+ * SELECT + UPDATE + INSERT share one transaction so the suspend +
+ * audit row land atomically (the audit chain is meaningless if a crash
+ * between writes leaves a suspended partner with no `partner.suspended`
+ * row). */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { requireAdmin } from '../../../../../../lib/server-guards';
 import { enforceOrigin } from '../../../../../../lib/origin-guard';
 import { enforceCsrf } from '../../../../../../lib/csrf';
-import { getDb, hasDb } from '../../../../../../lib/db';
+import { hasDb, withTenantContext } from '../../../../../../lib/db';
 import { partners, auditLog } from '../../../../../../lib/db/schema';
+import { getSessionContext } from '../../../../../../lib/session';
 import { safeLog } from '../../../../../../lib/safe-log';
 
 export const runtime = 'nodejs';
@@ -141,88 +151,84 @@ export async function POST(
   }
   const { status: newStatus, reason } = parsed.data;
 
-  const db = getDb();
+  const session = await getSessionContext(req);
 
-  // Look up existing row first so we can capture the previous status
-  // for the audit payload and so we return 404 (not 200) for an
-  // unknown partner id rather than silently UPDATE-zero-rows.
-  const existing = await db
-    .select()
-    .from(partners)
-    .where(eq(partners.id, partnerId))
-    .limit(1);
-  if (existing.length === 0) {
-    return problem(404, 'Not Found', 'partner_not_found', 'No partner with that id.');
-  }
-  const prev = existing[0]!;
-
+  // SELECT + UPDATE + audit INSERT happen inside one tenant-bound
+  // transaction. If any step throws, RLS rollback semantics + the
+  // try/catch below surface 503 — never leave an UPDATE without its
+  // matching audit row.
   const nowSuspendedAt = newStatus === 'suspended' ? new Date() : null;
   const nowSuspendedReason = newStatus === 'suspended' ? reason : null;
 
-  let updated;
+  type TxnOutcome =
+    | { kind: 'not_found' }
+    | {
+        kind: 'ok';
+        prev: { status: string };
+        updated: typeof partners.$inferSelect | undefined;
+        action: string;
+      };
+
+  let outcome: TxnOutcome;
   try {
-    const rows = await db
-      .update(partners)
-      .set({
-        status: newStatus,
-        suspendedAt: nowSuspendedAt,
-        suspendedReason: nowSuspendedReason,
-        updatedAt: new Date(),
-      })
-      .where(eq(partners.id, partnerId))
-      .returning();
-    updated = rows[0];
+    outcome = await withTenantContext(session, async (tx): Promise<TxnOutcome> => {
+      const existing = await tx.select().from(partners).where(eq(partners.id, partnerId)).limit(1);
+      if (existing.length === 0) {
+        return { kind: 'not_found' };
+      }
+      const prev = existing[0]!;
+
+      const rows = await tx
+        .update(partners)
+        .set({
+          status: newStatus,
+          suspendedAt: nowSuspendedAt,
+          suspendedReason: nowSuspendedReason,
+          updatedAt: new Date(),
+        })
+        .where(eq(partners.id, partnerId))
+        .returning();
+      const updated = rows[0];
+
+      // SOC2 CC7.2 — security-relevant event captured in the audit
+      // chain in the SAME transaction as the UPDATE. A crash between
+      // the two writes now rolls both back, so the audit chain is
+      // never silently desynced from the partners table.
+      const action = auditActionFor(prev.status, newStatus);
+      const payload = {
+        from: prev.status,
+        to: newStatus,
+        reason,
+        by: actor,
+      };
+      await tx.insert(auditLog).values({
+        actor,
+        action,
+        targetType: 'partner',
+        targetId: partnerId,
+        payloadJson: JSON.stringify(payload),
+        ipAddress:
+          req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+          req.headers.get('x-real-ip') ??
+          null,
+        userAgent: req.headers.get('user-agent') ?? null,
+      });
+      return { kind: 'ok', prev, updated, action };
+    });
   } catch (err) {
-    safeLog.error({ event: 'admin.partner_status.update_failed', err, partnerId });
+    safeLog.error({ event: 'admin.partner_status.txn_failed', err, partnerId });
     return problem(
       503,
       'Service Unavailable',
       'update_failed',
-      'Could not write the new partner status.',
+      'Could not write the new partner status + audit row atomically.',
     );
   }
 
-  // SOC2 CC7.2 — security-relevant event captured in the audit chain.
-  // Written in the SAME request as the UPDATE; if the audit insert
-  // fails we surface 503 so the operator knows the change is not
-  // durably recorded. Worst case is the UPDATE landed without an audit
-  // row — the compliance dashboard's reconciler will flag any partner
-  // whose suspended_at is set without a matching action='partner.suspended'
-  // row, and a backfill task can repair.
-  const action = auditActionFor(prev.status, newStatus);
-  const payload = {
-    from: prev.status,
-    to: newStatus,
-    reason,
-    by: actor,
-  };
-  try {
-    await db.insert(auditLog).values({
-      actor,
-      action,
-      targetType: 'partner',
-      targetId: partnerId,
-      payloadJson: JSON.stringify(payload),
-      ipAddress:
-        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-        req.headers.get('x-real-ip') ??
-        null,
-      userAgent: req.headers.get('user-agent') ?? null,
-    });
-  } catch (err) {
-    safeLog.error({
-      event: 'admin.partner_status.audit_insert_failed',
-      err,
-      partnerId,
-      action,
-    });
-    return problem(
-      503,
-      'Service Unavailable',
-      'audit_insert_failed',
-      'Status updated but the audit log entry could not be written. Reach compliance@eazepay.com to reconcile.',
-    );
+  if (outcome.kind === 'not_found') {
+    return problem(404, 'Not Found', 'partner_not_found', 'No partner with that id.');
   }
+  const { prev, updated, action } = outcome;
 
   safeLog.info({
     event: 'admin.partner_status.changed',

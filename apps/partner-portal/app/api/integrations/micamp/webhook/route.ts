@@ -1,6 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifyWebhookSignature } from '@/lib/micamp/client';
-import { getDb, hasDb, schema } from '@/lib/db';
+/* SEC-RLS-2 — webhook_inbox insert runs inside
+ * `withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, ...)`. This is a
+ * public unauthenticated endpoint (HMAC IS the auth, but at the DB
+ * layer there's no session); webhook_inbox is platform-global today,
+ * but pinning a consumer-tier GUC means a future migration that adds
+ * RLS to the inbox fails-CLOSED here rather than silently leaking
+ * cross-tenant rows. Handler dispatch then runs in the worker under
+ * SYSTEM_WEBHOOK_CONTEXT (operator-tier) so eventual writes into MIDs
+ * + applications + audit_log succeed. */
+import { hasDb, PUBLIC_CONSUMER_CONTEXT, schema, withRawTenantContext } from '@/lib/db';
 import { extractProviderEventId } from '@/lib/workers/webhook-processor';
 import { safeLog } from '@/lib/safe-log';
 import { incrementMetric } from '@/lib/observability/metrics';
@@ -133,20 +142,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const db = getDb();
-    const inserted = await db
-      .insert(schema.webhookInbox)
-      .values({
-        provider: PROVIDER,
-        eventId,
-        eventType,
-        rawBody,
-        signatureHeader,
-      })
-      .onConflictDoNothing({
-        target: [schema.webhookInbox.provider, schema.webhookInbox.eventId],
-      })
-      .returning({ id: schema.webhookInbox.id });
+    const inserted = await withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, (tx) =>
+      tx
+        .insert(schema.webhookInbox)
+        .values({
+          provider: PROVIDER,
+          eventId,
+          eventType,
+          rawBody,
+          signatureHeader,
+        })
+        .onConflictDoNothing({
+          target: [schema.webhookInbox.provider, schema.webhookInbox.eventId],
+        })
+        .returning({ id: schema.webhookInbox.id }),
+    );
 
     if (inserted.length === 0) {
       // Replay — already in the inbox. Do NOT enqueue again; the

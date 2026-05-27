@@ -8,7 +8,17 @@ import {
   verifySignature,
   withMeta,
 } from '../../../../../../lib/api-v1/shared';
-import { getDb, hasDb, schema } from '../../../../../../lib/db';
+/* SEC-RLS-2 — every DB write on this route runs through
+ * `withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, …)`. The lender POST
+ * is unauthenticated by user-session; HMAC signature verification IS
+ * the auth. The route only touches `webhook_inbox`, which is platform-
+ * global today (not RLS-protected); the consumer-tier GUC is harmless
+ * on that insert, but if a future migration adds RLS to the inbox we
+ * fail-CLOSED here rather than silently leak across providers. Tenant
+ * writes into RLS-protected tables happen later, in the worker, under
+ * `SYSTEM_WEBHOOK_CONTEXT`. Matches the MiCamp + HighSale sibling
+ * routes byte-for-byte. */
+import { hasDb, PUBLIC_CONSUMER_CONTEXT, schema, withRawTenantContext } from '../../../../../../lib/db';
 import { hasQueue } from '../../../../../../lib/queue';
 import { extractProviderEventId } from '../../../../../../lib/workers/webhook-processor';
 import { safeLog } from '../../../../../../lib/safe-log';
@@ -148,36 +158,39 @@ export async function POST(req: NextRequest, ctx: { params: { lender: string } }
   }
 
   try {
-    const db = getDb();
-    const inserted = await db
-      .insert(schema.webhookInbox)
-      .values({
-        provider: lender.id,
-        eventId,
-        eventType,
-        rawBody: bodyText,
-        signatureHeader: req.headers.get('x-eazepay-signature'),
-      })
-      .onConflictDoNothing({
-        target: [schema.webhookInbox.provider, schema.webhookInbox.eventId],
-      })
-      .returning({ id: schema.webhookInbox.id });
+    const inserted = await withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, (tx) =>
+      tx
+        .insert(schema.webhookInbox)
+        .values({
+          provider: lender.id,
+          eventId,
+          eventType,
+          rawBody: bodyText,
+          signatureHeader: req.headers.get('x-eazepay-signature'),
+        })
+        .onConflictDoNothing({
+          target: [schema.webhookInbox.provider, schema.webhookInbox.eventId],
+        })
+        .returning({ id: schema.webhookInbox.id }),
+    );
 
     if (inserted.length === 0) {
       // Replay — lender re-sending after a missed ack. Already in
       // the inbox, already enqueued (or done). No-op + 200.
       // This is the path that prevents the duplicate consumer
       // email + SMS for repeat `loan.funded` deliveries.
-      const dup = await db
-        .select({ id: schema.webhookInbox.id })
-        .from(schema.webhookInbox)
-        .where(
-          and(
-            eq(schema.webhookInbox.provider, lender.id),
-            eq(schema.webhookInbox.eventId, eventId),
-          ),
-        )
-        .limit(1);
+      const dup = await withRawTenantContext(PUBLIC_CONSUMER_CONTEXT, (tx) =>
+        tx
+          .select({ id: schema.webhookInbox.id })
+          .from(schema.webhookInbox)
+          .where(
+            and(
+              eq(schema.webhookInbox.provider, lender.id),
+              eq(schema.webhookInbox.eventId, eventId),
+            ),
+          )
+          .limit(1),
+      );
       const inboxId = dup[0]?.id ?? null;
       safeLog.info({
         event: 'webhook.inbox.duplicate',

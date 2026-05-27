@@ -21,13 +21,20 @@
  * tiny and operators often want the whole chain).
  */
 
+/* SEC-RLS-2 — DB reads on this route run inside `withTenantContext`
+ * so the RLS GUCs (`app.current_partner_id`, `app.role`) are bound to
+ * the transaction. `requireAdmin` above guarantees the session is
+ * operator-mapped → tenantContextFromSession resolves to role='operator',
+ * which the migration-0013 policies on `applications` + `application_events`
+ * pass through. Without the wrapper every SELECT returns zero rows. */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { and, asc, eq, gt, type SQL } from 'drizzle-orm';
-import { getDb, hasDb } from '../../../../../../lib/db';
+import { hasDb, withTenantContext } from '../../../../../../lib/db';
 import { applicationEvents, applications } from '../../../../../../lib/db/schema';
 import { requireAdmin } from '../../../../../../lib/server-guards';
 import { redactForLog } from '../../../../../../lib/safe-log';
+import { getSessionContext } from '../../../../../../lib/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -67,35 +74,45 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
   const { cursor, limit } = parsed.data;
 
-  const db = getDb();
+  // Both reads share one txn so the RLS GUCs are paid for once and the
+  // `appRows`→`events` pair sees a consistent snapshot.
+  const session = await getSessionContext(req);
+  const { appRows, events } = await withTenantContext(session, async (tx) => {
+    // Confirm the application exists before listing events. A request
+    // for a non-existent application should 404, not "200 with empty
+    // events" — the latter would let a caller probe for application
+    // ids by watching the response shape.
+    const appRows = await tx
+      .select({
+        id: applications.id,
+        brand: applications.brand,
+        partnerId: applications.partnerId,
+      })
+      .from(applications)
+      .where(eq(applications.id, id))
+      .limit(1);
 
-  // Confirm the application exists before listing events. A request
-  // for a non-existent application should 404, not "200 with empty
-  // events" — the latter would let a caller probe for application
-  // ids by watching the response shape.
-  const appRows = await db
-    .select({ id: applications.id, brand: applications.brand, partnerId: applications.partnerId })
-    .from(applications)
-    .where(eq(applications.id, id))
-    .limit(1);
+    const conditions: SQL[] = [eq(applicationEvents.applicationId, id)];
+    if (cursor) {
+      conditions.push(gt(applicationEvents.createdAt, new Date(cursor)));
+    }
+
+    const events =
+      appRows.length === 0
+        ? []
+        : await tx
+            .select()
+            .from(applicationEvents)
+            .where(and(...conditions))
+            .orderBy(asc(applicationEvents.createdAt))
+            .limit(limit + 1);
+
+    return { appRows, events };
+  });
+
   if (appRows.length === 0) {
     return problem(404, 'not_found', `Application ${id} not found.`);
   }
-
-  // Audit chain query — oldest first so the timeline reads naturally
-  // top → bottom. Cursor pagination on createdAt for stable ordering
-  // when an application has hundreds of events.
-  const conditions: SQL[] = [eq(applicationEvents.applicationId, id)];
-  if (cursor) {
-    conditions.push(gt(applicationEvents.createdAt, new Date(cursor)));
-  }
-
-  const events = await db
-    .select()
-    .from(applicationEvents)
-    .where(and(...conditions))
-    .orderBy(asc(applicationEvents.createdAt))
-    .limit(limit + 1);
 
   const hasMore = events.length > limit;
   const rows = hasMore ? events.slice(0, limit) : events;
