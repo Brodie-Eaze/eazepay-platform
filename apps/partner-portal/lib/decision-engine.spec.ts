@@ -45,6 +45,9 @@ import {
   isProfileTooThinForInternalScorer,
   _resetMetricsForTest,
   type PrequalInputs,
+  type RankedLender,
+  type IncludedLender,
+  type ExcludedLender,
 } from './decision-engine';
 import type { Brand } from './api-v1/shared';
 
@@ -216,21 +219,126 @@ describe('decision-engine', () => {
       persist: false,
     });
 
-    const excluded = result.rankedLenders.filter((r) => !r.included);
+    // Narrowing predicate enforces the discriminated-union invariant
+    // at compile time — `row.regBReasonCode` is `RegBReasonCode`, not
+    // `RegBReasonCode | null`.
+    const excluded = result.rankedLenders.filter((r): r is ExcludedLender => !r.included);
     expect(excluded.length).toBeGreaterThan(0);
     for (const row of excluded) {
-      expect(row.regBReasonCode).not.toBeNull();
-      expect(row.principalReasonText).not.toBeNull();
-      expect(row.reasonCode).not.toBeNull();
+      // Field is a required string under the new union — assert non-empty.
+      expect(row.regBReasonCode).toBeTruthy();
+      expect(row.principalReasonText).toBeTruthy();
+      expect(row.reasonCode).toBeTruthy();
     }
 
-    // Conversely, every included row has nulls there.
-    const included = result.rankedLenders.filter((r) => r.included);
+    // Conversely, included rows do not even carry the Reg B keys —
+    // attempting to read `row.regBReasonCode` here would be a compile
+    // error. The presence/absence is enforced by the type, not by a
+    // runtime null check.
+    const included = result.rankedLenders.filter((r): r is IncludedLender => r.included);
     for (const row of included) {
-      expect(row.regBReasonCode).toBeNull();
-      expect(row.principalReasonText).toBeNull();
-      expect(row.reasonCode).toBeNull();
+      expect(row).not.toHaveProperty('regBReasonCode');
+      expect(row).not.toHaveProperty('principalReasonText');
+      expect(row).not.toHaveProperty('reasonCode');
+      // Included rows DO carry the offer-ranking fields.
+      expect(row.propensityScore).toBeGreaterThanOrEqual(0);
+      expect(row.estimatedAprBps).toBeGreaterThan(0);
+      expect(row.estimatedMaxCents).toBeGreaterThan(0);
     }
+  });
+
+  // -------------------------------------------------------------------------
+  // Regression: discriminated-union type narrowing (type-design audit fix)
+  // -------------------------------------------------------------------------
+
+  describe('RankedLender discriminated union', () => {
+    it('narrows via the `included` discriminant', async () => {
+      const result = await evaluateDecision({
+        applicationId: APP_ID,
+        prequal: { ...basePrequal, brand: 'tradepay' },
+        engine: 'internal',
+        persist: false,
+      });
+
+      for (const r of result.rankedLenders) {
+        if (r.included) {
+          // Inside this branch, TS sees `IncludedLender` — the
+          // adverse-action fields are not in scope. The runtime
+          // assertions mirror what the type says.
+          expect(typeof r.propensityScore).toBe('number');
+          expect(typeof r.rank).toBe('number');
+          expect(typeof r.estimatedAprBps).toBe('number');
+          expect(typeof r.estimatedMaxCents).toBe('number');
+        } else {
+          // Inside this branch, TS sees `ExcludedLender` — propensity
+          // fields are not in scope.
+          expect(typeof r.reasonCode).toBe('string');
+          expect(typeof r.regBReasonCode).toBe('string');
+          expect(typeof r.principalReasonText).toBe('string');
+        }
+      }
+    });
+
+    it('DecisionResult narrows via decisionMode switch', async () => {
+      const normal = await evaluateDecision({
+        applicationId: APP_ID,
+        prequal: basePrequal,
+        engine: 'internal',
+        persist: false,
+      });
+
+      // Exhaustive switch — TypeScript will flag a missing arm here as
+      // a regression if a new DecisionMode is added without a matching
+      // DecisionResult variant.
+      switch (normal.decisionMode) {
+        case 'normal':
+          expect(normal.status).toBe('ok');
+          expect(normal.detail).toBeNull();
+          expect(normal.rankedLenders.length).toBeGreaterThan(0);
+          break;
+        case 'fallback_internal':
+          expect(normal.engineFallback).toBe(true);
+          expect(normal.status).toBe('ok');
+          break;
+        case 'failed_persisted_to_dlq':
+          expect(normal.status).toBe('failed');
+          // `detail` is non-null on the failed arm — enforced by type.
+          expect(normal.detail.length).toBeGreaterThan(0);
+          break;
+        default: {
+          const _exhaustive: never = normal;
+          throw new Error(`unreachable: ${String(_exhaustive)}`);
+        }
+      }
+    });
+
+    it('RankedLender type-guard predicates compose', () => {
+      const arr: RankedLender[] = [
+        {
+          included: true,
+          lenderId: 'L1',
+          displayName: 'L1',
+          propensityScore: 80,
+          rank: 1,
+          estimatedAprBps: 999,
+          estimatedMaxCents: 500_000,
+        },
+        {
+          included: false,
+          lenderId: 'L2',
+          displayName: 'L2',
+          reasonCode: 'tier_mismatch:D',
+          regBReasonCode: 'CREDIT_PROFILE_NEGATIVE',
+          principalReasonText: 'Credit application incomplete',
+        },
+      ];
+      const inc = arr.filter((r): r is IncludedLender => r.included);
+      const exc = arr.filter((r): r is ExcludedLender => !r.included);
+      expect(inc).toHaveLength(1);
+      expect(exc).toHaveLength(1);
+      expect(inc[0]!.propensityScore).toBe(80);
+      expect(exc[0]!.regBReasonCode).toBe('CREDIT_PROFILE_NEGATIVE');
+    });
   });
 
   // -------------------------------------------------------------------------

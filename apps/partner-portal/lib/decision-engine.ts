@@ -86,29 +86,44 @@ export type RegBReasonCode =
   | 'LOAN_AMOUNT_TOO_SMALL'
   | 'LOAN_AMOUNT_TOO_LARGE';
 
-export interface RankedLender {
+/**
+ * RankedLender — discriminated union on `included`.
+ *
+ * The previous shape was a wide object with nullable Reg B fields. Every
+ * consumer had to remember `if (!r.included)` before reading the
+ * adverse-action fields, and the invariant was enforced only by
+ * convention (see `excludedLender()` below). The union makes the
+ * invariant a type-system property: an `IncludedLender` cannot carry a
+ * `regBReasonCode`, an `ExcludedLender` cannot carry a propensity score,
+ * and TypeScript will refuse to compile any consumer that tries.
+ */
+export interface IncludedLender {
+  included: true;
   lenderId: string;
   displayName: string;
   /** 0..100 — likelihood of approval, given the consumer's profile. */
   propensityScore: number;
   /** Final rank — 1 = top. */
   rank: number;
-  /** Whether this lender is presented to the consumer (true) or
-   * excluded by a hard rule (false). */
-  included: boolean;
-  /** When excluded: the rule code that knocked them out. */
-  reasonCode: string | null;
-  /** When excluded: the CFPB Reg B code suitable for an adverse-action
-   * notice. NULL only when `included: true`. */
-  regBReasonCode: RegBReasonCode | null;
-  /** When excluded: human-readable principal reason text from CFPB
-   * Model Form C-1. NULL only when `included: true`. */
-  principalReasonText: string | null;
   /** Estimated APR band the consumer would see, in basis points. */
-  estimatedAprBps: number | null;
+  estimatedAprBps: number;
   /** Estimated max approval amount, in cents. */
-  estimatedMaxCents: number | null;
+  estimatedMaxCents: number;
 }
+
+export interface ExcludedLender {
+  included: false;
+  lenderId: string;
+  displayName: string;
+  /** Internal rule code that knocked the lender out. */
+  reasonCode: string;
+  /** CFPB Reg B code suitable for an adverse-action notice. */
+  regBReasonCode: RegBReasonCode;
+  /** Human-readable principal-reason text from CFPB Model Form C-1. */
+  principalReasonText: string;
+}
+
+export type RankedLender = IncludedLender | ExcludedLender;
 
 /**
  * Decision mode — the contract the orchestrator branches on.
@@ -144,27 +159,69 @@ export type DecisionMode = 'normal' | 'fallback_internal' | 'failed_persisted_to
  *  with decisionMode='failed_persisted_to_dlq' on every error path. */
 export type DecisionStatus = 'ok' | 'failed';
 
-export interface DecisionResult {
+/** Fields common to every decision-result arm. */
+interface DecisionResultBase {
   decisionId: string;
   engine: 'trutopia' | 'internal' | 'fallback';
   engineVersion: string;
   /** True when the persisted `engine` reflects a fallback from another
    * engine (e.g. Trutopia upstream failed → internal scorer ran). */
   engineFallback: boolean;
-  /** New fail-closed contract — orchestrator branches on this. */
-  decisionMode: DecisionMode;
-  /** 'ok' for normal + fallback_internal; 'failed' for DLQ path. */
-  status: DecisionStatus;
-  /** Free-form machine code describing why a failed result failed.
-   *  Examples: 'upstream_unavailable', 'thin_file_no_fallback',
-   *  'persist_failed'. NULL on normal/fallback_internal. */
-  detail: string | null;
+  latencyMs: number;
+}
+
+/** Clean decision — Trutopia (or the selected engine) computed a ranked
+ * list and persistence succeeded (or was disabled). Orchestrator
+ * proceeds to offers. */
+export interface NormalDecisionResult extends DecisionResultBase {
+  decisionMode: 'normal';
+  status: 'ok';
+  detail: null;
   rankedLenders: RankedLender[];
   eligibleCount: number;
   excludedCount: number;
   topPropensityScore: number | null;
-  latencyMs: number;
 }
+
+/** Trutopia upstream failed but the consumer profile was rich enough
+ * that the internal rule-based scorer produced a defensible offer-
+ * ranking. Orchestrator proceeds to offers. */
+export interface FallbackDecisionResult extends DecisionResultBase {
+  decisionMode: 'fallback_internal';
+  status: 'ok';
+  detail: null;
+  engineFallback: true;
+  rankedLenders: RankedLender[];
+  eligibleCount: number;
+  excludedCount: number;
+  topPropensityScore: number | null;
+}
+
+/** Fail-CLOSED arm. Either Trutopia was down + profile was too thin to
+ * score internally, or the DB transaction failed and the payload landed
+ * in the file-backed DLQ. Orchestrator MUST NOT proceed to offers — the
+ * application is marked `failed_decisioning` or `failed_persisted_to_dlq`
+ * and an operator picks it up from the queue. */
+export interface FailedDecisionResult extends DecisionResultBase {
+  decisionMode: 'failed_persisted_to_dlq';
+  status: 'failed';
+  /** Machine code describing the failure. Examples:
+   *  'thin_file_no_fallback', 'persist_failed'. */
+  detail: string;
+  /** May be non-empty in the `persist_failed` sub-case (we computed a
+   * ranking but couldn't persist it) and empty in the
+   * `thin_file_no_fallback` sub-case. Either way the orchestrator MUST
+   * NOT proceed to offers. */
+  rankedLenders: RankedLender[];
+  eligibleCount: number;
+  excludedCount: number;
+  topPropensityScore: number | null;
+}
+
+/** Discriminated union on `decisionMode`. Consumers narrow via
+ *  `switch (result.decisionMode)`; the `failed_persisted_to_dlq` arm
+ *  carries a non-null `detail` enforced by the type. */
+export type DecisionResult = NormalDecisionResult | FallbackDecisionResult | FailedDecisionResult;
 
 /* ---------- Reg B reason-code mapping (Task #47) ---------- */
 
@@ -303,19 +360,15 @@ function excludedLender(
   lender: (typeof SAMPLE_LENDERS)[number],
   reasonCode: string,
   requestedAmountCents: number,
-): RankedLender {
+): ExcludedLender {
   const regB = internalReasonToRegB(reasonCode, requestedAmountCents);
   return {
+    included: false,
     lenderId: lender.id,
     displayName: lender.id,
-    propensityScore: 0,
-    rank: 999,
-    included: false,
     reasonCode,
     regBReasonCode: regB.regBReasonCode,
     principalReasonText: regB.principalReasonText,
-    estimatedAprBps: null,
-    estimatedMaxCents: null,
   };
 }
 
@@ -378,14 +431,11 @@ function scoreLender(lender: (typeof SAMPLE_LENDERS)[number], inputs: PrequalInp
   score = Math.max(0, Math.min(100, score));
 
   return {
+    included: true,
     lenderId: lender.id,
     displayName: lender.id,
     propensityScore: Math.round(score),
     rank: 0, // assigned after sorting
-    included: true,
-    reasonCode: null,
-    regBReasonCode: null,
-    principalReasonText: null,
     estimatedAprBps: APR_BY_TIER_BPS[inputs.tier],
     estimatedMaxCents: Math.min(inputs.amountCents, lender.max_amount_cents),
   };
@@ -395,11 +445,14 @@ function scoreLender(lender: (typeof SAMPLE_LENDERS)[number], inputs: PrequalInp
 function runInternalEngine(inputs: PrequalInputs): RankedLender[] {
   const scored = SAMPLE_LENDERS.map((l) => scoreLender(l, inputs));
   // Sort: included first by descending propensity, then excluded by alpha.
-  const included = scored
-    .filter((s) => s.included)
+  // The `.filter((s): s is IncludedLender => s.included)` predicate
+  // narrows the array element type so the subsequent `propensityScore`
+  // read is type-safe — under the old wide shape it was a runtime check.
+  const included: IncludedLender[] = scored
+    .filter((s): s is IncludedLender => s.included)
     .sort((a, b) => b.propensityScore - a.propensityScore)
     .map((s, idx) => ({ ...s, rank: idx + 1 }));
-  const excluded = scored.filter((s) => !s.included);
+  const excluded: ExcludedLender[] = scored.filter((s): s is ExcludedLender => !s.included);
   return [...included, ...excluded];
 }
 
@@ -526,8 +579,10 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
     rankedLenders = runInternalEngine(opts.prequal);
   }
 
-  const included = rankedLenders.filter((r) => r.included);
-  const excluded = rankedLenders.filter((r) => !r.included);
+  // Narrowing predicates so the union arms are statically known —
+  // reading `propensityScore` off `included[0]` is now type-safe.
+  const included = rankedLenders.filter((r): r is IncludedLender => r.included);
+  const excluded = rankedLenders.filter((r): r is ExcludedLender => !r.included);
   const topScore = included.length > 0 && included[0] ? included[0].propensityScore : null;
   const latencyMs = Date.now() - t0;
 
@@ -664,20 +719,55 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
   // contract. The orchestrator branches on the same field.
   incrementMetric(`decision.mode.${decisionMode}` as const);
 
-  return {
+  const base: DecisionResultBase = {
     decisionId,
     engine,
     engineVersion,
     engineFallback,
-    decisionMode,
-    status: persistFailed ? 'failed' : 'ok',
-    detail: persistFailed ? 'persist_failed' : null,
+    latencyMs,
+  };
+  // Build the right arm of the DecisionResult union so the type
+  // discriminant matches the runtime state. Each arm's invariants
+  // (e.g. `detail: string` on the failed arm, `engineFallback: true`
+  // on the fallback arm) are enforced by the type system.
+  if (persistFailed) {
+    const failed: FailedDecisionResult = {
+      ...base,
+      decisionMode: 'failed_persisted_to_dlq',
+      status: 'failed',
+      detail: 'persist_failed',
+      rankedLenders,
+      eligibleCount: included.length,
+      excludedCount: excluded.length,
+      topPropensityScore: topScore,
+    };
+    return failed;
+  }
+  if (trutopiaFailed) {
+    const fallback: FallbackDecisionResult = {
+      ...base,
+      engineFallback: true,
+      decisionMode: 'fallback_internal',
+      status: 'ok',
+      detail: null,
+      rankedLenders,
+      eligibleCount: included.length,
+      excludedCount: excluded.length,
+      topPropensityScore: topScore,
+    };
+    return fallback;
+  }
+  const normal: NormalDecisionResult = {
+    ...base,
+    decisionMode: 'normal',
+    status: 'ok',
+    detail: null,
     rankedLenders,
     eligibleCount: included.length,
     excludedCount: excluded.length,
     topPropensityScore: topScore,
-    latencyMs,
   };
+  return normal;
 }
 
 /* ---------- fail-CLOSED helpers ---------- */
@@ -696,7 +786,7 @@ async function failClosed(input: {
   detail: string;
   underlyingDetail: string | null;
   applicationStatus: 'failed_decisioning' | 'failed_persisted_to_dlq';
-}): Promise<DecisionResult> {
+}): Promise<FailedDecisionResult> {
   const { opts, t0, decisionId, detail, underlyingDetail, applicationStatus } = input;
   const latencyMs = Date.now() - t0;
 
@@ -751,7 +841,7 @@ async function failClosed(input: {
   incrementMetric('decisions.computed');
   incrementMetric('decision.mode.failed_persisted_to_dlq');
 
-  return {
+  const result: FailedDecisionResult = {
     decisionId,
     engine: 'trutopia',
     engineVersion: 'trutopia_cloud_v1',
@@ -765,6 +855,7 @@ async function failClosed(input: {
     topPropensityScore: null,
     latencyMs,
   };
+  return result;
 }
 
 /**
@@ -803,4 +894,3 @@ async function tryMarkApplicationStatus(
     });
   }
 }
-
