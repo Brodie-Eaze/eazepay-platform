@@ -36,6 +36,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { enforceCsrf } from '../../../../lib/csrf.js';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
+import { resolveClientIp } from '../../../../lib/client-ip.js';
 import { getAccount, setAccountPassword, type AccountBrand } from '../../../../lib/accounts-store';
 import { ACCOUNT_COOKIE, signAccountSession } from '../../../../lib/account-cookie';
 import { consumeWelcomeToken } from '../../../../lib/welcome-tokens';
@@ -98,8 +99,8 @@ export async function POST(req: NextRequest) {
   const csrfFail = enforceCsrf(req);
   if (csrfFail) return csrfFail;
 
-  const xff = req.headers.get('x-forwarded-for') ?? '';
-  const clientIp = xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  // SEC-203: rightmost-trusted-hop instead of leftmost-XFF (spoofable).
+  const clientIp = resolveClientIp(req);
   const rl = enforceEdgeRateLimit(clientIp);
   if (!rl.allowed) {
     return new Response(

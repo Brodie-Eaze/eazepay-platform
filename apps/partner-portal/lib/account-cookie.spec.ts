@@ -52,11 +52,10 @@ describe('account-cookie', () => {
         { userId: 'u1', brand: 'medpay', partnerId: 'p_helio' },
         60,
       );
-      // Tamper: swap brand from medpay to tradepay, keep original HMAC.
-      const lastDot = signed.lastIndexOf('.');
-      const payload = signed.slice(0, lastDot);
-      const sig = signed.slice(lastDot + 1);
-      const tampered = payload.replace('.medpay.', '.tradepay.') + '.' + sig;
+      // v2 — tamper the b64u-encoded brand segment, keep HMAC.
+      const b64Medpay = Buffer.from('medpay').toString('base64url');
+      const b64Tradepay = Buffer.from('tradepay').toString('base64url');
+      const tampered = signed.replace('.' + b64Medpay + '.', '.' + b64Tradepay + '.');
       expect(await readSignedAccountSession(tampered)).toBeNull();
     });
 
@@ -65,10 +64,9 @@ describe('account-cookie', () => {
         { userId: 'u1', brand: 'medpay', partnerId: 'p_helio' },
         60,
       );
-      const lastDot = signed.lastIndexOf('.');
-      const payload = signed.slice(0, lastDot);
-      const sig = signed.slice(lastDot + 1);
-      const tampered = payload.replace('.p_helio.', '.p_orion.') + '.' + sig;
+      const b64Helio = Buffer.from('p_helio').toString('base64url');
+      const b64Orion = Buffer.from('p_orion').toString('base64url');
+      const tampered = signed.replace('.' + b64Helio + '.', '.' + b64Orion + '.');
       expect(await readSignedAccountSession(tampered)).toBeNull();
     });
 
@@ -81,20 +79,22 @@ describe('account-cookie', () => {
       const payload = signed.slice(0, lastDot);
       const sig = signed.slice(lastDot + 1);
       const parts = payload.split('.');
-      // Extend expiry by 1 year.
-      const original = Number(parts[3]);
-      parts[3] = String(original + 365 * 24 * 3_600_000);
+      // v2 layout: ['v2', b64UserId, b64Brand, b64PartnerId, expires]
+      // Extend the expiry slot (index 4 in v2) by 1 year.
+      const original = Number(parts[4]);
+      parts[4] = String(original + 365 * 24 * 3_600_000);
       const tampered = parts.join('.') + '.' + sig;
       expect(await readSignedAccountSession(tampered)).toBeNull();
     });
 
-    it('rejects an unknown brand', async () => {
-      // Mint with valid brand, then tamper to inject an unknown brand.
+    it('rejects an unknown brand (b64u-encoded)', async () => {
       const signed = await signAccountSession(
         { userId: 'u1', brand: 'medpay', partnerId: 'p_helio' },
         60,
       );
-      const tampered = signed.replace('.medpay.', '.foopay.');
+      const b64Medpay = Buffer.from('medpay').toString('base64url');
+      const b64Foopay = Buffer.from('foopay').toString('base64url');
+      const tampered = signed.replace('.' + b64Medpay + '.', '.' + b64Foopay + '.');
       expect(await readSignedAccountSession(tampered)).toBeNull();
     });
 
@@ -104,6 +104,55 @@ describe('account-cookie', () => {
       expect(await readSignedAccountSession('')).toBeNull();
       expect(await readSignedAccountSession('not-a-cookie')).toBeNull();
       expect(await readSignedAccountSession('a.b.c.d.zzz-not-hex')).toBeNull();
+    });
+  });
+
+  describe('SEC-204 — v2 canonicalization-safe shape', () => {
+    it('mints v2 cookies by default (b64url-encoded fields)', async () => {
+      const value = await signAccountSession(
+        { userId: 'u1', brand: 'medpay', partnerId: 'p_helio' },
+        60,
+      );
+      expect(value.startsWith('v2.')).toBe(true);
+      // v2 has 6 dot-separated parts: ['v2', b64u..., b64u..., b64u..., expires, sig]
+      expect(value.split('.').length).toBe(6);
+    });
+
+    it('round-trips a partnerId containing a literal dot (would have broken v1)', async () => {
+      // v1 would have split this into 5 parts and rejected as malformed.
+      // v2 encodes each field as b64url so embedded `.` chars are
+      // transported without ambiguity.
+      const signed = await signAccountSession(
+        { userId: 'u1', brand: 'medpay', partnerId: 'p.helio.with.dots' },
+        60,
+      );
+      const parsed = await readSignedAccountSession(signed);
+      expect(parsed?.partnerId).toBe('p.helio.with.dots');
+    });
+
+    it('rejects a v2 cookie whose b64u brand decodes to a non-allowlisted brand', async () => {
+      const signed = await signAccountSession(
+        { userId: 'u1', brand: 'medpay', partnerId: 'p_helio' },
+        60,
+      );
+      // Tamper: replace the b64u(medpay) segment with b64u(foopay) but
+      // keep the same HMAC. Must reject.
+      const b64Medpay = Buffer.from('medpay').toString('base64url');
+      const b64Foopay = Buffer.from('foopay').toString('base64url');
+      const tampered = signed.replace('.' + b64Medpay + '.', '.' + b64Foopay + '.');
+      expect(await readSignedAccountSession(tampered)).toBeNull();
+    });
+
+    it('rejects a v2 cookie whose b64u segment contains illegal chars', async () => {
+      const signed = await signAccountSession(
+        { userId: 'u1', brand: 'medpay', partnerId: 'p_helio' },
+        60,
+      );
+      // Inject a literal `=` into a b64u field — not in the b64url
+      // alphabet, must be rejected by the decoder.
+      const parts = signed.split('.');
+      parts[1] = parts[1] + '=';
+      expect(await readSignedAccountSession(parts.join('.'))).toBeNull();
     });
   });
 

@@ -27,6 +27,7 @@ import { and, asc, eq, gt, type SQL } from 'drizzle-orm';
 import { getDb, hasDb } from '../../../../../../lib/db';
 import { applicationEvents, applications } from '../../../../../../lib/db/schema';
 import { requireAdmin } from '../../../../../../lib/server-guards';
+import { redactForLog } from '../../../../../../lib/safe-log';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -100,7 +101,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const rows = hasMore ? events.slice(0, limit) : events;
   const nextCursor = hasMore ? (rows[rows.length - 1]?.createdAt.toISOString() ?? null) : null;
 
-  return NextResponse.json({
+  // SEC-211 — PII scrub on read. Application-event payloads are written
+  // from upstream sources (lender quote callbacks, MiCamp webhooks,
+  // operator notes) whose shape we don't control byte-for-byte. They
+  // can carry consumer email / phone / DOB / SSN-last-4 / address.
+  // Operators viewing the audit timeline shouldn't see raw consumer
+  // PII — the same fields are deny-listed in safeLog so we reuse
+  // `redactForLog` to enforce a single source of truth for "what's PII".
+  const resBody = {
     application: appRows[0],
     items: rows.map((e) => ({
       id: e.id,
@@ -109,12 +117,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       toStatus: e.toStatus,
       actor: e.actor,
       // Parse the stored JSON payload before returning so consumers
-      // don't have to double-parse. If the row was written with a
-      // non-JSON payload, return it as a `raw` string fallback.
-      payload: e.payload ? safeParseJson(e.payload) : null,
+      // don't have to double-parse. Then redact PII fields before
+      // emit. If the row was written with a non-JSON payload, return
+      // it as a `raw` string fallback (also PII-scrubbed via the
+      // wrapping object).
+      payload: e.payload ? redactForLog(safeParseJson(e.payload)) : null,
       createdAt: e.createdAt.toISOString(),
     })),
     nextCursor,
+  };
+  return NextResponse.json(resBody, {
+    headers: {
+      // SEC-212 — sensitive admin response: no intermediary caching.
+      'Cache-Control': 'no-store',
+    },
   });
 }
 

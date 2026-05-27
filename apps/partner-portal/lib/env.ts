@@ -250,6 +250,30 @@ export function assertProdEnv(): EnvAssertionResult {
     return lastSummary;
   }
 
+  // SEC-209 — dev-only escape hatches MUST never be true in prod.
+  // The MiCamp webhook signature verifier exposes a bypass flag for
+  // local-dev replay (no real HMAC available offline). If the flag
+  // leaks into a prod env, every webhook is accepted unsigned. We
+  // refuse to boot rather than serve traffic with the bypass live.
+  //
+  // Both names checked: the original `MICAMP_WEBHOOK_INSECURE_ALLOW`
+  // (legacy) and the renamed `MICAMP_DEV_SKIP_WEBHOOK_SIG` (new — name
+  // is explicit so a future operator can't misread the intent).
+  if (process.env.NODE_ENV === 'production') {
+    const insecureFlags: Array<[string, string | undefined]> = [
+      ['MICAMP_WEBHOOK_INSECURE_ALLOW', process.env.MICAMP_WEBHOOK_INSECURE_ALLOW],
+      ['MICAMP_DEV_SKIP_WEBHOOK_SIG', process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG],
+    ];
+    for (const [name, val] of insecureFlags) {
+      if (val && /^(1|true|yes|on)$/i.test(val)) {
+        const msg = `[env] ${name}=${val} in production — refusing to boot. This flag disables webhook signature verification and is dev-only.`;
+        // eslint-disable-next-line no-console
+        console.error(msg);
+        throw new Error(msg);
+      }
+    }
+  }
+
   if (warnings.length > 0) {
     // eslint-disable-next-line no-console
     console.info(

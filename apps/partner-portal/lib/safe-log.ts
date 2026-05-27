@@ -110,6 +110,16 @@ export function redactForLog(value: unknown, depth = 0, seen = new WeakSet()): u
   if (seen.has(value as object)) return REDACTED;
   seen.add(value as object);
 
+  // SEC-208: Error objects often have `err.message` strings that echo
+  // user-supplied input (Zod parse errors, Postgres "duplicate key
+  // (email)=(foo@bar)", fetch failures with full URLs incl. tokens).
+  // Redact down to the class name so call sites get diagnostic value
+  // without leaking the originating payload into log streams.
+  // Callers who genuinely need the message can stringify before pass.
+  if (value instanceof Error) {
+    return { errorName: value.name || 'Error', message: REDACTED };
+  }
+
   if (Array.isArray(value)) {
     return value.map((v) => redactForLog(v, depth + 1, seen));
   }

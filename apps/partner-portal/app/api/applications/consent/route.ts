@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
+import { resolveClientIp } from '../../../../lib/client-ip.js';
 import { getSessionContext } from '../../../../lib/session';
 import { enforceCsrf } from '../../../../lib/csrf.js';
 import {
@@ -62,8 +63,8 @@ export async function POST(req: NextRequest) {
   // attacker can OOM the BFF replica by posting synthetic receipts.
   // 20 req/min/IP per the brief — see lib/edge-rate-limit.ts for the
   // sliding-window mechanics and the multi-replica caveat.
-  const xff = req.headers.get('x-forwarded-for') ?? '';
-  const clientIp = xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  // SEC-203: rightmost-trusted-hop (was: leftmost-XFF, spoofable).
+  const clientIp = resolveClientIp(req);
   const rl = enforceEdgeRateLimit(clientIp);
   if (!rl.allowed) {
     return new Response(

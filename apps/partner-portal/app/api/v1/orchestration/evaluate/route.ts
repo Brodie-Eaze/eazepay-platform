@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { idFor, problem, SAMPLE_LENDERS, withMeta } from '../../../../../lib/api-v1/shared';
+import { enforceCsrf } from '../../../../../lib/csrf';
 
 /**
  * Orchestration eligibility — `POST /api/v1/orchestration/evaluate`.
@@ -21,6 +22,13 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // SEC-205: state-changing evaluation must be CSRF-protected. A
+  // cross-site form-POST that triggers eligibility against a
+  // victim-supplied application_id could probe lender match shape
+  // without authentication or exhaust the eval pool for that subject.
+  const csrfFail = enforceCsrf(req);
+  if (csrfFail) return csrfFail;
+
   const raw = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(raw);
   if (!parsed.success) {
