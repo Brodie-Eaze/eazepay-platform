@@ -173,6 +173,11 @@ const masterGroups: NavGroup[] = [
     items: [
       { href: '/eaze-ai', label: 'EAZE AI', icon: <RobotIcon /> },
       { href: '/settings', label: 'Settings', icon: <SettingsIcon /> },
+      // Explicit doorway to the platform-admin sidebar (Observability,
+      // SLOs, Provisioning, Audit Log, Migrations). Was previously
+      // reached implicitly by clicking Lender Network, which swapped
+      // sidebars and confused operators. Now the swap is intentional.
+      { href: '/admin', label: 'Platform Admin', icon: <ShieldIcon /> },
     ],
   },
 ];
@@ -236,17 +241,21 @@ const adminGroups: NavGroup[] = [
       },
     ],
   },
-  {
-    label: 'Lender Network',
-    items: [{ href: '/lender-marketplace', label: 'Marketplace', icon: <BankIcon /> }],
-  },
+  // Removed Lender Network from admin sidebar — it now lives only in
+  // master sidebar (where it belongs). Was duplicating the route + the
+  // reason operators got bounced into admin context unintentionally.
   {
     label: 'Back to Master',
     items: [{ href: '/', label: 'Command Center', icon: <GaugeIcon /> }],
   },
 ];
 
-const ADMIN_PATH_PREFIXES = ['/admin', '/lender-marketplace'];
+// `/lender-marketplace` intentionally NOT in admin paths — it's the
+// master lenders catalog (header says "Master Command Centre · Lenders")
+// and operators reach it from the master sidebar's Lender Network
+// group. Putting it in admin paths caused a full sidebar swap on
+// click which felt like getting bounced into a different app.
+const ADMIN_PATH_PREFIXES = ['/admin'];
 const isAdminPath = (pathname: string): boolean =>
   ADMIN_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
