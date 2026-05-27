@@ -26,6 +26,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -33,6 +34,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /* ---------- enums ---------- */
 
@@ -893,3 +895,54 @@ export const consentReceipts = pgTable(
 
 export type ConsentReceiptRow = typeof consentReceipts.$inferSelect;
 export type NewConsentReceiptRow = typeof consentReceipts.$inferInsert;
+
+/* ---------- outbox_events ----------
+ *
+ * Transactional outbox (migration 0014). A row is INSERTed inside
+ * the same Postgres transaction as the business write that needs a
+ * side-effect (notification, outbound webhook, audit-log entry).
+ * A separate drain worker (`lib/workers/outbox-drain.ts`) picks up
+ * `pending` rows whose `next_attempt_at <= now()`, dispatches them
+ * by `kind` to a handler registry, and marks them `sent` on success
+ * or schedules a retry on transient failure (exponential backoff,
+ * max 8 attempts then `dead`).
+ *
+ * Append-only at the DB layer: trigger blocks UPDATE of id, kind,
+ * payload_json, created_at, and blocks DELETE outright. See migration
+ * 0014_outbox.sql for the trigger + REVOKE statements.
+ */
+export const outboxEvents = pgTable(
+  'outbox_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** Dispatch discriminator — one of the keys registered in
+     *  `lib/workers/outbox-drain.ts::HANDLERS`. */
+    kind: text('kind').notNull(),
+    /** Verbatim handler payload. Schema is per-`kind`; the registry
+     *  owns parsing. Stored as jsonb so future ops queries can index
+     *  on payload fields without re-parsing. */
+    payloadJson: jsonb('payload_json').notNull(),
+    /** 'pending' | 'sent' | 'failed' | 'dead' — CHECK-constrained. */
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => ({
+    /** Drain query support: (status, next_attempt_at) WHERE
+     *  status='pending'. Drizzle doesn't model partial indexes
+     *  directly; the partial predicate is declared in the SQL
+     *  migration and this index hint keeps the column ordering
+     *  consistent if `db:push` is ever used in dev. */
+    pendingDueIdx: index('outbox_events_pending_due_idx').on(t.status, t.nextAttemptAt),
+    kindCreatedIdx: index('outbox_events_kind_created_idx').on(t.kind, t.createdAt),
+  }),
+);
+
+export type OutboxEventRow = typeof outboxEvents.$inferSelect;
+export type NewOutboxEventRow = typeof outboxEvents.$inferInsert;
+export type OutboxStatus = 'pending' | 'sent' | 'failed' | 'dead';
