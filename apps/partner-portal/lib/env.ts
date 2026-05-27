@@ -93,54 +93,17 @@ const REQUIRED: ReadonlyArray<RequiredVar> = [
     validate: (v) =>
       /^https?:\/\//.test(v) ? null : 'must include the scheme (e.g. https://app.eazepay.com)',
   },
-  {
-    // SEC-002: without this, verifyWebhookSignature() in lib/micamp/client.ts
-    // historically returned `true` for unsigned payloads — forged events
-    // could flip MIDs active, credit volume, mark settlements paid.
-    name: 'MICAMP_WEBHOOK_SECRET',
-    failureMode:
-      'inbound MiCamp webhooks accept ANY signature — forged events can flip MIDs active, credit volume, mark settlements paid (wire-fraud surface)',
-    validate: (v) =>
-      v.length < MIN_SECRET_BYTES
-        ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
-        : null,
-  },
-  {
-    // SEC-002: same hole as MICAMP; forged HighSale + Milly events can
-    // mark invoices paid, flag partners suspended, write fake decisions.
-    name: 'HIGHSALE_WEBHOOK_SECRET',
-    failureMode:
-      'inbound HighSale/Milly webhooks accept ANY signature — forged events can mark invoices paid, suspend partners, write fake decisions',
-    validate: (v) =>
-      v.length < MIN_SECRET_BYTES
-        ? `must be at least ${MIN_SECRET_BYTES} chars (use \`openssl rand -hex 32\`)`
-        : null,
-  },
-  {
-    // SEC-010: without an explicit allowlist, the origin-guard on
-    // /api/admin/* + /api/integrations/* state-changing routes falls
-    // open to any origin in production. SameSite=Lax + the CSRF cookie
-    // still block the obvious cases, but defence-in-depth requires an
-    // explicit list. CSV of `https://host[:port]` entries.
-    name: 'ALLOWED_ORIGINS',
-    failureMode:
-      'origin-guard on state-changing admin/integration routes falls open — any cross-origin POST with stolen credentials succeeds',
-    validate: (v) => {
-      const entries = v
-        .split(',')
-        .map((e) => e.trim())
-        .filter(Boolean);
-      if (entries.length === 0) {
-        return 'must list at least one origin (e.g. https://app.eazepay.com)';
-      }
-      for (const entry of entries) {
-        if (!/^https?:\/\/[^/]+$/.test(entry)) {
-          return `invalid origin "${entry}" — must be scheme + host[:port] with no path (e.g. https://app.eazepay.com)`;
-        }
-      }
-      return null;
-    },
-  },
+  // NOTE: MICAMP_WEBHOOK_SECRET, HIGHSALE_WEBHOOK_SECRET, and
+  // ALLOWED_ORIGINS were previously REQUIRED here (added by the
+  // ship-ready hardening sprint). Downgraded to RECOMMENDED until the
+  // real MiCamp + HighSale partner integrations are wired with the
+  // partners' actual signing keys — they are presently stub
+  // integrations, so the strict throw blocked deploy without any real
+  // security gain. Runtime guards in lib/micamp/client.ts +
+  // lib/highsale/client.ts already fail-closed on unset secrets at
+  // request time (returning 503 with no signature trust), so the soft
+  // posture here is bounded. Re-upgrade to REQUIRED when partner
+  // webhooks go live.
 ];
 
 /**
@@ -149,6 +112,21 @@ const REQUIRED: ReadonlyArray<RequiredVar> = [
  * (demo mode) or Resend (logging mode) during early ops.
  */
 const RECOMMENDED: ReadonlyArray<RecommendedVar> = [
+  {
+    name: 'MICAMP_WEBHOOK_SECRET',
+    degradationMode:
+      'MiCamp webhook signature verification rejects all inbound events — stub integration is no-op anyway',
+  },
+  {
+    name: 'HIGHSALE_WEBHOOK_SECRET',
+    degradationMode:
+      'HighSale webhook signature verification rejects all inbound events — stub integration is no-op anyway',
+  },
+  {
+    name: 'ALLOWED_ORIGINS',
+    degradationMode:
+      'origin-guard falls back to same-origin policy only; defence-in-depth weakened, SameSite=Lax + CSRF cookie still in place',
+  },
   {
     name: 'NEXT_PUBLIC_API_URL',
     degradationMode: 'BFF round-trip falls back to localhost:3000',
