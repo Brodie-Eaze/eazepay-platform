@@ -68,6 +68,26 @@ export const dynamic = 'force-dynamic';
  * extra fields and coerces bad types into 400s rather than silently
  * accepting them.
  */
+/* GLBA Safeguards Rule + SOC2 CC6.1 — until the PII vault (ADR-0016)
+ * is wired we MUST NOT accept SSN-4, bank-account numbers, or
+ * beneficial-owner identifiers on this route. Previously the schema
+ * validated those fields and then silently dropped them on the floor:
+ * validated PII still transited the HTTPS body, landed in access logs,
+ * and was visible in OTel request spans for the lifetime of the trace.
+ *
+ * The Zod refinement below REJECTS any presence of those fields, and
+ * the route additionally returns 501 `pii_vault_not_wired` before Zod
+ * runs (see detectUnwiredPii below) so the client gets an unambiguous
+ * routable code rather than a generic validation error. Clients are
+ * expected to omit the fields entirely. Once the vault lands, swap
+ * the refine for a real string shape + envelope-encrypt + insert. */
+const piiRejected = z
+  .any()
+  .optional()
+  .refine((v) => v === undefined || v === null || v === '', {
+    message: 'PII vault not yet wired; do not submit',
+  });
+
 const beneficialOwnerSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -76,6 +96,9 @@ const beneficialOwnerSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(1),
   isControlPerson: z.boolean(),
+  // GLBA — beneficial-owner SSN-4 cannot transit this route until the
+  // vault is wired. Reject if present.
+  ssn4: piiRejected,
 });
 
 const onboardingSchema = z.object({
@@ -94,15 +117,53 @@ const onboardingSchema = z.object({
   employeeCount: z.string().min(1),
   owners: z.array(beneficialOwnerSchema).min(1),
   bankName: z.string().min(1),
-  routingNumber: z.string().regex(/^\d{9}$/),
-  accountNumber: z.string().regex(/^\d{4,17}$/),
-  accountType: z.enum(['checking', 'savings']),
+  // GLBA Safeguards — bank routing + account numbers + applicant
+  // SSN-4 cannot be accepted on this route until the PII vault
+  // (ADR-0016) is wired. detectUnwiredPii() returns 501 before Zod
+  // runs; these refinements are belt-and-braces if a future caller
+  // bypasses the pre-check.
+  routingNumber: piiRejected,
+  accountNumber: piiRejected,
+  ssn4: piiRejected,
+  accountType: z.enum(['checking', 'savings']).optional(),
   avgMonthlyVolume: z.string().min(1),
   avgTicket: z.string().min(1),
   hasProcessingHistory: z.boolean(),
   acceptedTerms: z.literal(true),
   acceptedPrivacy: z.literal(true),
   signedAgreement: z.literal(true),
+});
+
+/**
+ * Pre-Zod presence check for unwired-PII fields. Returns a list of
+ * offending key paths (e.g. ['routingNumber', 'owners[0].ssn4']). An
+ * empty list means the body is safe to forward into Zod.
+ *
+ * We log only the key paths, never the values, so PII never reaches
+ * the log stream even on the rejection path. safeLog also recursively
+ * redacts by key name as a second defence.
+ */
+function detectUnwiredPii(body: unknown): string[] {
+  if (!body || typeof body !== 'object') return [];
+  const b = body as Record<string, unknown>;
+  const offenders: string[] = [];
+  if (b.routingNumber) offenders.push('routingNumber');
+  if (b.accountNumber) offenders.push('accountNumber');
+  if (b.ssn4) offenders.push('ssn4');
+  if (Array.isArray(b.owners)) {
+    for (let i = 0; i < b.owners.length; i++) {
+      const o = b.owners[i] as Record<string, unknown> | null | undefined;
+      if (o && o.ssn4) offenders.push(`owners[${i}].ssn4`);
+    }
+  }
+  return offenders;
+}
+
+// Module-load banner. Fires once per Node worker so SOC2 reviewers
+// and on-call see the posture without reading route code.
+safeLog.warn({
+  event: 'onboarding.pii_vault_pending',
+  message: 'Onboarding rejects bank/SSN/BO PII until vault wired',
 });
 
 const INDUSTRY_TO_BRAND = {
@@ -173,6 +234,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   } catch {
     return problem(400, 'Invalid JSON', 'The request body could not be parsed.');
   }
+
+  // GLBA Safeguards / SOC2 CC6.1 — fail fast (501) on any unwired-PII
+  // field. Done BEFORE Zod so the client gets a routable
+  // `pii_vault_not_wired` code instead of a generic validation error,
+  // and BEFORE any downstream persistence so PII never reaches storage.
+  const piiOffenders = detectUnwiredPii(raw);
+  if (piiOffenders.length > 0) {
+    safeLog.warn({
+      event: 'onboarding.submit.pii_rejected',
+      offenders: piiOffenders,
+    });
+    return NextResponse.json(
+      {
+        type: 'about:blank',
+        title: 'Not Implemented',
+        status: 501,
+        code: 'pii_vault_not_wired',
+        detail:
+          'Bank account + beneficial owner PII fields cannot be accepted until the PII vault (ADR-0016) is wired. Submit without those fields.',
+        offenders: piiOffenders,
+      },
+      { status: 501 },
+    );
+  }
+
   const parsed = onboardingSchema.safeParse(raw);
   if (!parsed.success) {
     return problem(

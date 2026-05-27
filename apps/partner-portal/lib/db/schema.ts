@@ -73,6 +73,14 @@ export const partners = pgTable(
     product: text('product'),
     status: text('status').notNull().default('active'),
     primaryContactEmail: text('primary_contact_email'),
+    /** Migration 0012. Set when an operator suspends the partner via
+     *  POST /api/admin/partners/[id]/status. NULL when active or
+     *  pending. SOC2 CC6.6 evidence: this column + the matching
+     *  audit_log row are the durable record of the suspension. */
+    suspendedAt: timestamp('suspended_at', { withTimezone: true }),
+    /** Free-form operator note captured at suspension time. Read in
+     *  the compliance dashboard alongside the audit_log row. */
+    suspendedReason: text('suspended_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

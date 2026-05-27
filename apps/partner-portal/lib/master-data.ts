@@ -1,3 +1,17 @@
+// NO REAL CREDENTIAL STRINGS. CI grep enforces this at build time.
+//
+// UDAAP / CFPA §§1031, 1036 — synthetic NMLS numbers, state-count
+// claims, CFL license numbers, or any other lender-credential string
+// rendered into the operator UI is a deceptive representation the
+// moment a screenshot leaks or a fixture gets accidentally promoted
+// to a production-shaped environment. Until real credentials are
+// issued AND a separate licensing service owns them, every credential
+// field in this fixture must be a `*_PENDING` placeholder.
+//
+// The CI step `master-data-no-credentials` in .github/workflows/ci.yml
+// greps this file for NMLS / CFL / state-count regressions and fails
+// the build. Do not edit-around the grep; the grep is the control.
+
 /**
  * Master-tier mock data for the EazePay Partner Portal admin pages.
  * Real data lands when the /v1/admin/* BFF routes are wired. Until
@@ -844,19 +858,19 @@ export const legalDocs: Record<string, LegalDoc> = {
     sections: [
       {
         heading: '1. EazePay Finance LLC',
-        body: 'NMLS #2086142. Holds Consumer Lending licenses in 41 states. California Financing Law license: 60DBO-87412.',
+        body: 'NMLS: NMLS_PENDING. Consumer Lending licensure: STATES_PENDING. California Financing Law license: CFL_LICENSE_PENDING.',
       },
       {
         heading: '2. EazePay Servicing LLC',
-        body: 'Loan servicer for partner-originated loans. Licensed in 38 states.',
+        body: 'Loan servicer for partner-originated loans. Licensed in: STATES_PENDING.',
       },
       {
         heading: '3. Originating bank partners',
-        body: 'Cross River Bank (FDIC #58410), WebBank (FDIC #34404), Capital Community Bank (FDIC #57614). State availability per-bank.',
+        body: 'Bank partners and FDIC certificates: BANK_PARTNERS_PENDING. State availability per-bank.',
       },
       {
         heading: '4. NMLS Consumer Access',
-        body: 'Verify any licensee at https://nmlsconsumeraccess.org. EazePay Finance LLC entry: ID 2086142.',
+        body: 'Verify any licensee at https://nmlsconsumeraccess.org. EazePay Finance LLC entry: NMLS_PENDING.',
       },
     ],
   },

@@ -146,6 +146,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      # UDAAP / CFPA §§1031, 1036 — fail the build if any synthetic
+      # NMLS / CFL / FDIC credential number, or a state-count claim,
+      # regresses into the operator-UI master fixture. See the top-of-
+      # file comment in apps/partner-portal/lib/master-data.ts.
+      - name: master-data-no-credentials
+        run: |
+          set -e
+          FILE=apps/partner-portal/lib/master-data.ts
+          if grep -nE "NMLS #?[0-9]{4,}" "$FILE"; then
+            echo "ERROR: synthetic NMLS number detected in $FILE" >&2
+            exit 1
+          fi
+          if grep -nE "60DBO-?[0-9]+" "$FILE"; then
+            echo "ERROR: synthetic CFL license number detected in $FILE" >&2
+            exit 1
+          fi
+          if grep -nE "FDIC #?[0-9]{3,}" "$FILE"; then
+            echo "ERROR: synthetic FDIC cert number detected in $FILE" >&2
+            exit 1
+          fi
+          if grep -nE "(Licensed|Holds|in) [0-9]+ states" "$FILE"; then
+            echo "ERROR: synthetic state-count claim detected in $FILE" >&2
+            exit 1
+          fi
+          echo "OK: $FILE contains no synthetic lender-credential strings."
+
       - name: Gitleaks (secret scan)
         uses: gitleaks/gitleaks-action@v2
         env:
