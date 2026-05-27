@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { desc, sql, and, eq, gt } from 'drizzle-orm';
-import { hasDb, getDb, schema } from '@/lib/db';
+import { hasDb, schema, withTenantContext } from '@/lib/db';
 import { requireAdmin } from '@/lib/server-guards';
 import { safeErrorResponse } from '@/lib/safe-error';
+import { getSessionContext } from '@/lib/session';
 
 /**
  * GET /api/admin/audit?actor=&action=&targetType=&since=
@@ -104,7 +105,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const db = getDb();
     const conditions = [];
     if (actor) conditions.push(eq(schema.auditLog.actor, actor));
     if (action) conditions.push(eq(schema.auditLog.action, action));
@@ -112,12 +112,19 @@ export async function GET(req: NextRequest) {
     if (sinceIso) conditions.push(gt(schema.auditLog.createdAt, new Date(sinceIso)));
     const where = conditions.length > 0 ? and(...conditions) : sql`true`;
 
-    const rows = await db
-      .select()
-      .from(schema.auditLog)
-      .where(where)
-      .orderBy(desc(schema.auditLog.createdAt))
-      .limit(200);
+    /* RLS policy on audit_log requires role='operator' to see the
+     * platform-wide log; partner-targeted rows additionally match on
+     * target_id = current_partner_id. Admin sessions resolve to
+     * operator at the GUC layer. */
+    const session = await getSessionContext(req);
+    const rows = await withTenantContext(session, async (tx) => {
+      return tx
+        .select()
+        .from(schema.auditLog)
+        .where(where)
+        .orderBy(desc(schema.auditLog.createdAt))
+        .limit(200);
+    });
 
     return NextResponse.json({
       source: 'db',

@@ -43,6 +43,16 @@ export const applicationStatusEnum = pgEnum('application_status', [
   'approved',
   'funded',
   'declined',
+  // Fail-closed decision-engine terminal-pending states (migration 0013).
+  // `failed_decisioning`      → upstream unavailable AND consumer profile
+  //                             too thin for the internal scorer; operator
+  //                             must intervene before the consumer sees
+  //                             offers.
+  // `failed_persisted_to_dlq` → decision computed but DB write failed;
+  //                             payload sits in the file-backed DLQ
+  //                             awaiting replay on Postgres recovery.
+  'failed_decisioning',
+  'failed_persisted_to_dlq',
 ]);
 export const applicationEventTypeEnum = pgEnum('application_event_type', [
   'created',

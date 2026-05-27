@@ -42,6 +42,7 @@ import {
   evaluateDecision,
   internalReasonToRegB,
   getMetricsSnapshot,
+  isProfileTooThinForInternalScorer,
   _resetMetricsForTest,
   type PrequalInputs,
 } from './decision-engine';
@@ -121,6 +122,11 @@ describe('decision-engine', () => {
 
         expect(result.engine).toBe('internal');
         expect(result.engineFallback).toBe(false);
+        // New fail-closed contract (Task #44 rewrite). A clean internal
+        // run with no upstream failure is `normal`, status='ok'.
+        expect(result.decisionMode).toBe('normal');
+        expect(result.status).toBe('ok');
+        expect(result.detail).toBeNull();
         expect(result.rankedLenders.length).toBeGreaterThan(0);
         const included = result.rankedLenders.filter((r) => r.included);
         expect(included.length).toBeGreaterThan(0);
@@ -128,6 +134,34 @@ describe('decision-engine', () => {
         expect(included[0]!.rank).toBe(1);
       },
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Fail-closed profile heuristic (Task #44 rewrite)
+  // -------------------------------------------------------------------------
+
+  describe('isProfileTooThinForInternalScorer', () => {
+    it('returns true when every signal is null', () => {
+      expect(
+        isProfileTooThinForInternalScorer({
+          ...basePrequal,
+          ficoBand: null,
+          dti: null,
+          openTradelines: null,
+        }),
+      ).toBe(true);
+    });
+
+    it('returns false when at least one signal is present', () => {
+      expect(
+        isProfileTooThinForInternalScorer({
+          ...basePrequal,
+          ficoBand: null,
+          dti: 0.3,
+          openTradelines: null,
+        }),
+      ).toBe(false);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -235,9 +269,67 @@ describe('decision-engine', () => {
       expect(result.engine).toBe('internal');
       expect(result.engineVersion).toBe('internal_v1_fallback_from_trutopia');
       expect(result.engineFallback).toBe(true);
+      // New contract: rich profile + Trutopia down → fallback_internal.
+      // status remains 'ok' because offer-ranking is fail-OPEN-safe
+      // when the consumer has scoring signal; sanctions-blocking would
+      // be a different decision and warrant a separate code path.
+      expect(result.decisionMode).toBe('fallback_internal');
+      expect(result.status).toBe('ok');
+      expect(result.detail).toBeNull();
       expect(result.rankedLenders.length).toBeGreaterThan(0);
       expect(getMetricsSnapshot().trutopiaTimeout).toBe(1);
       expect(getMetricsSnapshot().trutopiaFailure).toBe(0);
+    });
+
+    it('timeout + thin file → fail-CLOSED, status=failed, no ranked lenders', async () => {
+      // Brutally thin profile: no FICO, no DTI, no tradelines. The
+      // internal scorer's output here would be a coin flip — the
+      // fail-closed branch refuses to dress that up as a decision.
+      const thinPrequal: PrequalInputs = {
+        ...basePrequal,
+        ficoBand: null,
+        dti: null,
+        openTradelines: null,
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        await new Promise<void>((_resolve, reject) => {
+          const signal = (init as RequestInit | undefined)?.signal;
+          if (signal) {
+            signal.addEventListener('abort', () => {
+              const err = new Error('timeout');
+              err.name = 'TimeoutError';
+              reject(err);
+            });
+          }
+        });
+        throw new Error('unreachable');
+      });
+
+      const result = await evaluateDecision({
+        applicationId: APP_ID,
+        prequal: thinPrequal,
+        persist: false,
+      });
+
+      expect(result.decisionMode).toBe('failed_persisted_to_dlq');
+      expect(result.status).toBe('failed');
+      expect(result.detail).toBe('thin_file_no_fallback');
+      expect(result.rankedLenders).toHaveLength(0);
+      expect(result.eligibleCount).toBe(0);
+      expect(result.topPropensityScore).toBeNull();
+
+      // DLQ entry MUST exist — operators replay from disk on recovery.
+      const dlqPath = join(tmpCwd, 'dlq', 'decisions', `${result.decisionId}.json`);
+      expect(existsSync(dlqPath)).toBe(true);
+      const entry = JSON.parse(readFileSync(dlqPath, 'utf8')) as {
+        decisionMode: string;
+        applicationStatus: string;
+        detail: string;
+      };
+      expect(entry.decisionMode).toBe('failed_persisted_to_dlq');
+      expect(entry.applicationStatus).toBe('failed_decisioning');
+      expect(entry.detail).toBe('thin_file_no_fallback');
     });
 
     it('non-2xx response → fallback labelled as failure, not timeout', async () => {
@@ -253,6 +345,8 @@ describe('decision-engine', () => {
 
       expect(result.engine).toBe('internal');
       expect(result.engineFallback).toBe(true);
+      expect(result.decisionMode).toBe('fallback_internal');
+      expect(result.status).toBe('ok');
       expect(getMetricsSnapshot().trutopiaFailure).toBe(1);
       expect(getMetricsSnapshot().trutopiaTimeout).toBe(0);
     });
@@ -321,6 +415,8 @@ describe('decision-engine', () => {
       expect(transactionMock).toHaveBeenCalledOnce();
       expect(txInserts).toBeGreaterThanOrEqual(2);
       expect(result.decisionId).toBe('dec_persisted_uuid');
+      expect(result.decisionMode).toBe('normal');
+      expect(result.status).toBe('ok');
       expect(getMetricsSnapshot().decisionPersistDlq).toBe(0);
     });
 
@@ -334,9 +430,14 @@ describe('decision-engine', () => {
         engine: 'internal',
       });
 
-      // Decision still returns to the consumer.
+      // Decision row still returns to the orchestrator, but the new
+      // contract forces decisionMode='failed_persisted_to_dlq' +
+      // status='failed' so the orchestrator MUST NOT proceed to offers.
       expect(result.rankedLenders.length).toBeGreaterThan(0);
       expect(result.engine).toBe('internal');
+      expect(result.decisionMode).toBe('failed_persisted_to_dlq');
+      expect(result.status).toBe('failed');
+      expect(result.detail).toBe('persist_failed');
 
       // DLQ entry exists at the expected path.
       const dlqPath = join(tmpCwd, 'dlq', 'decisions', `${result.decisionId}.json`);
@@ -393,6 +494,9 @@ describe('decision-engine', () => {
       // decisionId is the pre-allocated UUID, NOT the would-be DB row id —
       // because the transaction rolled back, that row doesn't exist.
       expect(result.decisionId).not.toBe('dec_would_be');
+      // Same fail-closed contract: orchestrator MUST NOT proceed.
+      expect(result.decisionMode).toBe('failed_persisted_to_dlq');
+      expect(result.status).toBe('failed');
     });
   });
 });

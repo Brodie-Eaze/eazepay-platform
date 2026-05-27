@@ -15,9 +15,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { and, desc, eq, lt, type SQL } from 'drizzle-orm';
-import { getDb, hasDb } from '../../../../lib/db';
+import { hasDb, withTenantContext } from '../../../../lib/db';
 import { applications } from '../../../../lib/db/schema';
 import { requireAdmin } from '../../../../lib/server-guards';
+import { getSessionContext } from '../../../../lib/session';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 const StatusEnum = z.enum(['submitted', 'in_review', 'approved', 'funded', 'declined']);
@@ -63,13 +64,19 @@ export async function GET(req: NextRequest) {
   if (status) conditions.push(eq(applications.status, status));
   if (cursor) conditions.push(lt(applications.createdAt, new Date(cursor)));
 
-  const db = getDb();
-  const rows = await db
-    .select()
-    .from(applications)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(applications.createdAt))
-    .limit(limit + 1);
+  /* Wrap in withTenantContext so the RLS GUCs are bound to the
+   * transaction. requireAdmin above guarantees session is operator-
+   * mapped — tenantContextFromSession resolves that to role='operator',
+   * which the migration 0013 policies pass through. */
+  const session = await getSessionContext(req);
+  const rows = await withTenantContext(session, async (tx) => {
+    return tx
+      .select()
+      .from(applications)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(applications.createdAt))
+      .limit(limit + 1);
+  });
 
   const items = rows.slice(0, limit);
   const nextCursor = rows.length > limit ? items[items.length - 1]?.createdAt.toISOString() : null;
