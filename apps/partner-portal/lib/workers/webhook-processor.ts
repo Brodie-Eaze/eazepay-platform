@@ -80,8 +80,11 @@ const MAX_ATTEMPTS = 5;
  * handled separately — the route writes the canonical lender id
  * (e.g. `lp_buzzpay_prime`) into `webhook_inbox.provider`, and the
  * dispatcher routes any matching row to `handleLenderInboxRow`.
- * Widened to `string` here so we don't need to enumerate every lender
- * id in this type; the dispatcher's `isLenderProvider` is the gate.
+ *
+ * Stays as `string` (not the `WebhookProvider` enum union) because the
+ * column itself is text and carries both first-party providers AND
+ * lender slugs — narrowing to the first-party enum is done inside
+ * `dispatchEvent` by the explicit switch, not at this boundary.
  */
 type Provider = string;
 
@@ -170,7 +173,7 @@ export async function processInboxRow(inboxId: string): Promise<void> {
   }
   try {
     const parsed = JSON.parse(row.rawBody) as Record<string, unknown>;
-    await dispatchEvent(row.provider as Provider, row.eventType, parsed, row);
+    await dispatchEvent(row.provider, row.eventType, parsed, row);
     await markDone(db, row.id);
   } catch (err) {
     if (err instanceof NotImplementedError) {
@@ -259,7 +262,7 @@ export async function processInbox(): Promise<ProcessInboxResult> {
 
     try {
       const parsed = JSON.parse(row.rawBody) as Record<string, unknown>;
-      await dispatchEvent(row.provider as Provider, row.eventType, parsed, row);
+      await dispatchEvent(row.provider, row.eventType, parsed, row);
       await markDone(db, row.id);
       result.done += 1;
     } catch (err) {

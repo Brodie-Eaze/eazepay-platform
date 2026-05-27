@@ -65,6 +65,63 @@ export const applicationEventTypeEnum = pgEnum('application_event_type', [
   'note_added',
 ]);
 
+/**
+ * First-party webhook providers. The `webhook_inbox.provider` column
+ * itself is intentionally `text`, NOT this enum — lender slugs
+ * ('lp_buzzpay_prime', etc.) also flow through that column and
+ * adding a lender shouldn't require a schema migration. This enum
+ * exists at the DB layer for documentation + at the TS layer for
+ * the dispatcher's built-in switch (see `WebhookProvider` type below
+ * and the `dispatchEvent` switch in `lib/workers/webhook-processor.ts`).
+ */
+export const webhookProviderEnum = pgEnum('webhook_provider_enum', [
+  'micamp',
+  'highsale',
+  'trutopia',
+]);
+/** Literal-union of first-party providers — narrowed from the enum. */
+export type WebhookProvider = (typeof webhookProviderEnum.enumValues)[number];
+
+export const webhookStatusEnum = pgEnum('webhook_status_enum', [
+  'pending',
+  'processing',
+  'done',
+  'failed',
+]);
+export type WebhookStatus = (typeof webhookStatusEnum.enumValues)[number];
+
+export const offerDecisionEnum = pgEnum('offer_decision_enum', [
+  'approved',
+  'counter',
+  'declined',
+  'ineligible',
+]);
+export type OfferDecision = (typeof offerDecisionEnum.enumValues)[number];
+
+export const midProvisioningStatusEnum = pgEnum('mid_provisioning_status_enum', [
+  'requested',
+  'pending',
+  'active',
+  'failed',
+]);
+export type MidProvisioningStatus = (typeof midProvisioningStatusEnum.enumValues)[number];
+
+export const lenderStatusEnum = pgEnum('lender_status_enum', [
+  'active',
+  'paused',
+  'pending_integration',
+  'deprecated',
+]);
+export type LenderStatus = (typeof lenderStatusEnum.enumValues)[number];
+
+export const provisioningRunStatusEnum = pgEnum('provisioning_run_status_enum', [
+  'queued',
+  'running',
+  'completed',
+  'failed',
+]);
+export type ProvisioningRunStatus = (typeof provisioningRunStatusEnum.enumValues)[number];
+
 /* ---------- partners ----------
  *
  * Persisted view of `lib/master-data.ts` MASTER_PARTNERS. Seeded once
@@ -236,8 +293,8 @@ export const offers = pgTable(
     /** Display name at write time so historical UI keeps rendering
      * even if the lender catalogue entry is later renamed/removed. */
     lenderName: text('lender_name'),
-    /** approved | counter | declined | ineligible */
-    decision: text('decision').notNull(),
+    /** approved | counter | declined | ineligible — `offer_decision_enum`. */
+    decision: offerDecisionEnum('decision').notNull(),
     amountCents: bigint('amount_cents', { mode: 'number' }),
     aprBps: integer('apr_bps'),
     termMonths: integer('term_months'),
@@ -295,8 +352,11 @@ export const lenders = pgTable(
      * to all verticals. Stored as text because Postgres array support
      * in Drizzle is uneven across pg drivers. */
     enabledBrands: text('enabled_brands').notNull().default(''),
-    /** 'live' | 'pending_integration' | 'paused' | 'archived' */
-    status: text('status').notNull().default('pending_integration'),
+    /** active | paused | pending_integration | deprecated — `lender_status_enum`.
+     *  NOTE: enum tightened in migration 0018. Any legacy free-text rows
+     *  ('live' / 'archived') must be remapped before applying 0018 — the
+     *  USING ::lender_status_enum cast fails loud on unknown values. */
+    status: lenderStatusEnum('status').notNull().default('pending_integration'),
     /** Connection health from the last sync attempt. */
     connectionHealth: text('connection_health').notNull().default('unknown'),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
@@ -441,8 +501,15 @@ export const mids = pgTable(
     /** External MiCamp identifier — the number on the merchant's
      * processing statement. NULL until MiCamp returns it. */
     micampMid: text('micamp_mid'),
-    /** requested | underwriting_pre | underwriting_post | active | rejected | paused */
-    provisioningStatus: text('provisioning_status').notNull().default('requested'),
+    /** requested | pending | active | failed — `mid_provisioning_status_enum`.
+     *  Tightened in 0018. The header doc above mentions intermediate
+     *  states ('underwriting_pre', 'underwriting_post', 'rejected',
+     *  'paused') from an earlier design — those must be collapsed into
+     *  this 4-value enum (e.g. underwriting_* → 'pending', rejected/paused
+     *  → 'failed') before 0018 applies, or the USING cast fails loud. */
+    provisioningStatus: midProvisioningStatusEnum('provisioning_status')
+      .notNull()
+      .default('requested'),
     /** JSON blob: per-step status from the auto-provisioning orchestrator. */
     provisioningStateJson: text('provisioning_state_json'),
     /** JSON blob: interchange % + processing fee schedule at issuance. */
@@ -634,8 +701,8 @@ export const provisioningRuns = pgTable(
      * runs carry the source product for audit; stored as text so the
      * brand enum doesn't have to gain a vestigial value. */
     brand: text('brand').notNull(),
-    /** queued | running | completed | failed */
-    status: text('status').notNull().default('queued'),
+    /** queued | running | completed | failed — `provisioning_run_status_enum`. */
+    status: provisioningRunStatusEnum('status').notNull().default('queued'),
     /** JSON-encoded ProvisionStep[]. Rewritten on every step transition. */
     stepsJson: text('steps_json'),
     /** JSON-encoded ProvisionConfig — persisted at startProvision time so
@@ -687,7 +754,11 @@ export const webhookInbox = pgTable(
   'webhook_inbox',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    /** 'micamp' | 'highsale' | 'trutopia' — extend as providers land. */
+    /** First-party: 'micamp' | 'highsale' | 'trutopia' (see
+     *  `webhookProviderEnum`). Also carries arbitrary lender slugs
+     *  ('lp_buzzpay_prime', etc.). Intentionally `text` so onboarding
+     *  a new lender doesn't require a schema migration; the first-party
+     *  set is narrowed via `WebhookProvider` in the dispatcher. */
     provider: text('provider').notNull(),
     /** Provider's external event id. Defensive extraction at write
      * time (MiCamp uses `id`, HighSale uses `event_id`, etc.). */
@@ -698,8 +769,8 @@ export const webhookInbox = pgTable(
     rawBody: text('raw_body').notNull(),
     signatureHeader: text('signature_header'),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
-    /** 'pending' | 'processing' | 'done' | 'failed' */
-    processingStatus: text('processing_status').notNull().default('pending'),
+    /** 'pending' | 'processing' | 'done' | 'failed' — `webhook_status_enum`. */
+    processingStatus: webhookStatusEnum('processing_status').notNull().default('pending'),
     processedAt: timestamp('processed_at', { withTimezone: true }),
     failureReason: text('failure_reason'),
     attempts: integer('attempts').notNull().default(0),
