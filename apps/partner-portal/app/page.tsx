@@ -169,15 +169,30 @@ export default function CommandCenter() {
         description="Real-time picture of merchants, applications, funding, and credit distribution."
       />
       <PageBody>
-        {/* ── KPI grid (6 cards) ── */}
+        {/* ── KPI grid (6 cards) ──
+            Each card drills into /applications pre-filtered by the
+            matching status, so an operator clicking 'Funded' lands
+            on the funded apps list. /reports for $ totals where the
+            apps list isn't the most useful pivot. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <Kpi
             label="Submitted"
             value={live.submitted.toLocaleString()}
             delta={live.submittedDelta}
+            href="/applications?status=submitted"
           />
-          <Kpi label="Approved" value={live.approved.toLocaleString()} delta={live.approvedDelta} />
-          <Kpi label="Funded" value={live.funded.toLocaleString()} delta={live.fundedDelta} />
+          <Kpi
+            label="Approved"
+            value={live.approved.toLocaleString()}
+            delta={live.approvedDelta}
+            href="/applications?status=approved"
+          />
+          <Kpi
+            label="Funded"
+            value={live.funded.toLocaleString()}
+            delta={live.fundedDelta}
+            href="/applications?status=funded"
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Kpi
@@ -185,38 +200,52 @@ export default function CommandCenter() {
             value={compactDollars(live.fundedCents)}
             delta={live.fundedCentsDelta}
             icon={<DollarIcon size={14} />}
+            href="/reports"
           />
           <Kpi
             label="Declined"
             value={live.declined.toLocaleString()}
             delta={live.declinedDelta}
             icon={<XIcon size={14} />}
+            href="/applications?status=declined"
           />
           <Kpi
             label="In Review"
             value={live.inReview.toLocaleString()}
             delta={live.inReviewDelta}
             icon={<ClockIcon size={14} />}
+            href="/applications?status=in_review"
           />
         </div>
 
-        {/* ── 3-up chart row ── */}
+        {/* ── 3-up chart row ──
+            Each chart has a "View →" link in the top-right to the
+            relevant deep-view. Charts themselves keep their internal
+            interactivity (tooltips, etc.) from Sprint H. */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <ChartCard title="Monthly Submissions" subtitle="Application volume — last 12 months">
+          <ChartCard
+            title="Monthly Submissions"
+            subtitle="Application volume — last 12 months"
+            href="/applications"
+          >
             <BarChartGrey
               data={live.monthlySubs.map((d) => ({ label: d.label, value: d.value }))}
               yTicks={subsTicks}
               yFormat={(v) => v.toString()}
             />
           </ChartCard>
-          <ChartCard title="Funded Volume" subtitle="Monthly funded amount — last 12 months">
+          <ChartCard
+            title="Funded Volume"
+            subtitle="Monthly funded amount — last 12 months"
+            href="/reports"
+          >
             <BarChartGrey
               data={live.monthlyFunded.map((d) => ({ label: d.label, value: d.value / 100 }))}
               yTicks={fundedTicks.map((v) => Math.round(v / 100))}
               yFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
             />
           </ChartCard>
-          <ChartCard title="Credit Insights">
+          <ChartCard title="Credit Insights" href="/insights">
             <CreditDonut mix={live.mix} />
           </ChartCard>
         </div>
@@ -296,15 +325,19 @@ function Kpi({
   value,
   delta,
   icon,
+  href,
 }: {
   label: string;
   value: string;
   delta: number;
   icon?: React.ReactNode;
+  /** Optional drill-in target. When set, the whole card becomes a
+   *  link to the filtered view (e.g. /applications?status=funded). */
+  href?: string;
 }) {
   const positive = delta >= 0;
-  return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-5 py-4">
+  const body = (
+    <>
       <div className="flex items-start justify-between">
         <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">
           {label}
@@ -322,24 +355,54 @@ function Kpi({
         {positive ? '+' : ''}
         {delta}%
       </p>
-    </div>
+    </>
   );
+  const base = 'rounded-xl border border-border bg-bg-elevated px-5 py-4 block transition-colors';
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={
+          base +
+          ' hover:border-border-strong hover:bg-bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus'
+        }
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={base}>{body}</div>;
 }
 
 function ChartCard({
   title,
   subtitle,
   children,
+  href,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  /** Optional drill-in target — wraps the title row in a "View →"
+   *  link without making the whole chart area clickable (charts have
+   *  their own interactivity from Sprint H tooltips). */
+  href?: string;
 }) {
   return (
     <div className="rounded-xl border border-border bg-bg-elevated">
-      <div className="px-5 pt-5 pb-2">
-        <h3 className="text-[15px] font-semibold text-fg">{title}</h3>
-        {subtitle && <p className="text-[12px] text-fg-muted mt-0.5">{subtitle}</p>}
+      <div className="px-5 pt-5 pb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-semibold text-fg">{title}</h3>
+          {subtitle && <p className="text-[12px] text-fg-muted mt-0.5">{subtitle}</p>}
+        </div>
+        {href && (
+          <Link
+            href={href}
+            className="text-[12px] text-fg-secondary hover:text-fg flex items-center gap-1 shrink-0"
+          >
+            View <ArrowRightIcon size={12} />
+          </Link>
+        )}
       </div>
       <div className="px-5 pb-5">{children}</div>
     </div>
