@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 
+import { safeLog } from '../../../../../lib/safe-log';
+
 /**
  * EZ Check install — BFF proxy.
  *
@@ -81,7 +83,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(await res.json().catch(() => ({})), { status: res.status });
       }
       return NextResponse.json(await res.json());
-    } catch {
+    } catch (err) {
+      // SILENT-FAIL FIX: network failure was previously masked by the
+      // synthetic ack below — the partner-facing UI saw success even
+      // when the HighSale install never reached the backend. Log + fall
+      // through (the synthetic path is the documented dev fallback,
+      // but the failure needs to be visible to operators).
+      safeLog.error({
+        event: 'ez_check_connect.backend_unreachable',
+        err,
+      });
       // Fall through to the synthetic acknowledgement.
     }
   }

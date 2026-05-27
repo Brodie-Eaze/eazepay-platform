@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { safeLog } from '../safe-log';
+
 /**
  * Shared helpers for the public lender-facing `/api/v1/*` endpoints.
  *
@@ -178,6 +180,16 @@ export async function verifySignature(args: {
     }
     return { status: 'valid' };
   } catch (e) {
+    // SILENT-FAIL FIX: a crash in the HMAC pipeline is operationally
+    // distinct from a signature that simply didn't match — it usually
+    // means a malformed env var, a bad encoding, or a Web-Crypto runtime
+    // mismatch. Returning 'invalid' to the caller is correct (fail
+    // closed); but pre-fix the operator had no signal a real crash
+    // happened. Log loudly before returning.
+    safeLog.error({
+      event: 'lender_api.signature_verify_crashed',
+      err: e,
+    });
     return { status: 'invalid', reason: 'Signature verification crashed.' };
   }
 }

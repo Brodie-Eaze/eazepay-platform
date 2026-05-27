@@ -62,8 +62,35 @@ export async function notifyConsumerInvite(input: NotifyInput): Promise<boolean>
         }),
       },
     );
+    if (!res.ok) {
+      // SILENT-FAIL FIX: a non-2xx PATCH means the tracking event was
+      // dropped server-side. Emit a structured log so the consumer apply
+      // funnel's drop-off rate is debuggable (previously it was silent).
+      // eslint-disable-next-line no-console
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'consumer_invite.notify_non_ok',
+          brand: input.brand,
+          notifyEvent: input.event,
+          status: res.status,
+        }),
+      );
+    }
     return res.ok;
-  } catch {
+  } catch (err) {
+    // SILENT-FAIL FIX: network failure — log + still return false so
+    // callers in useEffect / fire-and-forget contexts keep working.
+    // eslint-disable-next-line no-console
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        event: 'consumer_invite.notify_failed',
+        brand: input.brand,
+        notifyEvent: input.event,
+        msg: err instanceof Error ? err.message : 'unknown',
+      }),
+    );
     return false;
   }
 }

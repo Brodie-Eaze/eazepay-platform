@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/server-guards';
 import { enforceOrigin } from '@/lib/origin-guard';
 import { writeAuditLog } from '@/lib/audit-log';
+import { safeLog } from '@/lib/safe-log';
 
 /**
  * Internal-team list + invite. Proxies to backend `/v1/admin/team`
@@ -65,9 +66,25 @@ export async function GET(req: NextRequest) {
     const res = await fetch(`${API_URL}/v1/admin/team`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return NextResponse.json({ members: [] });
+    if (!res.ok) {
+      // SILENT-FAIL FIX: previously returned empty members list without
+      // a log — admin saw "no team members" with no signal that the
+      // backend was misbehaving. Log + still return empty so the UI
+      // degrades gracefully.
+      safeLog.error({
+        event: 'admin_team.proxy_non_ok',
+        status: res.status,
+      });
+      return NextResponse.json({ members: [] });
+    }
     return NextResponse.json(await res.json());
-  } catch {
+  } catch (err) {
+    // SILENT-FAIL FIX: backend unreachable. Log so an operator can tell
+    // an empty list is "API down" not "no members".
+    safeLog.error({
+      event: 'admin_team.proxy_failed',
+      err,
+    });
     return NextResponse.json({ members: [] });
   }
 }

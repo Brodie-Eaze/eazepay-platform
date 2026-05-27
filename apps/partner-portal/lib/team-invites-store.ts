@@ -19,6 +19,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
+import { safeLog } from './safe-log';
+
 export type TeamInviteRole = 'Owner' | 'Admin' | 'Operator' | 'Viewer' | 'Compliance';
 
 export type TeamInviteBrand = 'medpay' | 'tradepay' | 'coachpay';
@@ -83,8 +85,19 @@ async function persist(): Promise<void> {
   try {
     await fs.mkdir(path.dirname(STORE_FILE), { recursive: true });
     await fs.writeFile(STORE_FILE, JSON.stringify(Array.from(invites.values()), null, 2), 'utf-8');
-  } catch {
-    /* Best-effort. */
+  } catch (err) {
+    // SILENT-FAIL FIX: previously swallowed. A failed persist leaves
+    // the in-memory map authoritative for THIS process only — on
+    // restart every invite minted since the last successful write is
+    // lost. Operator needs a signal; throwing would mask the success
+    // of the mutation behind a 500, so we log loudly + continue (same
+    // contract as audit-log writes).
+    safeLog.error({
+      event: 'team_invites_store.persist_failed',
+      storeFile: STORE_FILE,
+      inviteCount: invites.size,
+      err,
+    });
   }
 }
 

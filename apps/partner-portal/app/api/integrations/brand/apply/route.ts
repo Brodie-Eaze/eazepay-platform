@@ -5,6 +5,7 @@ import { redeemInvite, getInvite, BRAND_FROM_CONFIG_SLUG } from '../../../../../
 import { sendWelcomeEmail } from '../../../../../lib/server-email';
 import { createInvitedAccount, type AccountBrand } from '../../../../../lib/accounts-store';
 import { mintWelcomeToken } from '../../../../../lib/welcome-tokens';
+import { safeLog } from '../../../../../lib/safe-log';
 
 /** Map BrandCode → the first demo partnerId for the brand. New
  *  businesses are bound to the brand's demo partner for now; when
@@ -205,7 +206,21 @@ export async function POST(req: NextRequest) {
         await redeemInvite(parsed.data.inviteToken, json.applicationId ?? `app_${randomUUID()}`);
       }
       return NextResponse.json(json);
-    } catch {
+    } catch (err) {
+      // SILENT-FAIL FIX: network failure to backend /v1/integrations/<provider>/apply
+      // previously fell through to the "synthetic 202" path without a
+      // log — partner saw success, the upstream apply never happened,
+      // dashboards showed an applied brand that the backend has no
+      // record of. Log loudly before we degrade. We still degrade
+      // (don't rethrow) because the synthetic path is the documented
+      // dev / API-not-yet-live contract; but a regulator replaying
+      // the request later needs to see we knew this happened.
+      safeLog.error({
+        event: 'brand_apply.backend_unreachable',
+        provider,
+        surface: parsed.data.brand,
+        err,
+      });
       // Fall through to the synthetic 202.
     }
   }

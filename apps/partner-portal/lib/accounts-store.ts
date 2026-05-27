@@ -34,6 +34,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 
+import { safeLog } from './safe-log';
+
 export type AccountStatus = 'invited' | 'active' | 'suspended';
 
 export type AccountRole = 'Owner' | 'Admin' | 'Operator' | 'Viewer' | 'Compliance';
@@ -100,8 +102,19 @@ async function persist(): Promise<void> {
   try {
     await fs.mkdir(path.dirname(STORE_FILE), { recursive: true });
     await fs.writeFile(STORE_FILE, JSON.stringify(Array.from(accounts.values()), null, 2), 'utf-8');
-  } catch {
-    /* best-effort */
+  } catch (err) {
+    // SILENT-FAIL FIX: this store backs sign-in. A persist failure
+    // after createInvitedAccount / setAccountPassword / authenticate
+    // means the auth state is correct in-process but lost on restart —
+    // password the user just set won't survive a deploy. Log loudly so
+    // an operator notices before the next restart eats real accounts.
+    // Not thrown: would mask the success of the calling mutation.
+    safeLog.error({
+      event: 'accounts_store.persist_failed',
+      storeFile: STORE_FILE,
+      accountCount: accounts.size,
+      err,
+    });
   }
 }
 
