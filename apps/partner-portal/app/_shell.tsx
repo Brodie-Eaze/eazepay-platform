@@ -229,7 +229,11 @@ const adminGroups: NavGroup[] = [
   },
   {
     label: 'Verticals',
-    items: [{ href: '/admin/verticals/medpay', label: 'MedPay Config', icon: <HeartPulseIcon /> }],
+    items: [
+      { href: '/admin/verticals/medpay', label: 'MedPay Config', icon: <HeartPulseIcon /> },
+      { href: '/admin/verticals/tradepay', label: 'TradePay Config', icon: <BankIcon /> },
+      { href: '/admin/verticals/coachpay', label: 'CoachPay Config', icon: <CrownIcon /> },
+    ],
   },
   {
     label: 'Migrations',
