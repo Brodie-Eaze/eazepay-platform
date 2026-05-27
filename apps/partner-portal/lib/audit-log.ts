@@ -26,6 +26,7 @@
 
 import type { NextRequest } from 'next/server';
 import { getDb, hasDb, schema } from './db';
+import { parseAuditPayloadForWrite } from './db/jsonb-boundary';
 import { safeLog } from './safe-log';
 
 export type AuditOutcome = 'success' | 'failed';
@@ -72,7 +73,12 @@ export async function writeAuditLog(input: WriteAuditLogInput): Promise<void> {
       action: input.action,
       targetType: input.targetType,
       targetId: input.targetId ?? null,
-      payloadJson: JSON.stringify({
+      // Post-0014 the column is jsonb — pass a structured object, not a
+      // string. The boundary helper validates shape before insert; a
+      // malformed payload throws here and is caught by the surrounding
+      // try/catch (which is the explicit "audit write is best-effort"
+      // contract above).
+      payloadJson: parseAuditPayloadForWrite({
         outcome: input.outcome,
         ...(input.payload ?? {}),
       }),

@@ -42,6 +42,11 @@
 import { eq, desc } from 'drizzle-orm';
 import { startProvision } from './provision';
 import { getDb, hasDb, schema } from '../db';
+import {
+  parseAuditPayloadForWrite,
+  parseMigrationStepsForRead,
+  parseMigrationStepsForWrite,
+} from '../db/jsonb-boundary';
 import { safeLog } from '../safe-log';
 import { incrementMetric } from '../observability/metrics';
 import { hasQueue } from '../queue';
@@ -130,13 +135,20 @@ function rowToRecord(row: schema.CustomerMigration): MigrationRecord {
   };
 }
 
-function parseSteps(json: string | null): MigrationStepState[] {
-  if (!json) return newSteps();
+/**
+ * Post-0014 the column is jsonb — Drizzle returns a structured value,
+ * not a string. We validate with MigrationStepsSchema at the boundary
+ * and fall back to a fresh step list on shape drift.
+ */
+function parseSteps(value: unknown): MigrationStepState[] {
+  if (value == null) return newSteps();
   try {
-    const parsed: unknown = JSON.parse(json);
-    if (!Array.isArray(parsed)) return newSteps();
-    return parsed as MigrationStepState[];
-  } catch {
+    return parseMigrationStepsForRead(value) as MigrationStepState[];
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.migration.steps_shape_drift',
+      err: err instanceof Error ? err.message : 'unknown',
+    });
     return newSteps();
   }
 }
@@ -152,7 +164,8 @@ async function persistRecord(record: MigrationRecord): Promise<void> {
       .set({
         targetPartnerId: record.targetPartnerId,
         status: record.status,
-        stepStateJson: JSON.stringify(record.steps),
+        // jsonb post-0014 — boundary validation throws on drift, caught below.
+        stepStateJson: parseMigrationStepsForWrite(record.steps),
         failureReason: record.failureReason,
         startedAt: record.startedAt ? new Date(record.startedAt) : null,
         completedAt: record.completedAt ? new Date(record.completedAt) : null,
@@ -181,7 +194,7 @@ async function writeAudit(
       action,
       targetType: 'customer_migration',
       targetId: record.id,
-      payloadJson: JSON.stringify({
+      payloadJson: parseAuditPayloadForWrite({
         sourceCustomerId: record.sourceCustomerId,
         targetPartnerId: record.targetPartnerId,
         targetBrand: record.targetBrand,
@@ -289,7 +302,7 @@ export async function queueMigration(sourceCustomerId: string): Promise<Migratio
         sourceProduct: 'ai_funding',
         targetBrand: 'medpay',
         status: 'queued',
-        stepStateJson: JSON.stringify(steps),
+        stepStateJson: parseMigrationStepsForWrite(steps),
       })
       .onConflictDoNothing({ target: schema.customerMigrations.sourceCustomerId })
       .returning();

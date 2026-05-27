@@ -37,6 +37,13 @@ import { eq, desc } from 'drizzle-orm';
 import { createSubAccount } from '../highsale/client';
 import { provisionMid } from '../micamp/client';
 import { getDb, hasDb, schema } from '../db';
+import {
+  parseAuditPayloadForWrite,
+  parseProvisionConfigForRead,
+  parseProvisionConfigForWrite,
+  parseProvisionStepsForRead,
+  parseProvisionStepsForWrite,
+} from '../db/jsonb-boundary';
 import { safeLog } from '../safe-log';
 import { hasQueue } from '../queue';
 import { incrementMetric } from '../observability/metrics';
@@ -150,22 +157,28 @@ function rowToRun(row: schema.ProvisioningRun): ProvisionRun {
     partnerId: row.partnerId,
     brand: row.brand as ProvisionRun['brand'],
     status: row.status as ProvisionRun['status'],
-    steps: parseSteps(row.stepsJson),
+    steps: parseSteps(row.stepsJson) as ProvisionStep[],
     startedAt: row.startedAt.toISOString(),
     completedAt: row.completedAt ? row.completedAt.toISOString() : null,
     failureReason: row.failureReason,
   };
 }
 
-function parseSteps(json: string | null): ProvisionStep[] {
-  if (!json) return newSteps();
+/**
+ * Post-0014 the column is jsonb — Drizzle returns a structured value,
+ * not a string. We validate with ProvisionStepsSchema at the boundary
+ * and fall back to a fresh step list on shape drift so the operator
+ * dashboard still renders a recovery surface.
+ */
+function parseSteps(value: unknown): ProvisionStep[] {
+  if (value == null) return newSteps();
   try {
-    const parsed: unknown = JSON.parse(json);
-    if (!Array.isArray(parsed)) return newSteps();
-    // Trust the shape — we wrote it. A future schema migration would
-    // ship a transform here.
-    return parsed as ProvisionStep[];
-  } catch {
+    return parseProvisionStepsForRead(value) as ProvisionStep[];
+  } catch (err) {
+    safeLog.error({
+      event: 'orchestrator.provision.steps_shape_drift',
+      err: err instanceof Error ? err.message : 'unknown',
+    });
     return newSteps();
   }
 }
@@ -186,7 +199,9 @@ async function persistRun(run: ProvisionRun): Promise<void> {
       .update(schema.provisioningRuns)
       .set({
         status: run.status,
-        stepsJson: JSON.stringify(run.steps),
+        // jsonb post-0014. Boundary helper validates shape — on drift it
+        // throws and we hit the catch below which logs `persist_failed`.
+        stepsJson: parseProvisionStepsForWrite(run.steps),
         completedAt: run.completedAt ? new Date(run.completedAt) : null,
         failureReason: run.failureReason,
       })
@@ -267,7 +282,7 @@ async function writeAudit(
       action,
       targetType: 'provisioning_run',
       targetId: run.id,
-      payloadJson: JSON.stringify({
+      payloadJson: parseAuditPayloadForWrite({
         partnerId: run.partnerId,
         brand: run.brand,
         ...payload,
@@ -366,11 +381,12 @@ export async function startProvision(config: ProvisionConfig): Promise<Provision
         partnerId: run.partnerId,
         brand: run.brand,
         status: run.status,
-        stepsJson: JSON.stringify(run.steps),
+        // jsonb post-0014 — boundary helpers validate.
+        stepsJson: parseProvisionStepsForWrite(run.steps),
         // Persist the inputs so a cross-process BullMQ worker can recover
         // them. Keeps partner PII out of the Redis job payload — the job
         // carries only the run id.
-        configJson: JSON.stringify(config),
+        configJson: parseProvisionConfigForWrite(config),
         startedAt: new Date(startedAt),
       });
     } catch (err) {
@@ -459,10 +475,13 @@ export async function loadProvisionConfig(id: string): Promise<ProvisionConfig |
       .from(schema.provisioningRuns)
       .where(eq(schema.provisioningRuns.id, id))
       .limit(1);
-    const json = rows[0]?.configJson;
-    if (!json) return undefined;
+    const value = rows[0]?.configJson;
+    if (value == null) return undefined;
     try {
-      return JSON.parse(json) as ProvisionConfig;
+      // jsonb post-0014: Drizzle returns the parsed object. Validate
+      // shape at the boundary so a drifted row surfaces here, not in
+      // the worker mid-run where the failure mode is much worse.
+      return parseProvisionConfigForRead(value) as ProvisionConfig;
     } catch (err) {
       safeLog.error({
         event: 'orchestrator.provision.config_parse_failed',

@@ -47,6 +47,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { hasDb, getDb, schema } from './db';
+import { parseDecisionInputsForWrite, parseRankedLendersForWrite } from './db/jsonb-boundary';
 import { safeLog } from './safe-log';
 import { SAMPLE_LENDERS, type Brand, type LenderTier } from './api-v1/shared';
 import { incrementMetric } from './observability/metrics';
@@ -557,8 +558,11 @@ export async function evaluateDecision(opts: EvaluateOpts): Promise<DecisionResu
             engine,
             engineVersion,
             engineFallback,
-            inputsJson: JSON.stringify(opts.prequal),
-            rankedLendersJson: JSON.stringify(rankedLenders),
+            // jsonb post-0014 — pass structured values. The boundary
+            // helpers throw on shape drift, which is caught by the
+            // outer try/catch and routed into the DLQ branch below.
+            inputsJson: parseDecisionInputsForWrite(opts.prequal),
+            rankedLendersJson: parseRankedLendersForWrite(rankedLenders),
             eligibleLenderCount: included.length,
             excludedLenderCount: excluded.length,
             topPropensityScore: topScore,
@@ -803,4 +807,3 @@ async function tryMarkApplicationStatus(
     });
   }
 }
-

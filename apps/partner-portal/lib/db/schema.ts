@@ -26,6 +26,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -33,6 +34,15 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type {
+  AuditLogPayload,
+  DecisionInputs,
+  JsonObject,
+  MigrationSteps,
+  ProvisionConfig,
+  ProvisionSteps,
+  RankedLenders,
+} from '@eazepay/shared-types';
 
 /* ---------- enums ---------- */
 
@@ -299,8 +309,9 @@ export const lenders = pgTable(
     connectionHealth: text('connection_health').notNull().default('unknown'),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
     /** Hard eligibility rules (FICO floor, DTI cap, geography, etc.)
-     * shape varies per lender — stored as JSON-encoded text. */
-    eligibilityRulesJson: text('eligibility_rules_json'),
+     * shape varies per lender — stored as jsonb (migration 0014).
+     * Validate with LenderEligibilityRulesSchema at the boundary. */
+    eligibilityRulesJson: jsonb('eligibility_rules_json').$type<JsonObject>(),
     /** Origination kickback in basis points of funded amount. */
     kickbackBps: integer('kickback_bps').notNull().default(0),
     /** Webhook endpoint we POST to for application submission. */
@@ -343,14 +354,17 @@ export const verticalConfigs = pgTable(
     enabledLenderIds: text('enabled_lender_ids').notNull().default(''),
     /** Decision-engine routing policy: 'waterfall' | 'parallel' | 'hybrid' */
     routingMode: text('routing_mode').notNull().default('hybrid'),
-    /** Vertical-level overrides on top of each lender's rules. JSON. */
-    routingRulesJson: text('routing_rules_json'),
+    /** Vertical-level overrides on top of each lender's rules.
+     * jsonb (migration 0014). Validate with RoutingRulesSchema. */
+    routingRulesJson: jsonb('routing_rules_json').$type<JsonObject>(),
     /** Application form schema reference (slug into lib/forms/*). */
     formSchemaSlug: text('form_schema_slug'),
-    /** Branding defaults for the consumer-facing surface. JSON. */
-    brandingJson: text('branding_json'),
-    /** Fee economics: our cut, partner cut, lender fees. JSON. */
-    economicsJson: text('economics_json'),
+    /** Branding defaults for the consumer-facing surface.
+     * jsonb (migration 0014). Validate with BrandingSchema. */
+    brandingJson: jsonb('branding_json').$type<JsonObject>(),
+    /** Fee economics: our cut, partner cut, lender fees.
+     * jsonb (migration 0014). Validate with EconomicsSchema. */
+    economicsJson: jsonb('economics_json').$type<JsonObject>(),
     /** When the config was last published live. */
     publishedAt: timestamp('published_at', { withTimezone: true }),
     publishedBy: text('published_by'),
@@ -441,10 +455,12 @@ export const mids = pgTable(
     micampMid: text('micamp_mid'),
     /** requested | underwriting_pre | underwriting_post | active | rejected | paused */
     provisioningStatus: text('provisioning_status').notNull().default('requested'),
-    /** JSON blob: per-step status from the auto-provisioning orchestrator. */
-    provisioningStateJson: text('provisioning_state_json'),
-    /** JSON blob: interchange % + processing fee schedule at issuance. */
-    rateCardJson: text('rate_card_json'),
+    /** Per-step status from the auto-provisioning orchestrator.
+     * jsonb (migration 0014). Validate with MidProvisioningStateSchema. */
+    provisioningStateJson: jsonb('provisioning_state_json').$type<JsonObject>(),
+    /** Interchange % + processing fee schedule at issuance.
+     * jsonb (migration 0014). Validate with RateCardSchema. */
+    rateCardJson: jsonb('rate_card_json').$type<JsonObject>(),
     /** When MiCamp flipped us from pre- to post-underwriting. */
     postUnderwritingAt: timestamp('post_underwriting_at', { withTimezone: true }),
     /** Rolling total of processing volume (cents) used to trigger the
@@ -501,8 +517,12 @@ export const decisions = pgTable(
      * decision). Required for audit integrity — without it, replays
      * cannot distinguish a clean Trutopia run from a fallback. */
     engineFallback: boolean('engine_fallback').notNull().default(false),
-    inputsJson: text('inputs_json'),
-    rankedLendersJson: text('ranked_lenders_json'),
+    /** Frozen prequal snapshot — see DecisionInputsSchema.
+     * jsonb (migration 0014). */
+    inputsJson: jsonb('inputs_json').$type<DecisionInputs>(),
+    /** Propensity-ranked engine output — see RankedLendersSchema.
+     * jsonb (migration 0014). */
+    rankedLendersJson: jsonb('ranked_lenders_json').$type<RankedLenders>(),
     /** Top-line stats for fast dashboard reads without parsing JSON. */
     eligibleLenderCount: integer('eligible_lender_count').notNull().default(0),
     excludedLenderCount: integer('excluded_lender_count').notNull().default(0),
@@ -539,8 +559,10 @@ export const auditLog = pgTable(
     action: text('action').notNull(),
     targetType: text('target_type').notNull(),
     targetId: text('target_id'),
-    /** Before/after snapshot or free-form context, JSON-encoded. */
-    payloadJson: text('payload_json'),
+    /** Before/after snapshot or free-form context.
+     * jsonb (migration 0014). Validate per-action at the call site;
+     * the storage boundary uses AuditLogPayloadSchema (loose object). */
+    payloadJson: jsonb('payload_json').$type<AuditLogPayload>(),
     /** Source IP — for sensitive admin actions. NULL if unknown. */
     ipAddress: text('ip_address'),
     /** Source user agent. */
@@ -586,7 +608,9 @@ export const customerMigrations = pgTable(
     targetBrand: brandEnum('target_brand').notNull().default('medpay'),
     /** queued | in_progress | completed | failed | rolled_back */
     status: text('status').notNull().default('queued'),
-    stepStateJson: text('step_state_json'),
+    /** Per-step migration state — see MigrationStepsSchema.
+     * jsonb (migration 0014). */
+    stepStateJson: jsonb('step_state_json').$type<MigrationSteps>(),
     failureReason: text('failure_reason'),
     /** When the migration was kicked off + completed. */
     startedAt: timestamp('started_at', { withTimezone: true }),
@@ -634,13 +658,15 @@ export const provisioningRuns = pgTable(
     brand: text('brand').notNull(),
     /** queued | running | completed | failed */
     status: text('status').notNull().default('queued'),
-    /** JSON-encoded ProvisionStep[]. Rewritten on every step transition. */
-    stepsJson: text('steps_json'),
-    /** JSON-encoded ProvisionConfig — persisted at startProvision time so
-     *  a cross-process worker (BullMQ — Task #50) can recover the inputs
+    /** ProvisionStep[]. Rewritten on every step transition.
+     * jsonb (migration 0014). Validate with ProvisionStepsSchema. */
+    stepsJson: jsonb('steps_json').$type<ProvisionSteps>(),
+    /** ProvisionConfig — persisted at startProvision time so a
+     *  cross-process worker (BullMQ — Task #50) can recover the inputs
      *  without the config riding inside the Redis job payload. Nullable
-     *  for rows that pre-date Task #50. */
-    configJson: text('config_json'),
+     *  for rows that pre-date Task #50.
+     *  jsonb (migration 0014). Validate with ProvisionConfigSchema. */
+    configJson: jsonb('config_json').$type<ProvisionConfig>(),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     failureReason: text('failure_reason'),

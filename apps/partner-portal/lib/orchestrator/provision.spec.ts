@@ -259,7 +259,9 @@ describe('orchestrator/provision', () => {
         (c) => c.table === 'audit_log' && c.values.action === 'provision.failed',
       );
       expect(failedAudit).toBeDefined();
-      const payload = JSON.parse(failedAudit?.values.payloadJson as string);
+      // Post-0014: payload_json is jsonb. The writer hands Drizzle a
+      // structured object, so the spy captures the object directly.
+      const payload = failedAudit?.values.payloadJson as Record<string, unknown>;
       expect(payload.step).toBe('highsale_subaccount');
       expect(payload.reason).toContain('HighSale 503');
     });
