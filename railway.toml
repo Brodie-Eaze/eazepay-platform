@@ -29,5 +29,11 @@ startCommand = "node apps/partner-portal/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 # Railway will inject $PORT; the container binds to it automatically.
-healthcheckPath = "/sign-in"
+# P0 fix — was `/sign-in` (an HTML landing page) which only proved the
+# Next process was alive, not that env + DB are healthy. `/api/health`
+# returns 503 when env or DB checks fail (see
+# `apps/partner-portal/app/api/health/route.ts`) so Railway can rotate
+# a degraded replica out of the pool instead of leaving it serving
+# traffic without FCRA persistence.
+healthcheckPath = "/api/health"
 healthcheckTimeout = 30

@@ -135,6 +135,10 @@ describe('processInboxRow (Task #50 worker entry)', () => {
   });
 
   it('claims a pending row, dispatches stub, and marks failed (NotImplementedError) — fail-loud posture', async () => {
+    // Stubs throw NotImplementedError until the orchestrator wiring
+    // lands. The processor must mark the row `failed` (NOT `done`) so
+    // ops sees the gap in the DLQ surface.
+    // See fix/p0-webhook-stubs-fail-loud.
     rowsStore.set('row-pending', {
       id: 'row-pending',
       provider: 'micamp',
@@ -167,6 +171,9 @@ describe('processInboxRow (Task #50 worker entry)', () => {
   });
 
   it('NotImplementedError → terminal failed immediately (no backoff/retry budget)', async () => {
+    // attempts starts at 0 but the row should land in `failed`, not
+    // `pending` (which is what the standard catch path would do until
+    // MAX_ATTEMPTS=5). NotImplementedError is non-retryable by design.
     rowsStore.set('row-trutopia', {
       id: 'row-trutopia',
       provider: 'trutopia',

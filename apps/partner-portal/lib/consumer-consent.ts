@@ -190,14 +190,26 @@ export interface ConsentReceipt {
 export const FCRA_CONSENT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
- * SEC-105: bounded in-memory store. Replace with the consent_receipts
- * Postgres table when the schema lands.
- *   * MAX_RECEIPTS_TOTAL — global FIFO cap; oldest evicted on insert.
- *   * MAX_RECEIPTS_PER_APPLICATION — defends against single-applicationId
- *     amplification (an attacker forging session IDs in a loop).
+ * SEC-105 + P0 fix: in-memory store is now a LAST-RESORT FALLBACK only,
+ * used when `hasDb()` is false (local dev without DATABASE_URL). Every
+ * production replica MUST hit the `consent_receipts` Postgres table.
  */
 const MAX_RECEIPTS_TOTAL = 5_000;
 const MAX_RECEIPTS_PER_APPLICATION = 5;
+
+// Dynamic imports keep `pg` + `safe-log` out of the client bundle.
+async function loadDbAndLog() {
+  const [{ hasDb }, { safeLog }] = await Promise.all([import('./db'), import('./safe-log')]);
+  return { hasDb, safeLog };
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
 
 /**
  * Two indexes over the same set of receipts:
@@ -260,18 +272,66 @@ function serverUuid(): string {
  * and keep the original receipt id so the consumer never sees a new
  * id appear under their feet during a retry.
  */
-export function storeConsentReceipt(input: {
+export async function storeConsentReceipt(input: {
   applicationId: string;
   sessionId: string;
   disclosureVersion: string;
   consentText: string;
   ip: string;
   userAgent: string;
-}): ConsentReceipt {
+  partnerId?: string;
+  brand?: string;
+}): Promise<ConsentReceipt> {
+  const { hasDb, safeLog } = await loadDbAndLog();
+
+  if (hasDb()) {
+    try {
+      const { storeReceipt, getLatestReceiptForSession } = await import('./db/consent-receipts');
+      const existing = await getLatestReceiptForSession(input.applicationId, input.sessionId);
+      const receiptId = existing?.id ?? serverUuid();
+      const signatureHash = await sha256Hex(input.consentText);
+
+      const row = await storeReceipt({
+        id: receiptId,
+        applicationId: input.applicationId,
+        sessionId: input.sessionId,
+        partnerId: input.partnerId ?? null,
+        brand: input.brand ?? 'unknown',
+        disclosureVersion: input.disclosureVersion,
+        capturedIp: input.ip,
+        capturedUserAgent: input.userAgent,
+        signatureHash,
+        rawText: input.consentText,
+      });
+
+      return {
+        id: row.id,
+        applicationId: row.applicationId,
+        sessionId: row.sessionId ?? '',
+        disclosureVersion: row.disclosureVersion,
+        consentText: row.rawText,
+        timestamp: row.capturedAt.toISOString(),
+        ip: row.capturedIp,
+        userAgent: row.capturedUserAgent ?? '',
+      };
+    } catch (err) {
+      safeLog.error({
+        event: 'consent.db_write_failed',
+        applicationId: input.applicationId,
+        msg: err instanceof Error ? err.message : 'unknown',
+      });
+      throw err;
+    }
+  }
+
+  safeLog.error({
+    event: 'consent.db_unavailable',
+    applicationId: input.applicationId,
+  });
+
   const key = compositeKey(input.applicationId, input.sessionId);
   const existing = RECEIPTS_BY_COMPOSITE.get(key);
 
-  // First receipt for this composite — enforce caps before insert.
   if (!existing) {
     pruneReceiptsForApplication(input.applicationId);
     pruneReceiptsGlobal();
@@ -283,8 +343,6 @@ export function storeConsentReceipt(input: {
     sessionId: input.sessionId,
     disclosureVersion: input.disclosureVersion,
     consentText: input.consentText,
-    // Server time only — client clock skew is real and we want a
-    // monotonic source of truth for the audit chain.
     timestamp: new Date().toISOString(),
     ip: input.ip,
     userAgent: input.userAgent,
@@ -295,14 +353,62 @@ export function storeConsentReceipt(input: {
   return receipt;
 }
 
-/** O(1) lookup by receipt id. Returns undefined when missing. */
-export function findConsentReceiptById(id: string): ConsentReceipt | undefined {
+export async function findConsentReceiptById(id: string): Promise<ConsentReceipt | undefined> {
+  const { hasDb, safeLog } = await loadDbAndLog();
+  if (hasDb()) {
+    try {
+      const { getReceiptById } = await import('./db/consent-receipts');
+      const row = await getReceiptById(id);
+      if (!row) return undefined;
+      return {
+        id: row.id,
+        applicationId: row.applicationId,
+        sessionId: row.sessionId ?? '',
+        disclosureVersion: row.disclosureVersion,
+        consentText: row.rawText,
+        timestamp: row.capturedAt.toISOString(),
+        ip: row.capturedIp,
+        userAgent: row.capturedUserAgent ?? '',
+      };
+    } catch (err) {
+      safeLog.error({
+        event: 'consent.db_read_failed',
+        receiptId: id,
+        msg: err instanceof Error ? err.message : 'unknown',
+      });
+      throw err;
+    }
+  }
   return RECEIPTS_BY_ID.get(id);
 }
 
-/** Operator-tier helper — list every receipt captured against an
- *  applicationId. Used by the admin dispute viewer. */
-export function listConsentReceiptsForApplication(applicationId: string): ConsentReceipt[] {
+export async function listConsentReceiptsForApplication(
+  applicationId: string,
+): Promise<ConsentReceipt[]> {
+  const { hasDb, safeLog } = await loadDbAndLog();
+  if (hasDb()) {
+    try {
+      const { getReceiptByApplicationId } = await import('./db/consent-receipts');
+      const rows = await getReceiptByApplicationId(applicationId);
+      return rows.map((row) => ({
+        id: row.id,
+        applicationId: row.applicationId,
+        sessionId: row.sessionId ?? '',
+        disclosureVersion: row.disclosureVersion,
+        consentText: row.rawText,
+        timestamp: row.capturedAt.toISOString(),
+        ip: row.capturedIp,
+        userAgent: row.capturedUserAgent ?? '',
+      }));
+    } catch (err) {
+      safeLog.error({
+        event: 'consent.db_list_failed',
+        applicationId,
+        msg: err instanceof Error ? err.message : 'unknown',
+      });
+      throw err;
+    }
+  }
   const out: ConsentReceipt[] = [];
   for (const rec of RECEIPTS_BY_COMPOSITE.values()) {
     if (rec.applicationId === applicationId) out.push(rec);
@@ -345,13 +451,13 @@ export type FCRAConsentVerifyResult =
   | { valid: true; disclosureVersion: string; capturedAt: string; receiptId: string }
   | { valid: false; reason: FCRAConsentVerifyFailureReason };
 
-export function verifyFCRAConsent(
+export async function verifyFCRAConsent(
   consentReceiptId: string,
   applicationId: string,
   /** Injectable for tests; defaults to wall-clock. */
   now: number = Date.now(),
-): FCRAConsentVerifyResult {
-  const receipt = RECEIPTS_BY_ID.get(consentReceiptId);
+): Promise<FCRAConsentVerifyResult> {
+  const receipt = await findConsentReceiptById(consentReceiptId);
   if (!receipt) return { valid: false, reason: 'not_found' };
 
   // Order matters: applicationId mismatch is the cross-app replay

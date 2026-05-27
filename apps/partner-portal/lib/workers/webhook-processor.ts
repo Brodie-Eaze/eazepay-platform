@@ -41,10 +41,7 @@ import { getDb, hasDb, schema } from '../db';
 import type { Db } from '../db';
 import { incrementMetric } from '../observability/metrics';
 import { safeLog } from '../safe-log';
-import {
-  handleLenderInboxRow,
-  isLenderProvider,
-} from './lender-webhook-handler';
+import { handleLenderInboxRow, isLenderProvider } from './lender-webhook-handler';
 
 /**
  * Thrown by stub handlers that haven't been wired to their state
