@@ -233,9 +233,13 @@ export default function VerticalApplicationsPage() {
     const p = findPartner(currentPartnerId);
     return p?.legalName ?? '';
   }, [currentPartnerId]);
-  const seedRows = code
-    ? applicationsForPartner(currentPartnerId).filter((a) => a.product === code)
-    : [];
+  // Memoised: was a new array every render → broke downstream `rows`
+  // useMemo identity check → table re-rendered + re-sorted on every
+  // state change. Contributor to the load-time flicker.
+  const seedRows = useMemo(
+    () => (code ? applicationsForPartner(currentPartnerId).filter((a) => a.product === code) : []),
+    [code, currentPartnerId],
+  );
   const expandedRows = useMemo(() => {
     if (!code || !partnerName) return [] as ApplicationRow[];
     const seen = new Set(seedRows.map((r) => r.id));
@@ -247,8 +251,16 @@ export default function VerticalApplicationsPage() {
   // Default sort: newest first by `date`. ISO-8601 date strings sort
   // lexicographically equivalent to chronological order, so we can
   // skip a Date parse on every comparison.
-  const rows: ApplicationRow[] = [...submittedForPartner, ...seedRows, ...expandedRows].sort(
-    (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0),
+  // Memoised so the table doesn't re-sort + re-render on every
+  // unrelated state change (toast, query, tab, filter, live-poll
+  // tick). Was a visible glitch source — the row order would
+  // briefly flicker on each render before the user reported it.
+  const rows: ApplicationRow[] = useMemo(
+    () =>
+      [...submittedForPartner, ...seedRows, ...expandedRows].sort((a, b) =>
+        a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+      ),
+    [submittedForPartner, seedRows, expandedRows],
   );
 
   const [query, setQuery] = useState('');
