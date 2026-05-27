@@ -1862,3 +1862,62 @@ model OutboxEvent {
   @@index([kind, createdAt], map: "outbox_events_kind_created_idx")
   @@map("outbox_events")
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Migration state — one row per resumable batch job
+// ─────────────────────────────────────────────────────────────────────
+// Long-running data migrations (DEK rewrap onto KMS, base64→encrypted
+// HighsaleSnapshot backfill, future PII envelope re-keys) persist their
+// cursor here so a worker crash or KMS rate-limit pause is recoverable
+// — re-running the script picks up at `lastProcessedId` rather than
+// rescanning rows the previous run already finished.
+//
+// Per-script naming convention (`job` column):
+//   dek_rewrap.consumer_profiles   — structured envelope rewrap
+//   dek_rewrap.beneficial_owners   — structured envelope rewrap
+//   dek_rewrap.users_totp          — opaque envelope rewrap
+//   dek_rewrap.webhook_endpoints   — opaque envelope rewrap
+//   dek_rewrap.marketplaces        — opaque envelope rewrap
+//   dek_rewrap.billing_configs     — opaque envelope rewrap
+//   dek_rewrap.highsale_snapshots  — opaque envelope rewrap
+//
+// The script writes one progress row per (job, run) keyed by `job` +
+// timestamp. The `--resume-from=auto` mode reads the most-recent
+// unfinished row for the job and continues from `lastProcessedId`.
+//
+// Rows are append-only via discipline (not a DB trigger) — the script
+// always INSERTS a new row per batch and never UPDATEs prior rows.
+// This makes the table a natural audit trail of every batch the job
+// processed, including ones that failed mid-way.
+model DekRewrapProgress {
+  id                String    @id @default(uuid()) @db.Uuid
+  /// Job discriminator — see the naming convention in the model comment.
+  job               String
+  /// Source KEK id (e.g. `local-dev`) — pinned at script start so a
+  /// re-run cannot accidentally mix runs with different KEK origins.
+  sourceKekId       String    @map("source_kek_id")
+  /// Destination KEK id (e.g. `mock-kms`, or the real KMS key ARN).
+  destinationKekId  String    @map("destination_kek_id")
+  /// Last row id (uuid) processed in this batch. The next batch starts
+  /// strictly AFTER this id, ordered by id ascending. NULL on the first
+  /// progress row when no rows were eligible for processing.
+  lastProcessedId   String?   @map("last_processed_id") @db.Uuid
+  /// Cumulative counts across the whole run, NOT just this batch.
+  countDone         Int       @default(0) @map("count_done")
+  countSkipped      Int       @default(0) @map("count_skipped")
+  countFailed       Int       @default(0) @map("count_failed")
+  /// Wall-clock window the BATCH (not the run) covered.
+  batchStartedAt    DateTime  @map("batch_started_at") @db.Timestamptz(6)
+  batchFinishedAt   DateTime  @map("batch_finished_at") @db.Timestamptz(6)
+  /// Process-wide run id (uuid) so an operator can group all batch
+  /// rows belonging to one invocation of the script.
+  runId             String    @map("run_id") @db.Uuid
+  /// True ONLY on the final row of a fully-completed run. Resume picks
+  /// the most-recent row WHERE finishedRun = false to continue from.
+  finishedRun       Boolean   @default(false) @map("finished_run")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([job, createdAt(sort: Desc)])
+  @@index([job, finishedRun, createdAt(sort: Desc)])
+  @@map("dek_rewrap_progress")
+}

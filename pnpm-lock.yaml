@@ -692,6 +692,28 @@ importers:
         specifier: ^18.3.0
         version: 18.3.1
 
+  scripts:
+    dependencies:
+      '@eazepay/integrations-core':
+        specifier: workspace:*
+        version: link:../libs/integrations-core
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.39
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.39)(terser@5.46.2)
+
   services/admin:
     dependencies:
       '@eazepay/service-auth':

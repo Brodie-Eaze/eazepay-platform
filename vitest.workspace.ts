@@ -5,4 +5,5 @@ export default defineWorkspace([
   'services/*/vitest.config.ts',
   'apps/api/vitest.config.ts',
   'apps/partner-portal/vitest.config.ts',
+  'scripts/vitest.config.ts',
 ]);
