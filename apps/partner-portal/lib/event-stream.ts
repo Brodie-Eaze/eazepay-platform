@@ -122,11 +122,35 @@ export function useEventStream(
     };
 
     es.onopen = () => setConnected(true);
+    // Cap reconnects so an unreachable / misconfigured SSE endpoint
+    // does not generate a setState storm. Without this cap, EventSource
+    // re-fires `error` rapidly (much faster than the documented 3s
+    // `retry:` when the response itself is a hard rejection — 401/403/
+    // 404/CORS), and every error calls setReconnects which re-renders
+    // every ancestor (incl. AppShell). Combined with a heavy mount
+    // (e.g. the 1.8k-line partner-detail page), this stalls React
+    // reconciliation long enough to freeze the renderer entirely —
+    // observed in prod as "click partner row → blank page".
+    //
+    // After MAX_RECONNECTS we close the source and stop retrying.
+    // The strip's `Reconnecting…` pill stays visible so ops still
+    // sees the degraded state, but the runtime stops paying for it.
+    const MAX_RECONNECTS = 5;
+    let reconnectCount = 0;
     es.onerror = () => {
+      reconnectCount += 1;
       setConnected(false);
-      setReconnects((n) => n + 1);
-      // EventSource auto-reconnects after the `retry:` interval (3s,
-      // see sse-writer.ts). We don't need to manually re-establish.
+      setReconnects(reconnectCount);
+      if (reconnectCount >= MAX_RECONNECTS) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[event-stream] giving up after ${reconnectCount} reconnect attempts to ${finalUrl}. Verify NEXT_PUBLIC_API_URL points at a reachable SSE endpoint.`,
+        );
+        es.close();
+        sourceRef.current = null;
+      }
+      // Otherwise EventSource auto-reconnects after the `retry:`
+      // interval (3s default; see sse-writer.ts).
     };
     es.onmessage = onMessage;
     // Every event has `event: <kind>` per the spec — the browser fires
