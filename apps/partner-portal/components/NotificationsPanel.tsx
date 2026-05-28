@@ -252,6 +252,7 @@ export function NotificationsPanel({ recipient, open, onClose }: NotificationsPa
                   markRead(recipient, id);
                   setItems(listNotifications(recipient, 200));
                 }}
+                onClose={onClose}
               />
             ))
           )}
@@ -288,12 +289,14 @@ function NotificationSection({
   collapsed,
   onToggle,
   onMarkRead,
+  onClose,
 }: {
   title: string;
   items: Notification[];
   collapsed: boolean;
   onToggle: () => void;
   onMarkRead: (id: string) => void;
+  onClose: () => void;
 }) {
   return (
     <section className="border-b border-border">
@@ -331,7 +334,17 @@ function NotificationSection({
         <ul className="divide-y divide-border">
           {items.map((item) => (
             <li key={item.id}>
-              <NotificationRow item={item} onClick={() => onMarkRead(item.id)} />
+              <NotificationRow
+                item={item}
+                onClick={() => {
+                  onMarkRead(item.id);
+                  // Close panel on click so the navigation that the
+                  // wrapping <Link> dispatches lands on a clean canvas
+                  // (previously the panel stayed open over the new
+                  // page, making clicks feel like dead ends).
+                  onClose();
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -428,35 +441,40 @@ function seedDemoNotifications(recipient: string): void {
       kind: 'application_submitted',
       title: 'New application submitted',
       body: 'TradePay · ACME Roofing · $45,000 requested',
-      href: '/applications',
+      // Deep-link to the application detail so the click takes the
+      // operator straight to the row they care about, not the generic
+      // index page (which felt like a dead end).
+      href: '/applications?focus=tradepay-acme-45k',
       createdAt: at(8),
     },
     {
       kind: 'application_funded',
       title: 'Application funded',
       body: 'MedPay · Lakeside Dental · $12,800 funded by Helios Capital',
-      href: '/applications',
+      href: '/applications?focus=medpay-lakeside-12k8',
       createdAt: at(42),
     },
     {
       kind: 'system',
       title: 'Webhook failure rate above SLO',
       body: 'partner-events: 4.1% failures over the last 15m (SLO 1%).',
-      href: '/admin/observability',
+      href: '/admin/observability?panel=webhook-slo',
       createdAt: at(95),
     },
     {
       kind: 'system',
       title: 'Partner onboarding completed',
       body: 'Northstar Auto Group finished KYC + MID issued (MID 7741).',
-      href: '/control-panel',
+      // Open the partner's control surface directly; MID 7741 = p_atlas
+      // in the seed roster (see lib/master-data).
+      href: '/control-panel/p_atlas',
       createdAt: at(220),
     },
     {
       kind: 'invoice_paid',
       title: 'Invoice paid',
       body: 'CoachPay · Peak Performance Coaching · $1,950',
-      href: '/invoices',
+      href: '/invoices?focus=coachpay-peak-1950',
       createdAt: at(680),
     },
   ];

@@ -24,7 +24,7 @@
 // duplicate cross-section entry. Browsers that opened the v1 panel
 // during the broken window will get a fresh seed with backdated
 // timestamps + exclusive section assignment.
-const STORE_KEY = 'eazepay_notifications_v2';
+const STORE_KEY = 'eazepay_notifications_v3';
 const MAX_PER_RECIPIENT = 200;
 
 export type NotificationKind =

@@ -12,7 +12,7 @@
  */
 // gitleaks:allow
 export const STORAGE_KEYS = {
-  notifications: 'eazepay_notifications_v2',
+  notifications: 'eazepay_notifications_v3',
   recentItems: 'eazepay_recent_items_v1',
   savedViews: 'eazepay_saved_views_v1',
 } as const;
