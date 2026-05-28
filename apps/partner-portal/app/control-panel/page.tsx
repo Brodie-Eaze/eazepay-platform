@@ -407,6 +407,20 @@ export default function ControlPanelPage() {
                         path-to-the-control-surface. */}
                     <a
                       href={`/control-panel/${p.id}`}
+                      // HOTFIX(2): explicit window.location.assign forces
+                      // a real navigation. Plain <a> tags still get
+                      // intercepted somewhere in this app (Next router
+                      // or a global click handler in _shell), routing
+                      // client-side and freezing the JS thread for ~45s.
+                      // window.location bypasses every JS click handler
+                      // and triggers an SSR page load (<1s).
+                      onClick={(e) => {
+                        // Allow new-tab modifiers (Cmd/Ctrl, middle-click)
+                        // to keep their native behaviour.
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                        e.preventDefault();
+                        window.location.assign(`/control-panel/${p.id}`);
+                      }}
                       className="md:col-span-5 flex items-center gap-3 min-w-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-md"
                     >
                       <span
@@ -461,6 +475,11 @@ export default function ControlPanelPage() {
                           ~45s, SSR renders in <1s. */}
                       <a
                         href={`/control-panel/${p.id}`}
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                          e.preventDefault();
+                          window.location.assign(`/control-panel/${p.id}`);
+                        }}
                         className="inline-flex items-center justify-center gap-1.5 h-9 min-w-[44px] rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
                       >
                         Open <ArrowRightIcon size={11} />
@@ -535,9 +554,14 @@ export default function ControlPanelPage() {
                                 Lender access
                               </KebabLink>
                               <div className="border-t border-border my-1" role="separator" />
-                              {/* HOTFIX: plain <a> — see note above. */}
                               <a
                                 href={`/control-panel/${p.id}`}
+                                onClick={(e) => {
+                                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0)
+                                    return;
+                                  e.preventDefault();
+                                  window.location.assign(`/control-panel/${p.id}`);
+                                }}
                                 role="menuitem"
                                 className="w-full text-left px-3 py-2 flex items-center gap-2 text-fg-secondary hover:bg-bg-muted hover:text-fg focus-visible:outline-none focus-visible:bg-bg-muted"
                               >
