@@ -10,12 +10,34 @@ const nextConfig = {
   // "Can't resolve './brands.js'" because the on-disk file is `brands.ts`.
   // Mapping `.js` → `[.ts, .tsx, .js]` keeps both toolchains happy
   // without forking the source.
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.extensionAlias = {
       ...config.resolve.extensionAlias,
       '.js': ['.ts', '.tsx', '.js'],
       '.jsx': ['.tsx', '.jsx'],
     };
+    // Client bundle MUST NOT include Node-only modules. lib/db is
+    // dynamically imported from lib/consumer-consent, which is
+    // reachable from `app/apply/<brand>/page.tsx` (client component).
+    // Webpack still tries to *resolve* the dynamic import target
+    // during build, so the trace pulls in `pg` → `tls`/`net`/`dns`
+    // and fails the Railway deploy with:
+    //   "Module not found: Can't resolve 'tls' / 'net'"
+    // Mark those modules as `false` for the client build so webpack
+    // returns an empty stub — the dynamic chunk that actually pulls
+    // them in is server-only and never executed in the browser.
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        tls: false,
+        net: false,
+        dns: false,
+        fs: false,
+        child_process: false,
+        'pg-native': false,
+        'cloudflare:sockets': false,
+      };
+    }
     return config;
   },
   // TypeScript: now at 0 errors across the whole partner-portal surface

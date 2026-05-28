@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { type PrequalRequest } from '@/lib/highsale/client';
 import { getSoftPullProvider } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
-import { verifyFCRAConsent } from '@/lib/consumer-consent';
+import { verifyFCRAConsent } from '@/lib/consumer-consent-server';
 /* SEC-RLS-2 — the FCRA audit_log insert is wrapped in
  * `withTenantContext` so the RLS GUC on audit_log binds to the session
  * partner. The route already runs behind `requirePartnerSession`, so

@@ -70,7 +70,7 @@ import {
   storeConsentReceipt,
   __resetConsentReceiptStoreForTests,
   type ConsentReceipt,
-} from '../../../../../lib/consumer-consent';
+} from '../../../../../lib/consumer-consent-server';
 import { signDemoPreset, _resetDemoCookieKeyCache } from '../../../../../lib/demo-cookie';
 
 /**
