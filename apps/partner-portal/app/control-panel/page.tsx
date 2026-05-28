@@ -398,7 +398,14 @@ export default function ControlPanelPage() {
                     key={p.id}
                     className="relative grid grid-cols-1 md:grid-cols-12 items-start md:items-center gap-2 md:gap-3 px-4 sm:px-5 py-3.5 hover:bg-bg-muted/30"
                   >
-                    <Link
+                    {/* HOTFIX: plain <a> instead of Next Link so the
+                        navigation to /control-panel/[partnerId] does a
+                        full SSR page load. The client-side router
+                        path freezes the JS thread for ~45s on this
+                        route; SSR renders in <1s. Until the perf
+                        root cause is found, this is the user's
+                        path-to-the-control-surface. */}
+                    <a
                       href={`/control-panel/${p.id}`}
                       className="md:col-span-5 flex items-center gap-3 min-w-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded-md"
                     >
@@ -416,7 +423,7 @@ export default function ControlPanelPage() {
                           {p.email} {p.phone && <span>· {p.phone}</span>}
                         </p>
                       </div>
-                    </Link>
+                    </a>
                     <div className="md:col-span-1 flex md:block items-center gap-2">
                       <span className="md:hidden text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
                         Brand
@@ -449,12 +456,15 @@ export default function ControlPanelPage() {
                       </StatusPill>
                     </div>
                     <div className="md:col-span-2 flex items-center md:justify-end gap-1.5 mt-1 md:mt-0">
-                      <Link
+                      {/* HOTFIX: plain <a> — see note above; client-side
+                          router on /control-panel/[partnerId] freezes
+                          ~45s, SSR renders in <1s. */}
+                      <a
                         href={`/control-panel/${p.id}`}
                         className="inline-flex items-center justify-center gap-1.5 h-9 min-w-[44px] rounded-md border border-border bg-bg-elevated text-[12px] font-medium text-fg-secondary hover:bg-bg-muted px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
                       >
                         Open <ArrowRightIcon size={11} />
-                      </Link>
+                      </a>
                       <div className="relative">
                         <button
                           type="button"
@@ -525,12 +535,17 @@ export default function ControlPanelPage() {
                                 Lender access
                               </KebabLink>
                               <div className="border-t border-border my-1" role="separator" />
-                              <KebabLink
+                              {/* HOTFIX: plain <a> — see note above. */}
+                              <a
                                 href={`/control-panel/${p.id}`}
-                                icon={<ArrowRightIcon size={12} />}
+                                role="menuitem"
+                                className="w-full text-left px-3 py-2 flex items-center gap-2 text-fg-secondary hover:bg-bg-muted hover:text-fg focus-visible:outline-none focus-visible:bg-bg-muted"
                               >
+                                <span aria-hidden>
+                                  <ArrowRightIcon size={12} />
+                                </span>
                                 Open detail page
-                              </KebabLink>
+                              </a>
                             </div>
                           </>
                         )}
