@@ -31,19 +31,19 @@ RUN apk add --no-cache libc6-compat \
 COPY . .
 
 # Install with --frozen-lockfile so package.json + lockfile drift fails
-# loud. Use --filter=@eazepay/partner-portal... so we only install the
-# deps needed for the partner-portal app + its workspace deps (not the
-# whole monorepo).
-RUN pnpm install --frozen-lockfile --filter=@eazepay/partner-portal...
+# loud. We need BOTH partner-portal (the app being built) AND api (the
+# package that owns the Prisma schema) — `libs/integrations-core`
+# type-imports the `Prisma` namespace from `@prisma/client`, which only
+# exists after `prisma generate` runs against apps/api/prisma/schema.
+# Without including `@eazepay/api` in the install filter, prisma's CLI
+# isn't on disk and `prisma generate` errors with "Command not found".
+RUN pnpm install --frozen-lockfile \
+  --filter=@eazepay/partner-portal... \
+  --filter=@eazepay/api
 
-# Generate the Prisma client BEFORE the Next build. The build trips
-# through libs/integrations-core/src/outbox-prisma.ts which type-imports
-# the `Prisma` namespace from `@prisma/client`. That namespace only
-# exists after `prisma generate` runs; without this step the build
-# fails with "Module @prisma/client has no exported member 'Prisma'".
-# --filter=@eazepay/api... ensures the workspace dep that owns the
-# schema is the only one we generate against (matches the install
-# filter above).
+# Generate the Prisma client BEFORE the Next build. Without this the
+# next build fails: "Module @prisma/client has no exported member
+# 'Prisma'" in libs/integrations-core/src/outbox-prisma.ts.
 RUN pnpm --filter @eazepay/api exec prisma generate
 
 # Build the partner-portal app. `output: 'standalone'` in next.config.mjs
