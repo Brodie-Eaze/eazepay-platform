@@ -6,7 +6,7 @@ import { enforceCsrf } from '../../../../lib/csrf.js';
 import {
   storeConsentReceipt,
   listConsentReceiptsForApplication,
-} from '../../../../lib/consumer-consent';
+} from '../../../../lib/consumer-consent-server';
 
 /**
  * POST /api/applications/consent — consumer soft-pull consent receipt.

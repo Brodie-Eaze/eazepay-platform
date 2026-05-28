@@ -36,6 +36,16 @@ COPY . .
 # whole monorepo).
 RUN pnpm install --frozen-lockfile --filter=@eazepay/partner-portal...
 
+# Generate the Prisma client BEFORE the Next build. The build trips
+# through libs/integrations-core/src/outbox-prisma.ts which type-imports
+# the `Prisma` namespace from `@prisma/client`. That namespace only
+# exists after `prisma generate` runs; without this step the build
+# fails with "Module @prisma/client has no exported member 'Prisma'".
+# --filter=@eazepay/api... ensures the workspace dep that owns the
+# schema is the only one we generate against (matches the install
+# filter above).
+RUN pnpm --filter @eazepay/api exec prisma generate
+
 # Build the partner-portal app. `output: 'standalone'` in next.config.mjs
 # writes the trim-down bundle to apps/partner-portal/.next/standalone.
 ENV NEXT_TELEMETRY_DISABLED=1
