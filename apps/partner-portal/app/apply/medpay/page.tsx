@@ -1516,7 +1516,7 @@ const MEDPAY_APPLY_CSS = `
 }
 .mp-offer-amount {
   margin-top: 2px;
-  font-size: 32px; font-weight: 700;
+  font-size: 25px; font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
@@ -2174,7 +2174,7 @@ const MEDPAY_APPLY_CSS = `
   .mp-h1 { font-size: 34px; }
   .mp-h2 { font-size: 26px; }
   .mp-step { padding: 24px 18px; }
-  .mp-offer-amount { font-size: 28px; }
+  .mp-offer-amount { font-size: 22px; }
   .mp-chip { font-size: 10px; padding: 5px 9px; }
   .mp-container { padding: 0 18px; }
   .mp-how { margin-top: 72px; }
