@@ -107,13 +107,20 @@ export interface MarketplaceLenderRow {
     maxTermMonths?: number;
   };
   /**
-   * Optional logo URL surfaced next to the lender's `displayName` in
-   * the consumer-facing apply offers. Use a stable CDN (Clearbit logos,
-   * official press kit, or a self-hosted asset). Square aspect ratio
-   * preferred — the apply UI renders it at ~24×24 inside a rounded
-   * container.
+   * Optional wordmark for the lender (NOT square; rendered at the full
+   * width of the offer card title). Self-hosted SVGs under
+   * `public/lenders/` are preferred for stability — Clearbit-style
+   * CDN logos break the moment the third-party caches a stale asset.
    */
   logoSrc?: string;
+  /**
+   * Optional secondary wordmark for co-branded financing programs
+   * (e.g. U.S. Bank's Avvance POS lending product). When both
+   * `logoSrc` and `logoPartnerSrc` are set, the apply page renders
+   * them side-by-side with a thin vertical divider, matching the
+   * lender's brand book.
+   */
+  logoPartnerSrc?: string;
 }
 
 export const marketplaceLenders: MarketplaceLenderRow[] = [
@@ -134,7 +141,8 @@ export const marketplaceLenders: MarketplaceLenderRow[] = [
     permittedStates: [],
     globallyEnabled: true,
     syncedAt: '2026-05-28T00:00:00Z',
-    logoSrc: 'https://logo.clearbit.com/usbank.com',
+    logoSrc: '/lenders/us-bank.svg',
+    logoPartnerSrc: '/lenders/avvance.svg',
   },
   // engine.tech — medical pool
   {
