@@ -1574,16 +1574,18 @@ const MEDPAY_APPLY_CSS = `
 }
 
 .mp-offer-cta {
-  margin-top: 18px;
-  width: 100%;
-  /* Cap the CTA at a readable button width so wide-desktop viewports
-     don't get a CTA the width of the whole offer card. */
-  max-width: 360px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 18px auto 0 auto;
+  /* Right-sized button — auto width lets the label dictate size and
+     align-self:center survives every parent layout (flex/grid/block)
+     without depending on margin:auto of a 100%-width box, which was
+     being defeated by the offer card inner flex and producing a
+     full-card-width slab. */
+  width: auto;
+  max-width: 280px;
+  align-self: center;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 11px 22px;
+  border-radius: 10px;
   background: linear-gradient(180deg, var(--mp-teal-2) 0%, var(--mp-teal) 100%);
   color: #fff;
   font-weight: 600; font-size: 13px;

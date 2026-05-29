@@ -1752,13 +1752,15 @@ const TRADEPAY_APPLY_CSS = `
   box-shadow: 0 0 6px rgba(255,255,255,0.9);
 }
 .tradepay-root .tp-offer-card-cta {
-  /* Cap the CTA at a readable button width on wide desktops. */
+  /* Right-sized button — auto width + align-self:center keeps it
+     readable without spanning the full card. */
   margin: 14px auto 18px;
-  width: 100%;
-  max-width: 360px;
-  display: flex;
+  width: auto;
+  max-width: 280px;
+  align-self: center;
+  display: inline-flex;
   justify-content: center;
-  padding: 12px;
+  padding: 11px 22px;
   font-size: 13px;
 }
 
