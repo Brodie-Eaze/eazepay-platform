@@ -188,6 +188,8 @@ export default function MedPayApplyPage() {
   useEffect(() => {
     if (!sessionId) return;
     if (step === 'landing' || step === 'disclaimer') return;
+    // Preview mode (?preview=offers) has no bound session by design — skip the guard so the shared offer-card link doesn't snap back to landing.
+    if (previewStep === 'offers') return;
     if (!sessionStillBound()) {
       setIntake(BLANK_INTAKE);
       setStep('landing');
