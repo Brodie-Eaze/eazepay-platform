@@ -67,7 +67,7 @@ jobs:
     name: Partner-portal (unconditional)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # dorny/paths-filter@v3 calls the PR listFiles endpoint to compute
+    # dorny/paths-filter@v4 calls the PR listFiles endpoint to compute
     # the changed-files diff for the PR. That endpoint needs an
     # explicit `pull-requests: read` permission on PR runs, otherwise
     # the action errors with "Resource not accessible by integration".
@@ -82,7 +82,7 @@ jobs:
 
       - name: Detect partner-portal changes
         id: detect
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             partner-portal:
