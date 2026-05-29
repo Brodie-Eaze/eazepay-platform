@@ -1073,17 +1073,20 @@ function OffersStep({
 
             <div className="tp-offer-card-project">
               <div>
-                <div className="tp-offer-card-eyebrow inline-flex items-center gap-2">
+                <div
+                  className="tp-offer-card-eyebrow"
+                  style={{ display: 'flex', alignItems: 'center', gap: 7 }}
+                >
                   {top.logoSrc ? (
                     <img
                       src={top.logoSrc}
                       alt={`${top.displayName} logo`}
-                      className="h-3.5 w-auto object-contain"
+                      style={{ height: 15, width: 'auto', display: 'block', flexShrink: 0 }}
                     />
                   ) : (
                     <span>{top.displayName}</span>
                   )}
-                  <span className="opacity-90">· approved</span>
+                  <span style={{ opacity: 0.9 }}>· Pre-qualified</span>
                 </div>
                 <div className="tp-offer-card-amount">{fmt(effectiveAmount)}</div>
               </div>

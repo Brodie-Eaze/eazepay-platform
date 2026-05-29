@@ -1054,21 +1054,25 @@ function OffersStep({
           </div>
           <div className="mp-offer-id">APPROVAL · 92%</div>
         </div>
-        <div className="mp-offer-title inline-flex items-center gap-2">
+        <div className="mp-offer-title" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           {top.logoSrc ? (
             <img
               src={top.logoSrc}
               alt={`${top.displayName} logo`}
-              className="h-3.5 w-auto object-contain"
+              /* Inline style — these brand pages don't process Tailwind
+                 utilities, so h-* classes were no-ops and the SVG
+                 rendered at its full 300×38 natural size. Fixed height
+                 keeps the wordmark crisp + small. */
+              style={{ height: 15, width: 'auto', display: 'block', flexShrink: 0 }}
             />
           ) : (
             <span>{top.displayName}</span>
           )}
-          <span className="opacity-90">· approved</span>
+          <span style={{ opacity: 0.9 }}>· Pre-qualified</span>
         </div>
         <div className="mp-offer-amount">
           {fmt(effectiveAmount)}
-          <span className="mp-offer-amount-sub">approved</span>
+          <span className="mp-offer-amount-sub">Pre-qualified</span>
         </div>
         <div className="mp-offer-row">
           <div>

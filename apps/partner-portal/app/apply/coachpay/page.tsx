@@ -1074,20 +1074,23 @@ function OffersStep({
             <div className="cp-offer-tag cp-offer-tag-recommended">
               <BoltIcon size={11} /> AI RECOMMENDED
             </div>
-            <div className="cp-card-title inline-flex items-center gap-2">
+            <div
+              className="cp-card-title"
+              style={{ display: 'flex', alignItems: 'center', gap: 7 }}
+            >
               {top.logoSrc ? (
                 <img
                   src={top.logoSrc}
                   alt={`${top.displayName} logo`}
-                  className="h-3.5 w-auto object-contain"
+                  style={{ height: 15, width: 'auto', display: 'block', flexShrink: 0 }}
                 />
               ) : (
                 <span>{top.displayName}</span>
               )}
-              <span className="opacity-90">· approved</span>
+              <span style={{ opacity: 0.9 }}>· Pre-qualified</span>
             </div>
           </div>
-          <div className="cp-card-stamp">approval · 92%</div>
+          <div className="cp-card-stamp">pre-qual · 92%</div>
         </div>
 
         <div className="cp-card-amount">
@@ -1096,7 +1099,7 @@ function OffersStep({
             {(effectiveAmount / 100).toLocaleString('en-US')}
           </span>
         </div>
-        <div className="cp-card-amount-sub">approved</div>
+        <div className="cp-card-amount-sub">Pre-qualified</div>
 
         <div className="cp-card-offer-grid">
           <div>
