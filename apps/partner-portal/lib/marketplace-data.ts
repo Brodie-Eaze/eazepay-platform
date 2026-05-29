@@ -141,8 +141,12 @@ export const marketplaceLenders: MarketplaceLenderRow[] = [
     permittedStates: [],
     globallyEnabled: true,
     syncedAt: '2026-05-28T00:00:00Z',
-    logoSrc: '/lenders/us-bank.svg',
-    logoPartnerSrc: '/lenders/avvance.svg',
+    // Single Avvance brand mark — Avvance IS U.S. Bank's POS financing
+    // product, so its wordmark is the correct consumer-facing lender
+    // logo. The U.S. Bancorp corporate shield was deliberately removed
+    // (wrong entity + visually heavy). The "U.S. Bank" name still shows
+    // as text in the lender row.
+    logoSrc: '/lenders/avvance.svg',
   },
   // engine.tech — medical pool
   {

@@ -1054,25 +1054,13 @@ function OffersStep({
           </div>
           <div className="mp-offer-id">APPROVAL · 92%</div>
         </div>
-        <div className="mp-offer-title inline-flex items-center gap-2 flex-wrap">
+        <div className="mp-offer-title inline-flex items-center gap-2">
           {top.logoSrc ? (
-            <span className="inline-flex items-center gap-1.5">
-              <img
-                src={top.logoSrc}
-                alt={`${top.displayName} logo`}
-                className="h-4 w-auto object-contain"
-              />
-              {top.logoPartnerSrc && (
-                <>
-                  <span aria-hidden className="h-3 w-px bg-current opacity-25" />
-                  <img
-                    src={top.logoPartnerSrc}
-                    alt="Avvance"
-                    className="h-4 w-auto object-contain"
-                  />
-                </>
-              )}
-            </span>
+            <img
+              src={top.logoSrc}
+              alt={`${top.displayName} logo`}
+              className="h-3.5 w-auto object-contain"
+            />
           ) : (
             <span>{top.displayName}</span>
           )}
@@ -1096,9 +1084,7 @@ function OffersStep({
           </div>
           <div>
             <div className="mp-offer-row-k">Lender</div>
-            <div className="mp-offer-row-v sm">
-              {top.logoPartnerSrc ? `${top.displayName} · Avvance` : top.displayName}
-            </div>
+            <div className="mp-offer-row-v sm">{top.displayName} · Avvance</div>
           </div>
         </div>
 
@@ -1523,13 +1509,13 @@ const MEDPAY_APPLY_CSS = `
   letter-spacing: -0.01em;
 }
 .mp-offer-amount {
-  margin-top: 4px;
-  font-size: 44px; font-weight: 700;
+  margin-top: 2px;
+  font-size: 32px; font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--mp-ink);
   font-variant-numeric: tabular-nums;
-  line-height: 1;
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  line-height: 1.05;
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
 }
 .mp-offer-amount-sub {
   font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
@@ -2182,7 +2168,7 @@ const MEDPAY_APPLY_CSS = `
   .mp-h1 { font-size: 34px; }
   .mp-h2 { font-size: 26px; }
   .mp-step { padding: 24px 18px; }
-  .mp-offer-amount { font-size: 36px; }
+  .mp-offer-amount { font-size: 28px; }
   .mp-chip { font-size: 10px; padding: 5px 9px; }
   .mp-container { padding: 0 18px; }
   .mp-how { margin-top: 72px; }

@@ -1073,25 +1073,13 @@ function OffersStep({
 
             <div className="tp-offer-card-project">
               <div>
-                <div className="tp-offer-card-eyebrow inline-flex items-center gap-2 flex-wrap">
+                <div className="tp-offer-card-eyebrow inline-flex items-center gap-2">
                   {top.logoSrc ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <img
-                        src={top.logoSrc}
-                        alt={`${top.displayName} logo`}
-                        className="h-4 w-auto object-contain"
-                      />
-                      {top.logoPartnerSrc && (
-                        <>
-                          <span aria-hidden className="h-3 w-px bg-current opacity-25" />
-                          <img
-                            src={top.logoPartnerSrc}
-                            alt="Avvance"
-                            className="h-4 w-auto object-contain"
-                          />
-                        </>
-                      )}
-                    </span>
+                    <img
+                      src={top.logoSrc}
+                      alt={`${top.displayName} logo`}
+                      className="h-3.5 w-auto object-contain"
+                    />
                   ) : (
                     <span>{top.displayName}</span>
                   )}
@@ -1112,9 +1100,7 @@ function OffersStep({
               <div className="tp-offer-card-row tp-offer-row-primary">
                 <div className="tp-row-l">
                   <span className="tp-star">*</span>
-                  <span className="tp-row-name">
-                    {top.logoPartnerSrc ? `${top.displayName} · Avvance` : top.displayName}
-                  </span>
+                  <span className="tp-row-name">{top.displayName} · Avvance</span>
                   <span className="tp-row-recommend">BEST RATE</span>
                 </div>
                 <div className="ta-right tabular tp-row-strong">
