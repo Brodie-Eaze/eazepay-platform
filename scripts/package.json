@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@eazepay/integrations-core": "workspace:*",
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^7.8.0",
     "dotenv": "^17.4.2",
-    "tsx": "^4.19.0"
+    "tsx": "^4.22.3"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

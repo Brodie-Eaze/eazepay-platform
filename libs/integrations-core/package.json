@@ -12,7 +12,7 @@
     "@eazepay/shared-types": "workspace:*"
   },
   "peerDependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^7.8.0"
   },
   "peerDependenciesMeta": {
     "@prisma/client": {
@@ -20,6 +20,6 @@
     }
   },
   "devDependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^7.8.0"
   }
 }
