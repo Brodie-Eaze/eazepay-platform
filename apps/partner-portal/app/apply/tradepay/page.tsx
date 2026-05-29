@@ -1618,7 +1618,7 @@ const TRADEPAY_APPLY_CSS = `
 }
 .tradepay-root .tp-offer-card-amount {
   margin-top: 4px;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--tp-slate-900);
   font-variant-numeric: tabular-nums;

@@ -1640,7 +1640,7 @@ const COACHPAY_APPLY_CSS = `
   line-height: 1.3;
 }
 .cp-card-amount-n {
-  font-size: 36px; font-weight: 800; letter-spacing: -0.028em;
+  font-size: 27px; font-weight: 800; letter-spacing: -0.028em;
   line-height: 1.02;
   background: linear-gradient(180deg, #ffffff 0%, #b9b9c7 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
