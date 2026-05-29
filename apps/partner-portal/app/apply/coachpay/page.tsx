@@ -1074,25 +1074,13 @@ function OffersStep({
             <div className="cp-offer-tag cp-offer-tag-recommended">
               <BoltIcon size={11} /> AI RECOMMENDED
             </div>
-            <div className="cp-card-title inline-flex items-center gap-2 flex-wrap">
+            <div className="cp-card-title inline-flex items-center gap-2">
               {top.logoSrc ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <img
-                    src={top.logoSrc}
-                    alt={`${top.displayName} logo`}
-                    className="h-4 w-auto object-contain"
-                  />
-                  {top.logoPartnerSrc && (
-                    <>
-                      <span aria-hidden className="h-3 w-px bg-current opacity-25" />
-                      <img
-                        src={top.logoPartnerSrc}
-                        alt="Avvance"
-                        className="h-4 w-auto object-contain"
-                      />
-                    </>
-                  )}
-                </span>
+                <img
+                  src={top.logoSrc}
+                  alt={`${top.displayName} logo`}
+                  className="h-3.5 w-auto object-contain"
+                />
               ) : (
                 <span>{top.displayName}</span>
               )}
@@ -1124,9 +1112,7 @@ function OffersStep({
           </div>
           <div>
             <div className="cp-card-k">lender</div>
-            <div className="cp-card-v cp-card-v-sm">
-              {top.logoPartnerSrc ? `${top.displayName} · Avvance` : top.displayName}
-            </div>
+            <div className="cp-card-v cp-card-v-sm">{top.displayName} · Avvance</div>
           </div>
           <div>
             <div className="cp-card-k">payout</div>
@@ -1640,16 +1626,16 @@ const COACHPAY_APPLY_CSS = `
   white-space: nowrap;
 }
 .cp-card-amount {
-  margin-top: 18px;
-  display: flex; align-items: flex-start; gap: 4px;
+  margin-top: 10px;
+  display: flex; align-items: flex-start; gap: 3px;
   font-variant-numeric: tabular-nums;
 }
 .cp-card-amount-curr {
-  font-size: 24px; font-weight: 700; color: var(--cp-text-2);
-  line-height: 1.4;
+  font-size: 18px; font-weight: 700; color: var(--cp-text-2);
+  line-height: 1.3;
 }
 .cp-card-amount-n {
-  font-size: 52px; font-weight: 800; letter-spacing: -0.028em;
+  font-size: 36px; font-weight: 800; letter-spacing: -0.028em;
   line-height: 1.02;
   background: linear-gradient(180deg, #ffffff 0%, #b9b9c7 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
