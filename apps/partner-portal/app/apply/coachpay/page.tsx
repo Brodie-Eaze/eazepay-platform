@@ -1692,16 +1692,17 @@ const COACHPAY_APPLY_CSS = `
 }
 
 .cp-card-cta {
-  margin-top: 16px;
-  width: 100%;
-  /* Cap the CTA at a readable button width so wide-desktop viewports
-     don't get a button the width of the whole card. */
-  max-width: 360px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 16px auto 0 auto;
+  /* Right-sized button — auto width + align-self:center survives
+     every parent layout instead of relying on margin:auto of a
+     100%-width box, which was being defeated by the offer card inner
+     flex and producing a full-card-width slab. */
+  width: auto;
+  max-width: 280px;
+  align-self: center;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 11px 22px;
+  border-radius: 10px;
   background: linear-gradient(180deg, var(--cp-violet) 0%, var(--cp-violet-dd) 100%);
   color: #fff;
   font-weight: 600; font-size: 13.5px;
