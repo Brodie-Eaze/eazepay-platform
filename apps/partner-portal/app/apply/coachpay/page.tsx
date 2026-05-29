@@ -126,11 +126,22 @@ function filterLenders({ partnerId, tier, amountCents }: FilterArgs): Marketplac
 export default function CoachPayApplyPage() {
   const params = useSearchParams();
   const ref = params.get('ref') ?? '';
+  // Preview-mode short-circuit — see medpay page for full docstring.
+  //   /apply/coachpay?preview=offers&amount=20000&tier=sub_prime
+  const previewStep = (params.get('preview') as Step | null) ?? null;
+  const previewAmount = params.get('amount');
+  const previewTier = (params.get('tier') as CreditTier | null) ?? null;
+  const VALID_TIERS = new Set<CreditTier>(['prime_plus', 'prime', 'near_prime', 'sub_prime']);
+  const seedTier: CreditTier = previewTier && VALID_TIERS.has(previewTier) ? previewTier : 'prime';
+  const seedIntake: Intake =
+    previewStep === 'offers' && previewAmount
+      ? { ...BLANK_INTAKE, amount: previewAmount }
+      : BLANK_INTAKE;
 
-  const [step, setStep] = useState<Step>('landing');
+  const [step, setStep] = useState<Step>(previewStep === 'offers' ? 'offers' : 'landing');
   const [consent, setConsent] = useState(false);
-  const [intake, setIntake] = useState<Intake>(BLANK_INTAKE);
-  const [tier, setTier] = useState<CreditTier>('prime');
+  const [intake, setIntake] = useState<Intake>(seedIntake);
+  const [tier, setTier] = useState<CreditTier>(seedTier);
   const [chosen, setChosen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [consentBusy, setConsentBusy] = useState(false);
