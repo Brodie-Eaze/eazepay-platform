@@ -1054,21 +1054,21 @@ function OffersStep({
           </div>
           <div className="mp-offer-id">APPROVAL · 92%</div>
         </div>
-        <div className="mp-offer-title inline-flex items-center gap-3 flex-wrap">
+        <div className="mp-offer-title inline-flex items-center gap-2 flex-wrap">
           {top.logoSrc ? (
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5">
               <img
                 src={top.logoSrc}
                 alt={`${top.displayName} logo`}
-                className="h-6 w-auto object-contain"
+                className="h-4 w-auto object-contain"
               />
               {top.logoPartnerSrc && (
                 <>
-                  <span aria-hidden className="h-5 w-px bg-current opacity-30" />
+                  <span aria-hidden className="h-3 w-px bg-current opacity-25" />
                   <img
                     src={top.logoPartnerSrc}
                     alt="Avvance"
-                    className="h-5 w-auto object-contain"
+                    className="h-4 w-auto object-contain"
                   />
                 </>
               )}
@@ -1096,25 +1096,8 @@ function OffersStep({
           </div>
           <div>
             <div className="mp-offer-row-k">Lender</div>
-            <div className="mp-offer-row-v sm inline-flex items-center gap-2">
-              {top.logoSrc ? (
-                <>
-                  <img src={top.logoSrc} alt="" aria-hidden className="h-4 w-auto object-contain" />
-                  {top.logoPartnerSrc && (
-                    <>
-                      <span aria-hidden className="h-3 w-px bg-current opacity-30" />
-                      <img
-                        src={top.logoPartnerSrc}
-                        alt=""
-                        aria-hidden
-                        className="h-3.5 w-auto object-contain"
-                      />
-                    </>
-                  )}
-                </>
-              ) : (
-                <span>{top.displayName}</span>
-              )}
+            <div className="mp-offer-row-v sm">
+              {top.logoPartnerSrc ? `${top.displayName} · Avvance` : top.displayName}
             </div>
           </div>
         </div>
