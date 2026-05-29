@@ -1063,7 +1063,16 @@ function OffersStep({
             <div className="cp-offer-tag cp-offer-tag-recommended">
               <BoltIcon size={11} /> AI RECOMMENDED
             </div>
-            <div className="cp-card-title">{top.displayName} · approved</div>
+            <div className="cp-card-title inline-flex items-center gap-2">
+              {top.logoSrc && (
+                <img
+                  src={top.logoSrc}
+                  alt={`${top.displayName} logo`}
+                  className="size-6 rounded-md bg-white object-contain p-0.5 ring-1 ring-black/5"
+                />
+              )}
+              <span>{top.displayName} · approved</span>
+            </div>
           </div>
           <div className="cp-card-stamp">approval · 92%</div>
         </div>
@@ -1090,7 +1099,17 @@ function OffersStep({
           </div>
           <div>
             <div className="cp-card-k">lender</div>
-            <div className="cp-card-v cp-card-v-sm">{top.displayName}</div>
+            <div className="cp-card-v cp-card-v-sm inline-flex items-center gap-1.5">
+              {top.logoSrc && (
+                <img
+                  src={top.logoSrc}
+                  alt=""
+                  aria-hidden
+                  className="size-4 rounded bg-white object-contain p-0.5 ring-1 ring-black/5"
+                />
+              )}
+              <span>{top.displayName}</span>
+            </div>
           </div>
           <div>
             <div className="cp-card-k">payout</div>
