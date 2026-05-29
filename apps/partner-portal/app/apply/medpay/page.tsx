@@ -1040,15 +1040,29 @@ function OffersStep({
           </div>
           <div className="mp-offer-id">APPROVAL · 92%</div>
         </div>
-        <div className="mp-offer-title inline-flex items-center gap-2">
-          {top.logoSrc && (
-            <img
-              src={top.logoSrc}
-              alt={`${top.displayName} logo`}
-              className="size-6 rounded-md bg-white object-contain p-0.5 ring-1 ring-black/5"
-            />
+        <div className="mp-offer-title inline-flex items-center gap-3 flex-wrap">
+          {top.logoSrc ? (
+            <span className="inline-flex items-center gap-2">
+              <img
+                src={top.logoSrc}
+                alt={`${top.displayName} logo`}
+                className="h-6 w-auto object-contain"
+              />
+              {top.logoPartnerSrc && (
+                <>
+                  <span aria-hidden className="h-5 w-px bg-current opacity-30" />
+                  <img
+                    src={top.logoPartnerSrc}
+                    alt="Avvance"
+                    className="h-5 w-auto object-contain"
+                  />
+                </>
+              )}
+            </span>
+          ) : (
+            <span>{top.displayName}</span>
           )}
-          <span>{top.displayName} · approved</span>
+          <span className="opacity-90">· approved</span>
         </div>
         <div className="mp-offer-amount">
           {fmt(effectiveAmount)}
@@ -1068,16 +1082,25 @@ function OffersStep({
           </div>
           <div>
             <div className="mp-offer-row-k">Lender</div>
-            <div className="mp-offer-row-v sm inline-flex items-center gap-1.5">
-              {top.logoSrc && (
-                <img
-                  src={top.logoSrc}
-                  alt=""
-                  aria-hidden
-                  className="size-4 rounded bg-white object-contain p-0.5 ring-1 ring-black/5"
-                />
+            <div className="mp-offer-row-v sm inline-flex items-center gap-2">
+              {top.logoSrc ? (
+                <>
+                  <img src={top.logoSrc} alt="" aria-hidden className="h-4 w-auto object-contain" />
+                  {top.logoPartnerSrc && (
+                    <>
+                      <span aria-hidden className="h-3 w-px bg-current opacity-30" />
+                      <img
+                        src={top.logoPartnerSrc}
+                        alt=""
+                        aria-hidden
+                        className="h-3.5 w-auto object-contain"
+                      />
+                    </>
+                  )}
+                </>
+              ) : (
+                <span>{top.displayName}</span>
               )}
-              <span>{top.displayName}</span>
             </div>
           </div>
         </div>
