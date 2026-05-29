@@ -1074,21 +1074,21 @@ function OffersStep({
             <div className="cp-offer-tag cp-offer-tag-recommended">
               <BoltIcon size={11} /> AI RECOMMENDED
             </div>
-            <div className="cp-card-title inline-flex items-center gap-3 flex-wrap">
+            <div className="cp-card-title inline-flex items-center gap-2 flex-wrap">
               {top.logoSrc ? (
-                <span className="inline-flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5">
                   <img
                     src={top.logoSrc}
                     alt={`${top.displayName} logo`}
-                    className="h-6 w-auto object-contain"
+                    className="h-4 w-auto object-contain"
                   />
                   {top.logoPartnerSrc && (
                     <>
-                      <span aria-hidden className="h-5 w-px bg-current opacity-30" />
+                      <span aria-hidden className="h-3 w-px bg-current opacity-25" />
                       <img
                         src={top.logoPartnerSrc}
                         alt="Avvance"
-                        className="h-5 w-auto object-contain"
+                        className="h-4 w-auto object-contain"
                       />
                     </>
                   )}
@@ -1124,25 +1124,8 @@ function OffersStep({
           </div>
           <div>
             <div className="cp-card-k">lender</div>
-            <div className="cp-card-v cp-card-v-sm inline-flex items-center gap-2">
-              {top.logoSrc ? (
-                <>
-                  <img src={top.logoSrc} alt="" aria-hidden className="h-4 w-auto object-contain" />
-                  {top.logoPartnerSrc && (
-                    <>
-                      <span aria-hidden className="h-3 w-px bg-current opacity-30" />
-                      <img
-                        src={top.logoPartnerSrc}
-                        alt=""
-                        aria-hidden
-                        className="h-3.5 w-auto object-contain"
-                      />
-                    </>
-                  )}
-                </>
-              ) : (
-                <span>{top.displayName}</span>
-              )}
+            <div className="cp-card-v cp-card-v-sm">
+              {top.logoPartnerSrc ? `${top.displayName} · Avvance` : top.displayName}
             </div>
           </div>
           <div>
