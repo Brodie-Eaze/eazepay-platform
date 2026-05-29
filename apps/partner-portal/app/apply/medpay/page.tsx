@@ -1040,7 +1040,16 @@ function OffersStep({
           </div>
           <div className="mp-offer-id">APPROVAL · 92%</div>
         </div>
-        <div className="mp-offer-title">{top.displayName} · approved</div>
+        <div className="mp-offer-title inline-flex items-center gap-2">
+          {top.logoSrc && (
+            <img
+              src={top.logoSrc}
+              alt={`${top.displayName} logo`}
+              className="size-6 rounded-md bg-white object-contain p-0.5 ring-1 ring-black/5"
+            />
+          )}
+          <span>{top.displayName} · approved</span>
+        </div>
         <div className="mp-offer-amount">
           {fmt(effectiveAmount)}
           <span className="mp-offer-amount-sub">approved</span>
@@ -1059,7 +1068,17 @@ function OffersStep({
           </div>
           <div>
             <div className="mp-offer-row-k">Lender</div>
-            <div className="mp-offer-row-v sm">{top.displayName}</div>
+            <div className="mp-offer-row-v sm inline-flex items-center gap-1.5">
+              {top.logoSrc && (
+                <img
+                  src={top.logoSrc}
+                  alt=""
+                  aria-hidden
+                  className="size-4 rounded bg-white object-contain p-0.5 ring-1 ring-black/5"
+                />
+              )}
+              <span>{top.displayName}</span>
+            </div>
           </div>
         </div>
 

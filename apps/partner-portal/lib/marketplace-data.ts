@@ -106,9 +106,36 @@ export interface MarketplaceLenderRow {
     minTermMonths?: number;
     maxTermMonths?: number;
   };
+  /**
+   * Optional logo URL surfaced next to the lender's `displayName` in
+   * the consumer-facing apply offers. Use a stable CDN (Clearbit logos,
+   * official press kit, or a self-hosted asset). Square aspect ratio
+   * preferred — the apply UI renders it at ~24×24 inside a rounded
+   * container.
+   */
+  logoSrc?: string;
 }
 
 export const marketplaceLenders: MarketplaceLenderRow[] = [
+  // U.S. Bank — flagship prime lender, AI-recommended top match across
+  // all brands (kept first so apply pages surface it as the headline
+  // offer; see the apply/<brand>/page.tsx `eligibleLenders[0]` pick).
+  {
+    id: 'ml_in_us_bank',
+    marketplaceId: 'mkt_in_house',
+    externalLenderId: 'usbank_PERSONAL_001',
+    legalName: 'U.S. Bank, National Association',
+    displayName: 'U.S. Bank',
+    servesTiers: ['prime_plus', 'prime', 'near_prime', 'sub_prime'],
+    brands: ['tradepay', 'medpay', 'coachpay', 'direct'],
+    minAmountCents: 100_000,
+    maxAmountCents: 10_000_000,
+    minScore: 580,
+    permittedStates: [],
+    globallyEnabled: true,
+    syncedAt: '2026-05-28T00:00:00Z',
+    logoSrc: 'https://logo.clearbit.com/usbank.com',
+  },
   // engine.tech — medical pool
   {
     id: 'ml_eng_helia_med',
@@ -245,27 +272,7 @@ export const marketplaceLenders: MarketplaceLenderRow[] = [
   // Append-only — coordinate with the operational-connectedness agent
   // (other agent may also be touching this file).
   // ---------------------------------------------------------------
-  {
-    id: 'ml_in_us_bank',
-    marketplaceId: 'mkt_in_house',
-    externalLenderId: 'usbank_PERSONAL_001',
-    legalName: 'U.S. Bank, National Association',
-    displayName: 'U.S. Bank',
-    servesTiers: ['prime_plus', 'prime'],
-    brands: ['tradepay', 'medpay', 'coachpay', 'direct'],
-    minAmountCents: 500_000,
-    maxAmountCents: 100_000_00,
-    minScore: 700,
-    permittedStates: [],
-    globallyEnabled: false,
-    syncedAt: '2026-05-15T00:00:00Z',
-    pendingIntegration: {
-      note: 'Pending integration. API received, awaiting credentials.',
-      adapterFilePath: 'services/lender/src/adapters/us-bank.adapter.ts',
-      minTermMonths: 24,
-      maxTermMonths: 84,
-    },
-  },
+  // (U.S. Bank entry hoisted to the top of the array — see above.)
   {
     id: 'ml_in_engine_tech',
     marketplaceId: 'mkt_engine_tech',

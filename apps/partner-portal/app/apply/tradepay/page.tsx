@@ -1062,7 +1062,16 @@ function OffersStep({
 
             <div className="tp-offer-card-project">
               <div>
-                <div className="tp-offer-card-eyebrow">{top.displayName} · approved</div>
+                <div className="tp-offer-card-eyebrow inline-flex items-center gap-2">
+                  {top.logoSrc && (
+                    <img
+                      src={top.logoSrc}
+                      alt={`${top.displayName} logo`}
+                      className="size-5 rounded-md bg-white object-contain p-0.5 ring-1 ring-black/5"
+                    />
+                  )}
+                  <span>{top.displayName} · approved</span>
+                </div>
                 <div className="tp-offer-card-amount">{fmt(effectiveAmount)}</div>
               </div>
               <div className="tp-offer-card-right">
@@ -1078,7 +1087,17 @@ function OffersStep({
               <div className="tp-offer-card-row tp-offer-row-primary">
                 <div className="tp-row-l">
                   <span className="tp-star">*</span>
-                  <span className="tp-row-name">{top.displayName}</span>
+                  <span className="tp-row-name inline-flex items-center gap-1.5">
+                    {top.logoSrc && (
+                      <img
+                        src={top.logoSrc}
+                        alt=""
+                        aria-hidden
+                        className="size-4 rounded bg-white object-contain p-0.5 ring-1 ring-black/5"
+                      />
+                    )}
+                    <span>{top.displayName}</span>
+                  </span>
                   <span className="tp-row-recommend">BEST RATE</span>
                 </div>
                 <div className="ta-right tabular tp-row-strong">
