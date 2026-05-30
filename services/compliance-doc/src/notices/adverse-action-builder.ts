@@ -5,6 +5,7 @@ import type {
   AdverseActionRecipient,
   BureauContributor,
 } from './adverse-action.types.js';
+import { normalizeDeclineCodes } from './decline-code-mapper.js';
 
 /**
  * Structural mirror of `ExcludedLender` from
@@ -30,9 +31,20 @@ export interface ExcludedLenderForNotice {
 
 /**
  * Compose a notice content object from the structured inputs an admin
- * or orchestration would have on hand. Reason codes are validated
- * against the taxonomy here — an unknown code is a hard failure
- * (better to fail closed than ship a notice with a placeholder line).
+ * or orchestration would have on hand.
+ *
+ * Reason codes arrive as RAW codes (lender-adapter / risk-gate /
+ * decision-service strings). They are run through `normalizeDeclineCodes`
+ * (ECOA-02), which:
+ *   - passes through codes already in the Reg B taxonomy,
+ *   - maps known raw codes to their accurate taxonomy member,
+ *   - dedupes and caps at 4 (Reg B §1002.9(b)(2) specificity), and
+ *   - throws `UnmappableDeclineCodeError` on anything it cannot justify.
+ *
+ * The throw is a hard failure on purpose: better to fail closed (and let
+ * the caller alert + escalate) than ship a notice with a placeholder or a
+ * fabricated reason. The caller (orchestration) must catch this and
+ * fail LOUD — a missing statutory notice may never be silent.
  */
 export function buildAdverseActionNotice(input: {
   recipient: AdverseActionRecipient;
@@ -48,10 +60,16 @@ export function buildAdverseActionNotice(input: {
   bureau?: BureauContributor;
   policyVersion: string;
 }): AdverseActionNoticeContent {
+  // Map raw → Reg B taxonomy (dedup + ≤4). Throws on unmappable codes.
+  const taxonomyCodes = normalizeDeclineCodes(input.reasonCodes);
   const reasons: string[] = [];
-  for (const code of input.reasonCodes) {
+  for (const code of taxonomyCodes) {
     const line = (ADVERSE_ACTION_REASON_CODES as Record<string, string | undefined>)[code];
     if (!line) {
+      // Unreachable in practice — normalizeDeclineCodes only returns
+      // taxonomy members — but kept as a defensive backstop so a future
+      // taxonomy edit can never emit a reason with no consumer-readable
+      // line.
       throw new Error(`adverse_action_builder: unknown reason code "${code}"`);
     }
     reasons.push(line);
@@ -61,7 +79,7 @@ export function buildAdverseActionNotice(input: {
     application: input.application,
     lenderOfRecord: input.lenderOfRecord,
     reasons,
-    reasonCodes: [...input.reasonCodes],
+    reasonCodes: taxonomyCodes,
     ...(input.bureau ? { bureau: input.bureau } : {}),
     policyVersion: input.policyVersion,
     generatedAt: new Date().toISOString(),
