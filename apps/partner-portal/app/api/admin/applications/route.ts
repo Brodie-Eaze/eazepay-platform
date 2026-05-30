@@ -19,6 +19,7 @@ import { hasDb, withTenantContext } from '../../../../lib/db';
 import { applications } from '../../../../lib/db/schema';
 import { requireAdmin } from '../../../../lib/server-guards';
 import { getSessionContext } from '../../../../lib/session';
+import { decryptApplicationRowsZipped } from '../../../../lib/db/applications-pii';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 const StatusEnum = z.enum(['submitted', 'in_review', 'approved', 'funded', 'declined']);
@@ -81,13 +82,16 @@ export async function GET(req: NextRequest) {
   const items = rows.slice(0, limit);
   const nextCursor = rows.length > limit ? items[items.length - 1]?.createdAt.toISOString() : null;
 
+  /* PRIV-002: decrypt PII at the read boundary. Output shape unchanged. */
+  const decrypted = await decryptApplicationRowsZipped(items);
+
   return NextResponse.json({
-    items: items.map((a) => ({
+    items: decrypted.map(({ row: a, pii }) => ({
       id: a.id,
       brand: a.brand,
       partnerId: a.partnerId,
-      consumer: `${a.consumerFirst} ${a.consumerLast.slice(0, 1)}.`,
-      consumerEmail: a.consumerEmail,
+      consumer: `${pii.consumerFirst} ${pii.consumerLast.slice(0, 1)}.`,
+      consumerEmail: pii.consumerEmail,
       amountCents: a.amountCents,
       tier: a.tier,
       selectedLender: a.selectedLender,

@@ -1,0 +1,50 @@
+-- ============================================================
+-- 0021_drop_plaintext_consumer_pii — PRIV-002 expand/contract step 2 of 2.
+--
+-- !!! HOLD — DO NOT APPLY IN THE PRIV-002 PR. !!!
+--
+-- This file is intentionally suffixed `.sql.TODO` so the migration
+-- runner (scripts/migrate.ts globs `*.sql`) does NOT pick it up. It is
+-- the documented, reviewed contract for the FOLLOW-UP migration that
+-- drops the plaintext columns. Promote it to `0021_drop_plaintext_
+-- consumer_pii.sql` in a SEPARATE PR ONLY AFTER:
+--
+--   1. Migration 0020 is applied in production.
+--   2. `scripts/backfill-priv002.ts` has been run to completion and its
+--      final report shows `remaining_plaintext_unencrypted = 0`.
+--   3. A verification query confirms every row has all four `_enc`
+--      columns populated AND decrypts to the same value the plaintext
+--      column holds (the backfill script's --verify mode does this).
+--   4. A fresh DB snapshot has been taken (so the crypto-shred is
+--      recoverable from backup for the retention window if a defect is
+--      found post-drop).
+--
+-- WHAT THIS DOES
+-- --------------
+-- • Promotes the encrypted columns to NOT NULL (every row must now carry
+--   ciphertext — fail-closed against a future writer that forgets to
+--   seal).
+-- • DROPs the plaintext columns. The plaintext bytes are physically
+--   removed; the only remaining copy of each consumer's PII is the
+--   AES-256-GCM ciphertext whose per-row DEK is wrapped under the KEK.
+--   That is crypto-shred: the data is unrecoverable from the row alone,
+--   recoverable only by a holder of the KEK. This is the durable
+--   posture GLBA §314.4(c)(3) requires.
+--
+-- This drop is IRREVERSIBLE without restoring from the step-4 snapshot —
+-- which is exactly why it is a separate, human-gated PR.
+-- ============================================================
+
+ALTER TABLE "applications" ALTER COLUMN "consumer_first_enc" SET NOT NULL;
+ALTER TABLE "applications" ALTER COLUMN "consumer_last_enc" SET NOT NULL;
+ALTER TABLE "applications" ALTER COLUMN "consumer_email_enc" SET NOT NULL;
+ALTER TABLE "applications" ALTER COLUMN "consumer_phone_enc" SET NOT NULL;
+
+ALTER TABLE "applications" DROP COLUMN IF EXISTS "consumer_first";
+ALTER TABLE "applications" DROP COLUMN IF EXISTS "consumer_last";
+ALTER TABLE "applications" DROP COLUMN IF EXISTS "consumer_email";
+ALTER TABLE "applications" DROP COLUMN IF EXISTS "consumer_phone";
+
+-- After this migration, also remove the now-dead plaintext columns from
+-- lib/db/schema.ts (consumerFirst/Last/Email/Phone) and the
+-- EncryptedApplicationRow back-compat handling in lib/db/applications-pii.ts.

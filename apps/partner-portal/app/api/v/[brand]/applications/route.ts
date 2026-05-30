@@ -52,6 +52,11 @@ import { applicationEvents, applications, partners } from '../../../../../lib/db
 import { getSessionContext, allowedPartnerIdsForBrand } from '../../../../../lib/session';
 import { UNATTRIBUTED_PARTNER_ID } from '../../../../../lib/submitted-applications';
 import { incrementMetric } from '../../../../../lib/observability/metrics';
+import {
+  decryptApplicationRowsZipped,
+  newApplicationId,
+  sealApplicationPii,
+} from '../../../../../lib/db/applications-pii';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 
@@ -160,17 +165,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ bra
    * (above). The consumer is not authenticated, so we cannot derive a
    * partner-scoped GUC. The RLS policy in 0013 explicitly allows
    * role='operator' to insert into applications + application_events. */
+  /* PRIV-002: encrypt consumer PII at the data-access boundary BEFORE it
+   * touches Postgres. We mint the application id up front so the
+   * AES-256-GCM AAD can bind each ciphertext to this specific row id
+   * (cross-row transplant of a ciphertext then fails the auth-tag check
+   * on read). The plaintext columns are no longer written — the encrypted
+   * `*_enc` columns carry the data. Phone/email are normalized exactly as
+   * the legacy write path did so downstream behaviour is unchanged. */
+  const applicationId = newApplicationId();
+  const sealedPii = await sealApplicationPii(applicationId, {
+    consumerFirst: body.consumerFirst.trim(),
+    consumerLast: body.consumerLast.trim(),
+    consumerEmail: body.consumerEmail.trim().toLowerCase(),
+    consumerPhone: body.consumerPhone.replace(/\D+/g, ''),
+  });
+
   const inserted = await withRawTenantContext(SYNTHETIC_OPERATOR_CONTEXT, async (tx) => {
     const appRows = await tx
       .insert(applications)
       .values({
+        id: applicationId,
         brand,
         partnerId: resolvedPartnerId,
         refQuery: body.refQuery ?? body.partnerId ?? null,
-        consumerFirst: body.consumerFirst.trim(),
-        consumerLast: body.consumerLast.trim(),
-        consumerEmail: body.consumerEmail.trim().toLowerCase(),
-        consumerPhone: body.consumerPhone.replace(/\D+/g, ''),
+        consumerFirstEnc: sealedPii.consumerFirstEnc,
+        consumerLastEnc: sealedPii.consumerLastEnc,
+        consumerEmailEnc: sealedPii.consumerEmailEnc,
+        consumerPhoneEnc: sealedPii.consumerPhoneEnc,
+        consumerEmailBidx: sealedPii.consumerEmailBidx,
         amountCents: body.amountCents,
         tier: body.tier ?? null,
         selectedLender: body.selectedLender ?? null,
@@ -313,13 +335,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ bran
   const items = rows.slice(0, limit);
   const nextCursor = rows.length > limit ? items[items.length - 1]?.createdAt.toISOString() : null;
 
+  /* PRIV-002: decrypt PII at the read boundary. Identical output shape as
+   * before — `consumer` is still "First L." and `consumerEmail` the full
+   * address; only the source changed from plaintext columns to the
+   * AES-256-GCM envelope columns. */
+  const decrypted = await decryptApplicationRowsZipped(items);
+
   return NextResponse.json({
-    items: items.map((a) => ({
+    items: decrypted.map(({ row: a, pii }) => ({
       id: a.id,
       brand: a.brand,
       partnerId: a.partnerId,
-      consumer: `${a.consumerFirst} ${a.consumerLast.slice(0, 1)}.`,
-      consumerEmail: a.consumerEmail,
+      consumer: `${pii.consumerFirst} ${pii.consumerLast.slice(0, 1)}.`,
+      consumerEmail: pii.consumerEmail,
       amountCents: a.amountCents,
       tier: a.tier,
       selectedLender: a.selectedLender,
