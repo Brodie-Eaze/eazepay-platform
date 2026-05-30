@@ -24,7 +24,65 @@ import { safeLog } from '../safe-log';
  * is the single source of truth for the env-gated reject decision.
  */
 
-const MOCK_SECRET = 'demo_shared_secret_replace_in_prod';
+/**
+ * SEC-EZ-001 — per-lender inbound webhook / quote-callback HMAC secret.
+ *
+ * The previous implementation verified every inbound lender signature
+ * against a HARDCODED, source-committed constant
+ * (`demo_shared_secret_replace_in_prod`). That value is public (in git),
+ * so anyone could forge `loan.funded` / `loan.defaulted` / quote events
+ * in prod and corrupt application state + downstream money/notification
+ * flows. The committed constant is GONE. Secrets now come from env,
+ * per-lender, resolved at call time (rotation-safe — read from a
+ * function, never frozen into a module const).
+ *
+ * Resolution order for lender `<id>` (mirrors the MiCamp / HighSale
+ * per-partner model in lib/micamp/client.ts + lib/highsale/client.ts):
+ *   1. `LENDER_<SLUG>_WEBHOOK_SECRET` — per-lender override, where
+ *      <SLUG> is the upper-cased lender id with non-alphanumerics → `_`
+ *      (e.g. `lp_buzzpay_prime` → `LENDER_LP_BUZZPAY_PRIME_WEBHOOK_SECRET`).
+ *   2. `LENDER_WEBHOOK_SECRET` — shared fallback across all lenders
+ *      (acceptable while lenders are stub integrations; swap to
+ *      per-lender keys before a real lender goes live).
+ *
+ * Fail-closed contract: when NO secret resolves, this returns `''`.
+ * `verifySignature` treats an empty secret as an unconditional reject
+ * (`status: 'invalid'`) — there is NO hardcoded fallback to fall back
+ * to. In production that means an unset secret can never accept a
+ * forged signature. The ONLY dev convenience is a clearly-labelled
+ * non-prod placeholder below, which is impossible in prod.
+ */
+const DEV_LENDER_WEBHOOK_SECRET = 'dev-only-lender-secret-not-for-prod-set-LENDER_WEBHOOK_SECRET';
+
+/** Upper-case + non-alphanumerics → `_` so a lender id maps to a valid env var name. */
+function lenderEnvSlug(lenderId: string): string {
+  return lenderId.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+}
+
+/**
+ * Resolve the inbound HMAC secret for a given lender id. Reads env at
+ * call time (rotation-safe). Returns `''` when nothing is configured so
+ * `verifySignature` fails closed — EXCEPT in non-production, where a
+ * fixed dev placeholder is returned so local demo + integration-partner
+ * sandboxes keep working without secret-management overhead. The dev
+ * placeholder is NOT the old committed value, so a signature produced
+ * with the leaked `demo_shared_secret_replace_in_prod` is rejected
+ * everywhere.
+ */
+export function lenderWebhookSecret(lenderId: string): string {
+  const perLender = process.env[`LENDER_${lenderEnvSlug(lenderId)}_WEBHOOK_SECRET`];
+  if (perLender && perLender.length > 0) return perLender;
+
+  const shared = process.env.LENDER_WEBHOOK_SECRET;
+  if (shared && shared.length > 0) return shared;
+
+  // Production: NO fallback. Empty secret → verifySignature fails closed
+  // (401). A half-configured prod deploy can never accept a forged
+  // lender event. Non-prod: a fixed dev placeholder keeps demo flows
+  // alive — but it is unreachable in prod by construction.
+  if (process.env.NODE_ENV === 'production') return '';
+  return DEV_LENDER_WEBHOOK_SECRET;
+}
 
 /**
  * In production, HMAC signatures are MANDATORY — unsigned ('skipped')
@@ -118,7 +176,20 @@ export async function verifySignature(args: {
   secret?: string;
 }): Promise<{ status: 'valid' | 'missing' | 'invalid' | 'skipped'; reason?: string }> {
   const { timestamp, nonce, signature, body } = args;
-  const secret = args.secret ?? MOCK_SECRET;
+  // SEC-EZ-001 — NO hardcoded fallback secret. The caller resolves the
+  // per-lender secret via `lenderWebhookSecret(lenderId)`. An empty /
+  // unset secret fails closed: we reject the signature outright rather
+  // than verify against a public/committed key. This branch is what
+  // makes "prod + unset LENDER_WEBHOOK_SECRET" a 401 instead of an
+  // accepted forgery.
+  const secret = args.secret ?? '';
+  if (!secret) {
+    return {
+      status: 'invalid',
+      reason:
+        'No lender webhook secret configured — refusing to verify (set LENDER_WEBHOOK_SECRET).',
+    };
+  }
   if (!timestamp && !nonce && !signature) {
     return { status: 'skipped', reason: 'No signature headers — demo allows unsigned calls.' };
   }

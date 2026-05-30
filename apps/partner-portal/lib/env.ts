@@ -123,6 +123,18 @@ const RECOMMENDED: ReadonlyArray<RecommendedVar> = [
       'HighSale webhook signature verification rejects all inbound events — stub integration is no-op anyway',
   },
   {
+    // SEC-EZ-001. Shared fallback secret for inbound lender webhook +
+    // quote-callback HMAC (per-lender override is LENDER_<SLUG>_WEBHOOK_SECRET).
+    // RECOMMENDED, not REQUIRED, because lenders are stub integrations
+    // today — but the verifier in lib/api-v1/shared.ts FAILS CLOSED on an
+    // unset secret in production (verifySignature returns 'invalid' →
+    // requireSignatureCheck emits 401), so the soft posture here is
+    // bounded. Re-upgrade to REQUIRED when a real lender webhook goes live.
+    name: 'LENDER_WEBHOOK_SECRET',
+    degradationMode:
+      'lender webhook + quote-callback HMAC verification rejects all inbound events (401) — stub integration is no-op anyway',
+  },
+  {
     name: 'ALLOWED_ORIGINS',
     degradationMode:
       'origin-guard falls back to same-origin policy only; defence-in-depth weakened, SameSite=Lax + CSRF cookie still in place',
