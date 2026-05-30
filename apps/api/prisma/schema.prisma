@@ -313,6 +313,11 @@ enum ComplianceReviewKind {
   pii_unmask_request
   ofac_match
   reportable_event
+  // PRIV-014 — anchors a right-to-erasure / crypto-shred run. The review's
+  // `evidence` holds the full ErasureReceipt (what was shred vs retained).
+  // Left `open` (not auto-closed) when any retained item is flagged for
+  // legal review of the retention carve-out.
+  data_erasure
 }
 
 enum DocumentKind {
@@ -418,6 +423,15 @@ model User {
   /// of an already-burned code. Single-use is the load-bearing
   /// property; without it a stolen recovery sheet is permanent.
   totpRecoveryCodes    Json?         @map("totp_recovery_codes")
+  /// PRIV-014 — set when this user's plaintext CONTACT PII (email,
+  /// phoneE164, displayName, totpSecretCiphertext) has been tombstoned
+  /// by a right-to-erasure run. The User ROW survives (loans/audit FK to
+  /// it); only the contact columns are nulled. Non-null marks the account
+  /// as contact-erased; financial/CIP records may still be retained under
+  /// a BSA hold — see the ErasureReceipt linked by `erasureReceiptId`.
+  contactErasedAt  DateTime? @map("contact_erased_at") @db.Timestamptz(6)
+  /// PRIV-014 — id of the ErasureReceipt / AuditOutbox row for this erase.
+  erasureReceiptId String?   @map("erasure_receipt_id") @db.Uuid
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -471,11 +485,22 @@ model ConsumerProfile {
   // PII on its own; full street address lives encrypted in the blob.
   residentState String? @map("resident_state") @db.VarChar(2)
 
+  /// PRIV-014 — set when the PII blob has been CRYPTO-SHREDDED (the
+  /// per-subject DEK destroyed; ciphertext/nonce tombstoned). Non-null
+  /// means `piiCiphertext`/`dataKeyCiphertext` are tombstones and any
+  /// `vault.open()` will fail closed. Queryable so a quarterly evidence
+  /// pull can enumerate erased subjects without decrypting anything.
+  piiErasedAt      DateTime? @map("pii_erased_at") @db.Timestamptz(6)
+  /// PRIV-014 — id of the ErasureReceipt (and the AuditOutbox row) that
+  /// records this shred. Links the row to the append-only evidence.
+  erasureReceiptId String?   @map("erasure_receipt_id") @db.Uuid
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([kycStatus])
   @@index([residentState])
+  @@index([piiErasedAt])
   @@map("consumer_profiles")
 }
 

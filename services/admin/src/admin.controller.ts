@@ -16,7 +16,8 @@ import { Idempotent } from '@eazepay/shared-utils';
 import type { UserId } from '@eazepay/shared-types';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { AdminService } from './admin.service.js';
+import type { AdminService } from './admin.service.js';
+import type { ErasureService } from './erasure.service.js';
 import { ADVERSE_ACTION_REASON_CODES } from './reason-codes.js';
 import { AuditedRead } from './decorators/audited-read.decorator.js';
 import { AuditedReadInterceptor } from './interceptors/audited-read.interceptor.js';
@@ -157,6 +158,16 @@ const RegenerateAanSchema = z.object({
 });
 class RegenerateAanDto extends createZodDto(RegenerateAanSchema) {}
 
+// PRIV-014 — right-to-erasure / crypto-shred. `reason` is mandatory so
+// the audit narrative is never empty (e.g. a verified-CCPA-request id).
+// `manualLegalHold` lets an operator force retain-everything when a
+// litigation / regulatory hold is in play.
+const EraseConsumerSchema = z.object({
+  reason: z.string().min(10).max(2000),
+  manualLegalHold: z.boolean().optional(),
+});
+class EraseConsumerDto extends createZodDto(EraseConsumerSchema) {}
+
 @ApiTags('admin')
 @ApiBearerAuth()
 @AdminOnly()
@@ -170,7 +181,10 @@ class RegenerateAanDto extends createZodDto(RegenerateAanSchema) {}
 @UseInterceptors(AuditedReadInterceptor)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly erasure: ErasureService,
+  ) {}
 
   @Get('applications')
   @AuditedRead({ targetType: 'Application' })
@@ -340,5 +354,34 @@ export class AdminController {
       applicationId,
       dto.unmaskRequestId,
     );
+  }
+
+  // -------------------- PRIV-014: right-to-erasure (crypto-shred) --------------------
+
+  /**
+   * Crypto-shred a consumer's erasable PII on a verified deletion request
+   * (CCPA-CPRA §1798.105 / GDPR Art.17). Admin-gated (class-level
+   * @AdminOnly + AdminGuard) — there is NO self-serve path. Returns the
+   * structured ErasureReceipt detailing what was shred vs retained under a
+   * BSA/AML/FCRA hold. Destructive + irreversible for shredded items;
+   * @Idempotent guards against accidental double-submit.
+   */
+  @Post('consumers/:id/erase')
+  @Idempotent()
+  @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Crypto-shred a consumer`s erasable PII (right-to-delete). Destroys the per-subject DEK; ' +
+      'retains data under BSA/AML/FCRA holds. Returns an erasure receipt. Admin-only, irreversible.',
+  })
+  eraseConsumer(
+    @CurrentUser() adminUserId: UserId,
+    @Param('id', new ParseUUIDPipe()) subjectUserId: string,
+    @Body() dto: EraseConsumerDto,
+  ): Promise<unknown> {
+    return this.erasure.eraseConsumer(adminUserId, subjectUserId, {
+      reason: dto.reason,
+      manualLegalHold: dto.manualLegalHold,
+    });
   }
 }
