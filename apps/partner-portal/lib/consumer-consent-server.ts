@@ -12,6 +12,14 @@ import {
   ECOA_FOOTER_NOTICE,
 } from './consumer-consent';
 
+/* Re-export the disclosure constants so server callers + their specs can
+ * source the version/text and the verifier from ONE module — the module
+ * comment below mandates the version constant and the verifier stay in
+ * lockstep, and the prequal + decision-engine route specs both import
+ * these from here. Without the re-export TS2459 fires at those import
+ * sites (the names were only imported locally, never surfaced). */
+export { SOFT_PULL_DISCLOSURE_VERSION, SOFT_PULL_CONSENT_TEXT };
+
 /* ------------------------------------------------------------------ *
  * SERVER-ONLY: consent receipt store + FCRA verifier (SEC-006 / Task #45)
  *
