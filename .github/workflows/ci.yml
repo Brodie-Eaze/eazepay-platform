@@ -106,6 +106,16 @@ jobs:
         if: steps.detect.outputs.partner-portal == 'true'
         run: pnpm install --frozen-lockfile
 
+      # partner-portal typecheck pulls in libs/integrations-core, which
+      # imports the `Prisma` namespace from @prisma/client. Without a
+      # generated client that export does not exist and tsc fails with
+      # TS2305. The required-checks.yml gate already does this; mirror it
+      # here so this unconditional job matches the gate instead of
+      # red-flagging every PR.
+      - name: Generate Prisma client
+        if: steps.detect.outputs.partner-portal == 'true'
+        run: pnpm --filter @eazepay/api exec prisma generate
+
       - name: Lint partner-portal
         if: steps.detect.outputs.partner-portal == 'true'
         run: pnpm --filter @eazepay/partner-portal lint

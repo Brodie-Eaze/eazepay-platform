@@ -30,10 +30,7 @@ const VALID_BODY = {
   },
 } as const;
 
-function buildRequest(
-  body: unknown,
-  headers: Record<string, string> = {},
-): NextRequest {
+function buildRequest(body: unknown, headers: Record<string, string> = {}): NextRequest {
   return new NextRequest('http://localhost/api/v1/applications', {
     method: 'POST',
     headers: {
@@ -57,9 +54,7 @@ describe('POST /api/v1/applications (SEC-202)', () => {
   });
 
   it('401 unauthorized for a non-Bearer scheme', async () => {
-    const res = await POST(
-      buildRequest(VALID_BODY, { authorization: 'Basic dXNlcjpwYXNz' }),
-    );
+    const res = await POST(buildRequest(VALID_BODY, { authorization: 'Basic dXNlcjpwYXNz' }));
     expect(res.status).toBe(401);
   });
 
@@ -76,9 +71,7 @@ describe('POST /api/v1/applications (SEC-202)', () => {
   });
 
   it('response on auth-fail does NOT echo the request body (no PII leak)', async () => {
-    const res = await POST(
-      buildRequest(VALID_BODY, { authorization: 'Bearer pk_test_anything' }),
-    );
+    const res = await POST(buildRequest(VALID_BODY, { authorization: 'Bearer pk_test_anything' }));
     const text = await res.text();
     // PII fields from the body MUST NOT appear anywhere in the response.
     expect(text).not.toContain('avery@example.com');

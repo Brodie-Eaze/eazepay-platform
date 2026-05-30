@@ -60,6 +60,8 @@ const RCPT_ACME = `rcpt_acme_${RUN}`;
 function poolFor(role: string): Pool {
   const pool = new Pool({
     connectionString: TEST_URL!,
+    // nosemgrep -- test-only: connects to a local/CI Postgres that may present
+    // a self-signed cert; this Pool is never instantiated by the running app.
     ssl: TEST_URL!.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
     // max: 1 so GUC state can't leak across connections between cases —
     // each statement runs on the single pooled connection and every

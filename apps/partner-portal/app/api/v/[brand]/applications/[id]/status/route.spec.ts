@@ -31,7 +31,8 @@ function buildReq(brand: string, demoCookie?: string): NextRequest {
 }
 
 function pickSynthRow(brandSlug: 'medpay' | 'tradepay' | 'coachpay') {
-  const product = brandSlug === 'medpay' ? 'med-pay' : brandSlug === 'tradepay' ? 'trade-pay' : 'coach-pay';
+  const product =
+    brandSlug === 'medpay' ? 'med-pay' : brandSlug === 'tradepay' ? 'trade-pay' : 'coach-pay';
   const row = masterApplications.find((a) => a.product === product);
   if (!row) throw new Error(`no synth row for ${brandSlug}`);
   return row;
@@ -51,7 +52,9 @@ describe('GET /api/v/:brand/applications/:id/status — F-001 IDOR', () => {
   });
 
   it('returns 401 when no session cookie present', async () => {
-    const res = await GET(buildReq('medpay'), { params: Promise.resolve({ brand: 'medpay', id: 'a_001' }) });
+    const res = await GET(buildReq('medpay'), {
+      params: Promise.resolve({ brand: 'medpay', id: 'a_001' }),
+    });
     expect(res.status).toBe(401);
   });
 

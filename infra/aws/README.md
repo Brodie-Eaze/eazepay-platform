@@ -5,26 +5,26 @@ account. Single-operator (Brodie), single-region (us-east-1).
 
 ## Quick reference
 
-| File                       | Owns                                                                 |
-|----------------------------|----------------------------------------------------------------------|
-| `versions.tf`              | Terraform/provider pins, S3 backend block (commented until bootstrap)|
-| `providers.tf`             | AWS provider, default tags, account-id safety check                  |
-| `variables.tf`             | All input variables (region, account, services map, sizing)          |
-| `terraform.tfvars.example` | Operator template — copy to `terraform.tfvars` (git-ignored)         |
-| `vpc.tf`                   | VPC, 3-AZ public+private subnets, NAT GWs, S3 gateway endpoint       |
-| `security_groups.tf`       | ALB / ECS / RDS / Redis / VPCE SGs — default-deny                    |
-| `kms.tf`                   | KEK (envelope) + data (at-rest) keys + aliases                       |
-| `s3.tf`                    | audit (Object Lock 7y), artifacts, tfstate buckets + DynamoDB lock   |
-| `secrets.tf`               | 12 Secrets Manager shells with placeholder values                    |
-| `ecr.tf`                   | 14 ECR repos, lifecycle policies, image scan on push                 |
-| `rds.tf`                   | Postgres 16 Multi-AZ, KMS-encrypted, deletion-protected              |
-| `elasticache.tf`           | Redis 7 single-node (SCALE TO MULTI-NODE BEFORE PROD TRAFFIC)        |
-| `iam.tf`                   | Task exec role (shared) + per-service task roles                     |
-| `alb.tf`                   | Public ALB, HTTPS 443 with ACM cert, target groups, listener rules   |
-| `ecs_cluster.tf`           | ECS cluster, Container Insights, exec-command logging                |
-| `ecs_services.tf`          | Per-service task def + service + autoscaling                         |
-| `cloudwatch.tf`            | Log groups (90d), billing/CPU/storage/5xx alarms, SNS ops topic      |
-| `route53.tf`               | Zone data source, app subdomain record (commented until cutover)     |
+| File                       | Owns                                                                  |
+| -------------------------- | --------------------------------------------------------------------- |
+| `versions.tf`              | Terraform/provider pins, S3 backend block (commented until bootstrap) |
+| `providers.tf`             | AWS provider, default tags, account-id safety check                   |
+| `variables.tf`             | All input variables (region, account, services map, sizing)           |
+| `terraform.tfvars.example` | Operator template — copy to `terraform.tfvars` (git-ignored)          |
+| `vpc.tf`                   | VPC, 3-AZ public+private subnets, NAT GWs, S3 gateway endpoint        |
+| `security_groups.tf`       | ALB / ECS / RDS / Redis / VPCE SGs — default-deny                     |
+| `kms.tf`                   | KEK (envelope) + data (at-rest) keys + aliases                        |
+| `s3.tf`                    | audit (Object Lock 7y), artifacts, tfstate buckets + DynamoDB lock    |
+| `secrets.tf`               | 12 Secrets Manager shells with placeholder values                     |
+| `ecr.tf`                   | 14 ECR repos, lifecycle policies, image scan on push                  |
+| `rds.tf`                   | Postgres 16 Multi-AZ, KMS-encrypted, deletion-protected               |
+| `elasticache.tf`           | Redis 7 single-node (SCALE TO MULTI-NODE BEFORE PROD TRAFFIC)         |
+| `iam.tf`                   | Task exec role (shared) + per-service task roles                      |
+| `alb.tf`                   | Public ALB, HTTPS 443 with ACM cert, target groups, listener rules    |
+| `ecs_cluster.tf`           | ECS cluster, Container Insights, exec-command logging                 |
+| `ecs_services.tf`          | Per-service task def + service + autoscaling                          |
+| `cloudwatch.tf`            | Log groups (90d), billing/CPU/storage/5xx alarms, SNS ops topic       |
+| `route53.tf`               | Zone data source, app subdomain record (commented until cutover)      |
 
 ## CRITICAL — do not commit `terraform.tfvars`
 
@@ -256,21 +256,21 @@ Out of scope for this stack (single-region). DR plan in
 
 ## Cost estimate (us-east-1, on-demand, ~steady-state v1)
 
-| Item                       | Approx monthly |
-|----------------------------|----------------|
-| 3x NAT Gateway             | $96 + data     |
-| RDS db.t4g.medium Multi-AZ | $130           |
-| RDS storage gp3 100GB      | $12            |
-| ElastiCache cache.t4g.micro| $12            |
-| ALB                        | $20 + LCUs     |
-| ECS Fargate (28 vCPU-hrs/day baseline) | ~$120 |
-| ECR storage (14 repos x ~5GB) | $7         |
-| Secrets Manager (14 secrets) | $6           |
-| CloudWatch logs + metrics  | $20            |
-| S3 (modest writes)         | $5             |
-| KMS (2 keys + API calls)   | $2             |
-| Data transfer              | varies         |
-| **Subtotal**               | **~$430/mo**   |
+| Item                                   | Approx monthly |
+| -------------------------------------- | -------------- |
+| 3x NAT Gateway                         | $96 + data     |
+| RDS db.t4g.medium Multi-AZ             | $130           |
+| RDS storage gp3 100GB                  | $12            |
+| ElastiCache cache.t4g.micro            | $12            |
+| ALB                                    | $20 + LCUs     |
+| ECS Fargate (28 vCPU-hrs/day baseline) | ~$120          |
+| ECR storage (14 repos x ~5GB)          | $7             |
+| Secrets Manager (14 secrets)           | $6             |
+| CloudWatch logs + metrics              | $20            |
+| S3 (modest writes)                     | $5             |
+| KMS (2 keys + API calls)               | $2             |
+| Data transfer                          | varies         |
+| **Subtotal**                           | **~$430/mo**   |
 
 CloudWatch billing alarm fires at $500/mo (`cloudwatch.tf`).
 Reserved Instances for RDS + Savings Plan for Fargate after 30 days

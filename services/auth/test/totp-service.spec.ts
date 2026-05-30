@@ -75,9 +75,9 @@ describe('LocalTotpVaultAdapter — AES-256-GCM envelope round-trip', () => {
       userId: USER_A,
       secretBase32: 'JBSWY3DPEHPK3PXP',
     });
-    await expect(
-      vault.openTotpSecret({ userId: USER_B, envelope }),
-    ).rejects.toMatchObject({ problem: { code: 'totp_envelope_user_mismatch', status: 401 } });
+    await expect(vault.openTotpSecret({ userId: USER_B, envelope })).rejects.toMatchObject({
+      problem: { code: 'totp_envelope_user_mismatch', status: 401 },
+    });
   });
 
   it('rejects a malformed envelope with totp_envelope_malformed', async () => {

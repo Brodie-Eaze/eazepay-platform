@@ -1,15 +1,9 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
-import {
-  mintWelcomeToken,
-  __resetWelcomeTokensForTests,
-} from '../../../../lib/welcome-tokens';
+import { mintWelcomeToken, __resetWelcomeTokensForTests } from '../../../../lib/welcome-tokens';
 import { __resetEdgeRateLimitForTests } from '../../../../lib/edge-rate-limit';
-import {
-  _resetAccountsForTest,
-  createInvitedAccount,
-} from '../../../../lib/accounts-store';
+import { _resetAccountsForTest, createInvitedAccount } from '../../../../lib/accounts-store';
 import { _resetMetricsForTest, getMetricsSnapshot } from '../../../../lib/observability/metrics';
 
 /**
