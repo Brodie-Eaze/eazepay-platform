@@ -397,6 +397,7 @@ const NAKED_ROUTES = [
   '/invoices/confirm', // recipient confirm/dispute page — public, token-gated
   '/accept', // team-invite accept landing — recipient may have no cookie
   '/sales', // sales-team pitch decks (full-screen slide presentations)
+  '/platform', // brand narrative pages (flow + overview) — public, full-bleed, no sidebar
   '/medpay', // MedPay flow pages (Landing/Website/Checkout/Success/Onboarding)
   '/tradepay', // TradePay flow pages (Checkout/Onboarding)
   '/coachpay', // CoachPay flow pages (Checkout/Onboarding)
