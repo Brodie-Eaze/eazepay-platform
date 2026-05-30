@@ -35,6 +35,7 @@ import { applicationEvents, applications } from '../../../../../../lib/db/schema
 import { requireAdmin } from '../../../../../../lib/server-guards';
 import { redactForLog } from '../../../../../../lib/safe-log';
 import { getSessionContext } from '../../../../../../lib/session';
+import { redactForLog } from '../../../../../../lib/safe-log';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
