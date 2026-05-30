@@ -261,6 +261,21 @@ export class PaymentService {
       });
     }
 
+    // AML-04 — sanctions/KYC gate on money movement. Before ANY payout we
+    // assert that every counterparty to this disbursement has an explicit
+    // 'cleared' OFAC verdict: the consumer who receives the funds, and —
+    // when the application was referred by a merchant — that merchant
+    // entity plus every beneficial owner. This reuses the verdict persisted
+    // at screening time (AML-02/03); it does NOT re-call a vendor here.
+    // Fails closed: match / review / error / unscreened ('unknown') all
+    // block. Throws Conflict + writes an audit row before the provider call.
+    await this.assertCounterpartiesSanctionsCleared({
+      loanId: loan.id,
+      applicationId: loan.applicationId,
+      userId: loan.userId,
+      merchantId: loan.application?.merchantId ?? null,
+    });
+
     // SEC-036 — gate disbursement on a verified default bank account.
     //
     // Threat scenario:
@@ -581,6 +596,85 @@ export class PaymentService {
       select: { id: true },
     });
     if (!loan) throw NotFound({ code: 'loan_not_found' });
+  }
+
+  /**
+   * AML-04 — block disbursement unless every counterparty is sanctions-
+   * cleared. Reuses the persisted verdict (ConsumerProfile/Merchant/
+   * BeneficialOwner `sanctionsStatus`) written at KYC/KYB time; never calls
+   * a vendor here. Fail-closed: only an explicit 'cleared' passes — a
+   * missing profile, a missing column value, 'unknown' (unscreened),
+   * 'match', 'review' and 'error' all BLOCK.
+   *
+   * PRODUCTION: the upstream verdicts depend on a real OFAC SDN provider
+   * (Middesk/ComplyAdvantage/etc.). The dev-only mocks hardcode 'cleared',
+   * but because this gate treats anything that is not an explicit 'cleared'
+   * as a block, a stale/unscreened counterparty cannot be paid out.
+   */
+  private async assertCounterpartiesSanctionsCleared(ctx: {
+    loanId: string;
+    applicationId: string;
+    userId: string;
+    merchantId: string | null;
+  }): Promise<void> {
+    const blocked: Array<{ party: string; id: string; verdict: string }> = [];
+
+    // Consumer receives the funds — always screened.
+    const consumer = await this.prisma.consumerProfile.findUnique({
+      where: { userId: ctx.userId },
+      select: { sanctionsStatus: true },
+    });
+    const consumerVerdict = consumer?.sanctionsStatus ?? 'unknown';
+    if (consumerVerdict !== 'cleared') {
+      blocked.push({ party: 'consumer', id: ctx.userId, verdict: consumerVerdict });
+    }
+
+    // Merchant entity + every beneficial owner (when the application was
+    // referred by a merchant).
+    if (ctx.merchantId) {
+      const merchant = await this.prisma.merchant.findUnique({
+        where: { id: ctx.merchantId },
+        select: { sanctionsStatus: true },
+      });
+      const merchantVerdict = merchant?.sanctionsStatus ?? 'unknown';
+      if (merchantVerdict !== 'cleared') {
+        blocked.push({ party: 'merchant', id: ctx.merchantId, verdict: merchantVerdict });
+      }
+      const bos = await this.prisma.beneficialOwner.findMany({
+        where: { merchantId: ctx.merchantId },
+        select: { id: true, sanctionsStatus: true },
+      });
+      for (const bo of bos) {
+        if (bo.sanctionsStatus !== 'cleared') {
+          blocked.push({ party: 'beneficial_owner', id: bo.id, verdict: bo.sanctionsStatus });
+        }
+      }
+    }
+
+    if (blocked.length === 0) return;
+
+    await this.prisma.auditOutbox.create({
+      data: {
+        actorType: 'service',
+        actorId: null,
+        action: 'payment.disbursement.blocked_sanctions',
+        targetType: 'Loan',
+        targetId: ctx.loanId,
+        after: {
+          applicationId: ctx.applicationId,
+          userId: ctx.userId,
+          merchantId: ctx.merchantId,
+          blockedCounterparties: blocked,
+          reason: 'one or more counterparties not sanctions-cleared (fail-closed)',
+        },
+      },
+    });
+
+    throw Conflict({
+      code: 'counterparty_not_sanctions_cleared',
+      detail:
+        'disbursement blocked: a counterparty (consumer/merchant/beneficial owner) is not OFAC-cleared',
+    });
   }
 
   private async recordDisbursement(

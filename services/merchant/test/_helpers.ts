@@ -37,6 +37,7 @@ export interface FakeMerchant {
   kybProviderRef: string | null;
   kybLastCheckedAt: Date | null;
   kybCompletedAt: Date | null;
+  sanctionsStatus: string;
   mdrBps: number;
   createdAt: Date;
 }
@@ -58,6 +59,7 @@ export interface FakeBeneficialOwner {
   piiSchemaVersion: number;
   ownershipPct: number;
   isControlling: boolean;
+  sanctionsStatus: string;
 }
 
 export interface FakeApplicationLink {
@@ -129,6 +131,7 @@ export const makeMerchantPrisma = (seed?: {
           kybProviderRef: null,
           kybLastCheckedAt: null,
           kybCompletedAt: null,
+          sanctionsStatus: 'unknown',
           mdrBps: 0,
           createdAt: new Date(),
         };
@@ -187,12 +190,18 @@ export const makeMerchantPrisma = (seed?: {
           piiSchemaVersion: data.piiSchemaVersion,
           ownershipPct: data.ownershipPct,
           isControlling: data.isControlling,
+          sanctionsStatus: 'unknown',
         };
         beneficialOwners.push(row);
         if (!select) return row;
         const out: any = {};
         for (const k of Object.keys(select)) out[k] = (row as any)[k];
         return out;
+      },
+      updateMany: async ({ where, data }: any) => {
+        const matches = beneficialOwners.filter((b) => b.merchantId === where.merchantId);
+        for (const b of matches) Object.assign(b, data);
+        return { count: matches.length };
       },
     },
     applicationLink: {

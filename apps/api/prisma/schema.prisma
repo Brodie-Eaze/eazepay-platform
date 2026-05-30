@@ -52,6 +52,19 @@ enum PepStatus {
   match
 }
 
+// OFAC / sanctions screening verdict, persisted as its own column so the
+// real provider answer survives independently of any "checked at"
+// timestamp. `unknown` = never screened (fail-closed: NOT cleared).
+// `review`/`error` are non-terminal provider states that must ALSO be
+// treated as not-cleared by every money/activation gate (AML-01..04).
+enum SanctionsStatus {
+  unknown
+  cleared
+  match
+  review
+  error
+}
+
 enum LoanCategory {
   auto
   home_improvement
@@ -447,7 +460,12 @@ model ConsumerProfile {
   kycLastCheckedAt   DateTime? @map("kyc_last_checked_at") @db.Timestamptz(6)
   kycCompletedAt     DateTime? @map("kyc_completed_at") @db.Timestamptz(6)
   pepStatus          PepStatus @default(unknown) @map("pep_status")
-  sanctionsCheckedAt DateTime? @map("sanctions_checked_at") @db.Timestamptz(6)
+  // AML-03 — the ACTUAL OFAC verdict, persisted as its own column. The
+  // legacy `sanctionsCheckedAt` timestamp was set for BOTH cleared and
+  // match, so a real "match" was being read back as "cleared". This
+  // column holds the truth; gates read THIS, never infer from the ts.
+  sanctionsStatus    SanctionsStatus @default(unknown) @map("sanctions_status")
+  sanctionsCheckedAt DateTime?       @map("sanctions_checked_at") @db.Timestamptz(6)
 
   // Residency — used for state-rules-matrix routing in orchestration. Not
   // PII on its own; full street address lives encrypted in the blob.
@@ -835,6 +853,11 @@ model Merchant {
   kybLastCheckedAt DateTime?      @map("kyb_last_checked_at") @db.Timestamptz(6)
   kybCompletedAt   DateTime?      @map("kyb_completed_at") @db.Timestamptz(6)
 
+  // AML-02 — entity-level OFAC verdict from KYB, persisted independently
+  // of `kybStatus`. A vendor may report outcome=approved while ofac=match;
+  // activation MUST key off this column, never just the outcome.
+  sanctionsStatus  SanctionsStatus @default(unknown) @map("sanctions_status")
+
   /// MDR (merchant discount rate) in basis points — fee EazePay collects on each transaction
   mdrBps               Int     @default(0) @map("mdr_bps")
   /// Per-application fee in cents (BigInt)
@@ -893,6 +916,10 @@ model BeneficialOwner {
   isControlling Boolean   @default(false) @map("is_controlling")
   kycStatus     KycStatus @default(not_started) @map("kyc_status")
   pepStatus     PepStatus @default(unknown) @map("pep_status")
+  // AML-02/AML-04 — per-BO OFAC verdict. Every BO ≥25% / control person
+  // is screened; a match on ANY of them blocks merchant activation and
+  // any downstream disbursement to that merchant.
+  sanctionsStatus SanctionsStatus @default(unknown) @map("sanctions_status")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)

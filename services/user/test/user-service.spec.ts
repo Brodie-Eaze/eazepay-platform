@@ -42,6 +42,47 @@ describe('UserService.startKyc — adapter return paths via MockKycAdapter', () 
     expect((kycAudit.after as any).userAgent).toBe('jest-ua');
   });
 
+  it('AML-03: a sanctions MATCH persists sanctionsStatus="match" (not "cleared") and getMe reports it', async () => {
+    // Regression guard for the real bug: the verdict used to be inferred
+    // from `sanctionsCheckedAt`, which was set for BOTH cleared and match,
+    // so a genuine OFAC hit was read back as "cleared". The provider here
+    // approves identity but flags a sanctions match — the persisted verdict
+    // MUST be 'match', and getMe MUST surface it.
+    const { client, profiles } = makeUserPrisma({ users: [seedUser()] });
+    const matchAdapter: KycProvider = {
+      initiate: vi.fn(async () => ({ providerRef: 'ref-match', outcome: 'approved' as const })),
+      status: vi.fn(
+        async (): Promise<KycStatusResult> => ({
+          outcome: 'approved',
+          reasonCodes: ['ofac_potential_match'],
+          pep: 'cleared',
+          sanctions: 'match',
+        }),
+      ),
+    };
+    const svc = new UserService(client, makeVault(), matchAdapter);
+    await svc.updateProfile('user-1' as any, samplePii());
+    await svc.startKyc('user-1' as any);
+
+    const p = profiles.find((x) => x.userId === 'user-1')!;
+    expect(p.sanctionsStatus).toBe('match');
+    expect(p.sanctionsStatus).not.toBe('cleared');
+
+    const me = await svc.getMe('user-1' as any);
+    expect(me.kyc.sanctions).toBe('match');
+  });
+
+  it('AML-03: a genuine clear persists sanctionsStatus="cleared" (happy path still works)', async () => {
+    const { client, profiles } = makeUserPrisma({ users: [seedUser()] });
+    const svc = new UserService(client, makeVault(), new MockKycAdapter());
+    await svc.updateProfile('user-1' as any, samplePii());
+    await svc.startKyc('user-1' as any);
+    const p = profiles.find((x) => x.userId === 'user-1')!;
+    expect(p.sanctionsStatus).toBe('cleared');
+    const me = await svc.getMe('user-1' as any);
+    expect(me.kyc.sanctions).toBe('cleared');
+  });
+
   it('manual_review path: legalName.last starts with "X" → kycStatus=manual_review, no completedAt', async () => {
     const { client, profiles } = makeUserPrisma({ users: [seedUser()] });
     const svc = new UserService(client, makeVault(), new MockKycAdapter());

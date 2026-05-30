@@ -238,31 +238,74 @@ export class MerchantService {
     });
     const status = await this.kyb.status(initiate.providerRef);
 
+    // AML-02 — OFAC short-circuit. The vendor `outcome` and the OFAC
+    // verdict are independent signals: a provider can return
+    // outcome='approved' while ofac='match' (its identity/EIN checks
+    // passed but the name hit the SDN list). Keying activation off the
+    // outcome alone would activate a sanctioned merchant. We persist the
+    // REAL verdict and FAIL CLOSED: anything that is not an explicit
+    // 'cleared' (match / review / error / unscreened 'unknown') blocks
+    // activation and forces manual review.
+    //
+    // PRODUCTION: requires a real OFAC SDN provider
+    // (Middesk/ComplyAdvantage/etc.) — the mock KYB adapter is dev-only
+    // and hardcodes ofac='cleared'; this gate fails closed so the mock
+    // cannot wave a real match through. The KybStatusResult.ofac field is
+    // entity-level; we record it on the merchant AND mirror it onto each
+    // beneficial owner so the disbursement gate (AML-04) can read per-BO.
+    const sanctionsVerdict = toSanctionsStatus(status.ofac);
+    const sanctionsCleared = sanctionsVerdict === 'cleared';
+
+    const kybStatus =
+      status.outcome === 'approved'
+        ? 'approved'
+        : status.outcome === 'manual_review'
+          ? 'manual_review'
+          : status.outcome === 'rejected'
+            ? 'rejected'
+            : 'in_progress';
+    const merchantStatus =
+      status.outcome === 'approved'
+        ? 'active'
+        : status.outcome === 'manual_review'
+          ? 'kyb_manual_review'
+          : status.outcome === 'rejected'
+            ? 'suspended'
+            : 'kyb_in_progress';
+
+    // If sanctions are not cleared, NEVER activate. We only OVERRIDE when
+    // the vendor outcome would otherwise have ACTIVATED the merchant —
+    // non-active outcomes (pending / manual_review / rejected) are already
+    // not activating, and 'rejected'→'suspended' is a STRONGER block than
+    // manual_review, so we leave those as-is. This keeps the diff minimal
+    // and security-positive: the only behaviour that changes is that an
+    // approved-but-not-cleared entity is forced into manual review instead
+    // of going live.
+    const sanctionsForcedReview = !sanctionsCleared && merchantStatus === 'active';
+    const effectiveKybStatus = sanctionsForcedReview ? 'manual_review' : kybStatus;
+    const effectiveStatus = sanctionsForcedReview ? 'kyb_manual_review' : merchantStatus;
+
     await this.prisma.$transaction(async (tx) => {
       await tx.merchant.update({
         where: { id: merchantId },
         data: {
-          kybStatus:
-            status.outcome === 'approved'
-              ? 'approved'
-              : status.outcome === 'manual_review'
-                ? 'manual_review'
-                : status.outcome === 'rejected'
-                  ? 'rejected'
-                  : 'in_progress',
-          status:
-            status.outcome === 'approved'
-              ? 'active'
-              : status.outcome === 'manual_review'
-                ? 'kyb_manual_review'
-                : status.outcome === 'rejected'
-                  ? 'suspended'
-                  : 'kyb_in_progress',
+          kybStatus: effectiveKybStatus,
+          status: effectiveStatus,
+          sanctionsStatus: sanctionsVerdict,
           kybProviderRef: initiate.providerRef,
           kybLastCheckedAt: new Date(),
-          kybCompletedAt: status.outcome === 'approved' ? new Date() : null,
+          // Only a genuinely-cleared approval counts as "completed".
+          kybCompletedAt: status.outcome === 'approved' && sanctionsCleared ? new Date() : null,
         },
       });
+
+      // Mirror the entity verdict onto every BO so AML-04's per-counterparty
+      // disbursement gate has a value to read.
+      await tx.beneficialOwner.updateMany({
+        where: { merchantId },
+        data: { sanctionsStatus: sanctionsVerdict },
+      });
+
       await tx.auditOutbox.create({
         data: {
           actorType: 'user',
@@ -275,10 +318,35 @@ export class MerchantService {
             outcome: status.outcome,
             reasonCodes: status.reasonCodes,
             ofac: status.ofac,
+            sanctionsStatus: sanctionsVerdict,
             ein: status.ein,
           },
         },
       });
+
+      // AML-02 — explicit, regulator-visible record of the OFAC override
+      // whenever the sanctions verdict blocked an activation the vendor
+      // outcome would otherwise have approved.
+      if (sanctionsForcedReview) {
+        await tx.auditOutbox.create({
+          data: {
+            actorType: 'service',
+            actorId: null,
+            action: 'merchant.activation.blocked_sanctions',
+            targetType: 'Merchant',
+            targetId: merchantId,
+            after: {
+              providerRef: initiate.providerRef,
+              vendorOutcome: status.outcome,
+              sanctionsStatus: sanctionsVerdict,
+              forcedStatus: effectiveStatus,
+              forcedKybStatus: effectiveKybStatus,
+              reason:
+                'OFAC/sanctions verdict not cleared — activation blocked, manual review forced',
+            },
+          },
+        });
+      }
     });
 
     return { outcome: status.outcome, providerRef: initiate.providerRef };
@@ -482,5 +550,30 @@ export class MerchantService {
       if (!existing) return candidate;
     }
     return `${base}-${randomBytes(6).toString('hex')}`;
+  }
+}
+
+/**
+ * AML-02 — normalise the KYB provider's entity-level `ofac` field into the
+ * persisted SanctionsStatus enum. The KybProvider port currently emits only
+ * 'unknown' | 'cleared' | 'match'; we map those exactly and FAIL CLOSED on
+ * anything unexpected (mapping it to 'error'), so a provider that grows a
+ * new state can never be silently treated as cleared.
+ */
+function toSanctionsStatus(
+  raw: string | undefined,
+): 'unknown' | 'cleared' | 'match' | 'review' | 'error' {
+  switch (raw) {
+    case 'cleared':
+      return 'cleared';
+    case 'match':
+      return 'match';
+    case 'review':
+      return 'review';
+    case 'unknown':
+    case undefined:
+      return 'unknown';
+    default:
+      return 'error';
   }
 }

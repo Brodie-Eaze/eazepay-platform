@@ -50,6 +50,7 @@ export interface FakeConsumerProfile {
   kycLastCheckedAt: Date | null;
   kycCompletedAt: Date | null;
   pepStatus: string;
+  sanctionsStatus: string;
   sanctionsCheckedAt: Date | null;
 }
 
@@ -125,6 +126,7 @@ export const makeUserPrisma = (seed?: { users?: FakeUser[]; profiles?: FakeConsu
           kycLastCheckedAt: null,
           kycCompletedAt: null,
           pepStatus: 'unknown',
+          sanctionsStatus: 'unknown',
           sanctionsCheckedAt: null,
         };
         profiles.push(row);
