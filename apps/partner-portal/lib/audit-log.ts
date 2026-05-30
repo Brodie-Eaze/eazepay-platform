@@ -80,12 +80,30 @@ export async function writeAuditLog(input: WriteAuditLogInput): Promise<void> {
       userAgent: input.req?.headers.get('user-agent') ?? null,
     });
   } catch (err) {
-    /* Never throw. A failed audit write is a serious signal — the
-     * mutation it was attached to already happened — but throwing here
-     * would mask the success of that mutation behind a 500. The error
-     * surfaces in the operator dashboard via the structured log. */
+    /* ISO-03 — FAIL LOUD. A rejected audit INSERT means a compliance
+     * evidence row was DROPPED (e.g. an RLS WITH CHECK rejection like
+     * the ISO-02 FCRA case, a privilege REVOKE, or a constraint break).
+     * Pre-fix this was logged as a routine `audit_log.write_failed`,
+     * indistinguishable from noise, so a dropped SOC2/FCRA row was
+     * effectively invisible.
+     *
+     * We still DO NOT throw — the mutation this row described already
+     * happened, and surfacing a 500 to the user would neither restore
+     * the audit row nor undo the mutation; it would only hide the
+     * success behind an error. Audit is a side-channel. Instead we emit
+     * a control-tagged, critical-severity, alertable signal so a
+     * dropped row trips monitoring instead of vanishing.
+     *
+     * `event` is a dedicated high-signal name (NOT the old generic one)
+     * so a log-based alert can page on it directly. `severity`,
+     * `control`, `alert`, and `compliance_gap` are the structured hooks
+     * the operator dashboard + alerting pipeline key off. */
     safeLog.error({
-      event: 'audit_log.write_failed',
+      event: 'audit_log.write_dropped',
+      severity: 'critical',
+      alert: true,
+      control: 'SOC2-CC8.1',
+      compliance_gap: 'audit_write_dropped',
       action: input.action,
       actor: input.actor,
       targetType: input.targetType,

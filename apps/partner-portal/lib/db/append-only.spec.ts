@@ -62,11 +62,20 @@ describe.skipIf(!enabled)('append-only enforcement (0019_append_only_grants)', (
   });
 
   it('INSERT on audit_log succeeds for the app role', async () => {
+    // Bind an operator GUC in the SAME txn as the INSERT so the audit_log
+    // RLS WITH CHECK policy (0013 + 0020) admits this setup row. This
+    // spec tests the append-only REVOKE/trigger CONTRACT, not RLS
+    // admission; the audit viewer is operator-scoped, so operator is the
+    // natural context. Under FORCE RLS a no-context INSERT is rejected
+    // (NULL partner GUC), which would mask the immutability assertions.
     await expect(
-      db.execute(sql`
-        INSERT INTO audit_log (actor, action, target_type, target_id)
-        VALUES ('append-only-test', 'noop', 'partner', 'test-partner')
-      `),
+      db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT set_config('app.role', 'operator', true)`);
+        return tx.execute(sql`
+          INSERT INTO audit_log (actor, action, target_type, target_id)
+          VALUES ('append-only-test', 'noop', 'partner', 'test-partner')
+        `);
+      }),
     ).resolves.toBeDefined();
   });
 
