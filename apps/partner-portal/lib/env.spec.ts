@@ -139,21 +139,27 @@ describe('lib/env — assertProdEnv', () => {
       delete process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG;
     });
 
-    it('SEC-EZ-002 — throws when DEMO_MODE_ENABLED=true in prod (demo-auth escape hatch)', () => {
+    // SEC-EZ-002 — DEMO_MODE_ENABLED is intentionally NOT boot-blocked.
+    // The demo-auth surface is closed at the auth boundary
+    // (isDemoFallbackAllowed() hard-returns false in prod), so the flag is
+    // inert for auth. Boot-blocking it would brick the canonical
+    // demo/preview deploy, which runs NODE_ENV=production but legitimately
+    // sets the flag. These tests pin that boot stays GREEN with the flag on.
+    it('SEC-EZ-002 — does NOT throw when DEMO_MODE_ENABLED=true in prod (demo deploy must boot)', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
       process.env.DEMO_MODE_ENABLED = 'true';
-      expect(() => assertProdEnv()).toThrow(/DEMO_MODE_ENABLED/);
+      expect(() => assertProdEnv()).not.toThrow();
       delete process.env.DEMO_MODE_ENABLED;
     });
 
-    it('SEC-EZ-002 — throws when DEMO_MODE_ENABLED=1 in prod (truthy variants fenced)', () => {
+    it('SEC-EZ-002 — does NOT throw when DEMO_MODE_ENABLED=1 in prod (truthy variants still boot)', () => {
       process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
       process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
       process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
       process.env.DEMO_MODE_ENABLED = '1';
-      expect(() => assertProdEnv()).toThrow(/DEMO_MODE_ENABLED/);
+      expect(() => assertProdEnv()).not.toThrow();
       delete process.env.DEMO_MODE_ENABLED;
     });
 

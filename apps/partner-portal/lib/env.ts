@@ -309,21 +309,23 @@ export function assertProdEnv(): EnvAssertionResult {
     return lastSummary;
   }
 
-  // SEC-209 / SEC-EZ-002 — dev-only escape hatches MUST never be true in
-  // prod. The MiCamp webhook signature verifier exposes a bypass flag for
-  // local-dev replay (no real HMAC available offline); if it leaks into a
-  // prod env, every webhook is accepted unsigned. `DEMO_MODE_ENABLED`
-  // gates the seed-email demo-auth fallback that mints operator/admin
-  // sessions without real backend auth; if it leaks into prod it must not
-  // silently widen that surface. We refuse to boot rather than serve
-  // traffic with any of these live — the deploy fails loudly and the
+  // SEC-209 — dev-only escape hatches MUST never be true in prod. The
+  // MiCamp webhook signature verifier exposes a bypass flag for local-dev
+  // replay (no real HMAC available offline); if it leaks into a prod env,
+  // every webhook is accepted unsigned. We refuse to boot rather than
+  // serve traffic with the bypass live — the deploy fails loudly and the
   // rotation stays on the previous revision.
   //
-  // The /api/auth/login demo fallback ALSO hard-disables on
-  // NODE_ENV==='production' independent of this flag (defence in depth):
-  // even if this boot guard were somehow bypassed, demo login is
-  // impossible in prod. This guard exists so a leaked flag surfaces at
-  // deploy time instead of lurking.
+  // NOTE (SEC-EZ-002): `DEMO_MODE_ENABLED` is deliberately NOT boot-blocked
+  // here. The demo-auth surface it gates is closed at the only place it can
+  // be reached — `isDemoFallbackAllowed()` in /api/auth/login hard-returns
+  // false on NODE_ENV==='production' regardless of the flag — so the flag
+  // is inert for auth in prod. Boot-blocking on it would brick the
+  // canonical demo/preview deploy, which runs NODE_ENV=production but
+  // legitimately sets DEMO_MODE_ENABLED (apps/api is not deployed there;
+  // the demo TILES at /api/auth/demo are the intended login path and are
+  // origin- + master-gated separately). Keep the defence at the auth
+  // boundary, not at boot. Do not re-add it here without that deploy in mind.
   //
   // Both MiCamp names checked: the original `MICAMP_WEBHOOK_INSECURE_ALLOW`
   // (legacy) and the renamed `MICAMP_DEV_SKIP_WEBHOOK_SIG` (new — name
@@ -339,11 +341,6 @@ export function assertProdEnv(): EnvAssertionResult {
         'MICAMP_DEV_SKIP_WEBHOOK_SIG',
         process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG,
         'This flag disables webhook signature verification and is dev-only.',
-      ],
-      [
-        'DEMO_MODE_ENABLED',
-        process.env.DEMO_MODE_ENABLED,
-        'This flag gates the demo-auth fallback that mints sessions without real auth and is dev/preview-only.',
       ],
     ];
     for (const [name, val, why] of insecureFlags) {
