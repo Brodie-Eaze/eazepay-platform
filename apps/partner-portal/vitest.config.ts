@@ -20,6 +20,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '@/': `${fileURLToPath(new URL('.', import.meta.url))}/`,
+      // `server-only` is a build-time marker with no runtime impl and is
+      // not installed in this workspace. Server libs under test import it
+      // (e.g. lib/consumer-consent-server.ts); alias it to an empty stub
+      // so those specs load under the node runner. Production builds use
+      // the real Next.js resolution and keep the client/server guard.
+      'server-only': fileURLToPath(new URL('./test/server-only-stub.ts', import.meta.url)),
     },
   },
   test: {
