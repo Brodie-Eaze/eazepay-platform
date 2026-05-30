@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { deriveChargeIdempotencyKey, type ChargeRequest } from '@/lib/micamp/client';
 import { getMerchantProcessor } from '@/lib/integrations/registry';
 import { assertResourceOwnership, requirePartnerSession } from '@/lib/server-guards';
+import { writeAuditLog } from '@/lib/audit-log';
 import { safeErrorResponse } from '@/lib/safe-error';
 import { enforceOrigin } from '@/lib/origin-guard';
 
@@ -60,6 +61,38 @@ export async function POST(req: NextRequest) {
   // 404 on mismatch / not-found so callers can't enumerate UUIDs.
   const ownership = await assertResourceOwnership(guard, parsed.data.applicationId, 'application');
   if (ownership) return ownership;
+
+  // SOC2-C001 (P0): the applicationId check above proves the caller owns
+  // the *loan*, but NOT the *MID the money lands in*. Pre-fix, a signed-in
+  // tenant-A session could pass one of A's own applicationIds plus tenant
+  // B's midId and run a real card charge through B's merchant account —
+  // RLS can't catch it because midId is an opaque string handed to MiCamp,
+  // not a tenant-scoped SELECT. Mirror the settlement route: resolve the
+  // MID's owning partner (mids.partner_id) and confirm it matches the
+  // caller. 404 on mismatch/not-found to avoid leaking MID existence.
+  const midOwnership = await assertResourceOwnership(guard, parsed.data.midId, 'mid');
+  if (midOwnership) {
+    // Cross-tenant money-movement attempt — durable audit row in addition
+    // to the structured warn emitted inside assertResourceOwnership, so
+    // SOC2 access-monitoring evidence captures the denied charge with the
+    // claimed midId. No charge has been (or will be) attempted: we return
+    // before the processor is ever touched. payloadJson carries no PAN /
+    // consumerToken — only the disputed identifiers.
+    await writeAuditLog({
+      actor: `partner:${guard.partnerId}`,
+      action: 'micamp.charge.denied_cross_tenant_mid',
+      targetType: 'mid',
+      targetId: parsed.data.midId,
+      outcome: 'failed',
+      payload: {
+        applicationId: parsed.data.applicationId,
+        amountCents: parsed.data.amountCents,
+        reason: 'mid_not_owned_by_caller',
+      },
+      req,
+    });
+    return midOwnership;
+  }
 
   // Honour caller-supplied Idempotency-Key when present; otherwise
   // derive deterministically. Same `(applicationId, amountCents)` always
