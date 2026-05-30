@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { signDemoPreset } from '../../../../lib/demo-cookie';
 import { enforce as enforceEdgeRateLimit } from '../../../../lib/edge-rate-limit.js';
+import { resolveClientIp } from '../../../../lib/client-ip.js';
 
 /**
  * Sign-in proxy. The browser never talks to the backend directly so we
@@ -33,24 +34,14 @@ const ACCESS_TTL_SECONDS = 60 * 60; // 1h
 const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 30; // 30d
 
 /**
- * Demo fallback is non-production-only by hard guard, not by env flag,
- * so a misconfigured production deploy cannot accidentally enable it.
+ * Demo seed-email → preset table. Reaching the demo fallback that
+ * consumes this table is HARD-disabled in production by
+ * `isDemoFallbackAllowed()` (see below) — the gate short-circuits on
+ * `NODE_ENV === 'production'`, so a misconfigured prod deploy cannot
+ * mint a demo session no matter what `DEMO_MODE_ENABLED` is set to.
  *
- * SEC-001 hardening (final): previously the fallback was gated on
- * `DEMO_MODE_ENABLED=true`, which meant a single env-var typo in a
- * Railway dashboard could flip a production deployment into a state
- * where any password against `admin@eazepay.local` would mint an
- * `eazepay_demo` cookie bypassing real authentication. Hardening the
- * gate to `process.env.NODE_ENV !== 'production'` — read at the top of
- * the file and short-circuited inside the catch — removes the
- * env-flag override entirely from the production code path. The
- * dedicated /api/auth/demo endpoint retains its `DEMO_MODE_ENABLED`
- * gate because that surface is an explicit operator opt-in, not an
- * unattended fallback.
- *
- * Demo presets remain wired in case the `next dev` and CI surfaces
- * want them; the constant table stays in this file so test fixtures
- * can keep referencing it.
+ * The table stays in this file so `next dev` / CI surfaces and test
+ * fixtures can keep referencing it.
  */
 const DEMO_PRESET_BY_EMAIL: Record<string, string> = {
   'admin@eazepay.local': 'admin',
@@ -64,37 +55,36 @@ const DEMO_PRESET_BY_EMAIL: Record<string, string> = {
 };
 
 /**
- * Hard build-time guard. `IS_PRODUCTION` is captured once at module
- * load time — the value reflects the deployment's NODE_ENV and cannot
- * be flipped at request time by an env-var change in the dashboard.
- * Any future code path that wants to use the demo fallback must call
- * `isDemoFallbackAllowed()` AFTER this guard, so the production exit
- * dominates regardless of caller order.
- */
-/**
- * Demo fallback gate. Production deployments where apps/api IS NOT
- * deployed (the current Railway preview is the canonical example)
- * still need a way for an operator to demo the platform — typing a
- * known seed email like admin@eazepay.local should land them in the
- * matching workspace.
+ * Demo fallback gate. The demo path mints an `eazepay_demo` cookie that
+ * grants an operator/admin workspace WITHOUT a real backend
+ * authentication — so it must be impossible to reach in production.
  *
- * The gate honours `DEMO_MODE_ENABLED` (explicit opt-in). When apps/api
- * is fully deployed and the platform is taking real consumer traffic,
- * the operator MUST set `DEMO_MODE_ENABLED=false` on the partner-portal
- * service — that closes this surface entirely. A misconfigured prod
- * with `DEMO_MODE_ENABLED=true` is operator error; both the env-flag
- * docblock and the SOC2 evidence map flag this as a launch-day check.
+ * SEC-EZ-002 (final hardening): the gate is HARD-disabled whenever
+ * `NODE_ENV === 'production'`, regardless of `DEMO_MODE_ENABLED`. The
+ * previous posture honoured `DEMO_MODE_ENABLED === 'true'` even in
+ * prod, which meant a single env-var leak (e.g. `.env.example` shipped
+ * the flag ON, or a copy-paste into a Railway dashboard) flipped a
+ * production deploy into a state where any password against a seed
+ * email like admin@eazepay.local minted an admin session bypassing
+ * real auth. The hard `NODE_ENV` guard is defence-in-depth: even if the
+ * flag leaks into prod, demo login is impossible. The boot validator in
+ * lib/env.ts ALSO refuses to start a prod worker when DEMO_MODE_ENABLED
+ * is truthy (mirroring the SEC-209 dev-skip-flag fence), so a leaked
+ * flag fails the deploy loudly instead of silently widening this
+ * surface.
  *
- * Non-production environments always allow the fallback so local dev
- * + Railway previews work without an apps/api process. The SEC-001
- * hardening — removing the SILENT demo fallback that fired on any auth
- * failure — is preserved by limiting this path to (a) the catch block
- * on a network error, not a 401, and (b) the explicit known-email
- * allowlist.
+ * Non-production environments (local dev + Railway previews without an
+ * apps/api process) always allow the fallback so the deployed surface
+ * stays browsable. The SEC-001 hardening — removing the SILENT demo
+ * fallback that fired on any auth failure — is preserved by limiting
+ * this path to (a) the catch block on a network error, not a 401, and
+ * (b) the explicit known-email allowlist.
  */
 function isDemoFallbackAllowed(): boolean {
-  if (process.env.NODE_ENV !== 'production') return true;
-  return process.env.DEMO_MODE_ENABLED === 'true';
+  // Hard production exit FIRST — dominates any env-flag override. A
+  // leaked DEMO_MODE_ENABLED cannot re-open this in prod.
+  if (process.env.NODE_ENV === 'production') return false;
+  return process.env.DEMO_MODE_ENABLED !== 'false';
 }
 
 const DEMO_TTL_SECONDS = 60 * 60; // 1h, matches the dedicated demo route
@@ -154,8 +144,17 @@ export async function POST(req: NextRequest) {
 
   // SEC-203: per-IP rate limit BEFORE body parse. Cheap rejection path
   // for a botnet hammering this endpoint — no JSON parse, no Zod cost.
-  const xff = req.headers.get('x-forwarded-for') ?? '';
-  const clientIp = xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  //
+  // SEC-EZ-005: key on `resolveClientIp(req)` — the rightmost-trusted-hop
+  // XFF parse used by every other rate-limited route — NOT the raw
+  // leftmost `X-Forwarded-For` entry. The leftmost entry is
+  // client-controlled, so the old parse let an attacker rotate the XFF
+  // header (`X-Forwarded-For: <random>`) to land in a fresh bucket on
+  // every request and gallop past the cap on the highest-value endpoint
+  // in the app. `resolveClientIp` discards the spoofable prefix and
+  // returns the address our proxy hop actually saw, so the spoof can no
+  // longer rotate the bucket key.
+  const clientIp = resolveClientIp(req);
   const ipRl = enforceEdgeRateLimit(`auth-login-ip:${clientIp}`, LOGIN_IP_LIMIT, LOGIN_WINDOW_MS);
   if (!ipRl.allowed) {
     return rateLimited429(ipRl.retryAfterMs);

@@ -32,6 +32,10 @@ describe('lib/env — assertProdEnv', () => {
     delete process.env.MICAMP_WEBHOOK_SECRET;
     delete process.env.HIGHSALE_WEBHOOK_SECRET;
     delete process.env.ALLOWED_ORIGINS;
+    // SEC-EZ-002: the prod boot guard refuses when this is truthy — keep
+    // it unset by default so the unrelated prod-throw tests aren't
+    // tripped by a stray value, and assert the guard explicitly below.
+    delete process.env.DEMO_MODE_ENABLED;
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.spyOn(console, 'info').mockImplementation(() => {});
@@ -133,6 +137,47 @@ describe('lib/env — assertProdEnv', () => {
       process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG = 'false';
       expect(() => assertProdEnv()).not.toThrow();
       delete process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG;
+    });
+
+    // SEC-EZ-002 — DEMO_MODE_ENABLED is intentionally NOT boot-blocked.
+    // The demo-auth surface is closed at the auth boundary
+    // (isDemoFallbackAllowed() hard-returns false in prod), so the flag is
+    // inert for auth. Boot-blocking it would brick the canonical
+    // demo/preview deploy, which runs NODE_ENV=production but legitimately
+    // sets the flag. These tests pin that boot stays GREEN with the flag on.
+    it('SEC-EZ-002 — does NOT throw when DEMO_MODE_ENABLED=true in prod (demo deploy must boot)', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.DEMO_MODE_ENABLED = 'true';
+      expect(() => assertProdEnv()).not.toThrow();
+      delete process.env.DEMO_MODE_ENABLED;
+    });
+
+    it('SEC-EZ-002 — does NOT throw when DEMO_MODE_ENABLED=1 in prod (truthy variants still boot)', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.DEMO_MODE_ENABLED = '1';
+      expect(() => assertProdEnv()).not.toThrow();
+      delete process.env.DEMO_MODE_ENABLED;
+    });
+
+    it('SEC-EZ-002 — does NOT throw when DEMO_MODE_ENABLED=false in prod', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      process.env.DEMO_MODE_ENABLED = 'false';
+      expect(() => assertProdEnv()).not.toThrow();
+      delete process.env.DEMO_MODE_ENABLED;
+    });
+
+    it('SEC-EZ-002 — does NOT throw when DEMO_MODE_ENABLED is unset in prod', () => {
+      process.env.DEMO_COOKIE_SECRET = VALID_SECRET;
+      process.env.ACCOUNT_COOKIE_SECRET = VALID_SECRET;
+      process.env.NEXT_PUBLIC_APP_ORIGIN = VALID_ORIGIN;
+      delete process.env.DEMO_MODE_ENABLED;
+      expect(() => assertProdEnv()).not.toThrow();
     });
 
     it('aggregates multiple failures into one error message', () => {

@@ -309,23 +309,43 @@ export function assertProdEnv(): EnvAssertionResult {
     return lastSummary;
   }
 
-  // SEC-209 — dev-only escape hatches MUST never be true in prod.
-  // The MiCamp webhook signature verifier exposes a bypass flag for
-  // local-dev replay (no real HMAC available offline). If the flag
-  // leaks into a prod env, every webhook is accepted unsigned. We
-  // refuse to boot rather than serve traffic with the bypass live.
+  // SEC-209 — dev-only escape hatches MUST never be true in prod. The
+  // MiCamp webhook signature verifier exposes a bypass flag for local-dev
+  // replay (no real HMAC available offline); if it leaks into a prod env,
+  // every webhook is accepted unsigned. We refuse to boot rather than
+  // serve traffic with the bypass live — the deploy fails loudly and the
+  // rotation stays on the previous revision.
   //
-  // Both names checked: the original `MICAMP_WEBHOOK_INSECURE_ALLOW`
+  // NOTE (SEC-EZ-002): `DEMO_MODE_ENABLED` is deliberately NOT boot-blocked
+  // here. The demo-auth surface it gates is closed at the only place it can
+  // be reached — `isDemoFallbackAllowed()` in /api/auth/login hard-returns
+  // false on NODE_ENV==='production' regardless of the flag — so the flag
+  // is inert for auth in prod. Boot-blocking on it would brick the
+  // canonical demo/preview deploy, which runs NODE_ENV=production but
+  // legitimately sets DEMO_MODE_ENABLED (apps/api is not deployed there;
+  // the demo TILES at /api/auth/demo are the intended login path and are
+  // origin- + master-gated separately). Keep the defence at the auth
+  // boundary, not at boot. Do not re-add it here without that deploy in mind.
+  //
+  // Both MiCamp names checked: the original `MICAMP_WEBHOOK_INSECURE_ALLOW`
   // (legacy) and the renamed `MICAMP_DEV_SKIP_WEBHOOK_SIG` (new — name
   // is explicit so a future operator can't misread the intent).
   if (process.env.NODE_ENV === 'production') {
-    const insecureFlags: Array<[string, string | undefined]> = [
-      ['MICAMP_WEBHOOK_INSECURE_ALLOW', process.env.MICAMP_WEBHOOK_INSECURE_ALLOW],
-      ['MICAMP_DEV_SKIP_WEBHOOK_SIG', process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG],
+    const insecureFlags: Array<[string, string | undefined, string]> = [
+      [
+        'MICAMP_WEBHOOK_INSECURE_ALLOW',
+        process.env.MICAMP_WEBHOOK_INSECURE_ALLOW,
+        'This flag disables webhook signature verification and is dev-only.',
+      ],
+      [
+        'MICAMP_DEV_SKIP_WEBHOOK_SIG',
+        process.env.MICAMP_DEV_SKIP_WEBHOOK_SIG,
+        'This flag disables webhook signature verification and is dev-only.',
+      ],
     ];
-    for (const [name, val] of insecureFlags) {
+    for (const [name, val, why] of insecureFlags) {
       if (val && /^(1|true|yes|on)$/i.test(val)) {
-        const msg = `[env] ${name}=${val} in production — refusing to boot. This flag disables webhook signature verification and is dev-only.`;
+        const msg = `[env] ${name}=${val} in production — refusing to boot. ${why}`;
         // eslint-disable-next-line no-console
         console.error(msg);
         throw new Error(msg);

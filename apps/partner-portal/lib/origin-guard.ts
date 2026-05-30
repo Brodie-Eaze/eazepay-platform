@@ -27,10 +27,28 @@
  *
  * Allowlist:
  *   • Production: exact-match against `process.env.ALLOWED_ORIGINS`
- *     (CSV of `https://host[:port]` entries). Required env var; the
- *     boot-time validator in lib/env.ts refuses to start if missing.
+ *     (CSV of `https://host[:port]` entries).
  *   • Dev / test: localhost:* and 127.0.0.1:* on http or https, plus
  *     `ALLOWED_ORIGINS` if set.
+ *
+ * ALLOWED_ORIGINS posture (SEC-EZ-003 — read this before trusting the
+ * comment above):
+ *   • `ALLOWED_ORIGINS` is RECOMMENDED, not REQUIRED, in lib/env.ts —
+ *     the boot-time validator WARNS when it is unset but does NOT
+ *     refuse to boot. (It was REQUIRED during the ship-ready sprint,
+ *     then deliberately downgraded so the stub-phase deploy isn't
+ *     blocked while the real MiCamp/HighSale partner keys aren't wired.)
+ *   • The runtime guard below FAILS CLOSED per request regardless: when
+ *     `ALLOWED_ORIGINS` is empty in production, the allowlist set is
+ *     empty, so any cross-origin `Origin`/`Referer` is rejected with a
+ *     403 and a missing-both-headers request is rejected too. Absent
+ *     config never means "allow all" — it means "allow nothing but
+ *     same-origin browser requests". SameSite=Lax + the CSRF
+ *     double-submit cookie remain in force underneath.
+ *   • Re-upgrade `ALLOWED_ORIGINS` (and the partner webhook secrets) to
+ *     REQUIRED in lib/env.ts BEFORE partner webhooks / cross-origin
+ *     embeds go live, so a misconfigured prod fails the deploy loudly
+ *     instead of silently running with an empty allowlist.
  *
  * Exemptions:
  *   • Webhook routes — partner-side servers POST without a browser, so
@@ -81,6 +99,19 @@ function parseAllowedOrigins(raw: string | undefined): Set<string> {
 function getAllowedOrigins(): Set<string> {
   if (cachedAllowed !== null) return cachedAllowed;
   cachedAllowed = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
+  // SEC-EZ-003: surface the empty-allowlist posture once per worker in
+  // production. The guard still fails closed (empty set rejects every
+  // cross-origin request), but an unset ALLOWED_ORIGINS in prod is a
+  // launch-day misconfiguration worth a loud log line so it doesn't go
+  // unnoticed. Warn-only — never throws, never blocks the request path.
+  if (cachedAllowed.size === 0 && process.env.NODE_ENV === 'production') {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[origin-guard] ALLOWED_ORIGINS is unset in production — origin allowlist is empty, ' +
+        'so every cross-origin state-changing request is rejected (fail-closed). Set ALLOWED_ORIGINS ' +
+        'before partner webhooks / cross-origin embeds go live. See lib/env.ts (RECOMMENDED → re-upgrade to REQUIRED).',
+    );
+  }
   return cachedAllowed;
 }
 
