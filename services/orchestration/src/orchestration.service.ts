@@ -62,12 +62,84 @@ export class OrchestrationService {
     }
   }
 
+  /**
+   * Generate the statutory Adverse Action Notice for a declined
+   * application. FAIL-LOUD (ECOA-02): a missing §1002.9 notice is a
+   * fair-lending violation, so a render failure must NEVER be a silent
+   * log line. On failure we:
+   *   1. retry once (transient: storage blip, DB contention),
+   *   2. emit a critical, alert-tagged error log monitoring routes on,
+   *   3. write a durable `compliance.adverse_action_notice.failed` audit
+   *      row so the gap survives log rollover and surfaces in the
+   *      compliance evidence pull / SOC2 export,
+   * and still return (we do not crash the consumer-facing decline flow —
+   * the application is already correctly `declined`; what failed is the
+   * notice artifact, which the audit row now flags for remediation).
+   */
   private async fireAdverseActionNotice(applicationId: string): Promise<void> {
-    if (!this.complianceDoc) return;
+    if (!this.complianceDoc) {
+      // No compliance-doc service wired is itself a misconfiguration for a
+      // regulated decline path — record it loudly rather than no-op.
+      this.logger.error(
+        { applicationId, alert: true, sev: 'critical', control: 'ECOA-02' },
+        'AAN NOT GENERATED: compliance-doc service not configured on a decline path',
+      );
+      await this.recordAdverseActionFailure(applicationId, 'compliance_doc_unconfigured');
+      return;
+    }
+
+    const attempt = async (): Promise<void> => {
+      await this.complianceDoc!.generateAdverseActionNoticeForApplication(applicationId);
+    };
+
     try {
-      await this.complianceDoc.generateAdverseActionNoticeForApplication(applicationId);
-    } catch (err) {
-      this.logger.error({ err, applicationId }, 'AAN generation failed');
+      await attempt();
+      return;
+    } catch (firstErr) {
+      this.logger.warn(
+        { err: firstErr, applicationId, control: 'ECOA-02' },
+        'AAN generation failed on first attempt; retrying once',
+      );
+      try {
+        await attempt();
+        return;
+      } catch (secondErr) {
+        // Both attempts failed. This is a statutory-notice miss — escalate.
+        this.logger.error(
+          { err: secondErr, applicationId, alert: true, sev: 'critical', control: 'ECOA-02' },
+          'AAN GENERATION FAILED after retry — statutory Reg B notice missing; manual remediation required',
+        );
+        await this.recordAdverseActionFailure(
+          applicationId,
+          secondErr instanceof Error ? secondErr.message : String(secondErr),
+        );
+      }
+    }
+  }
+
+  /**
+   * Durable, queryable record of a missing adverse-action notice. A log
+   * line can roll off; an audit row cannot. Compliance pulls this action
+   * to find declines that owe a notice. Best-effort — if even this write
+   * fails we still have the critical error log.
+   */
+  private async recordAdverseActionFailure(applicationId: string, reason: string): Promise<void> {
+    try {
+      await this.prisma.auditOutbox.create({
+        data: {
+          actorType: 'system',
+          actorId: null,
+          action: 'compliance.adverse_action_notice.failed',
+          targetType: 'Application',
+          targetId: applicationId,
+          after: { control: 'ECOA-02', reason, requiresManualRemediation: true },
+        },
+      });
+    } catch (auditErr) {
+      this.logger.error(
+        { err: auditErr, applicationId, alert: true, sev: 'critical', control: 'ECOA-02' },
+        'failed to write AAN-failure audit row',
+      );
     }
   }
 
