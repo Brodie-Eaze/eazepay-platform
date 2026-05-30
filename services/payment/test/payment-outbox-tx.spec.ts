@@ -81,6 +81,13 @@ function makePrismaStub(opts: {
   repayment?: RepaymentRow;
   defaultMethod?: { id: string; providerToken: string };
   application?: { merchantId: string | null };
+  // AML-04 — sanctions verdicts the disbursement gate reads. Default to
+  // 'cleared' so the existing happy-path disbursement specs (a genuinely
+  // cleared consumer) keep funding; individual specs override to exercise
+  // the block paths.
+  consumerSanctions?: string;
+  merchantSanctions?: string;
+  beneficialOwners?: Array<{ id: string; sanctionsStatus: string }>;
   // Optional: cause the named model's `.create` to throw on the Nth
   // call so we can test ROLLBACK.
   throwOnCreate?: { model: string; nthCall: number };
@@ -148,6 +155,26 @@ function makePrismaStub(opts: {
     },
     application: {
       findUnique: vi.fn(async () => opts.application ?? null),
+    },
+    // AML-04 — counterparty sanctions reads. Default cleared so existing
+    // disbursement happy-path specs are unaffected.
+    consumerProfile: {
+      findUnique: vi.fn(async () => ({
+        sanctionsStatus: opts.consumerSanctions ?? 'cleared',
+      })),
+    },
+    merchant: {
+      findUnique: vi.fn(async () => ({
+        sanctionsStatus: opts.merchantSanctions ?? 'cleared',
+      })),
+    },
+    beneficialOwner: {
+      findMany: vi.fn(async () => opts.beneficialOwners ?? []),
+    },
+    auditOutbox: {
+      // Pre-tx audit writes (disbursement blocks) go here; disbursement
+      // specs that need it override this after construction.
+      create: vi.fn(async () => ({ id: 'audit_pre_tx' })),
     },
     $transaction: vi.fn(async <T>(fn: (tx: unknown) => Promise<T>): Promise<T> => {
       // Each tx attempt gets its own uncommitted buffer. On COMMIT
@@ -491,5 +518,144 @@ describe('PaymentService.recordDisbursement (via internal exposure) — outbox e
 
     const outboxRows = committed.filter((r) => r.model === 'outboxEvent');
     expect(outboxRows).toHaveLength(0);
+  });
+});
+
+describe('PaymentService.disburseAndSchedule — AML-04 counterparty sanctions gate', () => {
+  const loan: LoanRow = {
+    id: 'loan_99',
+    applicationId: 'app_99',
+    userId: 'u_sanctioned',
+    principalCents: 100_000n,
+    totalRepayableCents: 110_000n,
+    termMonths: 6,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** Wire the pre-tx reads disburseAndSchedule needs and capture the
+   *  pre-tx audit-block write so the spec can assert on it. */
+  function wireDisbursement(
+    prisma: Record<string, unknown>,
+    auditRows: Array<{ action: string; after: unknown }>,
+  ) {
+    prisma.loan = {
+      findUnique: vi.fn(async () => ({
+        ...loan,
+        status: 'funding_pending',
+        lenderOfRecord: 'lender_x',
+        application: { id: loan.applicationId, status: 'funding', merchantId: 'merchant_uuid_1' },
+      })),
+    };
+    prisma.auditOutbox = {
+      create: vi.fn(async ({ data }: { data: { action: string; after: unknown } }) => {
+        auditRows.push({ action: data.action, after: data.after });
+        return { id: 'audit_block' };
+      }),
+    };
+  }
+
+  it('BLOCKS + audits when the consumer is a sanctions match (provider.disburse never called)', async () => {
+    const disburse = vi.fn(async () => makeProviderResult('succeeded'));
+    const provider: PaymentProvider = { disburse, debit: vi.fn() };
+    const { prisma, committed } = makePrismaStub({
+      defaultMethod: { id: 'pm_1', providerToken: 'tok_1' },
+      application: { merchantId: 'merchant_uuid_1' },
+      consumerSanctions: 'match',
+      merchantSanctions: 'cleared',
+    });
+    const auditRows: Array<{ action: string; after: unknown }> = [];
+    wireDisbursement(prisma as unknown as Record<string, unknown>, auditRows);
+
+    const svc = new PaymentService(prisma as never, provider, mockBank);
+    await expect(svc.disburseAndSchedule(loan.id)).rejects.toMatchObject({
+      problem: { code: 'counterparty_not_sanctions_cleared' },
+    });
+
+    // No money moved.
+    expect(disburse).not.toHaveBeenCalled();
+    expect(committed).toHaveLength(0);
+    // Regulator-visible block audit row, naming the sanctioned consumer.
+    const block = auditRows.find((a) => a.action === 'payment.disbursement.blocked_sanctions');
+    expect(block).toBeDefined();
+    const blockedParties = (block!.after as { blockedCounterparties: Array<{ party: string }> })
+      .blockedCounterparties;
+    expect(blockedParties.some((p) => p.party === 'consumer')).toBe(true);
+  });
+
+  it('fail-closed: BLOCKS when the consumer was never screened (sanctionsStatus="unknown")', async () => {
+    const disburse = vi.fn(async () => makeProviderResult('succeeded'));
+    const provider: PaymentProvider = { disburse, debit: vi.fn() };
+    const { prisma } = makePrismaStub({
+      defaultMethod: { id: 'pm_1', providerToken: 'tok_1' },
+      application: { merchantId: 'merchant_uuid_1' },
+      consumerSanctions: 'unknown',
+    });
+    const auditRows: Array<{ action: string; after: unknown }> = [];
+    wireDisbursement(prisma as unknown as Record<string, unknown>, auditRows);
+
+    const svc = new PaymentService(prisma as never, provider, mockBank);
+    await expect(svc.disburseAndSchedule(loan.id)).rejects.toMatchObject({
+      problem: { code: 'counterparty_not_sanctions_cleared' },
+    });
+    expect(disburse).not.toHaveBeenCalled();
+  });
+
+  it('BLOCKS + audits when a beneficial owner of the referring merchant is a match', async () => {
+    const disburse = vi.fn(async () => makeProviderResult('succeeded'));
+    const provider: PaymentProvider = { disburse, debit: vi.fn() };
+    const { prisma } = makePrismaStub({
+      defaultMethod: { id: 'pm_1', providerToken: 'tok_1' },
+      application: { merchantId: 'merchant_uuid_1' },
+      consumerSanctions: 'cleared',
+      merchantSanctions: 'cleared',
+      beneficialOwners: [
+        { id: 'bo_clean', sanctionsStatus: 'cleared' },
+        { id: 'bo_hit', sanctionsStatus: 'match' },
+      ],
+    });
+    const auditRows: Array<{ action: string; after: unknown }> = [];
+    wireDisbursement(prisma as unknown as Record<string, unknown>, auditRows);
+
+    const svc = new PaymentService(prisma as never, provider, mockBank);
+    await expect(svc.disburseAndSchedule(loan.id)).rejects.toMatchObject({
+      problem: { code: 'counterparty_not_sanctions_cleared' },
+    });
+    expect(disburse).not.toHaveBeenCalled();
+    const block = auditRows.find((a) => a.action === 'payment.disbursement.blocked_sanctions');
+    const blockedParties = (
+      block!.after as { blockedCounterparties: Array<{ party: string; id: string }> }
+    ).blockedCounterparties;
+    expect(blockedParties.some((p) => p.party === 'beneficial_owner' && p.id === 'bo_hit')).toBe(
+      true,
+    );
+  });
+
+  it('happy path: a fully-cleared counterparty set disburses (provider.disburse IS called)', async () => {
+    const disburse = vi.fn(async () => makeProviderResult('succeeded', { providerRef: 'pay_ok' }));
+    const provider: PaymentProvider = { disburse, debit: vi.fn() };
+    const { prisma, committed } = makePrismaStub({
+      defaultMethod: { id: 'pm_1', providerToken: 'tok_1' },
+      application: { merchantId: 'merchant_uuid_1' },
+      consumerSanctions: 'cleared',
+      merchantSanctions: 'cleared',
+      beneficialOwners: [{ id: 'bo_clean', sanctionsStatus: 'cleared' }],
+    });
+    const auditRows: Array<{ action: string; after: unknown }> = [];
+    wireDisbursement(prisma as unknown as Record<string, unknown>, auditRows);
+
+    const svc = new PaymentService(prisma as never, provider, mockBank);
+    await svc.disburseAndSchedule(loan.id);
+
+    expect(disburse).toHaveBeenCalledTimes(1);
+    // No sanctions-block audit row on the cleared path.
+    expect(
+      auditRows.find((a) => a.action === 'payment.disbursement.blocked_sanctions'),
+    ).toBeUndefined();
+    // Funding side-effects committed (application.funded webhook + notify).
+    const outboxRows = committed.filter((r) => r.model === 'outboxEvent');
+    expect(outboxRows).toHaveLength(2);
   });
 });

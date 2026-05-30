@@ -127,7 +127,11 @@ export class UserService {
       kyc: {
         status: user.consumerProfile?.kycStatus ?? 'not_started',
         pep: user.consumerProfile?.pepStatus ?? 'unknown',
-        sanctions: user.consumerProfile?.sanctionsCheckedAt ? 'cleared' : 'unknown',
+        // AML-03 — report the persisted verdict directly. The old code
+        // inferred 'cleared' from `sanctionsCheckedAt`, but that timestamp
+        // was set for BOTH cleared and match, so a real OFAC hit surfaced
+        // here as 'cleared'. Read the column that holds the truth instead.
+        sanctions: user.consumerProfile?.sanctionsStatus ?? 'unknown',
         completedAt: user.consumerProfile?.kycCompletedAt?.toISOString() ?? null,
       },
       profile,
@@ -257,6 +261,18 @@ export class UserService {
           kycCompletedAt: status.outcome === 'approved' ? new Date() : null,
           pepStatus:
             status.pep === 'cleared' ? 'cleared' : status.pep === 'match' ? 'match' : 'unknown',
+          // AML-03 — persist the ACTUAL sanctions verdict as its own
+          // column, mirroring how pepStatus is persisted above. Previously
+          // only a timestamp was written (and for BOTH cleared AND match),
+          // so the real verdict was lost and read back as 'cleared'. Every
+          // downstream money/activation gate now reads this column.
+          //
+          // PRODUCTION: requires a real OFAC SDN provider
+          // (Middesk/ComplyAdvantage/Persona/etc.) — the mock KYC adapter is
+          // dev-only and always returns 'cleared'; the gate fails closed
+          // (treats anything that is not an explicit 'cleared' as a block)
+          // so the mock cannot wave a real match through.
+          sanctionsStatus: toSanctionsStatus(status.sanctions),
           sanctionsCheckedAt:
             status.sanctions === 'cleared' || status.sanctions === 'match' ? new Date() : null,
         },
@@ -280,6 +296,32 @@ export class UserService {
     });
 
     return { outcome: status.outcome, providerRef: result.providerRef };
+  }
+}
+
+/**
+ * AML-03 — normalise a KYC provider's sanctions field into the persisted
+ * SanctionsStatus enum. The KycProvider port currently emits only
+ * 'unknown' | 'cleared' | 'match'; we map those exactly and FAIL CLOSED on
+ * anything unexpected (a provider that grows a 'review'/'error'/garbage
+ * state must never be silently treated as cleared) by mapping it to
+ * 'error', which every gate treats as not-cleared.
+ */
+function toSanctionsStatus(
+  raw: string | undefined,
+): 'unknown' | 'cleared' | 'match' | 'review' | 'error' {
+  switch (raw) {
+    case 'cleared':
+      return 'cleared';
+    case 'match':
+      return 'match';
+    case 'review':
+      return 'review';
+    case 'unknown':
+    case undefined:
+      return 'unknown';
+    default:
+      return 'error';
   }
 }
 

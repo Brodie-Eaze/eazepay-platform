@@ -391,8 +391,104 @@ describe('MerchantService.startKyb — mock adapter return paths + state transit
       expect(ctx.merchants[0].status).toBe('suspended');
     });
 
-    it.skip("FRAUD-AML audit: OFAC 'match' MUST force status=suspended even when outcome reported as approved — rule NOT YET enforced", async () => {
-      // Pending: explicit OFAC short-circuit in MerchantService.startKyb.
+    it("AML-02: OFAC 'match' MUST block activation even when vendor outcome=approved + writes a sanctions audit row", async () => {
+      // The dangerous combination: identity/EIN checks pass (outcome
+      // 'approved') but the entity hits the OFAC SDN list (ofac 'match').
+      // Pre-fix this activated a sanctioned merchant. The fix forces
+      // manual review and refuses to set status='active'/kybStatus='approved'.
+      const adapter: KybProvider = {
+        initiate: vi.fn(async () => ({ providerRef: 'r1', outcome: 'approved' as const })),
+        status: vi.fn(
+          async (): Promise<KybStatusResult> => ({
+            outcome: 'approved',
+            reasonCodes: [],
+            ofac: 'match',
+            ein: 'verified',
+          }),
+        ),
+      };
+      const { svc, ctx } = makeSvc({ requiresAdmin: false, kyb: adapter });
+      const m = await seedMerchant(svc);
+      await svc.addBeneficialOwner('user-1' as any, m.id, {
+        pii: sampleBoPii() as any,
+        ownershipPct: 100,
+        isControlling: true,
+      } as any);
+      await svc.startKyb('user-1' as any, m.id);
+
+      const row = ctx.merchants[0];
+      // NEVER activate on a sanctions match.
+      expect(row.status).not.toBe('active');
+      expect(row.kybStatus).not.toBe('approved');
+      expect(row.status).toBe('kyb_manual_review');
+      expect(row.kybStatus).toBe('manual_review');
+      // The real verdict is persisted, not inferred.
+      expect(row.sanctionsStatus).toBe('match');
+      expect(row.kybCompletedAt).toBeNull();
+
+      // A regulator-visible audit row records the OFAC override.
+      const blockRow = ctx.audit.find((a) => a.action === 'merchant.activation.blocked_sanctions');
+      expect(blockRow).toBeDefined();
+      expect((blockRow!.after as any).sanctionsStatus).toBe('match');
+      expect((blockRow!.after as any).vendorOutcome).toBe('approved');
+    });
+
+    it("AML-02 fail-closed: OFAC 'unknown' (unscreened) on an approved entity also blocks activation", async () => {
+      // Defence-in-depth: an entity the provider never screened (ofac
+      // 'unknown') must not slip through on outcome=approved either.
+      const adapter: KybProvider = {
+        initiate: vi.fn(async () => ({ providerRef: 'r1', outcome: 'approved' as const })),
+        status: vi.fn(
+          async (): Promise<KybStatusResult> => ({
+            outcome: 'approved',
+            reasonCodes: [],
+            ofac: 'unknown',
+            ein: 'verified',
+          }),
+        ),
+      };
+      const { svc, ctx } = makeSvc({ requiresAdmin: false, kyb: adapter });
+      const m = await seedMerchant(svc);
+      await svc.addBeneficialOwner('user-1' as any, m.id, {
+        pii: sampleBoPii() as any,
+        ownershipPct: 100,
+        isControlling: true,
+      } as any);
+      await svc.startKyb('user-1' as any, m.id);
+      expect(ctx.merchants[0].status).not.toBe('active');
+      expect(ctx.merchants[0].sanctionsStatus).toBe('unknown');
+    });
+
+    it('AML-02 happy path: genuinely cleared entity (outcome=approved, ofac=cleared) still activates', async () => {
+      const adapter: KybProvider = {
+        initiate: vi.fn(async () => ({ providerRef: 'r1', outcome: 'approved' as const })),
+        status: vi.fn(
+          async (): Promise<KybStatusResult> => ({
+            outcome: 'approved',
+            reasonCodes: [],
+            ofac: 'cleared',
+            ein: 'verified',
+          }),
+        ),
+      };
+      const { svc, ctx } = makeSvc({ requiresAdmin: false, kyb: adapter });
+      const m = await seedMerchant(svc);
+      await svc.addBeneficialOwner('user-1' as any, m.id, {
+        pii: sampleBoPii() as any,
+        ownershipPct: 100,
+        isControlling: true,
+      } as any);
+      const r = await svc.startKyb('user-1' as any, m.id);
+      expect(r.outcome).toBe('approved');
+      expect(ctx.merchants[0].status).toBe('active');
+      expect(ctx.merchants[0].kybStatus).toBe('approved');
+      expect(ctx.merchants[0].sanctionsStatus).toBe('cleared');
+      // BOs got the mirrored cleared verdict (so AML-04 can read them).
+      expect(ctx.beneficialOwners[0].sanctionsStatus).toBe('cleared');
+      // No sanctions-block audit row on the happy path.
+      expect(
+        ctx.audit.find((a) => a.action === 'merchant.activation.blocked_sanctions'),
+      ).toBeUndefined();
     });
   });
 });
