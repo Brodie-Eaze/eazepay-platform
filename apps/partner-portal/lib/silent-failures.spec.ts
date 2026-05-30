@@ -106,6 +106,11 @@ describe('silent-failure regressions', () => {
         nonce: 'n-1',
         signature: 'a'.repeat(64),
         body: '{}',
+        // SEC-EZ-001: a secret MUST be supplied for the verifier to reach
+        // the HMAC pipeline at all — an empty/unset secret now fails closed
+        // ('invalid') before importKey is touched. Pass a non-empty secret
+        // so this test still exercises the crash-logging path it asserts on.
+        secret: 'test-secret-to-reach-hmac-pipeline',
       });
 
       expect(result.status).toBe('invalid');

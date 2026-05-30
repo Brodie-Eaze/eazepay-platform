@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 import {
   idFor,
+  lenderWebhookSecret,
   problem,
   requireSignatureCheck,
   SAMPLE_LENDERS,
@@ -18,7 +19,12 @@ import {
  * writes into RLS-protected tables happen later, in the worker, under
  * `SYSTEM_WEBHOOK_CONTEXT`. Matches the MiCamp + HighSale sibling
  * routes byte-for-byte. */
-import { hasDb, PUBLIC_CONSUMER_CONTEXT, schema, withRawTenantContext } from '../../../../../../lib/db';
+import {
+  hasDb,
+  PUBLIC_CONSUMER_CONTEXT,
+  schema,
+  withRawTenantContext,
+} from '../../../../../../lib/db';
 import { hasQueue } from '../../../../../../lib/queue';
 import { extractProviderEventId } from '../../../../../../lib/workers/webhook-processor';
 import { safeLog } from '../../../../../../lib/safe-log';
@@ -94,6 +100,9 @@ export async function POST(req: NextRequest, ctx: { params: { lender: string } }
     nonce: req.headers.get('x-eazepay-nonce'),
     signature: req.headers.get('x-eazepay-signature'),
     body: bodyText,
+    // SEC-EZ-001 — per-lender secret from env (LENDER_<SLUG>_WEBHOOK_SECRET
+    // or LENDER_WEBHOOK_SECRET). Empty in prod when unset → fail-closed.
+    secret: lenderWebhookSecret(lender.id),
   });
   // SEC-003: in prod (or REQUIRE_HMAC=true) a 'skipped' result is
   // rejected the same as 'invalid' — anyone could POST fake lender

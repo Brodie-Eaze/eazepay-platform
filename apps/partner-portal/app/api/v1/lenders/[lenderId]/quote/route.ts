@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
+  lenderWebhookSecret,
   offerFor,
   problem,
   requireSignatureCheck,
@@ -63,6 +64,9 @@ export async function POST(req: NextRequest, ctx: { params: { lenderId: string }
     nonce: req.headers.get('x-eazepay-nonce'),
     signature: req.headers.get('x-eazepay-signature'),
     body: bodyText,
+    // SEC-EZ-001 — per-lender secret from env (LENDER_<SLUG>_WEBHOOK_SECRET
+    // or LENDER_WEBHOOK_SECRET). Empty in prod when unset → fail-closed.
+    secret: lenderWebhookSecret(lender.id),
   });
   // SEC-003: in prod (or REQUIRE_HMAC=true) a 'skipped' result — i.e.
   // no signature headers at all — is rejected the same as 'invalid' /
