@@ -131,12 +131,21 @@ describe('TokenService.verifyAccess', () => {
     await expect(svc.verifyAccess(wrongAud)).rejects.toThrow();
   });
 
-  it('rejects a tampered token (last byte flipped breaks the HMAC)', async () => {
+  it('rejects a tampered token (signature byte flipped breaks the HMAC)', async () => {
     const minted = await svc.mint(USER_ID, SESSION_ID);
-    // Flip the last char of the signature segment.
-    const lastChar = minted.accessToken.slice(-1);
-    const replacement = lastChar === 'A' ? 'B' : 'A';
-    const tampered = minted.accessToken.slice(0, -1) + replacement;
+    // Tamper a SIGNIFICANT character of the signature segment. Flipping the
+    // FINAL base64url char is unreliable (flaky): the last char of a 32-byte
+    // HMAC encodes only 4 significant bits + 2 padding bits, so some flips
+    // (e.g. A↔B) change only the ignored padding and leave the decoded
+    // signature — and thus the HMAC — unchanged, which made this assertion
+    // pass ~94% of the time and fail on the rest. The FIRST signature char
+    // encodes 6 significant bits of byte 0, so flipping it always changes a
+    // real byte and the rejection is deterministic.
+    const segments = minted.accessToken.split('.');
+    const sig = segments[2];
+    const replacement = sig[0] === 'A' ? 'B' : 'A';
+    segments[2] = replacement + sig.slice(1);
+    const tampered = segments.join('.');
     await expect(svc.verifyAccess(tampered)).rejects.toThrow();
   });
 

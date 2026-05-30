@@ -385,8 +385,7 @@ function partnerIdForSynthRow(row: ApplicationRow, brand: BrandSlug): string | n
   const wantedProduct = BRAND_TO_PARTNER_PRODUCT[brand];
   const match = masterPartners.find(
     (p) =>
-      p.legalName === row.partner &&
-      (p.product === wantedProduct || p.product === 'Multi-brand'),
+      p.legalName === row.partner && (p.product === wantedProduct || p.product === 'Multi-brand'),
   );
   return match?.id ?? null;
 }

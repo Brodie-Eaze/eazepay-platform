@@ -37,10 +37,7 @@
  *     duplicating it here would double-count + obscure the call site.
  */
 
-import {
-  createHighsaleClient,
-  type HighsaleSoftPullProvider,
-} from '../highsale/client';
+import { createHighsaleClient, type HighsaleSoftPullProvider } from '../highsale/client';
 import { createMicampClient, type MicampMerchantProcessor } from '../micamp/client';
 
 /**

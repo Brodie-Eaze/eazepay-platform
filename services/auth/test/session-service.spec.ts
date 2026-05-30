@@ -44,7 +44,13 @@ function makePrismaFake() {
       void select;
       return { id: row.id };
     },
-    findFirst: async ({ where, select }: { where: { refreshTokenHash: string }; select?: unknown }) => {
+    findFirst: async ({
+      where,
+      select,
+    }: {
+      where: { refreshTokenHash: string };
+      select?: unknown;
+    }) => {
       void select;
       return sessions.find((s) => s.refreshTokenHash === where.refreshTokenHash) ?? null;
     },
@@ -83,7 +89,7 @@ function makePrismaFake() {
   const prisma = {
     session: sessionApi,
     auditOutbox: auditApi,
-    $transaction: async <T,>(cb: (tx: typeof prisma) => Promise<T>): Promise<T> => cb(prisma),
+    $transaction: async <T>(cb: (tx: typeof prisma) => Promise<T>): Promise<T> => cb(prisma),
   };
 
   return { prisma, sessions, audit };

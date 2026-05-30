@@ -42,9 +42,7 @@ export interface PartnerPrincipal {
  *
  * Stub: always returns null. See module docblock.
  */
-export async function verifyPartnerApiKey(
-  _token: string,
-): Promise<PartnerPrincipal | null> {
+export async function verifyPartnerApiKey(_token: string): Promise<PartnerPrincipal | null> {
   // Intentionally fail-closed until real key issuance + storage land.
   return null;
 }
