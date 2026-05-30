@@ -50,6 +50,7 @@ import {
   type ApplicationEvent,
   type Offer,
 } from '../../../../../../../lib/db/schema';
+import { decryptApplicationRow } from '../../../../../../../lib/db/applications-pii';
 
 const BrandEnum = z.enum(['medpay', 'tradepay', 'coachpay']);
 
@@ -385,8 +386,7 @@ function partnerIdForSynthRow(row: ApplicationRow, brand: BrandSlug): string | n
   const wantedProduct = BRAND_TO_PARTNER_PRODUCT[brand];
   const match = masterPartners.find(
     (p) =>
-      p.legalName === row.partner &&
-      (p.product === wantedProduct || p.product === 'Multi-brand'),
+      p.legalName === row.partner && (p.product === wantedProduct || p.product === 'Multi-brand'),
   );
   return match?.id ?? null;
 }
@@ -552,10 +552,16 @@ async function buildResponseFromDb(
    * the case where a partner pre-fills the invite with a different
    * legal name than the consumer types into the form). */
   const invite = await findInviteByApplicationId(applicationId);
-  const firstName = invite?.consumerFirstName ?? app.consumerFirst;
+  /* PRIV-002: the DB row's name is now encrypted at rest. Decrypt only
+   * when the invite did not supply both names — preserving the original
+   * "invite wins, DB row is the fallback" semantics while avoiding a
+   * needless decrypt when the invite already covers it. */
+  const needsDbName = !invite?.consumerFirstName || !invite?.consumerLastName;
+  const dbPii = needsDbName ? await decryptApplicationRow(app) : null;
+  const firstName = invite?.consumerFirstName ?? dbPii?.consumerFirst ?? '';
   const lastInitial = invite?.consumerLastName
     ? maskLastName(invite.consumerLastName)
-    : maskLastName(app.consumerLast);
+    : maskLastName(dbPii?.consumerLast ?? '');
 
   return {
     applicationId,
