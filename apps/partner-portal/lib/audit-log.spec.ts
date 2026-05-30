@@ -1,5 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NextRequest } from 'next/server';
+
+// ISO-03 fail-loud test needs to drive the DB-write FAILURE branch:
+// `hasDb()` true + an insert that throws. Mock the db module so the
+// helper takes the persist path and the insert rejects.
+const dbState = { hasDb: false, insertThrows: false };
+vi.mock('./db', () => ({
+  hasDb: () => dbState.hasDb,
+  getDb: () => ({
+    insert: () => ({
+      values: async () => {
+        if (dbState.insertThrows) {
+          // Mirror a Postgres RLS WITH CHECK rejection (the ISO-02 case).
+          throw new Error('new row violates row-level security policy for table "audit_log"');
+        }
+        return undefined;
+      },
+    }),
+  }),
+  schema: { auditLog: {} },
+}));
+
 import { writeAuditLog } from './audit-log';
 
 /**
@@ -26,6 +47,9 @@ describe('writeAuditLog', () => {
   beforeEach(() => {
     delete process.env.DATABASE_URL;
     delete process.env.POSTGRES_URL;
+    // Default: behave as if no DB (the existing dev-fallback tests).
+    dbState.hasDb = false;
+    dbState.insertThrows = false;
     // eslint-disable-next-line no-console
     infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     // eslint-disable-next-line no-console
@@ -78,5 +102,35 @@ describe('writeAuditLog', () => {
         outcome: 'success',
       }),
     ).resolves.toBeUndefined();
+  });
+
+  // -------- ISO-03: fail-loud on a dropped audit row --------
+
+  it('ISO-03: a rejected audit INSERT is logged LOUD (critical, control-tagged) but does NOT throw', async () => {
+    dbState.hasDb = true;
+    dbState.insertThrows = true;
+
+    // Still must not throw — audit is a side-channel; the mutation it
+    // described already happened.
+    await expect(
+      writeAuditLog({
+        actor: 'consumer:prequal',
+        action: 'credit_pull.soft',
+        targetType: 'application',
+        targetId: 'app_123',
+        outcome: 'success',
+      }),
+    ).resolves.toBeUndefined();
+
+    // But it MUST be unmistakable in the logs: dedicated event name,
+    // critical severity, alert flag, and a control tag.
+    expect(errorSpy).toHaveBeenCalled();
+    const parsed = JSON.parse(errorSpy.mock.calls[0]?.[0] as string);
+    expect(parsed.event).toBe('audit_log.write_dropped');
+    expect(parsed.severity).toBe('critical');
+    expect(parsed.alert).toBe(true);
+    expect(parsed.control).toBe('SOC2-CC8.1');
+    expect(parsed.compliance_gap).toBe('audit_write_dropped');
+    expect(parsed.action).toBe('credit_pull.soft');
   });
 });

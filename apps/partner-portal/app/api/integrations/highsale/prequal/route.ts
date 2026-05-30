@@ -148,8 +148,19 @@ async function writeFcraAuditLog(
       }),
     );
   } catch (err) {
+    /* ISO-03 — FAIL LOUD on a dropped FCRA permissible-purpose row.
+     * This is the §1681b evidence trail; a silently-swallowed failure
+     * here is exactly the gap ISO-02 created (RLS WITH CHECK rejecting
+     * target_type='application'). We keep this non-fatal to the
+     * consumer (the pull + the consent already exist) but emit a
+     * control-tagged, critical, alertable signal so a missing FCRA
+     * row trips monitoring rather than vanishing into routine logs. */
     safeLog.error({
-      event: 'audit_log.fcra.soft_pull.write_failed',
+      event: 'audit_log.fcra.soft_pull.write_dropped',
+      severity: 'critical',
+      alert: true,
+      control: 'FCRA-1681b',
+      compliance_gap: 'fcra_audit_write_dropped',
       applicationId: input.applicationId,
       consentReceiptId: input.consentReceiptId,
       pullId: input.pullId,
