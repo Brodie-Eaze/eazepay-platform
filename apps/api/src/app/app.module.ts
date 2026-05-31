@@ -6,7 +6,7 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule, JwtAuthGuard, PASSWORD_RESET_EMAIL_DISPATCHER } from '@eazepay/service-auth';
 import { EmailModule, PrismaEmailDispatchAudit } from '@eazepay/service-email';
-import { UserModule } from '@eazepay/service-user';
+import { UserModule, PiiVaultService } from '@eazepay/service-user';
 import { AdminModule } from '@eazepay/service-admin';
 import { ApplicationModule } from '@eazepay/service-application';
 import { AuditModule } from '@eazepay/service-audit';
@@ -150,7 +150,13 @@ const env = loadEnv();
       prismaToken: PrismaService,
       redisToken: RedisService,
     }),
-    OrchestrationModule.forRoot({ prismaToken: PrismaService }),
+    OrchestrationModule.forRoot({
+      prismaToken: PrismaService,
+      // BasisCipherPort → PiiVaultService (service-user opaque envelope).
+      // The orchestration module never imports service-user directly;
+      // this is the only place the DI boundary crosses (ADR-0027).
+      basisCipherToken: PiiVaultService,
+    }),
     ScheduleModule.forRoot(),
     // Global rate limiting — three tiers. Per-route decorators
     // (`@Throttle({ short: { limit, ttl } })` etc) tighten further on
