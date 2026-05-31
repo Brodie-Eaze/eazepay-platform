@@ -7,3 +7,5 @@ export * from './config.js';
 export * from './snapshot.js';
 export * from './knockouts.js';
 export * from './scorer.js';
+export * from './catalog-source.port.js';
+export * from './decide.js';
