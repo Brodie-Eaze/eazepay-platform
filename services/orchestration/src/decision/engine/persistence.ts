@@ -206,6 +206,14 @@ export interface DurableBasis {
   applicationId: string;
   /** The exact prequal inputs the decision reasoned over (PII). */
   input: CanonicalPrequal;
+  /**
+   * MLA coverage from the credit pull (ADR-0030). It is a decision INPUT, not
+   * derived from `input`, and can flip the outcome to NO_OFFER via the 36%
+   * MAPR cap (ADR-0029). It MUST live in the basis: without it an
+   * MLA-suppressed decision cannot replay byte-identically (ADR-0028) and
+   * cannot be reconstructed for an examiner.
+   */
+  mlaCovered: boolean;
   disposition: DecisionDisposition;
   reasonCodes: RegBReasonCode[];
   incompleteFields: IncompleteField[];
@@ -229,9 +237,10 @@ export function buildDurableBasis(args: {
   request: DecideRequest;
   runResult: RunDecisionResult;
   projected: ProjectedAggregate;
+  mlaCovered: boolean;
   decidedAtIso: string;
 }): { basis: DurableBasis; plaintext: string; fingerprint: string } {
-  const { request, runResult, projected, decidedAtIso } = args;
+  const { request, runResult, projected, mlaCovered, decidedAtIso } = args;
 
   const input: CanonicalPrequal = {
     tier: request.tier,
@@ -250,6 +259,7 @@ export function buildDurableBasis(args: {
     schemaVersion: BASIS_SCHEMA_VERSION,
     applicationId: request.applicationId,
     input,
+    mlaCovered,
     disposition: projected.disposition,
     reasonCodes: projected.reasonCodes,
     incompleteFields: projected.incompleteFields,
@@ -346,6 +356,12 @@ export interface PersistDecisionInput {
   aggregated: AggregatedDecision;
   /** Denormalised tenant for RLS; null when no merchant context applies. */
   merchantId?: string | null;
+  /**
+   * MLA coverage the decision was run under (ADR-0030). Defaults false, and is
+   * persisted into the basis so the decision can replay byte-identically.
+   * Must match the `mlaCovered` passed to `runDecision`/`aggregateDecision`.
+   */
+  mlaCovered?: boolean;
 }
 
 export interface PersistDecisionDeps {
@@ -374,6 +390,7 @@ export async function persistDecision(
 ): Promise<PersistedDecision> {
   const { request, runResult, aggregated } = input;
   const merchantId = input.merchantId ?? null;
+  const mlaCovered = input.mlaCovered ?? false;
   const { repository, cipher, now, newId } = deps;
 
   const { idempotencyKey, inputsHash } = deriveIdempotencyKey(request);
@@ -393,6 +410,7 @@ export async function persistDecision(
     request,
     runResult,
     projected,
+    mlaCovered,
     decidedAtIso: decidedAt.toISOString(),
   });
 

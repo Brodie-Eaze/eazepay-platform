@@ -13,3 +13,6 @@ export * from './aggregate.js';
 export * from './persistence.port.js';
 export * from './persistence.js';
 export * from './persistence.in-memory.js';
+export * from './replay.js';
+export * from './shadow-comparator.js';
+export * from './disparate-impact.js';

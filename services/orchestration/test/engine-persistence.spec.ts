@@ -214,8 +214,14 @@ describe('projectAggregated', () => {
 
 describe('buildDurableBasis', () => {
   const projected = projectAggregated(offersAggregated);
-  const build = (req: DecideRequest) =>
-    buildDurableBasis({ request: req, runResult: offersRun, projected, decidedAtIso: FIXED_NOW });
+  const build = (req: DecideRequest, mlaCovered = false) =>
+    buildDurableBasis({
+      request: req,
+      runResult: offersRun,
+      projected,
+      mlaCovered,
+      decidedAtIso: FIXED_NOW,
+    });
 
   it('fingerprint = sha256(plaintext) and is stable for identical inputs', () => {
     const a = build(request);
@@ -240,6 +246,15 @@ describe('buildDurableBasis', () => {
     expect(build({ ...request, annualIncomeCents: 5_000_000 }).fingerprint).not.toBe(
       build(request).fingerprint,
     );
+  });
+
+  it('captures mlaCovered as a replay-load-bearing input', () => {
+    const civilian = build(request, false);
+    const covered = build(request, true);
+    expect(civilian.basis.mlaCovered).toBe(false);
+    expect(covered.basis.mlaCovered).toBe(true);
+    // mlaCovered can flip the decision, so it must change the fingerprint.
+    expect(covered.fingerprint).not.toBe(civilian.fingerprint);
   });
 });
 
@@ -345,6 +360,20 @@ describe('persistDecision — atomic write', () => {
     expect(record.offersValidUntil.toISOString()).toBe('2026-06-15T00:00:00.000Z');
     expect(record.retainUntil.toISOString()).toBe('2028-07-01T00:00:00.000Z');
     expect(basisRow.retainUntil.toISOString()).toBe('2028-07-01T00:00:00.000Z');
+  });
+
+  it('seals mlaCovered into the basis so the decision can replay', async () => {
+    const { repo, cipher, deps } = harness();
+    await persistDecision({ ...offersInput, mlaCovered: true }, deps);
+    const basisRow = must(repo.getBasis('dec_1'), 'basis');
+    const { idempotencyKey } = deriveIdempotencyKey(request);
+    const plaintext = await cipher.open(basisRow.ciphertext, {
+      entity: 'decision_basis',
+      applicationId: 'app_123',
+      idempotencyKey,
+    });
+    const parsed = JSON.parse(plaintext) as { mlaCovered: boolean };
+    expect(parsed.mlaCovered).toBe(true);
   });
 
   it('records an ADVERSE_ACTION decision with ordered Reg B reason codes', async () => {
