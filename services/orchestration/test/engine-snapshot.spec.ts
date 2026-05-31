@@ -16,6 +16,7 @@ const productA: CatalogProductFingerprint = {
   minTermMonths: 6,
   maxTermMonths: 60,
   permittedStates: ['TX', 'CA', 'NY'],
+  permittedBrands: ['medpay', 'direct'],
   enabled: true,
   priority: 10,
 };
@@ -28,6 +29,7 @@ const productB: CatalogProductFingerprint = {
   minTermMonths: 3,
   maxTermMonths: 48,
   permittedStates: [], // nationwide
+  permittedBrands: [], // all brands
   enabled: true,
   priority: 20,
 };
@@ -47,9 +49,26 @@ describe('fingerprintCatalog — order independence', () => {
     );
   });
 
+  it('is invariant to permitted-brands order', () => {
+    const reordered: CatalogProductFingerprint = {
+      ...productA,
+      permittedBrands: ['direct', 'medpay'],
+    };
+    expect(fingerprintCatalog([reordered, productB])).toBe(
+      fingerprintCatalog([productA, productB]),
+    );
+  });
+
   it('changes when an eligibility-relevant field changes', () => {
     const widened: CatalogProductFingerprint = { ...productA, maxAmountCents: '9999999' };
     expect(fingerprintCatalog([widened, productB])).not.toBe(
+      fingerprintCatalog([productA, productB]),
+    );
+  });
+
+  it('changes when the brand allowlist changes', () => {
+    const restricted: CatalogProductFingerprint = { ...productA, permittedBrands: ['medpay'] };
+    expect(fingerprintCatalog([restricted, productB])).not.toBe(
       fingerprintCatalog([productA, productB]),
     );
   });

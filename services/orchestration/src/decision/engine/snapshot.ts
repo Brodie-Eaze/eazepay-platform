@@ -1,4 +1,5 @@
 import { sha256Hex, stableJsonSha256 } from '@eazepay/shared-utils';
+import type { Brand } from './financials.js';
 import type { EngineVersionPins } from './decision-engine.port.js';
 import {
   ENGINE_CONFIG_V1,
@@ -24,6 +25,8 @@ export interface CatalogProductFingerprint {
   maxTermMonths: number;
   /** Empty = nationwide. */
   permittedStates: string[];
+  /** Brand allowlist. Empty = serves every brand (no restriction). */
+  permittedBrands: Brand[];
   enabled: boolean;
   priority: number;
 }
@@ -36,7 +39,11 @@ export interface CatalogProductFingerprint {
  */
 export function fingerprintCatalog(products: readonly CatalogProductFingerprint[]): string {
   const normalised = products
-    .map((p) => ({ ...p, permittedStates: [...p.permittedStates].sort() }))
+    .map((p) => ({
+      ...p,
+      permittedStates: [...p.permittedStates].sort(),
+      permittedBrands: [...p.permittedBrands].sort(),
+    }))
     .sort((a, b) => a.lenderProductId.localeCompare(b.lenderProductId));
   return stableJsonSha256(normalised);
 }

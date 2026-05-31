@@ -5,3 +5,4 @@ export * from './credit-pull.port.js';
 export * from './decision-engine.port.js';
 export * from './config.js';
 export * from './snapshot.js';
+export * from './knockouts.js';

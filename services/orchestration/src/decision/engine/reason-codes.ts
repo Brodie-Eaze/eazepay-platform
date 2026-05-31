@@ -31,3 +31,22 @@ const REG_B_REASON_CODE_SET: ReadonlySet<string> = new Set(REG_B_REASON_CODES);
 export function isRegBReasonCode(value: string): value is RegBReasonCode {
   return REG_B_REASON_CODE_SET.has(value);
 }
+
+/**
+ * Consumer-readable principal-reason text for each Reg B code, taken from
+ * CFPB Model Form C-1 (12 CFR 1002 App. C). This is the exact language an
+ * adverse-action notice may carry; it is NOT free-form and must NOT be
+ * paraphrased. Mirrors `REG_B_PRINCIPAL_TEXT` in
+ * apps/partner-portal/lib/decision-engine.ts byte-for-byte.
+ */
+export const REG_B_PRINCIPAL_TEXT: Record<RegBReasonCode, string> = {
+  INCOME_INSUFFICIENT: 'Income insufficient for amount of credit requested',
+  CREDIT_HISTORY_INSUFFICIENT: 'Insufficient number of credit references provided',
+  CREDIT_PROFILE_NEGATIVE: 'Credit application incomplete',
+  DTI_EXCESSIVE: 'Excessive obligations in relation to income',
+  RESIDENCE_DURATION: 'Length of residence',
+  EMPLOYMENT_DURATION: 'Length of employment',
+  GEOGRAPHY: 'We do not grant credit in your state at this time',
+  LOAN_AMOUNT_TOO_SMALL: 'Loan amount below minimum',
+  LOAN_AMOUNT_TOO_LARGE: 'Loan amount above maximum',
+};
