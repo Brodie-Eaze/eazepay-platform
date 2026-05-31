@@ -9,3 +9,4 @@ export * from './knockouts.js';
 export * from './scorer.js';
 export * from './catalog-source.port.js';
 export * from './decide.js';
+export * from './aggregate.js';
