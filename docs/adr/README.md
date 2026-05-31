@@ -76,12 +76,16 @@ or reversible-in-a-day implementation choices.
 | 0018 | Billing service (rating + invoicing) as a separate module              | Accepted |
 | 0019 | Real-time event bus for partner-portal UI updates                      | Accepted |
 | 0020 | Applications data layer — Postgres + Drizzle + dual-write cutover      | Accepted |
-| 0021 | Decision engine — internal scorer as default, Trutopia opt-in          | Accepted |
+| 0021 | Decision engine — internal scorer as default, Trutopia opt-in          | Superseded by 0027 |
 | 0022 | Graceful in-memory fallback when DB / Redis are absent                 | Accepted |
 | 0023 | BullMQ for async orchestration                                         | Accepted |
 | 0024 | Resource ownership mismatch returns 404, not 403                       | Accepted |
 | 0025 | Write-then-200 webhook inbox with idempotency                          | Accepted |
 | 0026 | Graceful degradation philosophy — every external dep has a fallback    | Accepted |
+| 0027 | Decision engine placement — module-first, standalone-ready             | Accepted |
+| 0028 | Decision semantics — versioned catalog, evaluate-all, replay, retention | Accepted |
+| 0029 | Fairness — brand ≠ adverse-action reason, state knockout, DI testing    | Accepted |
+| 0030 | Credit-data ingestion — HighSale primary, CRS alternate, split retention | Accepted |
 
 ## Conventions for code references
 

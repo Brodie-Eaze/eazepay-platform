@@ -1,6 +1,6 @@
 # ADR-0021: Decision engine — internal scorer as default, Trutopia cloud as opt-in
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0027](0027-decision-engine-placement.md)
 **Date:** 2026-05-26
 **Deciders:** Brodie + Builder Council
 
