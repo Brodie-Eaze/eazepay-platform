@@ -1520,6 +1520,124 @@ model HighsaleSnapshot {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Decision engine — persisted /v1/decide records + the §615(a) basis.
+// ─────────────────────────────────────────────────────────────────────
+// ADR-0033. A decision splits into a PII-free queryable spine
+// (DecisionRecord), an encrypted §615(a) basis (DecisionBasis), and an
+// encrypted dead-letter (DecisionDlq) for failed durable writes. The
+// same-txn AuditOutbox + IdempotencyRecord writes reuse the existing
+// tables. Declared here in P6; the Prisma adapter + migration land in P7
+// alongside the handler (ADR-0033 P6/P7 split).
+
+/// The four legally-distinct consumer dispositions (ADR-0032). Stored
+/// UPPERCASE to mirror the engine's AggregatedDecision discriminant
+/// byte-for-byte (ADR-0033) so replay + shadow comparison need no case
+/// translation — this intentionally diverges from the lowercase enum
+/// convention used elsewhere in this schema.
+enum DecisionDisposition {
+  OFFERS
+  INCOMPLETE
+  ADVERSE_ACTION
+  NO_OFFER
+}
+
+/// Queryable spine of one /v1/decide decision (ADR-0033). Carries NO PII:
+/// disposition, the pinned engine versions, the ordered Reg B reason CODES
+/// (closed Model Form C-1 taxonomy — codes, not consumer data), an offer
+/// count, the basis fingerprint (SHA-256 audit anchor), and both retention
+/// clocks. Disparate-impact monitoring (ADR-0029) and adverse-action
+/// reproduction read this table without decrypting anything.
+model DecisionRecord {
+  id                         String              @id @default(uuid()) @db.Uuid
+  applicationId              String              @map("application_id") @db.Uuid
+  /// Denormalised tenant for RLS + dashboards; resolved from the application.
+  merchantId                 String?             @map("merchant_id") @db.Uuid
+  /// Derived idempotency key `applicationId:sha256(canonical request)` —
+  /// composes ADR-0015. Unique so a retried decide replays, never double-writes.
+  idempotencyKey             String              @unique @map("idempotency_key")
+  disposition                DecisionDisposition
+  /// Ordered Reg B principal-reason codes (ADR-0032); empty unless ADVERSE_ACTION.
+  reasonCodes                String[]            @default([]) @map("reason_codes")
+  /// Count of included lenders; 0 unless OFFERS. Denormalised for dashboards.
+  offerCount                 Int                 @default(0) @map("offer_count")
+  /// Pinned engine versions (SR 11-7 / ADR-0028) — same input + these reproduce.
+  policyVersion              String              @map("policy_version")
+  ruleVersion                String              @map("rule_version")
+  scorerVersion              String              @map("scorer_version")
+  effectiveCatalogSnapshotId String              @map("effective_catalog_snapshot_id")
+  /// SHA-256 of the canonical basis — the tamper-evidence anchor the audit
+  /// chain transitively commits to (ADR-0011, ADR-0033).
+  basisFingerprint           String              @map("basis_fingerprint")
+  /// Offer freshness — 14 days, tied to the soft-pull (ADR-0030). After this
+  /// the portal must re-decide; NOT a purge deadline.
+  offersValidUntil           DateTime            @map("offers_valid_until") @db.Timestamptz(6)
+  /// FCRA / Reg B 1002.12(b) record-retention floor — 25 months. The record,
+  /// basis, and any DLQ co-retain to this stamp (ADR-0033).
+  retainUntil                DateTime            @map("retain_until") @db.Timestamptz(6)
+  decidedAt                  DateTime            @map("decided_at") @db.Timestamptz(6)
+  createdAt                  DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  basis DecisionBasis?
+
+  @@index([applicationId, decidedAt(sort: Desc)])
+  @@index([disposition, decidedAt])
+  @@index([retainUntil])
+  @@map("decision_records")
+}
+
+/// Encrypted §615(a) decision basis (ADR-0033). The ciphertext is the
+/// envelope-encrypted canonical-JSON basis: the prequal echo (PII), the
+/// disposition, ordered reasons, included-offer summary, and the scorer's
+/// signed per-factor key-factor breakdown, plus version pins + snapshot id.
+/// Read via BasisCipherPort (prod = PiiVaultService opaque envelope). One
+/// per decision; co-retained 25 months with its record.
+model DecisionBasis {
+  id            String         @id @default(uuid()) @db.Uuid
+  decisionId    String         @unique @map("decision_id") @db.Uuid
+  decision      DecisionRecord @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  /// Opaque envelope (base64). NEVER plaintext. AAD binds it to the decision.
+  ciphertext    String
+  /// SHA-256 of the canonical plaintext basis == DecisionRecord.basisFingerprint.
+  fingerprint   String
+  /// SHA-256 of the canonical decide request — proves the basis belongs to
+  /// these inputs (mirrors HighsaleSnapshot.inputsHash).
+  inputsHash    String         @map("inputs_hash")
+  /// Basis payload schema version; bumps when captured fields change (ADR-0033).
+  schemaVersion Int            @default(1) @map("schema_version")
+  retainUntil   DateTime       @map("retain_until") @db.Timestamptz(6)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([retainUntil])
+  @@map("decision_bases")
+}
+
+/// Encrypted dead-letter for a decision whose same-txn durable write failed
+/// (ADR-0033). Stores the already-encrypted intended write — never plaintext
+/// — so a reconcile tool can replay it without leaking PII. Retained 25
+/// months like the basis it stands in for.
+model DecisionDlq {
+  id             String    @id @default(uuid()) @db.Uuid
+  /// The derived idempotency key the failed write would have claimed; lets the
+  /// reconcile tool dedupe against a later successful DecisionRecord.
+  idempotencyKey String    @map("idempotency_key")
+  applicationId  String?   @map("application_id") @db.Uuid
+  /// Opaque envelope (base64) of the intended write. NEVER plaintext.
+  ciphertext     String
+  fingerprint    String
+  /// A failure CLASS, not a raw error string (no PII / no stack).
+  failureReason  String    @map("failure_reason")
+  attempts       Int       @default(1)
+  retainUntil    DateTime  @map("retain_until") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastAttemptAt  DateTime  @default(now()) @map("last_attempt_at") @db.Timestamptz(6)
+  resolvedAt     DateTime? @map("resolved_at") @db.Timestamptz(6)
+
+  @@index([resolvedAt, createdAt])
+  @@index([idempotencyKey])
+  @@map("decision_dlq")
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Billing — platform-fee invoicing.
 // ─────────────────────────────────────────────────────────────────────
 // EazePay invoices each Merchant a platform fee on funded volume.
