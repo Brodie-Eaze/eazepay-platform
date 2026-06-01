@@ -740,11 +740,18 @@
   color: transparent;
 }
 .ez-eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+/* One typeface across the entire site — never the monospace.
+   Neutralises every Tailwind `font-mono` utility and any var(--font-mono)
+   consumer so codes, stat numbers and eyebrows all render in Inter. */
+.font-mono {
+  font-family: var(--font-sans) !important;
 }
 
 /* live status dot (agent console) */
