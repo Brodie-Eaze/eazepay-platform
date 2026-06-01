@@ -1,0 +1,25 @@
+{
+  "name": "eazepay-site",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/eazepay-site/app",
+  "projectType": "application",
+  "tags": ["scope:app", "platform:web"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/eazepay-site build" }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/eazepay-site dev" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/eazepay-site typecheck" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "pnpm --filter @eazepay/eazepay-site lint" }
+    }
+  }
+}

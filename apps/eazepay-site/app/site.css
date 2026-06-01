@@ -1,0 +1,1074 @@
+/* ============================================================================
+   EazePay marketing site — visual engine.
+   Layered on top of the shared @eazepay/ui globals.css (navy/grey/white
+   tokens, Inter + JetBrains Mono, .bg-grid / .bg-accent-gradient / .shimmer).
+   This file adds: the light-blue brand layer, a deep-navy canvas, CSS-only
+   3D scenes (orchestration core + perspective floor), the animated
+   lead-flow pipeline, tilt, marquee, waterfall fills and scroll-reveal.
+   No JS animation library — every motion here is CSS keyframes/transition,
+   so it inherits the globals.css `prefers-reduced-motion` kill-switch.
+   ========================================================================== */
+
+:root {
+  /* Enterprise light-blue accent (the net-new brand colour the shared
+     preset doesn't carry) + a deep-navy canvas for the dark scenes.
+     RGB triplets so Tailwind `rgb(var(--token) / <alpha>)` works. */
+  --brand-sky: 46 92 174; /* #2E5CAE — primary enterprise blue (muted, AA on white) */
+  --brand-sky-soft: 123 158 222; /* #7B9EDE — steel glow / accent on navy */
+  --brand-sky-deep: 28 58 122; /* #1C3A7A — pressed / depth */
+  --brand-sky-wash: 234 240 250; /* #EAF0FA — light fill on white */
+  --brand-ink: 8 12 27; /* #080C1B — deep-navy canvas (darker than fg) */
+  --brand-ink-soft: 18 24 47; /* #12182F — matches --fg navy */
+}
+
+/* ---------------------------------------------------------------- canvas -- */
+
+.ez-dark {
+  position: relative;
+  background:
+    radial-gradient(980px 560px at 50% -14%, rgb(var(--brand-sky-soft) / 0.14), transparent 62%),
+    radial-gradient(760px 520px at 86% 6%, rgb(var(--brand-sky) / 0.12), transparent 58%),
+    radial-gradient(640px 480px at 8% 98%, rgb(var(--brand-sky-deep) / 0.2), transparent 62%),
+    linear-gradient(180deg, rgb(var(--brand-ink)) 0%, rgb(var(--brand-ink-soft)) 100%);
+  color: rgb(244 246 252);
+  isolation: isolate;
+}
+
+/* Brand tile — the rounded badge that carries the LogoMark in the nav +
+   footer. A confident navy→blue gradient with a subtle top sheen so it reads
+   like a crafted logo lockup, not a flat color swatch. */
+.ez-logo-tile {
+  background: linear-gradient(150deg, rgb(var(--brand-sky)) 0%, rgb(var(--brand-sky-deep)) 100%);
+  box-shadow:
+    0 1px 2px rgb(var(--brand-ink) / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+/* Faint engineering grid that recedes into perspective — sits behind hero
+   content as a "platform floor". */
+.ez-grid-floor {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.ez-grid-floor::before {
+  content: '';
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  bottom: -40%;
+  height: 120%;
+  background-image:
+    linear-gradient(rgb(var(--brand-sky-soft) / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--brand-sky-soft) / 0.16) 1px, transparent 1px);
+  background-size: 46px 46px;
+  transform: perspective(620px) rotateX(66deg);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 55%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 55%, transparent 100%);
+  animation: ez-floor-drift 14s linear infinite;
+}
+@keyframes ez-floor-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 46px;
+  }
+}
+
+/* ------------------------------------------------------------ scroll reveal */
+
+/* SSR / first-paint default = visible (the Reveal client component flips the
+   attribute). A <noscript> override in layout keeps no-JS visitors covered. */
+[data-reveal='out'] {
+  opacity: 0;
+  transform: translateY(20px);
+  will-change: opacity, transform;
+}
+[data-reveal='in'] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.72s cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms),
+    transform 0.72s cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms);
+}
+
+/* --------------------------------------------------- hero orchestration core */
+
+.ez-core-scene {
+  perspective: 1600px;
+  perspective-origin: 50% 50%;
+}
+.ez-core-stage {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: ez-stage-sway 24s ease-in-out infinite;
+}
+/* Gentle turn only — a small rotateX keeps the orbit reading as a clean ring
+   instead of a foreshortened plane that bunches every label near the top. */
+@keyframes ez-stage-sway {
+  0%,
+  100% {
+    transform: rotateX(4deg) rotateY(-9deg);
+  }
+  50% {
+    transform: rotateX(4deg) rotateY(9deg);
+  }
+}
+
+/* ambient bloom behind the core — a soft breathing glow */
+.ez-core-scene::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82%;
+  height: 82%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(var(--brand-sky) / 0.3) 0%,
+    rgb(var(--brand-sky-deep) / 0.12) 40%,
+    transparent 70%
+  );
+  filter: blur(16px);
+  z-index: 0;
+  pointer-events: none;
+  animation: ez-bloom-breathe 7s ease-in-out infinite;
+}
+@keyframes ez-bloom-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.07);
+  }
+}
+
+/* faint orbit path the nodes ride on, with a slowly sweeping bright arc */
+.ez-orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72%;
+  height: 72%;
+  transform: translate(-50%, -50%) translateZ(6px);
+  border-radius: 50%;
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.12);
+}
+.ez-orbit-ring::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgb(var(--brand-sky-soft) / 0.55) 38deg,
+    transparent 96deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent calc(50% - 2px), #000 calc(50% - 2px));
+  mask: radial-gradient(circle, transparent calc(50% - 2px), #000 calc(50% - 2px));
+  animation: ez-orbit-spin 18s linear infinite;
+}
+@keyframes ez-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* the glowing centre disc + concentric pulse rings */
+.ez-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  margin: -70px 0 0 -70px;
+  border-radius: 50%;
+  transform: translateZ(70px);
+  background:
+    radial-gradient(circle at 50% 30%, rgb(255 255 255 / 0.5) 0%, transparent 32%),
+    radial-gradient(circle at 50% 42%, rgb(var(--brand-sky-soft)) 0%, rgb(var(--brand-sky)) 46%, rgb(var(--brand-sky-deep)) 100%);
+  box-shadow:
+    0 0 0 1px rgb(var(--brand-sky-soft) / 0.55),
+    0 0 0 7px rgb(var(--brand-sky) / 0.1),
+    0 0 60px rgb(var(--brand-sky) / 0.8),
+    0 0 130px rgb(var(--brand-sky) / 0.35),
+    inset 0 -12px 30px rgb(var(--brand-ink) / 0.55),
+    inset 0 9px 22px rgb(255 255 255 / 0.22),
+    0 30px 70px rgb(var(--brand-ink) / 0.72);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+/* slow specular sweep across the orb surface */
+.ez-core::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 210deg,
+    transparent 0deg,
+    rgb(255 255 255 / 0.22) 42deg,
+    transparent 116deg,
+    transparent 360deg
+  );
+  mix-blend-mode: screen;
+  animation: ez-core-spin 9s linear infinite;
+}
+/* top glass highlight */
+.ez-core::after {
+  content: '';
+  position: absolute;
+  top: 11%;
+  left: 23%;
+  width: 44%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgb(255 255 255 / 0.55), transparent 70%);
+  filter: blur(2px);
+}
+.ez-core__mark {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+}
+/* energy aura — a soft conic ring rotating just outside the core */
+.ez-core-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 196px;
+  height: 196px;
+  margin: -98px 0 0 -98px;
+  border-radius: 50%;
+  transform: translateZ(60px);
+  background: conic-gradient(
+    from 0deg,
+    rgb(var(--brand-sky-soft) / 0) 0deg,
+    rgb(var(--brand-sky-soft) / 0.5) 72deg,
+    rgb(var(--brand-sky) / 0) 150deg,
+    rgb(var(--brand-sky-soft) / 0.4) 252deg,
+    rgb(var(--brand-sky-soft) / 0) 330deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 65%, #000 80%, transparent 86%);
+  mask: radial-gradient(circle, transparent 58%, #000 65%, #000 80%, transparent 86%);
+  filter: blur(3px);
+  animation: ez-halo-spin 14s linear infinite;
+}
+@keyframes ez-halo-spin {
+  from {
+    transform: translateZ(60px) rotate(0deg);
+  }
+  to {
+    transform: translateZ(60px) rotate(360deg);
+  }
+}
+@keyframes ez-core-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ez-core__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.35);
+  transform: translate(-50%, -50%);
+  animation: ez-ring-pulse 4.4s ease-out infinite;
+}
+.ez-core__ring--2 {
+  animation-delay: 1.4s;
+}
+.ez-core__ring--3 {
+  animation-delay: 2.8s;
+}
+@keyframes ez-ring-pulse {
+  0% {
+    width: 140px;
+    height: 140px;
+    opacity: 0.55;
+  }
+  100% {
+    width: 400px;
+    height: 400px;
+    opacity: 0;
+  }
+}
+
+/* orbiting nodes (agents + verticals) — placed by inline left/top + --tz.
+   Depth comes from translateZ; each node floats + glows on a stagger. */
+.ez-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: rgb(232 238 250);
+  background: linear-gradient(180deg, rgb(var(--brand-ink-soft) / 0.88), rgb(var(--brand-ink) / 0.82));
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.36);
+  box-shadow:
+    0 10px 30px rgb(var(--brand-ink) / 0.55),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+  backdrop-filter: blur(6px);
+  transform: translate(-50%, -50%) translateZ(var(--tz, 0px));
+  animation: ez-node-float 7s ease-in-out infinite;
+  animation-delay: var(--nd, 0s);
+}
+.ez-node__dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(var(--brand-sky-soft));
+  box-shadow: 0 0 10px rgb(var(--brand-sky-soft));
+}
+.ez-node__dot::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.6);
+  animation: ez-node-ping 2.8s ease-out infinite;
+}
+@keyframes ez-node-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+.ez-node--vertical {
+  color: rgb(var(--brand-ink-soft));
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(234 240 250 / 0.92));
+  border-color: rgb(var(--brand-sky) / 0.42);
+}
+.ez-node--vertical .ez-node__dot {
+  background: rgb(var(--brand-sky));
+  box-shadow: 0 0 10px rgb(var(--brand-sky));
+}
+.ez-node--vertical .ez-node__dot::before {
+  border-color: rgb(var(--brand-sky) / 0.55);
+}
+@keyframes ez-node-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateZ(var(--tz, 0px)) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateZ(var(--tz, 0px)) translateY(-6px);
+  }
+}
+
+/* thin connector from centre to each node with a travelling data pulse */
+.ez-spoke {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 1px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgb(var(--brand-sky) / 0.55), rgb(var(--brand-sky-soft) / 0.05));
+  overflow: hidden;
+}
+.ez-spoke::after {
+  content: '';
+  position: absolute;
+  top: -1.5px;
+  left: 0;
+  width: 28px;
+  height: 4px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgb(var(--brand-sky-soft)) 0%, rgb(var(--brand-sky-soft) / 0) 100%);
+  box-shadow: 0 0 12px rgb(var(--brand-sky-soft));
+  animation: ez-pulse-run 2.8s linear infinite;
+  animation-delay: var(--sd, 0s);
+}
+/* pulse converges INWARD (node → core) — a lead flowing into the rail */
+@keyframes ez-pulse-run {
+  0% {
+    left: 100%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    left: -12px;
+    opacity: 0;
+  }
+}
+
+/* floating compliance chips anchored to the hero frame (parallax drift) */
+.ez-float-chip {
+  position: absolute;
+  z-index: 3;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.96);
+  border: 1px solid rgb(var(--brand-sky) / 0.22);
+  box-shadow: 0 18px 44px rgb(var(--brand-ink) / 0.4);
+  animation: ez-chip-float 9s ease-in-out infinite;
+}
+@keyframes ez-chip-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-12px) rotate(var(--rot, 0deg));
+  }
+}
+
+/* ------------------------------------------------------ lead-flow pipeline -- */
+
+.ez-pipe {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  align-items: stretch;
+}
+@media (max-width: 880px) {
+  .ez-pipe {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ez-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 16px;
+  z-index: 2;
+}
+/* the connecting rail behind the nodes that leads travel along */
+.ez-pipe__rail {
+  position: absolute;
+  top: 64px;
+  left: 9%;
+  right: 9%;
+  height: 2px;
+  z-index: 0;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--brand-sky) / 0.1),
+    rgb(var(--brand-sky) / 0.55) 50%,
+    rgb(var(--brand-sky) / 0.1)
+  );
+  overflow: visible;
+}
+@media (max-width: 880px) {
+  .ez-pipe__rail {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    right: auto;
+    width: 2px;
+    height: auto;
+    background: linear-gradient(
+      180deg,
+      rgb(var(--brand-sky) / 0.1),
+      rgb(var(--brand-sky) / 0.55) 50%,
+      rgb(var(--brand-sky) / 0.1)
+    );
+  }
+}
+
+/* a travelling lead chip — staggered, looping. Horizontal on desktop,
+   vertical on mobile. */
+.ez-lead {
+  position: absolute;
+  top: 53px;
+  left: 9%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: rgb(238 242 250);
+  background: rgb(var(--brand-ink-soft) / 0.92);
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.4);
+  box-shadow: 0 8px 22px rgb(var(--brand-ink) / 0.5);
+  animation: ez-lead-run 12s linear infinite;
+  animation-delay: var(--ld, 0s);
+}
+@keyframes ez-lead-run {
+  0% {
+    left: 9%;
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    left: 88%;
+    opacity: 0;
+  }
+}
+@media (max-width: 880px) {
+  .ez-lead {
+    top: 2%;
+    left: 50%;
+    transform: translateX(-50%);
+    animation-name: ez-lead-run-v;
+  }
+  @keyframes ez-lead-run-v {
+    0% {
+      top: 2%;
+      opacity: 0;
+    }
+    6% {
+      opacity: 1;
+    }
+    92% {
+      opacity: 1;
+    }
+    100% {
+      top: 96%;
+      opacity: 0;
+    }
+  }
+}
+.ez-lead__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.ez-lead__dot--hot {
+  background: rgb(var(--brand-sky-soft));
+  box-shadow: 0 0 8px rgb(var(--brand-sky-soft));
+}
+.ez-lead__dot--warm {
+  background: rgb(var(--brand-sky));
+  box-shadow: 0 0 8px rgb(var(--brand-sky));
+}
+.ez-lead__dot--cold {
+  background: rgb(148 163 184);
+}
+
+/* the node "card" inside each pipeline stage */
+.ez-pnode {
+  position: relative;
+  border-radius: 14px;
+  padding: 14px;
+  background: rgb(var(--brand-ink-soft) / 0.6);
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.22);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+.ez-pnode__ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgb(var(--brand-sky) / 0.16);
+  border: 1px solid rgb(var(--brand-sky) / 0.4);
+  color: rgb(var(--brand-sky-soft));
+}
+
+/* ----------------------------------------------------------------- card -- */
+/* Refined, consistent lift for content cards on light sections. The hero is
+   the single dramatic 3D piece; every card gets a restrained micro-interaction
+   so the whole page reads at one craft bar — lift + crisp shadow + a sky
+   accent hairline that ignites on hover. */
+.ez-card {
+  position: relative;
+  isolation: isolate;
+  box-shadow: 0 1px 2px rgb(var(--brand-ink) / 0.03);
+  transition:
+    transform 0.34s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.34s ease,
+    border-color 0.34s ease;
+  will-change: transform;
+}
+.ez-card:hover {
+  transform: translateY(-5px);
+  border-color: rgb(var(--brand-sky) / 0.42);
+  box-shadow: 0 22px 48px -20px rgb(var(--brand-ink) / 0.28);
+}
+.ez-card::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 14%;
+  right: 14%;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgb(var(--brand-sky) / 0.85), transparent);
+  opacity: 0;
+  transition: opacity 0.34s ease;
+  pointer-events: none;
+}
+.ez-card:hover::after {
+  opacity: 1;
+}
+
+/* CTA glyph — a soft, breathing echo of the hero core to bookend the page */
+.ez-cta-glyph {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 8px 24px -6px rgb(var(--brand-sky) / 0.6),
+    0 0 36px -6px rgb(var(--brand-sky) / 0.45);
+  animation: ez-glyph-breathe 5s ease-in-out infinite;
+}
+@keyframes ez-glyph-breathe {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.12),
+      0 8px 24px -6px rgb(var(--brand-sky) / 0.55),
+      0 0 34px -8px rgb(var(--brand-sky) / 0.4);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.14),
+      0 10px 30px -6px rgb(var(--brand-sky) / 0.85),
+      0 0 54px -2px rgb(var(--brand-sky) / 0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ez-card {
+    transition:
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .ez-card:hover {
+    transform: none;
+  }
+  .ez-cta-glyph {
+    animation: none;
+  }
+}
+
+/* --------------------------------------------------------------- marquee -- */
+
+.ez-marquee {
+  display: flex;
+  width: max-content;
+  animation: ez-marquee-run 38s linear infinite;
+}
+.ez-marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes ez-marquee-run {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ------------------------------------------------------------- waterfall -- */
+
+.ez-wf__bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky) / 0.14);
+  overflow: hidden;
+}
+.ez-wf__bar > span {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgb(var(--brand-sky-deep)), rgb(var(--brand-sky-soft)));
+  animation: ez-wf-fill 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) infinite alternate;
+  animation-delay: var(--wd, 0s);
+}
+@keyframes ez-wf-fill {
+  0% {
+    transform: scaleX(0.08);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scaleX(var(--wf, 0.7));
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------- text helpers -- */
+
+.ez-gradient-text {
+  background: linear-gradient(100deg, rgb(var(--brand-sky-soft)) 0%, #ffffff 55%, rgb(var(--brand-sky-soft)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ez-sky-text {
+  background: linear-gradient(100deg, rgb(var(--brand-sky-deep)), rgb(var(--brand-sky)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ez-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* live status dot (agent console) */
+.ez-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(var(--brand-sky));
+  box-shadow: 0 0 0 0 rgb(var(--brand-sky) / 0.6);
+  animation: ez-live 2s ease-out infinite;
+}
+@keyframes ez-live {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--brand-sky) / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 9px rgb(var(--brand-sky) / 0);
+  }
+}
+
+/* hairline divider used between dark sections */
+.ez-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--brand-sky-soft) / 0.4), transparent);
+}
+
+/* ------------------------------------------------- device · merchant phone -- */
+/* A pure-CSS iPhone showing a live deal clear the rail — an orchestration
+   stepper + the lender waterfall + an "approving itself" banner that crossfades
+   from "selecting best offer" to "approved" on a calm loop. The single light
+   product-shot on the page: a navy frame + soft sky bloom lift it off the light
+   section the way the hero core lifts off the dark. */
+.ez-phone-stage {
+  position: relative;
+}
+.ez-phone-stage::before {
+  content: '';
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  width: 116%;
+  height: 84%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgb(var(--brand-sky) / 0.2) 0%,
+    rgb(var(--brand-sky-soft) / 0.1) 38%,
+    transparent 68%
+  );
+  filter: blur(22px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ez-phone {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  aspect-ratio: 300 / 626;
+  padding: 11px;
+  border-radius: 46px;
+  background: linear-gradient(155deg, #232c43 0%, #0a0f20 58%);
+  box-shadow:
+    0 2px 5px rgb(var(--brand-ink) / 0.45),
+    0 44px 90px -30px rgb(var(--brand-ink) / 0.62),
+    0 0 0 1px rgb(var(--brand-sky-soft) / 0.14),
+    inset 0 1.5px 0 rgb(255 255 255 / 0.12);
+}
+
+/* physical side buttons */
+.ez-phone__btn {
+  position: absolute;
+  left: -3px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(180deg, #2a3450, #131a30);
+}
+.ez-phone__btn--mute {
+  top: 96px;
+  height: 26px;
+}
+.ez-phone__btn--vol-up {
+  top: 134px;
+  height: 44px;
+}
+.ez-phone__btn--vol-dn {
+  top: 188px;
+  height: 44px;
+}
+.ez-phone__btn--power {
+  left: auto;
+  right: -3px;
+  top: 150px;
+  height: 66px;
+  border-radius: 2px 0 0 2px;
+}
+
+/* Dynamic Island */
+.ez-phone__island {
+  position: absolute;
+  top: 19px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 25px;
+  border-radius: 999px;
+  background: #04060d;
+  z-index: 6;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+.ez-phone__island::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 35% 30%, #1c3d68, #04060d 72%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.ez-phone__screen {
+  position: relative;
+  height: 100%;
+  border-radius: 36px;
+  overflow: hidden;
+  background: #f4f7fc;
+  box-shadow: inset 0 0 0 1px rgb(var(--brand-ink) / 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* orchestration stepper rail + a travelling scan pulse */
+.ez-step-rail {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 9px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky) / 0.16);
+  overflow: hidden;
+}
+.ez-step-rail::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 4px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, rgb(var(--brand-sky)), transparent);
+  animation: ez-step-scan 3.8s ease-in-out infinite;
+}
+@keyframes ez-step-scan {
+  0% {
+    top: -26px;
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* step status node */
+.ez-step-dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgb(var(--brand-sky));
+  color: #fff;
+  box-shadow: 0 2px 6px rgb(var(--brand-sky) / 0.4);
+}
+.ez-step-dot--active {
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgb(var(--brand-sky) / 0.5),
+    0 2px 6px rgb(var(--brand-sky) / 0.3);
+}
+
+/* in-phone waterfall bar (one-shot fill + hold; no infinite pulse) */
+.ez-pf-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky) / 0.12);
+  overflow: hidden;
+}
+.ez-pf-bar > span {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transform-origin: left center;
+  transform: scaleX(var(--wf, 0.7));
+  background: linear-gradient(90deg, rgb(var(--brand-sky-deep)), rgb(var(--brand-sky-soft)));
+  animation: ez-pf-fill 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--wd, 0s);
+}
+@keyframes ez-pf-fill {
+  from {
+    transform: scaleX(0.06);
+    opacity: 0.5;
+  }
+  to {
+    transform: scaleX(var(--wf, 0.7));
+    opacity: 1;
+  }
+}
+
+/* the "approve itself" banner — crossfades pending → approved on a calm loop */
+.ez-appr {
+  position: relative;
+  height: 46px;
+}
+.ez-appr > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 13px;
+}
+.ez-appr__pending {
+  background: rgb(var(--brand-sky) / 0.1);
+  color: rgb(var(--brand-sky-deep));
+  animation: ez-appr-pending 6.4s ease-in-out infinite;
+}
+.ez-appr__done {
+  color: #fff;
+  background: linear-gradient(100deg, rgb(var(--brand-sky-deep)), rgb(var(--brand-sky)));
+  box-shadow: 0 10px 26px -8px rgb(var(--brand-sky) / 0.7);
+  opacity: 0;
+  animation: ez-appr-done 6.4s ease-in-out infinite;
+}
+@keyframes ez-appr-pending {
+  0%,
+  34% {
+    opacity: 1;
+  }
+  44%,
+  92% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes ez-appr-done {
+  0%,
+  36% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  47%,
+  92% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+.ez-appr__indet {
+  position: relative;
+  height: 4px;
+  width: 52px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky) / 0.2);
+  overflow: hidden;
+}
+.ez-appr__indet::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 42%;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky));
+  animation: ez-appr-indet 1.25s ease-in-out infinite;
+}
+@keyframes ez-appr-indet {
+  0% {
+    left: -42%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ez-step-rail::after,
+  .ez-appr__indet::after,
+  .ez-pf-bar > span {
+    animation: none;
+  }
+  .ez-pf-bar > span {
+    transform: scaleX(var(--wf, 0.7));
+  }
+  .ez-appr__pending {
+    opacity: 0;
+    animation: none;
+  }
+  .ez-appr__done {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
