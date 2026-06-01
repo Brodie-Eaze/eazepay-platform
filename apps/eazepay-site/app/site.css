@@ -1079,3 +1079,176 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Smart-routing TREE — one branching flow, live leads root→leaf
+   ============================================================ */
+.ez-tree {
+  position: relative;
+  width: 100%;
+}
+.ez-tree__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* tree edges */
+.ez-tedge {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.1);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.ez-tedge--flow {
+  stroke: rgb(var(--brand-sky) / 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 1 11;
+  animation: ez-tedge-flow 0.9s linear infinite;
+}
+@keyframes ez-tedge-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+/* travelling lead tokens */
+.ez-ttok {
+  offset-rotate: 0deg;
+}
+.ez-ttok__pill {
+  fill: rgb(8 12 27 / 0.92);
+  stroke: rgb(255 255 255 / 0.16);
+  stroke-width: 1;
+}
+.ez-ttok__id {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  fill: rgb(255 255 255 / 0.92);
+  letter-spacing: 0.01em;
+}
+.ez-ttok__dot {
+  filter: drop-shadow(0 0 5px currentColor);
+}
+.ez-ttok--hot {
+  color: rgb(var(--brand-sky-soft));
+}
+.ez-ttok--hot .ez-ttok__dot {
+  fill: rgb(var(--brand-sky-soft));
+}
+.ez-ttok--hot .ez-ttok__pill {
+  stroke: rgb(var(--brand-sky-soft) / 0.55);
+}
+.ez-ttok--warm {
+  color: rgb(var(--brand-sky));
+}
+.ez-ttok--warm .ez-ttok__dot {
+  fill: rgb(var(--brand-sky));
+}
+.ez-ttok--cold {
+  color: rgb(148 163 184);
+}
+.ez-ttok--cold .ez-ttok__dot {
+  fill: rgb(148 163 184);
+  filter: none;
+}
+
+/* node cards over the tree */
+.ez-tnode-pos {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.ez-tnode {
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.035);
+  padding: 10px 12px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+.ez-tnode--match {
+  border-color: rgb(var(--brand-sky) / 0.4);
+  background: rgb(var(--brand-sky) / 0.07);
+}
+.ez-tnode--book {
+  border-color: rgb(52 211 153 / 0.45);
+  background: rgb(52 211 153 / 0.08);
+}
+.ez-tnode__code {
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgb(var(--brand-sky-soft));
+}
+.ez-tnode--book .ez-tnode__code {
+  color: rgb(110 231 183);
+}
+.ez-tnode__title {
+  margin-top: 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+.ez-tnode__sub {
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: rgb(255 255 255 / 0.5);
+  line-height: 1.25;
+}
+.ez-tnode__scores {
+  margin-top: 7px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+.ez-tnode__score {
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(8 12 27 / 0.5);
+  padding: 2px 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.72);
+}
+.ez-tnode__book {
+  margin-top: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  border: 1px solid rgb(52 211 153 / 0.4);
+  background: rgb(52 211 153 / 0.12);
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgb(110 231 183);
+}
+.ez-tnode__book .ez-live-dot {
+  background: rgb(52 211 153);
+}
+
+@media (max-width: 720px) {
+  .ez-tnode__sub,
+  .ez-tnode__scores {
+    display: none;
+  }
+  .ez-tnode__title {
+    font-size: 11px;
+  }
+  .ez-tnode__code {
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ez-tedge--flow {
+    animation: none;
+  }
+}
