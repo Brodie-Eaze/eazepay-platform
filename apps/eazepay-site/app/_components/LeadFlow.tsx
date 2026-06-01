@@ -22,9 +22,10 @@ export function LeadFlow() {
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-white/65">
             Drop the EazePay smart form into any funnel your sales team runs. Every submission flows
-            the same path — captured, scored on credit and intent in under two seconds, routed to
-            the right offer, quoted across the lender marketplace in parallel, then settled
-            merchant-direct. Each chip below is the same applicant moving left to right — live.
+            the same path — captured, qualified on credit and intent in under two seconds, then
+            routed: high-ticket buyers land straight on a closer's calendar, everyone else drops
+            into the right nurture or starter offer. Each chip below is the same lead moving left to
+            right — live.
           </p>
         </Reveal>
 
