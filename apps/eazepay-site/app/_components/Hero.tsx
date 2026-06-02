@@ -49,14 +49,12 @@ export function Hero() {
             className="ez-hero-rise mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-[12.5px] font-medium text-white/55"
             style={rise(4)}
           >
-            {['SOC 2 Type II', 'PCI-DSS Level 1', 'FCRA-aware agents', 'Lender marketplace'].map(
-              (t) => (
-                <li key={t} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-sky-soft" aria-hidden />
-                  {t}
-                </li>
-              ),
-            )}
+            {['SOC 2 Type II', 'Lender marketplace'].map((t) => (
+              <li key={t} className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-sky-soft" aria-hidden />
+                {t}
+              </li>
+            ))}
           </ul>
         </div>
 
