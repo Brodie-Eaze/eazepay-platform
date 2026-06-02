@@ -2019,3 +2019,41 @@
     border-radius: 999px;
   }
 }
+
+/* ============================================================
+   MOBILE — DealScope: drop the fake iPhone bezel and render the
+   deal UI as a clean, full-width native card. A device mockup is a
+   desktop conceit; on a real phone it just shrinks the content.
+   ============================================================ */
+@media (max-width: 767px) {
+  .ez-phone-stage::before {
+    display: none; /* kill the ambient glow */
+  }
+  .ez-phone {
+    max-width: 100%;
+    aspect-ratio: auto;
+    padding: 0;
+    border-radius: 22px;
+    background: none;
+    box-shadow: none;
+  }
+  .ez-phone__island,
+  .ez-phone__btn,
+  .ez-phone__statusbar {
+    display: none; /* no bezel, no fake status bar */
+  }
+  .ez-phone__screen {
+    height: auto;
+    border-radius: 22px;
+    box-shadow:
+      0 1px 0 rgb(var(--brand-ink) / 0.04),
+      0 18px 40px -22px rgb(20 30 60 / 0.32);
+  }
+  /* a touch more breathing room now that it's full-width */
+  .ez-phone__screen .ez-phone-card {
+    padding: 16px;
+  }
+  .ez-phone__screen .ez-appr {
+    height: 50px;
+  }
+}

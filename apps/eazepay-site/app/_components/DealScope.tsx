@@ -64,7 +64,7 @@ export function DealScope() {
 
             <div className="ez-phone__screen">
               {/* status bar */}
-              <div className="flex items-center justify-between px-6 pb-1 pt-3.5 text-[11px] font-semibold text-brand-ink-soft">
+              <div className="ez-phone__statusbar flex items-center justify-between px-6 pb-1 pt-3.5 text-[11px] font-semibold text-brand-ink-soft">
                 <span className="tabular-nums">9:41</span>
                 <span className="flex items-center gap-1.5">
                   <span className="font-mono text-[9px] tracking-tight">5G</span>
@@ -98,23 +98,27 @@ export function DealScope() {
                       SM
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[14px] font-bold leading-tight text-fg">Sarah M.</div>
-                      <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-brand-sky-wash px-2 py-0.5 text-[9.5px] font-semibold text-brand-sky-deep">
+                      <div className="text-[15px] md:text-[14px] font-bold leading-tight text-fg">
+                        Sarah M.
+                      </div>
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-brand-sky-wash px-2 py-0.5 text-[10.5px] md:text-[9.5px] font-semibold text-brand-sky-deep">
                         MedPay · Dental implants
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[17px] font-extrabold leading-none tracking-tight tabular-nums text-fg">
+                      <div className="text-[19px] md:text-[17px] font-extrabold leading-none tracking-tight tabular-nums text-fg">
                         $12,400
                       </div>
-                      <div className="mt-1 text-[9.5px] font-medium text-fg-muted">L-8423</div>
+                      <div className="mt-1 text-[10.5px] md:text-[9.5px] font-medium text-fg-muted">
+                        L-8423
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* soft-pull underwriting factors */}
                 <div>
-                  <div className="mb-2 text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
+                  <div className="mb-2 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
                     Soft-pull check
                   </div>
                   <div className="relative">
@@ -125,8 +129,10 @@ export function DealScope() {
                           <span className="ez-step-dot">
                             <Check size={11} />
                           </span>
-                          <span className="text-[11px] font-semibold text-fg">{c.label}</span>
-                          <span className="ml-auto text-[11px] font-bold tabular-nums text-fg">
+                          <span className="text-[12.5px] md:text-[11px] font-semibold text-fg">
+                            {c.label}
+                          </span>
+                          <span className="ml-auto text-[12.5px] md:text-[11px] font-bold tabular-nums text-fg">
                             {c.value}
                           </span>
                         </li>
@@ -137,7 +143,7 @@ export function DealScope() {
 
                 {/* best offers */}
                 <div>
-                  <div className="mb-2 text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
+                  <div className="mb-2 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
                     Best offers · soft pull
                   </div>
                   <div className="space-y-2">
@@ -151,7 +157,7 @@ export function DealScope() {
                         }
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-1.5 text-[11.5px] font-bold text-fg">
+                          <span className="flex items-center gap-1.5 text-[13px] md:text-[11.5px] font-bold text-fg">
                             {o.name}
                             {o.win && (
                               <span className="rounded-full bg-gradient-to-r from-brand-sky-deep to-brand-sky px-1.5 py-[1.5px] text-[8px] font-bold uppercase tracking-wide text-white shadow-[0_2px_5px_-1px_rgb(60_110_220/0.6)]">
@@ -159,7 +165,7 @@ export function DealScope() {
                               </span>
                             )}
                           </span>
-                          <span className="font-mono text-[12px] font-extrabold tabular-nums text-fg">
+                          <span className="font-mono text-[13.5px] md:text-[12px] font-extrabold tabular-nums text-fg">
                             {o.rate}
                           </span>
                         </div>
@@ -190,8 +196,10 @@ export function DealScope() {
                     <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20 ring-1 ring-white/30">
                       <Check size={13} />
                     </span>
-                    <span className="text-[12.5px] font-bold">Approved · merchant-direct</span>
-                    <span className="ml-auto font-mono text-[10px] font-semibold text-white/85">
+                    <span className="text-[13.5px] md:text-[12.5px] font-bold">
+                      Approved · merchant-direct
+                    </span>
+                    <span className="ml-auto font-mono text-[11px] md:text-[10px] font-semibold text-white/85">
                       5.9% · 48–72hr
                     </span>
                   </div>
