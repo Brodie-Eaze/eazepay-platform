@@ -15,7 +15,6 @@ const CHECKS: Array<{ label: string; value: string }> = [
   { label: 'Credit score', value: '712' },
   { label: 'Income', value: '$8,200/mo' },
   { label: 'DTI', value: '34%' },
-  { label: 'Identity', value: 'verified' },
 ];
 
 /** Three best fit offers (winner first), representative, mirrors the marketplace. */
@@ -81,10 +80,6 @@ export function DealScope() {
                   </span>
                   <span className="text-[12.5px] font-bold tracking-tight text-fg">EazePay</span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-sky/10 px-2 py-0.5 font-mono text-[9px] font-semibold tracking-[0.08em] text-brand-sky-deep">
-                  <span className="ez-live-dot" style={{ width: 6, height: 6 }} />
-                  LIVE
-                </span>
               </div>
 
               {/* body */}
