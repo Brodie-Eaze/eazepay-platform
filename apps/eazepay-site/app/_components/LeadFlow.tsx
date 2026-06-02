@@ -17,14 +17,13 @@ export function LeadFlow() {
         <Reveal className="max-w-3xl">
           <Eyebrow>Smart routing · built for sales teams</Eyebrow>
           <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-white sm:text-[42px]">
-            One smart form, <span className="ez-gradient-text">routed in real time.</span>
+            One smart form, <span className="ez-gradient-text">routed your way.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-white/65">
-            Follow a live lead through the engine. It&apos;s captured from any funnel, scored on
-            real financial data, then split on{' '}
-            <span className="text-white/85">credit first, then income</span>: qualified buyers earn
-            a 1:1 closer&apos;s calendar, everyone else drops into the SLO low-ticket funnel. Each
-            decision lights up as the lead routes.
+            Route on whatever you want — credit, income, or the answers the form collects. Switch
+            configurations below and watch a live lead walk each one: sequential financial gates, a
+            parallel score plus an intent question, or pure question-based routing. Every decision
+            lights up as the lead finds its funnel.
           </p>
         </Reveal>
 

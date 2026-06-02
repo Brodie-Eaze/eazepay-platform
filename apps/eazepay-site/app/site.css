@@ -1707,6 +1707,52 @@
   font-size: 14px;
 }
 
+/* routing config tabs (segmented control) */
+.ez-cfg-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 6px 14px;
+}
+.ez-cfg-tab {
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.03);
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.6);
+  cursor: pointer;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.ez-cfg-tab:hover {
+  color: rgb(255 255 255 / 0.88);
+  border-color: rgb(255 255 255 / 0.2);
+}
+.ez-cfg-tab--active {
+  color: #fff;
+  border-color: rgb(var(--brand-sky) / 0.5);
+  background: rgb(var(--brand-sky) / 0.14);
+  box-shadow:
+    0 0 0 1px rgb(var(--brand-sky) / 0.2),
+    0 0 18px -8px rgb(var(--brand-sky) / 0.7);
+}
+.ez-cfg-blurb {
+  margin-left: 4px;
+  font-size: 12px;
+  color: rgb(255 255 255 / 0.45);
+}
+@media (max-width: 760px) {
+  .ez-cfg-blurb {
+    display: none;
+  }
+}
+
 .ez-tedge--litglow {
   stroke: rgb(var(--brand-sky) / 0.22);
   stroke-width: 5;
