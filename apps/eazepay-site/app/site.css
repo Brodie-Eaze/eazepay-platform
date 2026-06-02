@@ -1923,3 +1923,99 @@
     transition: none;
   }
 }
+
+/* ============================================================
+   MOBILE NAV — hamburger + slide-down sheet
+   ============================================================ */
+.ez-nav-burger {
+  background: rgb(var(--brand-ink) / 0.02);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+.ez-nav-burger:hover {
+  border-color: rgb(var(--brand-sky) / 0.5);
+}
+.ez-burger {
+  position: relative;
+  display: block;
+  width: 17px;
+  height: 12px;
+}
+.ez-burger span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.8px;
+  border-radius: 999px;
+  background: currentColor;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.18s ease;
+}
+.ez-burger span:nth-child(1) {
+  top: 0;
+}
+.ez-burger span:nth-child(2) {
+  top: 5px;
+}
+.ez-burger span:nth-child(3) {
+  top: 10px;
+}
+.ez-burger--open span:nth-child(1) {
+  transform: translateY(5px) rotate(45deg);
+}
+.ez-burger--open span:nth-child(2) {
+  opacity: 0;
+}
+.ez-burger--open span:nth-child(3) {
+  transform: translateY(-5px) rotate(-45deg);
+}
+
+.ez-nav-sheet {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  border-bottom: 1px solid transparent;
+  background: #ffffff;
+  backdrop-filter: blur(12px);
+  transition:
+    max-height 0.34s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.24s ease;
+}
+.ez-nav-sheet--open {
+  max-height: 420px;
+  opacity: 1;
+  border-bottom-color: rgb(var(--brand-ink) / 0.08);
+}
+
+/* ============================================================
+   MOBILE — routing tree becomes swipeable so it stays legible
+   ============================================================ */
+.ez-tree-scroll {
+  width: 100%;
+}
+@media (max-width: 760px) {
+  .ez-tree-frame {
+    padding: 12px 10px;
+  }
+  .ez-tree-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -10px;
+    padding: 0 10px 6px;
+    scrollbar-width: thin;
+  }
+  .ez-tree-scroll .ez-tree {
+    min-width: 660px;
+  }
+  /* subtle edge cue that there's more to scroll */
+  .ez-tree-scroll::-webkit-scrollbar {
+    height: 5px;
+  }
+  .ez-tree-scroll::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 0.18);
+    border-radius: 999px;
+  }
+}

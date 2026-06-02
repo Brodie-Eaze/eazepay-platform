@@ -561,157 +561,163 @@ export function RoutingTree() {
         <span className="ez-cfg-blurb">{cfg.blurb}</span>
       </div>
 
-      <div className="ez-tree" style={{ aspectRatio: `${VB.w} / ${VB.h}` }}>
-        <div className="ez-tree__glow" aria-hidden />
+      <div className="ez-tree-scroll">
+        <div className="ez-tree" style={{ aspectRatio: `${VB.w} / ${VB.h}` }}>
+          <div className="ez-tree__glow" aria-hidden />
 
-        <svg
-          className="ez-tree__svg"
-          viewBox={`0 0 ${VB.w} ${VB.h}`}
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden
-        >
-          {SOURCES.map((s) => (
-            <path
-              key={`src-${s.id}`}
-              className="ez-tedge ez-tedge--src"
-              d={`M${s.x + 26},${s.y} C118,${s.y} 118,250 ${cfg.nodes[0]!.x - cfg.nodes[0]!.w / 2},250`}
-            />
-          ))}
-
-          {cfg.edges.map((e) => (
-            <path
-              key={`base-${e.from}-${e.to}`}
-              className="ez-tedge"
-              d={edgePath(nodeBy[e.from]!, nodeBy[e.to]!)}
-            />
-          ))}
-          {cfg.edges.map((e) =>
-            isLit(e) ? (
-              <g key={`lit-${e.from}-${e.to}`}>
-                <path
-                  className="ez-tedge ez-tedge--litglow"
-                  d={edgePath(nodeBy[e.from]!, nodeBy[e.to]!)}
-                />
-                <path
-                  className="ez-tedge ez-tedge--lit"
-                  d={edgePath(nodeBy[e.from]!, nodeBy[e.to]!)}
-                />
-              </g>
-            ) : null,
-          )}
-
-          {activeEdge && (
-            <circle key={`pulse-${configIdx}-${leadIdx}-${step}`} className="ez-pulse" r={4}>
-              <animateMotion
-                dur="0.85s"
-                begin="0s"
-                fill="freeze"
-                path={edgePath(nodeBy[activeEdge.from]!, nodeBy[activeEdge.to]!)}
-              />
-              <animate
-                attributeName="opacity"
-                dur="0.85s"
-                begin="0s"
-                fill="freeze"
-                values="0;1;1;0"
-                keyTimes="0;0.2;0.7;1"
-              />
-            </circle>
-          )}
-        </svg>
-
-        {SOURCES.map((s) => (
-          <div
-            key={s.id}
-            className={`ez-tsrc${s.label === lead.src && step === 0 ? ' ez-tsrc--on' : ''}`}
-            style={
-              { left: `${(s.x / VB.w) * 100}%`, top: `${(s.y / VB.h) * 100}%` } as CSSProperties
-            }
+          <svg
+            className="ez-tree__svg"
+            viewBox={`0 0 ${VB.w} ${VB.h}`}
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden
           >
-            <span className="ez-tsrc__dot" aria-hidden />
-            {s.label}
-          </div>
-        ))}
+            {SOURCES.map((s) => (
+              <path
+                key={`src-${s.id}`}
+                className="ez-tedge ez-tedge--src"
+                d={`M${s.x + 26},${s.y} C118,${s.y} 118,250 ${cfg.nodes[0]!.x - cfg.nodes[0]!.w / 2},250`}
+              />
+            ))}
 
-        {cfg.edges
-          .filter((e) => e.label)
-          .map((e) => {
-            const m = midpoint(nodeBy[e.from]!, nodeBy[e.to]!);
+            {cfg.edges.map((e) => (
+              <path
+                key={`base-${e.from}-${e.to}`}
+                className="ez-tedge"
+                d={edgePath(nodeBy[e.from]!, nodeBy[e.to]!)}
+              />
+            ))}
+            {cfg.edges.map((e) =>
+              isLit(e) ? (
+                <g key={`lit-${e.from}-${e.to}`}>
+                  <path
+                    className="ez-tedge ez-tedge--litglow"
+                    d={edgePath(nodeBy[e.from]!, nodeBy[e.to]!)}
+                  />
+                  <path
+                    className="ez-tedge ez-tedge--lit"
+                    d={edgePath(nodeBy[e.from]!, nodeBy[e.to]!)}
+                  />
+                </g>
+              ) : null,
+            )}
+
+            {activeEdge && (
+              <circle key={`pulse-${configIdx}-${leadIdx}-${step}`} className="ez-pulse" r={4}>
+                <animateMotion
+                  dur="0.85s"
+                  begin="0s"
+                  fill="freeze"
+                  path={edgePath(nodeBy[activeEdge.from]!, nodeBy[activeEdge.to]!)}
+                />
+                <animate
+                  attributeName="opacity"
+                  dur="0.85s"
+                  begin="0s"
+                  fill="freeze"
+                  values="0;1;1;0"
+                  keyTimes="0;0.2;0.7;1"
+                />
+              </circle>
+            )}
+          </svg>
+
+          {SOURCES.map((s) => (
+            <div
+              key={s.id}
+              className={`ez-tsrc${s.label === lead.src && step === 0 ? ' ez-tsrc--on' : ''}`}
+              style={
+                { left: `${(s.x / VB.w) * 100}%`, top: `${(s.y / VB.h) * 100}%` } as CSSProperties
+              }
+            >
+              <span className="ez-tsrc__dot" aria-hidden />
+              {s.label}
+            </div>
+          ))}
+
+          {cfg.edges
+            .filter((e) => e.label)
+            .map((e) => {
+              const m = midpoint(nodeBy[e.from]!, nodeBy[e.to]!);
+              return (
+                <div
+                  key={`chip-${e.from}-${e.to}`}
+                  className={`ez-edge-chip${isLit(e) ? ' ez-edge-chip--lit' : ''}`}
+                  style={
+                    {
+                      left: `${(m.x / VB.w) * 100}%`,
+                      top: `${(m.y / VB.h) * 100}%`,
+                    } as CSSProperties
+                  }
+                >
+                  {e.label}
+                </div>
+              );
+            })}
+
+          {cfg.nodes.map((n) => {
+            const active = n.id === activeId;
+            const cls = [
+              'ez-tnode',
+              n.kind === 'decision' ? 'ez-tnode--decision' : '',
+              n.kind === 'leaf' ? 'ez-tnode--leaf' : '',
+              n.book ? 'ez-tnode--book' : '',
+              active ? 'ez-tnode--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            const decision =
+              n.kind === 'decision' && reached(n.id) ? lead.decisions?.[n.id] : undefined;
             return (
               <div
-                key={`chip-${e.from}-${e.to}`}
-                className={`ez-edge-chip${isLit(e) ? ' ez-edge-chip--lit' : ''}`}
+                key={n.id}
+                className="ez-tnode-pos"
                 style={
-                  { left: `${(m.x / VB.w) * 100}%`, top: `${(m.y / VB.h) * 100}%` } as CSSProperties
+                  {
+                    left: `${(n.x / VB.w) * 100}%`,
+                    top: `${(n.y / VB.h) * 100}%`,
+                    width: `${(n.w / VB.w) * 100}%`,
+                  } as CSSProperties
                 }
               >
-                {e.label}
+                <div className={cls}>
+                  <div className="ez-tnode__code">{n.code}</div>
+                  <div className="ez-tnode__title">{n.title}</div>
+                  <div className="ez-tnode__sub">{n.sub}</div>
+
+                  {n.scores && reached(n.id) && lead.scores && (
+                    <div className="ez-tnode__scores" key={`${configIdx}-${leadIdx}`}>
+                      {lead.scores.map((s, si) => (
+                        <span
+                          key={s.k}
+                          className="ez-tnode__score ez-score-in"
+                          style={{ animationDelay: `${si * 0.14}s` } as CSSProperties}
+                        >
+                          {s.k} {s.v}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {decision && (
+                    <span
+                      className={`ez-decide ${decision.pass ? 'ez-decide--yes' : 'ez-decide--no'}`}
+                    >
+                      {decision.text}
+                    </span>
+                  )}
+
+                  {n.kind === 'leaf' && (
+                    <span className="ez-tnode__tally">
+                      <span className="ez-tnode__tally-dot" aria-hidden />
+                      {n.verb ?? 'routed'} ·{' '}
+                      <span className="tabular-nums">{counts[n.id] ?? 0}</span>
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
-
-        {cfg.nodes.map((n) => {
-          const active = n.id === activeId;
-          const cls = [
-            'ez-tnode',
-            n.kind === 'decision' ? 'ez-tnode--decision' : '',
-            n.kind === 'leaf' ? 'ez-tnode--leaf' : '',
-            n.book ? 'ez-tnode--book' : '',
-            active ? 'ez-tnode--active' : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-          const decision =
-            n.kind === 'decision' && reached(n.id) ? lead.decisions?.[n.id] : undefined;
-          return (
-            <div
-              key={n.id}
-              className="ez-tnode-pos"
-              style={
-                {
-                  left: `${(n.x / VB.w) * 100}%`,
-                  top: `${(n.y / VB.h) * 100}%`,
-                  width: `${(n.w / VB.w) * 100}%`,
-                } as CSSProperties
-              }
-            >
-              <div className={cls}>
-                <div className="ez-tnode__code">{n.code}</div>
-                <div className="ez-tnode__title">{n.title}</div>
-                <div className="ez-tnode__sub">{n.sub}</div>
-
-                {n.scores && reached(n.id) && lead.scores && (
-                  <div className="ez-tnode__scores" key={`${configIdx}-${leadIdx}`}>
-                    {lead.scores.map((s, si) => (
-                      <span
-                        key={s.k}
-                        className="ez-tnode__score ez-score-in"
-                        style={{ animationDelay: `${si * 0.14}s` } as CSSProperties}
-                      >
-                        {s.k} {s.v}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {decision && (
-                  <span
-                    className={`ez-decide ${decision.pass ? 'ez-decide--yes' : 'ez-decide--no'}`}
-                  >
-                    {decision.text}
-                  </span>
-                )}
-
-                {n.kind === 'leaf' && (
-                  <span className="ez-tnode__tally">
-                    <span className="ez-tnode__tally-dot" aria-hidden />
-                    {n.verb ?? 'routed'} · <span className="tabular-nums">{counts[n.id] ?? 0}</span>
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        </div>
       </div>
     </div>
   );
