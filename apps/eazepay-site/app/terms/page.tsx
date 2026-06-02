@@ -174,7 +174,7 @@ export default function TermsPage() {
         relating to these Terms or the Services will be resolved by binding individual arbitration,
         and you and EazePay Inc. waive any right to a jury trial and to participate in a class
         action. You may opt out of arbitration within 30 days of first accepting these Terms by
-        emailing <a href="mailto:legal@eazepay.com">legal@eazepay.com</a>.
+        emailing <a href="mailto:support@eazepay.com">support@eazepay.com</a>.
       </p>
 
       <h2>15. Changes to these Terms</h2>
@@ -198,9 +198,9 @@ export default function TermsPage() {
       <p>
         EazePay Inc. — Legal
         <br />
-        Email: <a href="mailto:legal@eazepay.com">legal@eazepay.com</a>
+        Email: <a href="mailto:support@eazepay.com">support@eazepay.com</a>
         <br />
-        General: <a href="mailto:hello@eazepay.com">hello@eazepay.com</a>
+        General: <a href="mailto:support@eazepay.com">support@eazepay.com</a>
       </p>
     </LegalPage>
   );

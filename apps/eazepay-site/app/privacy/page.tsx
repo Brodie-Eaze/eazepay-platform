@@ -246,7 +246,7 @@ export default function PrivacyPage() {
       </p>
       <p>
         To exercise any right, contact us at{' '}
-        <a href="mailto:privacy@eazepay.com">privacy@eazepay.com</a>. We will verify your request as
+        <a href="mailto:support@eazepay.com">support@eazepay.com</a>. We will verify your request as
         required by law and respond within the applicable timeframe. You may use an authorized agent
         where permitted.
       </p>
@@ -276,9 +276,9 @@ export default function PrivacyPage() {
       <p>
         EazePay Inc. — Privacy Team
         <br />
-        Email: <a href="mailto:privacy@eazepay.com">privacy@eazepay.com</a>
+        Email: <a href="mailto:support@eazepay.com">support@eazepay.com</a>
         <br />
-        General: <a href="mailto:hello@eazepay.com">hello@eazepay.com</a>
+        General: <a href="mailto:support@eazepay.com">support@eazepay.com</a>
       </p>
     </LegalPage>
   );

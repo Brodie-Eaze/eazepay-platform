@@ -48,10 +48,10 @@ export default function BookPage() {
               <p className="mt-8 text-[14px] text-fg-secondary">
                 Prefer email?{' '}
                 <a
-                  href="mailto:hello@eazepay.com"
+                  href="mailto:support@eazepay.com"
                   className="font-semibold text-brand-sky no-underline"
                 >
-                  hello@eazepay.com
+                  support@eazepay.com
                 </a>
               </p>
             </div>

@@ -27,7 +27,7 @@ export function BookForm() {
       `${data.get('message') || ''}`,
     ].join('\n');
     try {
-      window.location.href = `mailto:hello@eazepay.com?subject=${encodeURIComponent(
+      window.location.href = `mailto:support@eazepay.com?subject=${encodeURIComponent(
         'Book a call — ' + (data.get('company') || data.get('name') || 'New request'),
       )}&body=${encodeURIComponent(body)}`;
     } catch {
@@ -46,8 +46,11 @@ export function BookForm() {
         <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-fg-secondary">
           Thanks — a member of the EazePay Inc. team will reach out within one business day to book
           your call. If your mail client didn&apos;t open, email us directly at{' '}
-          <a href="mailto:hello@eazepay.com" className="font-semibold text-brand-sky no-underline">
-            hello@eazepay.com
+          <a
+            href="mailto:support@eazepay.com"
+            className="font-semibold text-brand-sky no-underline"
+          >
+            support@eazepay.com
           </a>
           .
         </p>
