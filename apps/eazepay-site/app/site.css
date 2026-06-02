@@ -1398,9 +1398,65 @@
   }
 }
 
+/* travelling-lead layer rides ABOVE the node cards */
+.ez-tree__toklayer {
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* the Route node is the decision hub — give it a breathing glow */
+.ez-tnode--hub {
+  border-color: rgb(var(--brand-sky-soft) / 0.5);
+  animation: ez-hub-pulse 3s ease-in-out infinite;
+}
+@keyframes ez-hub-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(var(--brand-sky) / 0.2),
+      0 0 22px -6px rgb(var(--brand-sky) / 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(var(--brand-sky-soft) / 0.45),
+      0 0 42px -4px rgb(var(--brand-sky) / 0.75);
+  }
+}
+
+/* hero core — gentle breathing glow */
+.ez-core {
+  animation: ez-core-breathe 5s ease-in-out infinite;
+}
+@keyframes ez-core-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.16);
+  }
+}
+
+/* phone — winning offer row pulses to draw the eye */
+.ez-offer-win {
+  animation: ez-offer-glow 2.6s ease-in-out infinite;
+}
+@keyframes ez-offer-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--brand-sky) / 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgb(var(--brand-sky) / 0.14);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ez-tedge--flow,
-  .ez-tnode__tally-dot {
+  .ez-tnode__tally-dot,
+  .ez-tnode--hub,
+  .ez-core,
+  .ez-offer-win {
     animation: none;
   }
 }

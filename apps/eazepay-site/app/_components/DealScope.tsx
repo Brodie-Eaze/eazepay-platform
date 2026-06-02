@@ -143,7 +143,7 @@ export function DealScope() {
                         key={o.name}
                         className={
                           o.win
-                            ? 'rounded-lg border border-brand-sky/30 bg-brand-sky-wash/70 p-2'
+                            ? 'ez-offer-win rounded-lg border border-brand-sky/30 bg-brand-sky-wash/70 p-2'
                             : 'rounded-lg border border-black/[0.05] bg-white p-2'
                         }
                       >

@@ -7,8 +7,8 @@ import { Reveal } from './Reveal';
  * captured from a funnel, scored on real financial data, routed at the fork,
  * then travels down the high-ticket or low-ticket branch — along glowing
  * energy edges — all the way to a booked call / offer leaf, where a live
- * counter ticks. Leads animate root → leaf (SMIL) on their actual path; the
- * branch is decided by ticket size + intent. Pure SVG + CSS.
+ * counter ticks. Leads animate root → leaf (SMIL) on their actual path and
+ * ride ON TOP of the nodes; the branch is decided by ticket size + intent.
  */
 
 const VB = { w: 1000, h: 540 };
@@ -135,7 +135,7 @@ const NODES: Node[] = [
   },
 ];
 
-// Tree edges. `flow` flags the live (branch) edges that carry the glow.
+// Tree edges. `hot` flags the live (winning) branch that carries the bright glow.
 const EDGES: Array<{ d: string; hot?: boolean }> = [
   { d: 'M150,270 L348,270' },
   { d: 'M348,270 L540,270' },
@@ -193,9 +193,44 @@ const LEADS: Lead[] = [
 const DUR = 8;
 
 function cardClass(n: Node): string {
-  if (n.kind === 'match') return 'ez-tnode ez-tnode--match';
+  const hub = n.id === 'route' ? ' ez-tnode--hub' : '';
+  if (n.kind === 'match') return `ez-tnode ez-tnode--match${hub}`;
   if (n.kind === 'leaf') return `ez-tnode ez-tnode--leaf${n.book ? ' ez-tnode--book' : ''}`;
-  return 'ez-tnode ez-tnode--stage';
+  return `ez-tnode ez-tnode--stage${hub}`;
+}
+
+function Token({ lead }: { lead: Lead }) {
+  return (
+    <g className={`ez-ttok ez-ttok--${lead.intent}`} filter="url(#ezGlowT)">
+      <rect className="ez-ttok__pill" x={-66} y={-13} width={132} height={26} rx={13} />
+      <circle className="ez-ttok__dot" cx={-52} cy={0} r={4.5} />
+      <text className="ez-ttok__id" x={-42} y={4}>
+        {lead.id}
+      </text>
+      <text className="ez-ttok__amt" x={58} y={4} textAnchor="end">
+        {lead.amt}
+      </text>
+      <animateMotion
+        dur={`${DUR}s`}
+        begin={lead.begin}
+        repeatCount="indefinite"
+        rotate="0"
+        path={lead.d}
+        calcMode="spline"
+        keyTimes="0;0.2;0.52;0.82;1"
+        keyPoints="0;0.2;0.52;0.82;1"
+        keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1"
+      />
+      <animate
+        attributeName="opacity"
+        dur={`${DUR}s`}
+        begin={lead.begin}
+        repeatCount="indefinite"
+        values="0;1;1;1;0"
+        keyTimes="0;0.07;0.5;0.9;1"
+      />
+    </g>
+  );
 }
 
 export function LeadFlow() {
@@ -244,7 +279,7 @@ export function LeadFlow() {
             <div className="ez-tree" style={{ aspectRatio: `${VB.w} / ${VB.h}` }}>
               <div className="ez-tree__glow" aria-hidden />
 
-              {/* edges + travelling leads (SVG layer) */}
+              {/* edges (behind the nodes) */}
               <svg
                 className="ez-tree__svg"
                 viewBox={`0 0 ${VB.w} ${VB.h}`}
@@ -252,10 +287,6 @@ export function LeadFlow() {
                 aria-hidden
               >
                 <defs>
-                  <linearGradient id="ezEdge" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="rgb(124 162 246)" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="rgb(160 192 255)" stopOpacity="0.6" />
-                  </linearGradient>
                   <filter id="ezGlow" x="-60%" y="-60%" width="220%" height="220%">
                     <feGaussianBlur stdDeviation="2.4" result="b" />
                     <feMerge>
@@ -288,50 +319,6 @@ export function LeadFlow() {
                     style={{ '--fd': `${(i % 4) * 0.22}s` } as CSSProperties}
                   />
                 ))}
-
-                {/* travelling leads */}
-                {LEADS.map((lead) => (
-                  <g
-                    key={lead.id}
-                    className={`ez-ttok ez-ttok--${lead.intent}`}
-                    filter="url(#ezGlow)"
-                  >
-                    <rect
-                      className="ez-ttok__pill"
-                      x={-76}
-                      y={-14}
-                      width={152}
-                      height={28}
-                      rx={14}
-                    />
-                    <circle className="ez-ttok__dot" cx={-60} cy={0} r={4.5} />
-                    <text className="ez-ttok__id" x={-49} y={4}>
-                      {lead.id}
-                    </text>
-                    <text className="ez-ttok__amt" x={66} y={4} textAnchor="end">
-                      {lead.amt}
-                    </text>
-                    <animateMotion
-                      dur={`${DUR}s`}
-                      begin={lead.begin}
-                      repeatCount="indefinite"
-                      rotate="0"
-                      path={lead.d}
-                      calcMode="spline"
-                      keyTimes="0;0.2;0.52;0.82;1"
-                      keyPoints="0;0.2;0.52;0.82;1"
-                      keySplines="0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1;0.45 0 0.55 1"
-                    />
-                    <animate
-                      attributeName="opacity"
-                      dur={`${DUR}s`}
-                      begin={lead.begin}
-                      repeatCount="indefinite"
-                      values="0;1;1;1;0"
-                      keyTimes="0;0.07;0.5;0.9;1"
-                    />
-                  </g>
-                ))}
               </svg>
 
               {/* source labels */}
@@ -351,7 +338,7 @@ export function LeadFlow() {
                 </div>
               ))}
 
-              {/* node cards (HTML overlay, same coordinate space) */}
+              {/* node cards (HTML overlay) */}
               {NODES.map((n) => (
                 <div
                   key={n.id}
@@ -386,6 +373,27 @@ export function LeadFlow() {
                   </div>
                 </div>
               ))}
+
+              {/* travelling leads — ON TOP of the nodes so they read as chips riding the rail */}
+              <svg
+                className="ez-tree__svg ez-tree__toklayer"
+                viewBox={`0 0 ${VB.w} ${VB.h}`}
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden
+              >
+                <defs>
+                  <filter id="ezGlowT" x="-60%" y="-60%" width="220%" height="220%">
+                    <feGaussianBlur stdDeviation="2.2" result="b" />
+                    <feMerge>
+                      <feMergeNode in="b" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                {LEADS.map((lead) => (
+                  <Token key={lead.id} lead={lead} />
+                ))}
+              </svg>
             </div>
           </div>
         </Reveal>
