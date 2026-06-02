@@ -1123,46 +1123,28 @@
   }
 }
 
-/* travelling lead tokens */
-.ez-ttok {
-  offset-rotate: 0deg;
-}
-.ez-ttok__pill {
-  fill: rgb(8 12 27 / 0.92);
-  stroke: rgb(255 255 255 / 0.16);
-  stroke-width: 1;
-}
-.ez-ttok__id {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  fill: rgb(255 255 255 / 0.92);
-  letter-spacing: 0.01em;
-}
-.ez-ttok__dot {
-  filter: drop-shadow(0 0 5px currentColor);
-}
+/* travelling lead comets — a glowing head + white core + trailing tail */
 .ez-ttok--hot {
   color: rgb(var(--brand-sky-soft));
-}
-.ez-ttok--hot .ez-ttok__dot {
-  fill: rgb(var(--brand-sky-soft));
-}
-.ez-ttok--hot .ez-ttok__pill {
-  stroke: rgb(var(--brand-sky-soft) / 0.55);
 }
 .ez-ttok--warm {
   color: rgb(var(--brand-sky));
 }
-.ez-ttok--warm .ez-ttok__dot {
-  fill: rgb(var(--brand-sky));
-}
 .ez-ttok--cold {
   color: rgb(148 163 184);
 }
-.ez-ttok--cold .ez-ttok__dot {
-  fill: rgb(148 163 184);
-  filter: none;
+.ez-ttok__head {
+  fill: currentColor;
+}
+.ez-ttok__core {
+  fill: rgb(255 255 255 / 0.92);
+}
+.ez-ttok__tail {
+  fill: currentColor;
+  opacity: 0.34;
+}
+.ez-ttok--cold .ez-ttok__tail {
+  opacity: 0.2;
 }
 
 /* node cards over the tree */
@@ -1254,14 +1236,6 @@
   .ez-tnode__code {
     font-size: 8px;
   }
-}
-
-.ez-ttok__amt {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  fill: rgb(255 255 255 / 0.55);
-  letter-spacing: 0.01em;
 }
 
 /* leaf live tally */

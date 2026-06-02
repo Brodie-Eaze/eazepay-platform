@@ -205,21 +205,19 @@ function cardClass(n: Node): string {
 }
 
 function Token({ lead }: { lead: Lead }) {
+  // A glowing data comet: a bright head with a white core and a trailing tail
+  // that points backwards along the path (rotate="auto"). The blur filter turns
+  // it into a soft comet so leads read as energy flowing — never as clutter.
   return (
     <g className={`ez-ttok ez-ttok--${lead.intent}`} filter="url(#ezGlowT)">
-      <rect className="ez-ttok__pill" x={-66} y={-13} width={132} height={26} rx={13} />
-      <circle className="ez-ttok__dot" cx={-52} cy={0} r={4.5} />
-      <text className="ez-ttok__id" x={-42} y={4}>
-        {lead.id}
-      </text>
-      <text className="ez-ttok__amt" x={58} y={4} textAnchor="end">
-        {lead.amt}
-      </text>
+      <ellipse className="ez-ttok__tail" cx={-13} cy={0} rx={16} ry={2.1} />
+      <circle className="ez-ttok__head" cx={0} cy={0} r={3.8} />
+      <circle className="ez-ttok__core" cx={0} cy={0} r={1.5} />
       <animateMotion
         dur={`${DUR}s`}
         begin={lead.begin}
         repeatCount="indefinite"
-        rotate="0"
+        rotate="auto"
         path={lead.d}
         calcMode="spline"
         keyTimes="0;0.2;0.52;0.82;1"
