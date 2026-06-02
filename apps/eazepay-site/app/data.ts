@@ -438,7 +438,7 @@ export const FAQ: Array<{ q: string; a: string }> = [
   },
   {
     q: 'Is the platform secure and compliant?',
-    a: 'Security is built in: encryption in transit and at rest, tokenization of sensitive payment data, granular access controls, and immutable, exportable audit trails on every action. Our controls are independently audited to SOC 2 Type II, and we operate a continuous security and compliance program.',
+    a: 'Security is built in: encryption in transit and at rest, tokenization of sensitive payment data, granular access controls, and immutable, exportable audit trails on every action. We operate a continuous security and compliance program.',
   },
   {
     q: 'How do we get started?',

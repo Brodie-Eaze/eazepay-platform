@@ -31,7 +31,7 @@ const FOOTER_COLS: Array<{ title: string; links: Array<{ label: string; href: st
   },
 ];
 
-const BADGES = ['SOC 2 Type II', 'Encrypted end to end', 'Soft pull only'];
+const BADGES = ['Encrypted end to end', 'Soft pull only'];
 
 export function SiteFooter() {
   return (

@@ -320,9 +320,8 @@ export default function PrivacyPage() {
         alteration, disclosure, and loss. Measures include encryption in transit and at rest,
         tokenization of sensitive payment data, role-based and least-privilege access controls,
         network segmentation, logging and monitoring, vulnerability management, vendor due
-        diligence, and employee training. We undergo independent SOC 2 Type II examinations of our
-        controls. No method of transmission or storage is completely secure, and we cannot guarantee
-        absolute security.
+        diligence, and employee training. No method of transmission or storage is completely secure,
+        and we cannot guarantee absolute security.
       </p>
 
       <h2>14. Automated processing and decisioning</h2>
