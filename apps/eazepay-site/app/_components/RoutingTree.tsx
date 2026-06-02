@@ -5,10 +5,10 @@ import type { CSSProperties } from 'react';
 
 /**
  * Configurable smart-routing showcase. Smart routing can branch on financial
- * data, on form answers, or any mix — so this renders multiple CONFIGS as tabs:
+ * data, on form answers, or any mix, so this renders multiple CONFIGS as tabs:
  *   1. Credit → Income (sequential financial gates)
  *   2. Score + Intent (parallel score, then a form-question gate)
- *   3. Question-based (route purely on form answers, 3 outcomes)
+ *   3. Question based (route purely on form answers, 3 outcomes)
  * One lead at a time walks the active config; each stage activates, the taken
  * branch lights up, a pulse travels it. Tabs are clickable + auto-advance.
  */
@@ -60,7 +60,7 @@ const CONFIGS: Config[] = [
   {
     id: 'credit-income',
     label: 'Credit → Income',
-    blurb: 'Sequential financial gates — credit first, then income.',
+    blurb: 'Sequential financial gates, credit first, then income.',
     nodes: [
       {
         id: 'capture',
@@ -108,7 +108,7 @@ const CONFIGS: Config[] = [
         x: 876,
         y: 108,
         w: 176,
-        code: 'HIGH-TICKET VSL',
+        code: 'HIGH TICKET VSL',
         title: 'Book a call',
         sub: "closer's calendar · 1:1",
         kind: 'leaf',
@@ -121,8 +121,8 @@ const CONFIGS: Config[] = [
         y: 392,
         w: 176,
         code: 'SLO FUNNEL',
-        title: 'Self-liquidating offer',
-        sub: 'low-ticket · instant',
+        title: 'Self liquidating offer',
+        sub: 'low ticket · instant',
         kind: 'leaf',
         verb: 'entered',
       },
@@ -237,7 +237,7 @@ const CONFIGS: Config[] = [
         w: 176,
         code: 'BOOK A CALL',
         title: 'Closer track',
-        sub: 'high-intent · 1:1',
+        sub: 'high intent · 1:1',
         kind: 'leaf',
         book: true,
         verb: 'booked',
@@ -248,7 +248,7 @@ const CONFIGS: Config[] = [
         y: 392,
         w: 176,
         code: 'SLO FUNNEL',
-        title: 'Self-liquidating offer',
+        title: 'Self liquidating offer',
         sub: 'nurture · instant',
         kind: 'leaf',
         verb: 'entered',
@@ -307,11 +307,11 @@ const CONFIGS: Config[] = [
       },
     ],
   },
-  // ── 3 · pure question-based routing, 3 outcomes ────────────────
+  // ── 3 · pure question based routing, 3 outcomes ────────────────
   {
     id: 'question-based',
-    label: 'Question-based',
-    blurb: 'No financials — route purely on the answers the form collects.',
+    label: 'Question based',
+    blurb: 'No financials, route purely on the answers the form collects.',
     nodes: [
       {
         id: 'capture',
@@ -362,7 +362,7 @@ const CONFIGS: Config[] = [
         y: 250,
         w: 176,
         code: 'SLO OFFER',
-        title: 'Self-liquidating offer',
+        title: 'Self liquidating offer',
         sub: 'instant checkout',
         kind: 'leaf',
         verb: 'sold',
@@ -374,7 +374,7 @@ const CONFIGS: Config[] = [
         w: 176,
         code: 'NURTURE',
         title: 'Email nurture',
-        sub: 'long-cycle',
+        sub: 'long cycle',
         kind: 'leaf',
         verb: 'added',
       },
@@ -402,13 +402,13 @@ const CONFIGS: Config[] = [
       },
       {
         id: 'L-7704',
-        amt: '$5–15k',
+        amt: '$5 to 15k',
         src: 'Google',
         dot: 'warm',
         path: ['capture', 'answers', 'route', 'slo'],
         scores: [
           { k: 'goal', v: 'Test' },
-          { k: 'budget', v: '$5–15k' },
+          { k: 'budget', v: '$5 to 15k' },
           { k: 'when', v: '30 days' },
         ],
         decisions: { route: { text: 'mid budget → SLO', pass: true } },
@@ -422,7 +422,7 @@ const CONFIGS: Config[] = [
         scores: [
           { k: 'goal', v: 'Learn' },
           { k: 'budget', v: 'TBD' },
-          { k: 'when', v: '—' },
+          { k: 'when', v: ', ' },
         ],
         decisions: { route: { text: 'researching → nurture', pass: false } },
       },
@@ -720,7 +720,7 @@ export function RoutingTree() {
         </div>
       </div>
 
-      {/* Mobile: the same live flow, stacked top-to-bottom (no horizontal scroll) */}
+      {/* Mobile: the same live flow, stacked top to bottom (no horizontal scroll) */}
       <div className="ez-mflow">
         {[...cfg.nodes]
           .sort((a, b) => a.x - b.x || a.y - b.y)

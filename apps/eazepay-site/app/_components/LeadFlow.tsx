@@ -4,7 +4,7 @@ import { RoutingTree } from './RoutingTree';
 
 /**
  * The smart-routing section: a guided walkthrough where one live lead is driven
- * through the pipeline stage by stage — captured, qualified on real financials,
+ * through the pipeline stage by stage, captured, qualified on real financials,
  * routed down its branch, booked. The interactive state machine lives in
  * RoutingTree (client); this is the section shell + copy.
  */
@@ -20,9 +20,9 @@ export function LeadFlow() {
             One smart form, <span className="ez-gradient-text">routed your way.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-white/65">
-            Route on whatever you want — credit, income, or the answers the form collects. Switch
+            Route on whatever you want, credit, income, or the answers the form collects. Switch
             configurations below and watch a live lead walk each one: sequential financial gates, a
-            parallel score plus an intent question, or pure question-based routing. Every decision
+            parallel score plus an intent question, or pure question based routing. Every decision
             lights up as the lead finds its funnel.
           </p>
         </Reveal>

@@ -738,6 +738,64 @@
   }
 }
 
+/* lender marketplace rows — ranked, with a highlighted best offer */
+.ez-lender {
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 0.07);
+  background: rgb(255 255 255 / 0.02);
+  padding: 12px 14px;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    transform 0.25s ease;
+}
+.ez-lender:hover {
+  border-color: rgb(var(--brand-sky-soft) / 0.32);
+  background: rgb(255 255 255 / 0.045);
+  transform: translateY(-1px);
+}
+.ez-lender--win {
+  border-color: rgb(var(--brand-sky) / 0.5);
+  background: linear-gradient(120deg, rgb(var(--brand-sky) / 0.16), rgb(255 255 255 / 0.02));
+  box-shadow: 0 14px 32px -18px rgb(var(--brand-sky) / 0.75);
+}
+.ez-lender__rank {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 0.06);
+  font-size: 11px;
+  font-weight: 700;
+  color: rgb(255 255 255 / 0.55);
+  font-variant-numeric: tabular-nums;
+}
+.ez-lender--win .ez-lender__rank {
+  background: linear-gradient(180deg, rgb(var(--brand-sky-soft)), rgb(var(--brand-sky)));
+  color: #fff;
+  box-shadow: 0 4px 10px -2px rgb(var(--brand-sky) / 0.7);
+}
+.ez-lender__best {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgb(var(--brand-sky-deep)), rgb(var(--brand-sky)));
+  padding: 2px 7px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #fff;
+  box-shadow: 0 2px 6px -1px rgb(var(--brand-sky) / 0.7);
+}
+.ez-lender--win .ez-wf__bar {
+  background: rgb(var(--brand-sky) / 0.2);
+}
+.ez-lender--win .ez-wf__bar > span {
+  background: linear-gradient(90deg, rgb(var(--brand-sky)), rgb(var(--brand-sky-soft)));
+}
+
 /* --------------------------------------------------------- text helpers -- */
 
 .ez-gradient-text {
@@ -2002,52 +2060,34 @@
 }
 @media (max-width: 767px) {
   .ez-tree-frame {
-    padding: 14px 12px;
+    padding: 12px 10px;
   }
-  /* hide the SVG diagram, show the stack */
-  .ez-tree-scroll {
+  /* show the full diagram and let it flow sideways — swipe to follow it */
+  .ez-mflow {
     display: none;
   }
-  .ez-mflow {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 6px 2px 2px;
+  .ez-tree-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -10px;
+    padding: 0 10px 10px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
   }
-  .ez-mnode-row {
-    position: relative;
-    padding-top: 24px;
+  .ez-tree-scroll .ez-tree {
+    min-width: 820px;
   }
-  .ez-mnode-row:first-child {
-    padding-top: 4px;
+  .ez-tree-scroll::-webkit-scrollbar {
+    height: 6px;
   }
-  /* connector spine between stacked cards */
-  .ez-mnode-row:not(:first-child)::before {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 50%;
-    width: 2px;
-    height: 20px;
-    transform: translateX(-50%);
-    border-radius: 2px;
-    background: rgb(255 255 255 / 0.14);
+  .ez-tree-scroll::-webkit-scrollbar-track {
+    background: rgb(255 255 255 / 0.04);
+    border-radius: 999px;
   }
-  .ez-mnode-row--lit:not(:first-child)::before {
-    background: rgb(var(--brand-sky-soft));
-    box-shadow: 0 0 9px rgb(var(--brand-sky) / 0.7);
-  }
-  .ez-mflow .ez-tnode {
-    width: 100%;
-  }
-  .ez-mflow .ez-tnode__title {
-    font-size: 16px;
-  }
-  .ez-mflow .ez-tnode__sub {
-    font-size: 12px;
-  }
-  .ez-mflow .ez-tnode__code {
-    font-size: 10.5px;
+  .ez-tree-scroll::-webkit-scrollbar-thumb {
+    background: rgb(var(--brand-sky-soft) / 0.5);
+    border-radius: 999px;
   }
 }
 

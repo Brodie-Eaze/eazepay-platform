@@ -15,7 +15,7 @@ export function BookForm() {
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    // No backend wired yet — fall back to opening the user's mail client with a
+    // No backend wired yet, fall back to opening the user's mail client with a
     // pre-filled request so nothing is lost. Replace with a CRM/endpoint POST.
     const body = [
       `Name: ${data.get('name') || ''}`,
@@ -28,7 +28,7 @@ export function BookForm() {
     ].join('\n');
     try {
       window.location.href = `mailto:support@eazepay.com?subject=${encodeURIComponent(
-        'Book a call — ' + (data.get('company') || data.get('name') || 'New request'),
+        'Book a call, ' + (data.get('company') || data.get('name') || 'New request'),
       )}&body=${encodeURIComponent(body)}`;
     } catch {
       /* ignore */
@@ -44,7 +44,7 @@ export function BookForm() {
         </span>
         <h2 className="mt-5 text-[22px] font-bold tracking-tight text-fg">Request received.</h2>
         <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-fg-secondary">
-          Thanks — a member of the EazePay Inc. team will reach out within one business day to book
+          Thanks, a member of the EazePay Inc. team will reach out within one business day to book
           your call. If your mail client didn&apos;t open, email us directly at{' '}
           <a
             href="mailto:support@eazepay.com"
@@ -113,8 +113,8 @@ export function BookForm() {
               Select a range
             </option>
             <option>Under $100k / mo</option>
-            <option>$100k – $500k / mo</option>
-            <option>$500k – $2M / mo</option>
+            <option>$100k, $500k / mo</option>
+            <option>$500k, $2M / mo</option>
             <option>$2M+ / mo</option>
           </select>
         </div>

@@ -16,9 +16,8 @@ export function Cta() {
             Put every brand on <span className="ez-gradient-text">one rail.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-white/70">
-            Prequalification, agents, a lender marketplace and payment processing — one platform,
-            one contract, behind every brand. Book a walkthrough and watch a live lead flow through
-            it.
+            Prequalification, agents, a lender marketplace and payment processing, one platform, one
+            contract, behind every brand. Book a walkthrough and watch a live lead flow through it.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <a href="/book" className={ctaPrimary}>

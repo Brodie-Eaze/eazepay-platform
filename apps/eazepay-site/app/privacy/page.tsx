@@ -28,10 +28,10 @@ export default function PrivacyPage() {
     >
       <h2>1. Who we are; controller and processor roles</h2>
       <p>
-        EazePay Inc. is a financial-technology company that provides the infrastructure —
+        EazePay Inc. is a financial-technology company that provides the infrastructure:
         prequalification software, automated decisioning agents, a lender marketplace, an
-        orchestration waterfall, application tracking, and payment processing — that powers
-        consumer- and merchant-facing brands such as MedPay, TradePay, CoachPay, and VetPay.
+        orchestration waterfall, application tracking, and payment processing, that powers consumer-
+        and merchant-facing brands such as MedPay, TradePay, CoachPay, and VetPay.
       </p>
       <p>
         For some processing we act as a <strong>business / controller</strong> that determines the
@@ -62,13 +62,13 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <span>
-            <strong>Identifiers and contact data</strong> — name, email address, postal address,
+            <strong>Identifiers and contact data</strong>, name, email address, postal address,
             phone number, business name, job title, and account credentials.
           </span>
         </li>
         <li>
           <span>
-            <strong>Application and financial information</strong> — information submitted through a
+            <strong>Application and financial information</strong>, information submitted through a
             prequalification or financing form, which may include date of birth, the last four
             digits of a Social Security number or other government identifier, income, employment,
             housing, requested amount, and similar details necessary to evaluate an application.
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <span>
-            <strong>Payment information</strong> — card, bank-account, or other payment-instrument
+            <strong>Payment information</strong>, card, bank-account, or other payment-instrument
             details used to process a transaction. Card data is tokenized and handled within a
             scope-minimized, PCI-aware environment; we do not store full primary account numbers on
             our general systems.
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <span>
-            <strong>Communications and support content</strong> — the contents of messages, support
+            <strong>Communications and support content</strong>, the contents of messages, support
             tickets, survey responses, and call notes you share with us.
           </span>
         </li>
@@ -93,20 +93,20 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <span>
-            <strong>Device and connection data</strong> — IP address, device and browser type,
+            <strong>Device and connection data</strong>, IP address, device and browser type,
             operating system, language, and mobile identifiers.
           </span>
         </li>
         <li>
           <span>
-            <strong>Usage and analytics data</strong> — pages and screens viewed, referring/exit
+            <strong>Usage and analytics data</strong>, pages and screens viewed, referring/exit
             pages, links clicked, session duration, timestamps, and similar interactions, collected
             via cookies, pixels, SDKs, and server logs.
           </span>
         </li>
         <li>
           <span>
-            <strong>Approximate location</strong> — derived from IP address for security, fraud
+            <strong>Approximate location</strong>, derived from IP address for security, fraud
             prevention, and localization. We do not collect precise geolocation without consent.
           </span>
         </li>
@@ -115,7 +115,7 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <span>
-            <strong>Verification and risk data</strong> — from identity-verification vendors,
+            <strong>Verification and risk data</strong>, from identity-verification vendors,
             consumer-reporting agencies (via soft inquiries that do not affect a credit score unless
             otherwise disclosed to you), fraud and device-intelligence providers, and sanctions /
             watchlist screening providers.
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <span>
-            <strong>Business-customer and partner data</strong> — information our merchants and
+            <strong>Business-customer and partner data</strong>, information our merchants and
             partners provide about applicants and transactions routed through the Services.
           </span>
         </li>
@@ -198,19 +198,19 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <span>
-            <strong>Lenders and financing partners</strong> — to evaluate, decision, and fund an
+            <strong>Lenders and financing partners</strong>, to evaluate, decision, and fund an
             application you submit;
           </span>
         </li>
         <li>
           <span>
-            <strong>Payment processors, networks, and financial institutions</strong> — to
-            authorize, process, and settle transactions;
+            <strong>Payment processors, networks, and financial institutions</strong>, to authorize,
+            process, and settle transactions;
           </span>
         </li>
         <li>
           <span>
-            <strong>Service providers and sub-processors</strong> — cloud hosting, data storage,
+            <strong>Service providers and sub-processors</strong>, cloud hosting, data storage,
             analytics, identity verification, fraud prevention, customer support, and communications
             vendors who process information on our behalf under written agreements that restrict
             their use of the information;
@@ -218,26 +218,26 @@ export default function PrivacyPage() {
         </li>
         <li>
           <span>
-            <strong>Our business customers</strong> — the merchant or partner whose branded
+            <strong>Our business customers</strong>, the merchant or partner whose branded
             experience you used;
           </span>
         </li>
         <li>
           <span>
-            <strong>Professional advisors and auditors</strong> — lawyers, accountants, and auditors
+            <strong>Professional advisors and auditors</strong>, lawyers, accountants, and auditors
             under confidentiality obligations;
           </span>
         </li>
         <li>
           <span>
-            <strong>Authorities and other parties</strong> — when required by law, regulation,
+            <strong>Authorities and other parties</strong>, when required by law, regulation,
             subpoena, court order, or legal process, or to protect the rights, property, or safety
             of EazePay, our users, or the public, and to enforce our agreements; and
           </span>
         </li>
         <li>
           <span>
-            <strong>Successors</strong> — in connection with a merger, financing, acquisition,
+            <strong>Successors</strong>, in connection with a merger, financing, acquisition,
             reorganization, bankruptcy, or sale of all or part of our assets, subject to this
             Policy.
           </span>
@@ -269,19 +269,19 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <span>
-            <strong>Strictly necessary</strong> — required to operate the site, authenticate
+            <strong>Strictly necessary</strong>, required to operate the site, authenticate
             sessions, balance load, and maintain security. These cannot be switched off in our
             systems.
           </span>
         </li>
         <li>
           <span>
-            <strong>Functional</strong> — remember your preferences and settings.
+            <strong>Functional</strong>, remember your preferences and settings.
           </span>
         </li>
         <li>
           <span>
-            <strong>Analytics / performance</strong> — help us understand how the site is used so we
+            <strong>Analytics / performance</strong>, help us understand how the site is used so we
             can improve it. Used only where permitted.
           </span>
         </li>
@@ -347,9 +347,9 @@ export default function PrivacyPage() {
 
       <h2>16. U.S. state privacy rights</h2>
       <p>
-        Residents of states with comprehensive privacy laws — including California (CCPA/CPRA),
+        Residents of states with comprehensive privacy laws, including California (CCPA/CPRA),
         Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA), Utah (UCPA), and a growing number of
-        others — may exercise the rights granted by those laws. Note that the GLBA and other
+        others, may exercise the rights granted by those laws. Note that the GLBA and other
         sector-specific laws may exempt certain financial information from some of these rights.
       </p>
       <h3>California</h3>
@@ -410,7 +410,7 @@ export default function PrivacyPage() {
         contact us:
       </p>
       <p>
-        EazePay Inc. — Privacy Team
+        EazePay Inc., Privacy Team
         <br />
         Email: <a href="mailto:support@eazepay.com">support@eazepay.com</a>
       </p>

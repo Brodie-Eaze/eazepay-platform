@@ -1,5 +1,5 @@
 /* ============================================================================
-   EazePay site — copy + config.
+   EazePay site, copy + config.
    Strings carried over from the in-platform parent landing page (the copy
    source of truth at apps/partner-portal/app/landing/eazepay) so the
    standalone marketing site stays consistent with the product surface.
@@ -23,7 +23,7 @@ export const NAV_LINKS = [
 
 export const TICKER: Array<{ value: string; label: string; delta: string }> = [
   { value: '$240M+', label: 'Orchestrated', delta: 'lifetime GMV · processing + financing' },
-  { value: 'Curated', label: 'Lender marketplace', delta: 'prime → near-prime · soft pull' },
+  { value: 'Curated', label: 'Lender marketplace', delta: 'prime → near prime · soft pull' },
   { value: '<10s', label: 'Avg decision', delta: 'parallel waterfall · p95' },
   { value: '99.8%', label: 'Uptime SLA', delta: 'rolling 12mo · audited' },
 ];
@@ -34,7 +34,7 @@ export const STITCHED: Array<{ stat: string; label: string }> = [
   {
     stat: 'Fragmented',
     label:
-      'A separate payment processor and several lenders, each on its own platform — nothing connected',
+      'A separate payment processor and several lenders, each on its own platform, nothing connected',
   },
   {
     stat: 'Blind',
@@ -47,7 +47,7 @@ export const STITCHED: Array<{ stat: string; label: string }> = [
   {
     stat: 'Form questions',
     label:
-      'Clients qualified the old way — static questions in a form, with no real financial data behind the answers',
+      'Clients qualified the old way, static questions in a form, with no real financial data behind the answers',
   },
 ];
 
@@ -55,20 +55,20 @@ export const UNIFIED: Array<{ stat: string; label: string }> = [
   {
     stat: 'One platform',
     label:
-      'Prequalification, agents, a lender marketplace, the orchestration waterfall, application tracking and payment processing — one financial infrastructure',
+      'Prequalification, agents, a lender marketplace, the orchestration waterfall, application tracking and payment processing, one financial infrastructure',
   },
   {
     stat: 'Full tracking',
-    label: 'Every finance application tracked end-to-end, in real time, from capture to funded',
+    label: 'Every finance application tracked end to end, in real time, from capture to funded',
   },
   {
     stat: 'Real support',
-    label: 'A team behind you — onboarding, launch and ongoing',
+    label: 'A team behind you, onboarding, launch and ongoing',
   },
   {
     stat: 'Real data',
     label:
-      'Leads qualified on real financial data by the prequalification agents and smart form — not form questions',
+      'Leads qualified on real financial data by the prequalification agents and smart form, not form questions',
   },
 ];
 
@@ -137,14 +137,14 @@ export const FLOW_NODES: Array<{
 
 /* the binary fork + four leaf outcomes (shown beneath the live rail) */
 export const FLOW_FORK: Array<{ code: string; label: string }> = [
-  { code: 'HIGH-TICKET VSL', label: 'premium video sales letter' },
-  { code: 'LOW-TICKET VSL', label: 'fast video sales letter' },
+  { code: 'HIGH TICKET VSL', label: 'premium video sales letter' },
+  { code: 'LOW TICKET VSL', label: 'fast video sales letter' },
 ];
 
 export const FLOW_OUTCOMES: Array<{ label: string; sub: string }> = [
-  { label: 'BOOK A CALL · PREMIUM', sub: 'high-intent · sales team' },
-  { label: 'SLO', sub: 'self-liquidating offer' },
-  { label: 'LOW-TICKET OFFER', sub: 'instant checkout · $97–$497' },
+  { label: 'BOOK A CALL · PREMIUM', sub: 'high intent · sales team' },
+  { label: 'SLO', sub: 'self liquidating offer' },
+  { label: 'LOW TICKET OFFER', sub: 'instant checkout · $97 to $497' },
   { label: 'BOOK A CALL · STANDARD', sub: 'warm pipeline · group call' },
 ];
 
@@ -168,7 +168,7 @@ export const AGENTS: Array<{
     role: 'Intake Agent',
     status: 'ONLINE',
     description:
-      'Watches every apply-form session in real time. Reshapes question order on partial answers, strips friction for high-intent applicants and adds verification when it detects junk. Learns which sequences convert per merchant, per source.',
+      'Watches every apply form session in real time. Reshapes question order on partial answers, strips friction for high intent applicants and adds verification when it detects junk. Learns which sequences convert per merchant, per source.',
     stats: [
       { k: 'Sessions/hr', v: '4,820' },
       { k: 'Form drop-off', v: '−41%' },
@@ -194,7 +194,7 @@ export const AGENTS: Array<{
     role: 'Scoring Agent',
     status: 'LEARNING',
     description:
-      'Runs a calibrated propensity model trained on closed-won outcomes per merchant — not a generic lookalike. Retrains nightly on every disposition and surfaces drift before it touches revenue.',
+      'Runs a calibrated propensity model trained on closed won outcomes per merchant, not a generic lookalike. Retrains nightly on every disposition and surfaces drift before it touches revenue.',
     stats: [
       { k: 'Model AUC', v: '0.89' },
       { k: 'Last retrain', v: '4h ago' },
@@ -207,7 +207,7 @@ export const AGENTS: Array<{
     role: 'Routing Agent',
     status: 'ONLINE',
     description:
-      'Matches every qualified applicant to the right rep — not just the next available one. Learns which reps close which tiers, accounts for capacity in real time and routes around breaks and underperformance.',
+      'Matches every qualified applicant to the right rep, not just the next available one. Learns which reps close which tiers, accounts for capacity in real time and routes around breaks and underperformance.',
     stats: [
       { k: 'Avg route', v: '320ms' },
       { k: 'Match lift', v: '+31%' },
@@ -220,7 +220,7 @@ export const AGENTS: Array<{
     role: 'Lender Marketplace Agent',
     status: 'ONLINE',
     description:
-      'Routes every qualified applicant through a curated lender marketplace, prime to near-prime. Soft pull only. Learns which lenders approve which profiles and reroutes around lenders that tighten overnight.',
+      'Routes every qualified applicant through a curated lender marketplace, prime to near prime. Soft pull only. Learns which lenders approve which profiles and reroutes around lenders that tighten overnight.',
     stats: [
       { k: 'Decision', v: '<2s' },
       { k: 'Pull type', v: 'Soft only' },
@@ -247,12 +247,12 @@ export const AGENTS: Array<{
     status: 'ONLINE',
     wide: true,
     description:
-      'Closes the loop. Holds pixel events until an applicant clears qualification, then fires weighted conversions back to Meta and Google via server-side CAPI and uploads closed-won deals as offline conversions — the cleanest training signal your ad account will ever see.',
+      'Closes the loop. Holds pixel events until an applicant clears qualification, then fires weighted conversions back to Meta and Google via server side CAPI and uploads closed won deals as offline conversions, the cleanest training signal your ad account will ever see.',
     stats: [
-      { k: 'Match quality', v: 'server-side' },
+      { k: 'Match quality', v: 'server side' },
       { k: 'Loop', v: 'closed' },
     ],
-    lastAction: 'uploaded 47 closed-won deals to Meta CAPI, weighted by ticket_value · 6m ago',
+    lastAction: 'uploaded 47 closed won deals to Meta CAPI, weighted by ticket_value · 6m ago',
   },
 ];
 
@@ -269,8 +269,8 @@ export const PILLARS: Array<{
   {
     n: '01',
     tag: 'PREQUALIFICATION',
-    title: 'Prequalify on real financial data — in seconds.',
-    body: 'The smart form pulls live credit and income on a soft inquiry, then makes a decision on your rules. No credit impact, no waiting — applicants see where they stand before they ever commit.',
+    title: 'Prequalify on real financial data, in seconds.',
+    body: 'The smart form pulls live credit and income on a soft inquiry, then makes a decision on your rules. No credit impact, no waiting, applicants see where they stand before they ever commit.',
     bullets: [
       'Soft-pull prequal · zero credit impact',
       'Credit, income and affordability pulled live · under 2s',
@@ -282,7 +282,7 @@ export const PILLARS: Array<{
     n: '02',
     tag: 'AGENTS',
     title: 'Seven agents, bundled in.',
-    body: 'Intake, enrichment, scoring, routing and attribution run as agents inside the platform — no separate AI stack to buy. Each has one job, a measurable output and an immutable, exportable audit trail.',
+    body: 'Intake, enrichment, scoring, routing and attribution run as agents inside the platform, no separate AI stack to buy. Each has one job, a measurable output and an immutable, exportable audit trail.',
     bullets: [
       'Defined role + scope + measurable output per agent',
       'Real-time scoring, routing and attribution',
@@ -294,23 +294,23 @@ export const PILLARS: Array<{
     n: '03',
     tag: 'MARKETPLACE',
     title: 'Lender marketplace waterfall.',
-    body: 'Every application waterfalls through a curated lender marketplace — prime through near-prime, in parallel. The best offer wins by total cost of credit and the lender disburses merchant-direct.',
+    body: 'Every application waterfalls through a curated lender marketplace, prime through near prime, in parallel. The best offer wins by total cost of credit and the lender disburses merchant direct.',
     bullets: [
       'Parallel quoting across a curated lender panel',
       'Best-fit offers ranked by total cost of credit',
-      'Merchant-direct disbursement · 48–72hr',
+      'Merchant direct disbursement · 48 to 72hr',
     ],
-    metric: 'Parallel quoting · merchant-direct',
+    metric: 'Parallel quoting · merchant direct',
   },
   {
     n: '04',
     tag: 'PAYMENT PROCESSING',
     title: 'Take the payment on the platform too.',
-    body: 'Card payments run through EazePay itself — so processing and financing sit on the same rail, under one contract. One platform takes the money and funds the deal.',
+    body: 'Card payments run through EazePay itself, so processing and financing sit on the same rail, under one contract. One platform takes the money and funds the deal.',
     bullets: [
       'All major card networks · one integration',
       'Tokenized · card data never touches your servers',
-      'Merchant-direct settlement',
+      'Merchant direct settlement',
     ],
     metric: 'Cards on the same rail',
   },
@@ -323,9 +323,9 @@ export const LENDERS: Array<{ name: string; tier: string; rate: string; fill: nu
   { name: 'Lender 2', tier: 'PRIME', rate: '6.4%', fill: 0.84 },
   { name: 'Lender 3', tier: 'PRIME', rate: '6.9%', fill: 0.78 },
   { name: 'Lender 4', tier: 'PRIME', rate: '7.2%', fill: 0.71 },
-  { name: 'Lender 5', tier: 'NEAR-PRIME', rate: '8.9%', fill: 0.6 },
-  { name: 'Lender 6', tier: 'NEAR-PRIME', rate: '9.4%', fill: 0.52 },
-  { name: 'Lender 7', tier: 'NEAR-PRIME', rate: '10.4%', fill: 0.44 },
+  { name: 'Lender 5', tier: 'NEAR PRIME', rate: '8.9%', fill: 0.6 },
+  { name: 'Lender 6', tier: 'NEAR PRIME', rate: '9.4%', fill: 0.52 },
+  { name: 'Lender 7', tier: 'NEAR PRIME', rate: '10.4%', fill: 0.44 },
 ];
 
 export const INTEGRATIONS: string[] = [
@@ -392,18 +392,18 @@ export const PROOF: Array<{ value: string; unit: string; label: string; sub: str
     value: 'Parallel',
     unit: '',
     label: 'Lender marketplace',
-    sub: 'Prime → near-prime · soft pull · parallel quoting',
+    sub: 'Prime → near prime · soft pull · parallel quoting',
   },
   {
     value: '<10',
     unit: 's',
     label: 'Average decision time',
-    sub: 'p95 round-trip · soft-pull pre-qual · zero credit impact',
+    sub: 'p95 round-trip · soft pull pre-qual · zero credit impact',
   },
   {
-    value: '48–72',
+    value: '48 to 72',
     unit: 'hr',
-    label: 'Merchant-direct settlement',
+    label: 'Merchant direct settlement',
     sub: 'Lender disburses to the merchant account · no intermediary float',
   },
 ];
@@ -413,11 +413,11 @@ export const PROOF: Array<{ value: string; unit: string; label: string; sub: str
 export const FAQ: Array<{ q: string; a: string }> = [
   {
     q: 'What is EazePay?',
-    a: 'EazePay is the financial infrastructure behind the brand. One platform brings together four things — prequalification software, automated agents, a lender marketplace and payment processing — so a brand can capture an applicant, qualify them, route them to financing and take the payment, all on the same rail.',
+    a: 'EazePay is the financial infrastructure behind the brand. One platform brings together four things, prequalification software, automated agents, a lender marketplace and payment processing, so a brand can capture an applicant, qualify them, route them to financing and take the payment, all on the same rail.',
   },
   {
     q: 'How do the different brands work?',
-    a: 'MedPay, TradePay, CoachPay and VetPay are brand wrappers that all run on the exact same EazePay infrastructure. The prequalification, the agents, the marketplace and the payment processing underneath are identical — only the brand, the copy and the underwriting profile change. That is why a new brand can launch in days, not months.',
+    a: 'MedPay, TradePay, CoachPay and VetPay are brand wrappers that all run on the exact same EazePay infrastructure. The prequalification, the agents, the marketplace and the payment processing underneath are identical, only the brand, the copy and the underwriting profile change. That is why a new brand can launch in days, not months.',
   },
   {
     q: 'Does prequalification affect an applicant’s credit score?',
@@ -425,15 +425,15 @@ export const FAQ: Array<{ q: string; a: string }> = [
   },
   {
     q: 'How does the lender marketplace decide which offer wins?',
-    a: 'Every application is sent in parallel to a curated panel of partner lenders, prime through near-prime. The marketplace ranks the returned offers by total cost of credit and surfaces the best-fit options. The partner lender that makes the offer provides the financing and holds the loan.',
+    a: 'Every application is sent in parallel to a curated panel of partner lenders, prime through near prime. The marketplace ranks the returned offers by total cost of credit and surfaces the best fit options. The partner lender that makes the offer provides the financing and holds the loan.',
   },
   {
     q: 'How does payment processing work?',
-    a: 'Card payments run through the EazePay platform itself, so processing and financing sit on the same rail under one contract. Cards are tokenized and never touch your servers, and funds are settled merchant-direct to your business account.',
+    a: 'Card payments run through the EazePay platform itself, so processing and financing sit on the same rail under one contract. Cards are tokenized and never touch your servers, and funds are settled merchant direct to your business account.',
   },
   {
     q: 'How fast do merchants get funded?',
-    a: 'When an applicant accepts a financing offer, the partner lender disburses funds merchant-direct — typically in 48–72 hours — with no intermediary float. Card transactions settle on standard processing timelines.',
+    a: 'When an applicant accepts a financing offer, the partner lender disburses funds merchant direct, typically in 48 to 72 hours, with no intermediary float. Card transactions settle on standard processing timelines.',
   },
   {
     q: 'Is the platform secure and compliant?',
@@ -441,6 +441,6 @@ export const FAQ: Array<{ q: string; a: string }> = [
   },
   {
     q: 'How do we get started?',
-    a: 'Book a call and we will walk you through the platform on your real use case, run a live application end-to-end, and share pricing, onboarding timeline and a free sandbox to build against. Most brands are live within days of signing.',
+    a: 'Book a call and we will walk you through the platform on your real use case, run a live application end to end, and share pricing, onboarding timeline and a free sandbox to build against. Most brands are live within days of signing.',
   },
 ];

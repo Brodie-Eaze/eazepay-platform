@@ -34,25 +34,25 @@ export default function TermsPage() {
       <ul>
         <li>
           <span>
-            <strong>&ldquo;Services&rdquo;</strong> — the EazePay websites, hosted pages,
+            <strong>&ldquo;Services&rdquo;</strong>, the EazePay websites, hosted pages,
             applications, APIs, SDKs, documentation, and related products and support.
           </span>
         </li>
         <li>
           <span>
-            <strong>&ldquo;Lender&rdquo;</strong> — an independent third-party financial institution
+            <strong>&ldquo;Lender&rdquo;</strong>, an independent third-party financial institution
             or creditor that evaluates and provides financing through the marketplace.
           </span>
         </li>
         <li>
           <span>
-            <strong>&ldquo;Business Customer&rdquo;</strong> — a merchant, partner, or organization
+            <strong>&ldquo;Business Customer&rdquo;</strong>, a merchant, partner, or organization
             that uses the Services under a commercial agreement with us.
           </span>
         </li>
         <li>
           <span>
-            <strong>&ldquo;Content&rdquo;</strong> — information, data, text, and materials you
+            <strong>&ldquo;Content&rdquo;</strong>, information, data, text, and materials you
             submit to or through the Services.
           </span>
         </li>
@@ -70,13 +70,13 @@ export default function TermsPage() {
 
       <h2>3. The Services; our role</h2>
       <p>
-        EazePay provides financial infrastructure — including prequalification, automated
-        decisioning agents, a lender marketplace, an orchestration waterfall, application tracking,
-        and payment processing — that powers branded experiences such as MedPay, TradePay, CoachPay,
-        and VetPay. <strong>EazePay is a technology provider.</strong> EazePay is not a bank, is not
-        a lender, and does not extend credit or make credit decisions on its own behalf. Financing,
-        where offered, is originated and provided by independent Lenders that are solely responsible
-        for their own products, underwriting, credit decisions, disclosures, and loan agreements.
+        EazePay provides financial infrastructure, including prequalification, automated decisioning
+        agents, a lender marketplace, an orchestration waterfall, application tracking, and payment
+        processing, that powers branded experiences such as MedPay, TradePay, CoachPay, and VetPay.{' '}
+        <strong>EazePay is a technology provider.</strong> EazePay is not a bank, is not a lender,
+        and does not extend credit or make credit decisions on its own behalf. Financing, where
+        offered, is originated and provided by independent Lenders that are solely responsible for
+        their own products, underwriting, credit decisions, disclosures, and loan agreements.
         Payment processing is provided through relationships with sponsoring financial institutions
         and processors. We may add, change, or discontinue features of the Services at any time.
       </p>
@@ -253,7 +253,7 @@ export default function TermsPage() {
         time, with or without notice, if we believe you have violated these Terms or applicable law,
         or to protect the Services or others. You may stop using the Services at any time. Upon
         termination, your license to use the Services ends; Sections that by their nature should
-        survive — including Sections 9–11 and 14–22 — will survive.
+        survive, including Sections 9 to 11 and 14 to 22, will survive.
       </p>
 
       <h2>18. Governing law; arbitration; class-action waiver</h2>
@@ -314,7 +314,7 @@ export default function TermsPage() {
 
       <h2>23. Contact us</h2>
       <p>
-        EazePay Inc. — Legal
+        EazePay Inc., Legal
         <br />
         Email: <a href="mailto:support@eazepay.com">support@eazepay.com</a>
       </p>

@@ -6,9 +6,9 @@ import { Reveal } from './Reveal';
 
 const POINTS = [
   'Soft pull only · zero credit impact',
-  'Three best-fit offers ranked by total cost of credit',
+  'Three best fit offers ranked by total cost of credit',
   'Lender carries the credit risk · no clawback on routine defaults',
-  'Merchant-direct disbursement · 48–72hr to your account',
+  'Merchant direct disbursement · 48 to 72hr to your account',
 ];
 
 export function Marketplace() {
@@ -21,9 +21,9 @@ export function Marketplace() {
             Every lender. One waterfall. <span className="ez-gradient-text">Best offer wins.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-white/65">
-            Every application waterfalls through a curated lender marketplace — prime to near-prime
-            — in parallel. NEXUS ranks the three best offers by total cost of credit on a soft pull.
-            The lender on the winning offer disburses merchant-direct in 48–72 hours.
+            Every application waterfalls through a curated lender marketplace, prime to near prime,
+            in parallel. NEXUS ranks the three best offers by total cost of credit on a soft pull.
+            The lender on the winning offer disburses merchant direct in 48 to 72 hours.
           </p>
           <ul className="mt-7 space-y-3">
             {POINTS.map((t) => (
@@ -43,12 +43,15 @@ export function Marketplace() {
               <span>Lender</span>
               <span>Parallel quote · APR from</span>
             </div>
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-2.5">
               {LENDERS.map((l, i) => (
-                <div key={l.name}>
+                <div key={l.name} className={i === 0 ? 'ez-lender ez-lender--win' : 'ez-lender'}>
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[13.5px] font-semibold text-white">{l.name}</span>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="ez-lender__rank">{i + 1}</span>
+                      <span className="truncate text-[13.5px] font-semibold text-white">
+                        {l.name}
+                      </span>
                       <span
                         className="rounded-full border px-2 py-0.5 font-mono text-[9px] font-semibold tracking-[0.06em]"
                         style={
@@ -59,12 +62,13 @@ export function Marketplace() {
                       >
                         {l.tier}
                       </span>
+                      {i === 0 && <span className="ez-lender__best">Best</span>}
                     </div>
-                    <span className="font-mono text-[13px] font-semibold tabular-nums text-white">
+                    <span className="font-mono text-[14px] font-bold tabular-nums text-white">
                       {l.rate}
                     </span>
                   </div>
-                  <div className="ez-wf__bar mt-2">
+                  <div className="ez-wf__bar mt-2.5">
                     <span
                       style={
                         { '--wf': l.fill, '--wd': `${(i * 0.16).toFixed(2)}s` } as CSSProperties
@@ -75,7 +79,7 @@ export function Marketplace() {
               ))}
             </div>
             <p className="mt-6 text-[11.5px] leading-relaxed text-white/40">
-              Representative panel — lender names and rates are illustrative of the marketplace, not
+              Representative panel, lender names and rates are illustrative of the marketplace, not
               a published offer. Soft pull only; final APR is set by the lender.
             </p>
           </div>

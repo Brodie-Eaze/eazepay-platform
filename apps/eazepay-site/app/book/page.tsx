@@ -8,12 +8,12 @@ import { BookForm } from './BookForm';
 export const metadata: Metadata = {
   title: 'Book a call',
   description:
-    'Request a call with the EazePay Inc. team. See the financial infrastructure — prequalification, agents, a lender marketplace and payment processing — behind a live brand.',
+    'Request a call with the EazePay Inc. team. See the financial infrastructure, prequalification, agents, a lender marketplace and payment processing, behind a live brand.',
 };
 
 const POINTS = [
   'A walkthrough of the platform on your real use case',
-  'A live lead routed end-to-end — prequal → marketplace → settlement',
+  'A live lead routed end-to-end, prequal → marketplace → settlement',
   'Pricing, onboarding timeline and a sandbox to build against',
 ];
 
@@ -32,7 +32,7 @@ export default function BookPage() {
               </h1>
               <p className="mt-5 max-w-md text-[16px] leading-relaxed text-fg-secondary">
                 Tell us what you&apos;re building and we&apos;ll show you the infrastructure behind
-                it — prequalification, agents, a lender marketplace and payment processing on one
+                it, prequalification, agents, a lender marketplace and payment processing on one
                 platform. No commitment, no pressure.
               </p>
               <ul className="mt-8 space-y-3.5">

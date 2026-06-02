@@ -13,7 +13,7 @@ export function Industries() {
             Same infrastructure. <span className="ez-sky-text">Different brand.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
-            MedPay, TradePay, CoachPay and VetPay are brand wrappers on the EazePay infrastructure —
+            MedPay, TradePay, CoachPay and VetPay are brand wrappers on the EazePay infrastructure,
             the exact same prequalification, agents, lender marketplace and payment processing
             underneath. Only the brand, the copy and the underwriting profile change. Stand up the
             next one in days.

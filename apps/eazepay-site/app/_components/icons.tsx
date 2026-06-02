@@ -1,6 +1,6 @@
 import type { SVGProps } from 'react';
 
-/* Inline stroke icons — currentColor, 1.6 weight, 24-grid. Server-rendered. */
+/* Inline stroke icons, currentColor, 1.6 weight, 24-grid. Server-rendered. */
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
@@ -19,7 +19,7 @@ function base({ size = 18, ...rest }: IconProps) {
 }
 
 /**
- * EazePay brandmark — a monogram "E" built from three rounded rails (the
+ * EazePay brandmark, a monogram "E" built from three rounded rails (the
  * platform's stacked layers) with a detached node routed off the middle rail
  * (a lead moving through the orchestration). Filled, not stroked, so it reads
  * as a real logo at any size. Inherits `currentColor` (white on the navy tile).

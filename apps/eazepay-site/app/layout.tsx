@@ -5,11 +5,11 @@ import type { Metadata, Viewport } from 'next';
 export const metadata: Metadata = {
   metadataBase: new URL('https://eazepay.com'),
   title: {
-    default: 'EazePay — The financial infrastructure behind every brand',
+    default: 'EazePay, The financial infrastructure behind every brand',
     template: '%s · EazePay',
   },
   description:
-    'EazePay is the financial infrastructure behind the brand — prequalification, agents, a lender marketplace and payment processing on one platform. MedPay, TradePay, CoachPay and VetPay are brand wrappers on the same infrastructure.',
+    'EazePay is the financial infrastructure behind the brand, prequalification, agents, a lender marketplace and payment processing on one platform. MedPay, TradePay, CoachPay and VetPay are brand wrappers on the same infrastructure.',
   keywords: [
     'financial infrastructure',
     'embedded finance',
@@ -20,9 +20,9 @@ export const metadata: Metadata = {
     'agentic platform',
   ],
   openGraph: {
-    title: 'EazePay — The financial infrastructure behind every brand',
+    title: 'EazePay, The financial infrastructure behind every brand',
     description:
-      'One infrastructure behind every brand — prequalification, agents, a lender marketplace and payment processing. MedPay, TradePay, CoachPay and VetPay run on the same rail.',
+      'One infrastructure behind every brand, prequalification, agents, a lender marketplace and payment processing. MedPay, TradePay, CoachPay and VetPay run on the same rail.',
     type: 'website',
     siteName: 'EazePay',
   },

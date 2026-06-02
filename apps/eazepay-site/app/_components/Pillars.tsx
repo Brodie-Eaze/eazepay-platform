@@ -15,7 +15,7 @@ export function Pillars() {
             One infrastructure. <span className="ez-sky-text">Four parts.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
-            Prequalification, agents, a lender marketplace and payment processing — built as one
+            Prequalification, agents, a lender marketplace and payment processing, built as one
             system, behind every brand. This is what EazePay actually is.
           </p>
         </Reveal>

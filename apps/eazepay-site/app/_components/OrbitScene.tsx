@@ -48,7 +48,7 @@ function spoke(x: number, y: number, i: number): CSSProperties {
 }
 
 /**
- * The hero constellation. Held at a fixed 3D tilt — it does NOT sway side to
+ * The hero constellation. Held at a fixed 3D tilt, it does NOT sway side to
  * side and does NOT track the cursor. It comes to life through light: the core
  * breathes, energy pulses inward along the spokes, nodes drift + ping, rings
  * expand. All depth, no wandering.

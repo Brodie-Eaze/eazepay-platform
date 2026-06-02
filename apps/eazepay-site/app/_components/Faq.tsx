@@ -13,9 +13,9 @@ export function Faq() {
               Frequently asked <span className="ez-sky-text">questions.</span>
             </h2>
             <p className="mt-5 text-[15px] leading-relaxed text-fg-secondary">
-              The essentials on how EazePay works — the infrastructure, the brands,
-              prequalification, the marketplace and payments. Need more? Book a call and we&apos;ll
-              walk you through it.
+              The essentials on how EazePay works, the infrastructure, the brands, prequalification,
+              the marketplace and payments. Need more? Book a call and we&apos;ll walk you through
+              it.
             </p>
           </Reveal>
 

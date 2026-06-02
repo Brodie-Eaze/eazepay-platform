@@ -31,7 +31,7 @@ const FOOTER_COLS: Array<{ title: string; links: Array<{ label: string; href: st
   },
 ];
 
-const BADGES = ['SOC 2 Type II', 'Encrypted end-to-end', 'Soft pull only'];
+const BADGES = ['SOC 2 Type II', 'Encrypted end to end', 'Soft pull only'];
 
 export function SiteFooter() {
   return (
@@ -48,7 +48,7 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-white/55">
-              The financial infrastructure behind the brand — prequalification, agents, a lender
+              The financial infrastructure behind the brand, prequalification, agents, a lender
               marketplace and payment processing on one platform. MedPay, TradePay, CoachPay and
               VetPay ride on top.
             </p>
