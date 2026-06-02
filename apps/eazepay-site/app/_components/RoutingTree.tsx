@@ -4,18 +4,18 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 /**
- * Guided smart-routing DECISION TREE. One lead at a time:
- *   Capture (smart form) → Intelligence (pull financial data) →
- *   DECISION 1 · credit score  →  DECISION 2 · income  →
- *   either the SLO low-ticket funnel, or the high-ticket VSL → book-a-call.
+ * Guided smart-routing DECISION TREE — refined.
+ *   Capture (smart form) → Intelligence (financial data) →
+ *   DECISION 1 · credit  →  DECISION 2 · income  →
+ *   SLO low-ticket funnel  OR  high-ticket VSL → book a call.
  *
- * The split is credit-first (thin credit drops straight to SLO), then income
- * (good credit but low income also drops to SLO; good credit + high income
- * earns the closer's calendar). Each stage activates as the lead arrives and
- * the taken branch lights up. State-machine driven; reduced-motion settles.
+ * Credit-first: thin credit short-circuits to SLO; good credit goes to the
+ * income gate; income decides VSL vs SLO. One lead at a time activates each
+ * stage; a sleek pulse travels the segment it just took; the lit path stays
+ * crisp (no glow blob). State-machine driven; reduced-motion settles.
  */
 
-const VB = { w: 1000, h: 560 };
+const VB = { w: 1000, h: 520 };
 
 type Kind = 'stage' | 'decision' | 'leaf';
 type Term = 'vsl' | 'slo';
@@ -35,8 +35,8 @@ type NodeT = {
 const NODES: NodeT[] = [
   {
     id: 'capture',
-    x: 168,
-    y: 280,
+    x: 158,
+    y: 250,
     w: 150,
     code: 'SMART FORM',
     title: 'Capture',
@@ -45,9 +45,9 @@ const NODES: NodeT[] = [
   },
   {
     id: 'intel',
-    x: 352,
-    y: 280,
-    w: 184,
+    x: 344,
+    y: 250,
+    w: 182,
     code: 'INTELLIGENCE',
     title: 'Financial data',
     sub: 'soft pull · under 2s',
@@ -56,8 +56,8 @@ const NODES: NodeT[] = [
   },
   {
     id: 'credit',
-    x: 524,
-    y: 280,
+    x: 520,
+    y: 250,
     w: 150,
     code: 'DECISION · 1',
     title: 'Credit score',
@@ -66,8 +66,8 @@ const NODES: NodeT[] = [
   },
   {
     id: 'income',
-    x: 690,
-    y: 190,
+    x: 700,
+    y: 162,
     w: 150,
     code: 'DECISION · 2',
     title: 'Income',
@@ -76,9 +76,9 @@ const NODES: NodeT[] = [
   },
   {
     id: 'vsl',
-    x: 884,
-    y: 120,
-    w: 178,
+    x: 886,
+    y: 106,
+    w: 176,
     code: 'HIGH-TICKET VSL',
     title: 'Book a call',
     sub: "closer's calendar · 1:1",
@@ -87,9 +87,9 @@ const NODES: NodeT[] = [
   },
   {
     id: 'slo',
-    x: 884,
-    y: 420,
-    w: 178,
+    x: 886,
+    y: 396,
+    w: 176,
     code: 'SLO FUNNEL',
     title: 'Self-liquidating offer',
     sub: 'low-ticket · instant',
@@ -100,46 +100,46 @@ const NODE_BY_ID: Record<string, NodeT> = Object.fromEntries(NODES.map((n) => [n
 
 type Edge = { from: string; to: string; d: string; label?: string; lx?: number; ly?: number };
 const EDGES: Edge[] = [
-  { from: 'capture', to: 'intel', d: 'M168,280 L352,280' },
-  { from: 'intel', to: 'credit', d: 'M352,280 L524,280' },
+  { from: 'capture', to: 'intel', d: 'M158,250 L344,250' },
+  { from: 'intel', to: 'credit', d: 'M344,250 L520,250' },
   {
     from: 'credit',
     to: 'income',
-    d: 'M524,280 C604,280 614,190 690,190',
+    d: 'M520,250 C606,250 616,162 700,162',
     label: '≥ 680',
     lx: 612,
-    ly: 220,
+    ly: 196,
   },
   {
     from: 'credit',
     to: 'slo',
-    d: 'M524,280 C620,300 660,420 884,420',
+    d: 'M520,250 C614,250 648,396 886,396',
     label: '< 680',
-    lx: 636,
-    ly: 352,
+    lx: 642,
+    ly: 332,
   },
   {
     from: 'income',
     to: 'vsl',
-    d: 'M690,190 C784,190 794,120 884,120',
+    d: 'M700,162 C792,162 800,106 886,106',
     label: 'high',
-    lx: 792,
-    ly: 144,
+    lx: 794,
+    ly: 126,
   },
   {
     from: 'income',
     to: 'slo',
-    d: 'M690,190 C786,214 802,420 884,420',
+    d: 'M700,162 C794,188 812,396 886,396',
     label: 'low',
-    lx: 800,
-    ly: 312,
+    lx: 806,
+    ly: 288,
   },
 ];
 
 const SOURCES = [
-  { id: 's1', x: 40, y: 188, label: 'Meta' },
-  { id: 's2', x: 40, y: 280, label: 'Google' },
-  { id: 's3', x: 40, y: 372, label: 'TikTok' },
+  { id: 's1', x: 42, y: 170, label: 'Meta' },
+  { id: 's2', x: 42, y: 250, label: 'Google' },
+  { id: 's3', x: 42, y: 330, label: 'TikTok' },
 ];
 
 type Intent = 'hot' | 'warm' | 'cold';
@@ -156,8 +156,6 @@ type Lead = {
   dot: Intent;
 };
 
-// Each lead's path encodes the decision it gets: thin credit short-circuits to
-// SLO; good credit goes to the income gate; income decides VSL vs SLO.
 const LEADS: Lead[] = [
   {
     id: 'L-8419',
@@ -212,7 +210,7 @@ const LEADS: Lead[] = [
 function narrate(lead: Lead, nodeId: string): string {
   switch (nodeId) {
     case 'capture':
-      return `New lead from ${lead.src} · ${lead.amt}`;
+      return `New lead from ${lead.src}`;
     case 'intel':
       return `Pulling financial data · soft pull`;
     case 'credit':
@@ -247,13 +245,13 @@ export function RoutingTree() {
     if (reduce) return;
     let t: ReturnType<typeof setTimeout>;
     if (step < last) {
-      t = setTimeout(() => setStep((s) => s + 1), step === 0 ? 1000 : 1350);
+      t = setTimeout(() => setStep((s) => s + 1), step === 0 ? 1100 : 1400);
     } else {
       t = setTimeout(() => {
         setLeadIdx((i) => (i + 1) % LEADS.length);
         setStep(0);
         counted.current = false;
-      }, 2100);
+      }, 2200);
     }
     return () => clearTimeout(t);
   }, [step, leadIdx, reduce, last]);
@@ -267,12 +265,14 @@ export function RoutingTree() {
   }, [step, leadIdx, last, path]);
 
   const activeId = path[step] as string;
-  const token = NODE_BY_ID[activeId];
   const reached = (id: string) => path.slice(0, step + 1).includes(id);
   const isLit = (e: Edge) => {
     for (let i = 0; i < step; i++) if (path[i] === e.from && path[i + 1] === e.to) return true;
     return false;
   };
+  // the segment the lead just traversed (for the travelling pulse)
+  const activeEdge =
+    step > 0 ? EDGES.find((e) => e.from === path[step - 1] && e.to === path[step]) : undefined;
 
   return (
     <div className="ez-tree-frame">
@@ -281,11 +281,15 @@ export function RoutingTree() {
           <span className="ez-live-dot" aria-hidden />
           Live routing
         </span>
+        <span className={`ez-tree-lead ez-tree-lead--${lead.dot}`} key={leadIdx}>
+          <span className="ez-tree-lead__dot" aria-hidden />
+          {lead.id} · {lead.amt}
+        </span>
         <span className="ez-tree-narrate" key={`${leadIdx}-${step}`}>
           {narrate(lead, activeId)}
         </span>
         <span className="ez-tree-stat">
-          {counts.vsl} calls booked today · <span className="text-white/80">0 dropped</span>
+          {counts.vsl} booked · {counts.slo} nurtured
         </span>
       </div>
 
@@ -298,50 +302,47 @@ export function RoutingTree() {
           preserveAspectRatio="xMidYMid meet"
           aria-hidden
         >
-          <defs>
-            <filter id="ezGlow" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur stdDeviation="2.4" result="b" />
-              <feMerge>
-                <feMergeNode in="b" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
+          {/* source → capture feeders */}
           {SOURCES.map((s) => (
             <path
               key={`src-${s.id}`}
               className="ez-tedge ez-tedge--src"
-              d={`M${s.x + 28},${s.y} C120,${s.y} 120,280 168,280`}
+              d={`M${s.x + 26},${s.y} C118,${s.y} 118,250 158,250`}
             />
           ))}
 
+          {/* base edges */}
           {EDGES.map((e) => (
             <path key={`base-${e.from}-${e.to}`} className="ez-tedge" d={e.d} />
           ))}
+
+          {/* lit path: soft underglow + crisp core (no blob) */}
           {EDGES.map((e) =>
             isLit(e) ? (
-              <path
-                key={`lit-${e.from}-${e.to}`}
-                className="ez-tedge ez-tedge--lit"
-                d={e.d}
-                filter="url(#ezGlow)"
-              />
+              <g key={`lit-${e.from}-${e.to}`}>
+                <path className="ez-tedge ez-tedge--litglow" d={e.d} />
+                <path className="ez-tedge ez-tedge--lit" d={e.d} />
+              </g>
             ) : null,
           )}
-          {EDGES.filter((e) => e.label).map((e) => (
-            <text
-              key={`lbl-${e.from}-${e.to}`}
-              className={`ez-tedge-label${isLit(e) ? ' ez-tedge-label--lit' : ''}`}
-              x={e.lx}
-              y={e.ly}
-              textAnchor="middle"
-            >
-              {e.label}
-            </text>
-          ))}
+
+          {/* sleek pulse travelling the segment just taken */}
+          {activeEdge && (
+            <circle key={`pulse-${leadIdx}-${step}`} className="ez-pulse" r={4}>
+              <animateMotion dur="0.9s" begin="0s" fill="freeze" path={activeEdge.d} />
+              <animate
+                attributeName="opacity"
+                dur="0.9s"
+                begin="0s"
+                fill="freeze"
+                values="0;1;1;0"
+                keyTimes="0;0.2;0.7;1"
+              />
+            </circle>
+          )}
         </svg>
 
+        {/* sources */}
         {SOURCES.map((s) => (
           <div
             key={s.id}
@@ -355,6 +356,20 @@ export function RoutingTree() {
           </div>
         ))}
 
+        {/* condition chips on the decision edges */}
+        {EDGES.filter((e) => e.label).map((e) => (
+          <div
+            key={`chip-${e.from}-${e.to}`}
+            className={`ez-edge-chip${isLit(e) ? ' ez-edge-chip--lit' : ''}`}
+            style={
+              { left: `${(e.lx! / VB.w) * 100}%`, top: `${(e.ly! / VB.h) * 100}%` } as CSSProperties
+            }
+          >
+            {e.label}
+          </div>
+        ))}
+
+        {/* node cards */}
         {NODES.map((n) => {
           const active = n.id === activeId;
           const cls = [
@@ -428,22 +443,6 @@ export function RoutingTree() {
             </div>
           );
         })}
-
-        {token && (
-          <div
-            className={`ez-demo-tok ez-demo-tok--${lead.dot}${step === last ? ' ez-demo-tok--done' : ''}`}
-            style={
-              {
-                left: `${(token.x / VB.w) * 100}%`,
-                top: `${((token.y - 46) / VB.h) * 100}%`,
-              } as CSSProperties
-            }
-          >
-            <span className="ez-demo-tok__dot" aria-hidden />
-            {lead.id}
-            <span className="ez-demo-tok__amt">{lead.amt}</span>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1596,23 +1596,81 @@
     background 0.45s ease;
 }
 .ez-tnode--active {
-  border-color: rgb(var(--brand-sky-soft) / 0.7) !important;
-  background: rgb(var(--brand-sky) / 0.12);
+  border-color: rgb(var(--brand-sky-soft) / 0.6) !important;
+  background: rgb(var(--brand-sky) / 0.08);
   box-shadow:
-    0 0 0 1px rgb(var(--brand-sky-soft) / 0.5),
-    0 0 34px -2px rgb(var(--brand-sky) / 0.8) !important;
+    0 0 0 1px rgb(var(--brand-sky-soft) / 0.38),
+    0 0 20px -8px rgb(var(--brand-sky) / 0.6) !important;
 }
 .ez-tnode--book.ez-tnode--active {
-  border-color: rgb(110 231 183 / 0.8) !important;
-  background: rgb(52 211 153 / 0.14);
+  border-color: rgb(110 231 183 / 0.6) !important;
+  background: rgb(52 211 153 / 0.1);
   box-shadow:
-    0 0 0 1px rgb(110 231 183 / 0.6),
-    0 0 36px -2px rgb(52 211 153 / 0.85) !important;
+    0 0 0 1px rgb(110 231 183 / 0.42),
+    0 0 20px -8px rgb(52 211 153 / 0.6) !important;
 }
 
+/* condition chips on the decision edges */
+.ez-edge-chip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgb(255 255 255 / 0.5);
+  background: rgb(8 12 27 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  transition:
+    color 0.4s ease,
+    border-color 0.4s ease;
+}
+.ez-edge-chip--lit {
+  color: rgb(var(--brand-sky-soft));
+  border-color: rgb(var(--brand-sky) / 0.45);
+}
+
+/* current lead chip in the header */
+.ez-tree-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.82);
+}
+.ez-tree-lead__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky-soft));
+  box-shadow: 0 0 8px rgb(var(--brand-sky-soft));
+}
+.ez-tree-lead--warm .ez-tree-lead__dot {
+  background: rgb(var(--brand-sky));
+  box-shadow: 0 0 8px rgb(var(--brand-sky));
+}
+.ez-tree-lead--cold .ez-tree-lead__dot {
+  background: rgb(148 163 184);
+  box-shadow: none;
+}
+
+.ez-tedge--litglow {
+  stroke: rgb(var(--brand-sky) / 0.22);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
 .ez-tedge--lit {
   stroke: rgb(var(--brand-sky-soft));
-  stroke-width: 2.5;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+.ez-pulse {
+  fill: #ffffff;
+  filter: drop-shadow(0 0 5px rgb(var(--brand-sky-soft)));
 }
 
 .ez-tsrc {
