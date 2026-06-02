@@ -38,7 +38,7 @@ export function SiteNav() {
 
         <div className="flex items-center gap-3 sm:gap-4">
           <a
-            href="https://app.eazepay.com"
+            href="https://app.eazepay.com/sign-in?from=%2F"
             className="hidden text-[13.5px] font-semibold text-fg-secondary no-underline transition-colors hover:text-fg sm:inline"
           >
             Sign in
