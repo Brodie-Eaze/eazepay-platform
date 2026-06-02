@@ -34,8 +34,8 @@ export function Orchestration() {
               </p>
               <ul className="mt-6 space-y-4">
                 {STITCHED.map((row) => (
-                  <li key={row.stat} className="flex gap-4">
-                    <span className="w-[116px] shrink-0 font-mono text-[13px] font-semibold text-fg-muted">
+                  <li key={row.stat} className="flex flex-col gap-1 sm:flex-row sm:gap-4">
+                    <span className="font-mono text-[13px] font-semibold text-fg-muted sm:w-[116px] sm:shrink-0">
                       {row.stat}
                     </span>
                     <span className="text-[14px] leading-snug text-fg-secondary">{row.label}</span>
@@ -65,8 +65,8 @@ export function Orchestration() {
               </p>
               <ul className="relative mt-6 space-y-4">
                 {UNIFIED.map((row) => (
-                  <li key={row.stat} className="flex gap-4">
-                    <span className="flex w-[124px] shrink-0 items-start gap-1.5 font-mono text-[13px] font-semibold text-brand-sky-soft">
+                  <li key={row.stat} className="flex flex-col gap-1 sm:flex-row sm:gap-4">
+                    <span className="flex items-start gap-1.5 font-mono text-[13px] font-semibold text-brand-sky-soft sm:w-[124px] sm:shrink-0">
                       <Check size={14} className="mt-0.5 shrink-0" />
                       {row.stat}
                     </span>

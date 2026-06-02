@@ -115,7 +115,7 @@ export function DealScope() {
 
                 {/* soft pull underwriting factors */}
                 <div>
-                  <div className="mb-3 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
+                  <div className="mb-3 text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
                     Soft pull check
                   </div>
                   <div className="relative">
@@ -126,10 +126,8 @@ export function DealScope() {
                           <span className="ez-step-dot">
                             <Check size={11} />
                           </span>
-                          <span className="text-[12.5px] md:text-[11px] font-semibold text-fg">
-                            {c.label}
-                          </span>
-                          <span className="ml-auto text-[12.5px] md:text-[11px] font-bold tabular-nums text-fg">
+                          <span className="text-[11px] font-semibold text-fg">{c.label}</span>
+                          <span className="ml-auto text-[11px] font-bold tabular-nums text-fg">
                             {c.value}
                           </span>
                         </li>
@@ -140,7 +138,7 @@ export function DealScope() {
 
                 {/* best offers */}
                 <div>
-                  <div className="mb-3 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
+                  <div className="mb-3 text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
                     Pre-approved offers
                   </div>
                   <div className="space-y-2.5">
@@ -154,7 +152,7 @@ export function DealScope() {
                         }
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="flex items-center gap-1.5 text-[13px] md:text-[11.5px] font-bold text-fg">
+                          <span className="flex items-center gap-1.5 text-[11.5px] font-bold text-fg">
                             {o.name}
                             {o.win && (
                               <span className="rounded-full bg-gradient-to-r from-brand-sky-deep to-brand-sky px-1.5 py-[1.5px] text-[8px] font-bold uppercase tracking-wide text-white shadow-[0_2px_5px_-1px_rgb(60_110_220/0.6)]">
@@ -162,7 +160,7 @@ export function DealScope() {
                               </span>
                             )}
                           </span>
-                          <span className="font-mono text-[13.5px] md:text-[12px] font-extrabold tabular-nums text-fg">
+                          <span className="font-mono text-[12px] font-extrabold tabular-nums text-fg">
                             {o.rate}
                           </span>
                         </div>
@@ -193,10 +191,8 @@ export function DealScope() {
                     <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/20 ring-1 ring-white/30">
                       <Check size={12} />
                     </span>
-                    <span className="truncate text-[12.5px] md:text-[12px] font-bold">
-                      Pre-approved
-                    </span>
-                    <span className="ml-auto shrink-0 whitespace-nowrap font-mono text-[10px] md:text-[9.5px] font-semibold text-white/85">
+                    <span className="truncate text-[12px] font-bold">Pre-approved</span>
+                    <span className="ml-auto shrink-0 whitespace-nowrap font-mono text-[9.5px] font-semibold text-white/85">
                       5.9% APR · best offer
                     </span>
                   </div>
