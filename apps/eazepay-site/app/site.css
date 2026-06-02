@@ -1990,33 +1990,64 @@
 }
 
 /* ============================================================
-   MOBILE — routing tree becomes swipeable so it stays legible
+   MOBILE — routing tree: the wide diagram is replaced by a vertical
+   stacked flow (no horizontal scrolling). Reuses the node cards.
    ============================================================ */
 .ez-tree-scroll {
   width: 100%;
 }
-@media (max-width: 760px) {
+/* the stacked mobile flow is hidden on desktop */
+.ez-mflow {
+  display: none;
+}
+@media (max-width: 767px) {
   .ez-tree-frame {
-    padding: 12px 10px;
+    padding: 14px 12px;
   }
+  /* hide the SVG diagram, show the stack */
   .ez-tree-scroll {
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    margin: 0 -10px;
-    padding: 0 10px 6px;
-    scrollbar-width: thin;
+    display: none;
   }
-  .ez-tree-scroll .ez-tree {
-    min-width: 660px;
+  .ez-mflow {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 6px 2px 2px;
   }
-  /* subtle edge cue that there's more to scroll */
-  .ez-tree-scroll::-webkit-scrollbar {
-    height: 5px;
+  .ez-mnode-row {
+    position: relative;
+    padding-top: 24px;
   }
-  .ez-tree-scroll::-webkit-scrollbar-thumb {
-    background: rgb(255 255 255 / 0.18);
-    border-radius: 999px;
+  .ez-mnode-row:first-child {
+    padding-top: 4px;
+  }
+  /* connector spine between stacked cards */
+  .ez-mnode-row:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    width: 2px;
+    height: 20px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: rgb(255 255 255 / 0.14);
+  }
+  .ez-mnode-row--lit:not(:first-child)::before {
+    background: rgb(var(--brand-sky-soft));
+    box-shadow: 0 0 9px rgb(var(--brand-sky) / 0.7);
+  }
+  .ez-mflow .ez-tnode {
+    width: 100%;
+  }
+  .ez-mflow .ez-tnode__title {
+    font-size: 16px;
+  }
+  .ez-mflow .ez-tnode__sub {
+    font-size: 12px;
+  }
+  .ez-mflow .ez-tnode__code {
+    font-size: 10.5px;
   }
 }
 

@@ -719,6 +719,64 @@ export function RoutingTree() {
           })}
         </div>
       </div>
+
+      {/* Mobile: the same live flow, stacked top-to-bottom (no horizontal scroll) */}
+      <div className="ez-mflow">
+        {[...cfg.nodes]
+          .sort((a, b) => a.x - b.x || a.y - b.y)
+          .map((n) => {
+            const active = n.id === activeId;
+            const onPath = reached(n.id);
+            const decision = n.kind === 'decision' && onPath ? lead.decisions?.[n.id] : undefined;
+            const cls = [
+              'ez-tnode',
+              n.kind === 'decision' ? 'ez-tnode--decision' : '',
+              n.kind === 'leaf' ? 'ez-tnode--leaf' : '',
+              n.book ? 'ez-tnode--book' : '',
+              active ? 'ez-tnode--active' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <div
+                className={`ez-mnode-row${onPath ? ' ez-mnode-row--lit' : ''}`}
+                key={`m-${n.id}`}
+              >
+                <div className={cls}>
+                  <div className="ez-tnode__code">{n.code}</div>
+                  <div className="ez-tnode__title">{n.title}</div>
+                  <div className="ez-tnode__sub">{n.sub}</div>
+
+                  {n.scores && onPath && lead.scores && (
+                    <div className="ez-tnode__scores">
+                      {lead.scores.map((s) => (
+                        <span key={s.k} className="ez-tnode__score">
+                          {s.k} {s.v}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {decision && (
+                    <span
+                      className={`ez-decide ${decision.pass ? 'ez-decide--yes' : 'ez-decide--no'}`}
+                    >
+                      {decision.text}
+                    </span>
+                  )}
+
+                  {n.kind === 'leaf' && (
+                    <span className="ez-tnode__tally">
+                      <span className="ez-tnode__tally-dot" aria-hidden />
+                      {n.verb ?? 'routed'} ·{' '}
+                      <span className="tabular-nums">{counts[n.id] ?? 0}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </div>
     </div>
   );
 }
