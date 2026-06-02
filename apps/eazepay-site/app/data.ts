@@ -33,26 +33,42 @@ export const TICKER: Array<{ value: string; label: string; delta: string }> = [
 export const STITCHED: Array<{ stat: string; label: string }> = [
   {
     stat: 'Fragmented',
-    label: 'A separate payment processor and multiple lenders — each on its own platform',
+    label:
+      'A separate payment processor and several lenders, each on its own platform — nothing connected',
   },
   {
     stat: 'Blind',
-    label: 'Little to no visibility or tracking on where a finance application stands',
+    label: 'Little to no visibility or tracking on where a finance application actually stands',
   },
-  { stat: 'No support', label: 'On your own when a deal stalls or something breaks' },
   {
-    stat: 'Manual',
-    label: 'Qualifying clients the old-fashioned way — paper forms and back-and-forth',
+    stat: 'No support',
+    label: 'When a deal stalls or something breaks, you are on your own',
+  },
+  {
+    stat: 'Form questions',
+    label:
+      'Clients qualified the old way — static questions in a form, with no real financial data behind the answers',
   },
 ];
 
 export const UNIFIED: Array<{ stat: string; label: string }> = [
-  { stat: 'One platform', label: 'Payment processing and every lender together on a single rail' },
-  { stat: 'Full view', label: 'Track every finance application end-to-end, in real time' },
-  { stat: 'Real support', label: 'A team behind you — onboarding, launch and ongoing' },
   {
-    stat: 'Instant',
-    label: 'Smart prequalification on real financial data — no paper forms',
+    stat: 'One platform',
+    label:
+      'Prequalification, agents, a lender marketplace, the orchestration waterfall, application tracking and payment processing — one financial infrastructure',
+  },
+  {
+    stat: 'Full tracking',
+    label: 'Every finance application tracked end-to-end, in real time, from capture to funded',
+  },
+  {
+    stat: 'Real support',
+    label: 'A team behind you — onboarding, launch and ongoing',
+  },
+  {
+    stat: 'Real data',
+    label:
+      'Leads qualified on real financial data by the prequalification agents and smart form — not form questions',
   },
 ];
 

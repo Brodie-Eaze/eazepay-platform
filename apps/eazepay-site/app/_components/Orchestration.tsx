@@ -29,12 +29,13 @@ export function Orchestration() {
                 The fragmented way
               </div>
               <p className="mt-2 text-[15px] font-medium text-fg-secondary">
-                A processor here, lenders there — and barely any view of your applications.
+                A processor here, lenders there, applications you can&apos;t track — and clients
+                qualified off form questions alone.
               </p>
               <ul className="mt-6 space-y-4">
                 {STITCHED.map((row) => (
                   <li key={row.stat} className="flex gap-4">
-                    <span className="w-[104px] shrink-0 font-mono text-[13px] font-semibold text-fg-muted">
+                    <span className="w-[116px] shrink-0 font-mono text-[13px] font-semibold text-fg-muted">
                       {row.stat}
                     </span>
                     <span className="text-[14px] leading-snug text-fg-secondary">{row.label}</span>
@@ -59,7 +60,8 @@ export function Orchestration() {
                 On EazePay
               </div>
               <p className="relative mt-2 text-[15px] font-medium text-white/80">
-                One platform. Every lender, full visibility and real support in one place.
+                One financial infrastructure behind every brand — prequalification, agents, lenders,
+                orchestration, application tracking and payments, together.
               </p>
               <ul className="relative mt-6 space-y-4">
                 {UNIFIED.map((row) => (
