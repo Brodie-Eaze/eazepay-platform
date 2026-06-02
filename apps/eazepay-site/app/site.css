@@ -2196,3 +2196,17 @@
     animation: none;
   }
 }
+
+/* Seamless join: when a dark section follows another dark section, start its
+   background at the same tone the previous section ends on (brand-ink-soft)
+   with no top glow, so there is no visible seam between them. */
+.ez-section-join {
+  background:
+    radial-gradient(760px 460px at 88% 112%, rgb(var(--brand-sky) / 0.12), transparent 60%),
+    linear-gradient(
+      180deg,
+      rgb(var(--brand-ink-soft)) 0%,
+      rgb(var(--brand-ink)) 52%,
+      rgb(var(--brand-ink-soft)) 100%
+    );
+}
