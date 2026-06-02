@@ -107,7 +107,6 @@
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  animation: ez-stage-sway 24s ease-in-out infinite;
 }
 /* Gentle turn only — a small rotateX keeps the orbit reading as a clean ring
    instead of a foreshortened plane that bunches every label near the top. */
@@ -1440,10 +1439,10 @@
 }
 
 /* hero constellation — pointer parallax tilt (driven by --px/--py from JS) */
+/* fixed 3D tilt — alive through light, never swaying or mouse-tracking */
 .ez-core-tilt {
   transform-style: preserve-3d;
-  transform: rotateY(calc(var(--px, 0) * 11deg)) rotateX(calc(var(--py, 0) * -9deg));
-  will-change: transform;
+  transform: rotateX(5deg) rotateY(-6deg);
 }
 
 /* routing tree — a slow scan beam sweeping the console */

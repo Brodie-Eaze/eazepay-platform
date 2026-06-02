@@ -1,6 +1,3 @@
-'use client';
-
-import { useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { LogoMark } from './icons';
 
@@ -48,61 +45,15 @@ function spoke(x: number, y: number, i: number): CSSProperties {
 }
 
 /**
- * The hero constellation, made interactive: the whole orbit tilts in 3D toward
- * the cursor (smoothed via a requestAnimationFrame lerp on --px/--py), so the
- * depth of every node parallaxes as you move. Respects reduced-motion and
- * touch (pointer parallax simply stays neutral).
+ * The hero constellation. Held at a fixed 3D tilt — it does NOT sway side to
+ * side and does NOT track the cursor. It comes to life through light: the core
+ * breathes, energy pulses inward along the spokes, nodes drift + ping, rings
+ * expand. All depth, no wandering.
  */
 export function OrbitScene() {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-
-    let raf = 0;
-    let tx = 0;
-    let ty = 0;
-    let cx = 0;
-    let cy = 0;
-
-    const onMove = (e: MouseEvent) => {
-      const r = el.getBoundingClientRect();
-      const nx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
-      const ny = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
-      tx = Math.max(-1.6, Math.min(1.6, nx));
-      ty = Math.max(-1.6, Math.min(1.6, ny));
-    };
-    const reset = () => {
-      tx = 0;
-      ty = 0;
-    };
-
-    const loop = () => {
-      cx += (tx - cx) * 0.08;
-      cy += (ty - cy) * 0.08;
-      el.style.setProperty('--px', cx.toFixed(4));
-      el.style.setProperty('--py', cy.toFixed(4));
-      raf = requestAnimationFrame(loop);
-    };
-
-    window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('blur', reset);
-    document.addEventListener('mouseleave', reset);
-    raf = requestAnimationFrame(loop);
-
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('blur', reset);
-      document.removeEventListener('mouseleave', reset);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
   return (
     <div className="relative">
-      <div ref={ref} className="ez-core-scene relative mx-auto aspect-square w-full max-w-[460px]">
+      <div className="ez-core-scene relative mx-auto aspect-square w-full max-w-[460px]">
         <div className="ez-core-tilt absolute inset-0">
           <div className="ez-core-stage absolute inset-0">
             <span className="ez-orbit-ring" aria-hidden />

@@ -84,9 +84,9 @@ const NODES: NodeT[] = [
     x: 892,
     y: 92,
     w: 168,
-    code: 'BOOK A CALL · PREMIUM',
-    title: "Closer's calendar",
-    sub: 'high-intent · live',
+    code: "CLOSER'S CALENDAR",
+    title: '1:1 with a closer',
+    sub: 'high-ticket · booked',
     kind: 'leaf',
     book: true,
   },
@@ -95,9 +95,9 @@ const NODES: NodeT[] = [
     x: 892,
     y: 214,
     w: 168,
-    code: 'SLO',
-    title: 'Self-liquidating offer',
-    sub: 'instant · funds the ads',
+    code: 'PRIORITY CALLBACK',
+    title: 'Closer follow-up',
+    sub: 'high-intent · queued',
     kind: 'leaf',
   },
   {
@@ -105,9 +105,9 @@ const NODES: NodeT[] = [
     x: 892,
     y: 326,
     w: 168,
-    code: 'LOW-TICKET OFFER',
+    code: 'SELF-SERVE OFFER',
     title: 'Starter offer',
-    sub: 'instant checkout',
+    sub: 'instant · $97–$497',
     kind: 'leaf',
   },
   {
@@ -115,9 +115,9 @@ const NODES: NodeT[] = [
     x: 892,
     y: 448,
     w: 168,
-    code: 'BOOK A CALL · STANDARD',
+    code: 'TEAM CALENDAR',
     title: 'Group call',
-    sub: 'warm pipeline',
+    sub: 'low-ticket · booked',
     kind: 'leaf',
     book: true,
   },
@@ -155,6 +155,10 @@ type Lead = {
   outcome: string;
 };
 
+// Routing rule: ticket size + intent decide the branch.
+//   HIGH ticket  → closer track → 1:1 closer's calendar / priority callback.
+//   LOW  ticket  → nurture track → TEAM calendar (group call) OR self-serve offer.
+// The team calendar is ONLY ever reached by low-ticket leads.
 const LEADS: Lead[] = [
   {
     id: 'L-8419',
@@ -169,52 +173,52 @@ const LEADS: Lead[] = [
     ],
     branch: 'high',
     leaf: 'bookP',
-    outcome: "Closer's calendar",
-  },
-  {
-    id: 'L-8417',
-    amt: '$5,800',
-    intent: 'warm',
-    src: 'Google',
-    tag: 'Warm',
-    scores: [
-      { k: 'credit', v: '690' },
-      { k: 'income', v: '$6.1k/mo' },
-      { k: 'avail', v: '$18k' },
-    ],
-    branch: 'low',
-    leaf: 'lowoff',
-    outcome: 'Starter offer',
+    outcome: "closer's calendar",
   },
   {
     id: 'L-8421',
-    amt: '$48,000',
+    amt: '$41,000',
     intent: 'hot',
     src: 'TikTok',
     tag: 'High intent',
     scores: [
       { k: 'credit', v: '712' },
       { k: 'income', v: '$9.4k/mo' },
-      { k: 'avail', v: '$41k' },
+      { k: 'avail', v: '$38k' },
     ],
     branch: 'high',
     leaf: 'slo',
-    outcome: 'Self-liquidating offer',
+    outcome: 'closer follow-up',
+  },
+  {
+    id: 'L-8417',
+    amt: '$5,800',
+    intent: 'warm',
+    src: 'Google',
+    tag: 'Low ticket',
+    scores: [
+      { k: 'credit', v: '690' },
+      { k: 'income', v: '$6.1k/mo' },
+      { k: 'avail', v: '$14k' },
+    ],
+    branch: 'low',
+    leaf: 'bookS',
+    outcome: 'team calendar',
   },
   {
     id: 'L-8416',
     amt: '$1,200',
     intent: 'cold',
     src: 'Meta',
-    tag: 'Low intent',
+    tag: 'Low ticket',
     scores: [
       { k: 'credit', v: 'past-due' },
       { k: 'income', v: '$3.2k/mo' },
       { k: 'avail', v: '$2k' },
     ],
     branch: 'low',
-    leaf: 'bookS',
-    outcome: 'Group call',
+    leaf: 'lowoff',
+    outcome: 'self-serve offer',
   },
 ];
 
@@ -240,18 +244,17 @@ function pathEdges(lead: Lead): Array<[string, string]> {
 const NARRATION: Array<(l: Lead) => string> = [
   (l) => `New lead from ${l.src} · ${l.amt}`,
   (l) => `Soft-pull qualify · ${l.scores[0]!.v} credit · ${l.scores[1]!.v}`,
-  (l) => `Routing · ${l.branch === 'high' ? 'high-ticket' : 'low-ticket'} · ${l.tag.toLowerCase()}`,
+  (l) => `Routing · ${l.branch === 'high' ? 'high-ticket' : 'low-ticket'} · ${l.amt}`,
   (l) => `Matched · ${l.branch === 'high' ? 'Premium VSL' : 'Fast VSL'}`,
-  (l) => `Booked · ${l.outcome}`,
+  (l) => `${l.leaf === 'bookP' || l.leaf === 'bookS' ? 'Booked' : 'Routed'} · ${l.outcome}`,
 ];
 
-const INIT_COUNTS: Record<LeafId, number> = { bookP: 23, slo: 64, lowoff: 118, bookS: 41 };
+const INIT_COUNTS: Record<LeafId, number> = { bookP: 31, slo: 17, lowoff: 142, bookS: 48 };
 
 export function RoutingTree() {
   const [leadIdx, setLeadIdx] = useState(0);
   const [step, setStep] = useState(0);
   const [counts, setCounts] = useState<Record<LeafId, number>>(INIT_COUNTS);
-  const [paused, setPaused] = useState(false);
   const counted = useRef(false);
 
   const lead = LEADS[leadIdx]!;
@@ -261,7 +264,7 @@ export function RoutingTree() {
 
   // drive the state machine
   useEffect(() => {
-    if (reduce || paused) return;
+    if (reduce) return;
     let t: ReturnType<typeof setTimeout>;
     if (step < 4) {
       t = setTimeout(() => setStep((s) => s + 1), STEP_MS[step]);
@@ -273,7 +276,7 @@ export function RoutingTree() {
       }, STEP_MS[4]);
     }
     return () => clearTimeout(t);
-  }, [step, leadIdx, reduce, paused]);
+  }, [step, leadIdx, reduce]);
 
   // tick the leaf counter exactly once, when the lead books
   useEffect(() => {
@@ -290,11 +293,7 @@ export function RoutingTree() {
   const totalBooked = counts.bookP + counts.bookS;
 
   return (
-    <div
-      className="ez-tree-frame"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <div className="ez-tree-frame">
       <div className="ez-tree-frame__top">
         <span className="ez-tree-live">
           <span className="ez-live-dot" aria-hidden />
@@ -410,7 +409,7 @@ export function RoutingTree() {
                 {isLeaf && (
                   <span className="ez-tnode__tally">
                     <span className="ez-tnode__tally-dot" aria-hidden />
-                    {n.book ? 'booked' : n.id === 'lowoff' ? 'checkout' : 'sold'} ·{' '}
+                    {n.book ? 'booked' : n.id === 'lowoff' ? 'checkout' : 'queued'} ·{' '}
                     <span className="tabular-nums">{counts[n.id as LeafId]}</span>
                   </span>
                 )}
