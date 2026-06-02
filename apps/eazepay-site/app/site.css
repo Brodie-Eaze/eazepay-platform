@@ -1451,12 +1451,97 @@
   }
 }
 
+/* hero constellation — pointer parallax tilt (driven by --px/--py from JS) */
+.ez-core-tilt {
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--px, 0) * 11deg)) rotateX(calc(var(--py, 0) * -9deg));
+  will-change: transform;
+}
+
+/* routing tree — a slow scan beam sweeping the console */
+.ez-tree__scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -15%;
+  width: 16%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(var(--brand-sky) / 0.06) 42%,
+    rgb(var(--brand-sky-soft) / 0.14) 50%,
+    rgb(var(--brand-sky) / 0.06) 58%,
+    transparent
+  );
+  mix-blend-mode: screen;
+  animation: ez-tree-scan 6.5s ease-in-out infinite;
+}
+@keyframes ez-tree-scan {
+  0% {
+    left: -16%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: 104%;
+    opacity: 0;
+  }
+}
+
+/* leaf lights up at the exact moment its lead lands (delay = lead.begin) */
+.ez-leaf-live {
+  animation: ez-leaf-arrive 8s ease-out infinite;
+}
+@keyframes ez-leaf-arrive {
+  0%,
+  85% {
+    box-shadow: 0 0 0 0 rgb(var(--brand-sky) / 0);
+  }
+  90% {
+    box-shadow:
+      0 0 0 1px rgb(var(--brand-sky-soft) / 0.75),
+      0 0 36px -2px rgb(var(--brand-sky) / 0.85);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--brand-sky) / 0);
+  }
+}
+.ez-tnode--book.ez-leaf-live {
+  animation-name: ez-leaf-arrive-book;
+}
+@keyframes ez-leaf-arrive-book {
+  0%,
+  85% {
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 0);
+  }
+  90% {
+    box-shadow:
+      0 0 0 1px rgb(110 231 183 / 0.8),
+      0 0 36px -2px rgb(52 211 153 / 0.85);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ez-tedge--flow,
   .ez-tnode__tally-dot,
   .ez-tnode--hub,
+  .ez-tree__scan,
+  .ez-leaf-live,
   .ez-core,
   .ez-offer-win {
     animation: none;
+  }
+  .ez-core-tilt {
+    transform: none;
   }
 }

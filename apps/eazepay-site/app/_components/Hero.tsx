@@ -1,61 +1,6 @@
-import type { CSSProperties } from 'react';
-import { ArrowRight, LogoMark } from './icons';
+import { ArrowRight } from './icons';
+import { OrbitScene } from './OrbitScene';
 import { Container, Eyebrow, ctaPrimary, ctaGhostDark } from './primitives';
-
-type OrbitNode = {
-  label: string;
-  kind: 'agent' | 'vertical';
-  deg: number; // ring angle, clockwise from 12 o'clock
-  tz: number; // px of 3D depth
-  d: string; // float animation delay
-};
-
-// Ten nodes on ONE even ring around the orchestration core: three vertical
-// brands across the prominent top arc, then the seven agents flowing clockwise
-// around the rest of the ring in pipeline order (intake → … → attribution).
-// Angles are evenly spaced so the constellation reads as an intentional ring,
-// not a scatter; positions are projected geometrically below.
-const RING: OrbitNode[] = [
-  // vertical brands — top arc, prominent white pills (symmetric about 12 o'clock)
-  { label: 'CoachPay', kind: 'vertical', deg: -52, tz: 40, d: '1.0s' },
-  { label: 'MedPay', kind: 'vertical', deg: 0, tz: 44, d: '0.4s' },
-  { label: 'TradePay', kind: 'vertical', deg: 52, tz: 40, d: '1.5s' },
-  // seven agents — clockwise from top-right around the ring, dark pills
-  { label: 'PRISM', kind: 'agent', deg: 84, tz: 30, d: '0s' },
-  { label: 'VEGA', kind: 'agent', deg: 116, tz: 26, d: '2.4s' },
-  { label: 'ORACLE', kind: 'agent', deg: 148, tz: 28, d: '1.1s' },
-  { label: 'HELIX', kind: 'agent', deg: 180, tz: 24, d: '2.2s' },
-  { label: 'NEXUS', kind: 'agent', deg: 212, tz: 28, d: '0.7s' },
-  { label: 'FLUX', kind: 'agent', deg: 244, tz: 26, d: '1.7s' },
-  { label: 'ECHO', kind: 'agent', deg: 276, tz: 30, d: '2.7s' },
-];
-
-// Horizontal radius is tighter than vertical so the wide pills never clip the
-// frame; both land on ~the 72% orbit ring. Projected once, reused for the node
-// and its connector spoke.
-const RX = 32;
-const RY = 36;
-const NODES = RING.map((n, i) => {
-  const rad = (n.deg * Math.PI) / 180;
-  return {
-    ...n,
-    i,
-    x: 50 + RX * Math.sin(rad),
-    y: 50 - RY * Math.cos(rad),
-  };
-});
-
-function spoke(x: number, y: number, i: number): CSSProperties {
-  const dx = x - 50;
-  const dy = y - 50;
-  const len = Math.sqrt(dx * dx + dy * dy);
-  const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
-  return {
-    width: `${len}%`,
-    transform: `rotate(${ang}deg)`,
-    '--sd': `${(i * 0.28).toFixed(2)}s`,
-  } as CSSProperties;
-}
 
 export function Hero() {
   return (
@@ -101,59 +46,8 @@ export function Hero() {
           </ul>
         </div>
 
-        {/* ---- 3D orchestration core ---- */}
-        <div className="relative">
-          <div className="ez-core-scene relative mx-auto aspect-square w-full max-w-[460px]">
-            <div className="ez-core-stage absolute inset-0">
-              {/* faint orbit path with a sweeping radar arc */}
-              <span className="ez-orbit-ring" aria-hidden />
-
-              {/* connector spokes (base plane) */}
-              {NODES.map((n) => (
-                <span
-                  key={`s-${n.label}`}
-                  className="ez-spoke"
-                  style={spoke(n.x, n.y, n.i)}
-                  aria-hidden
-                />
-              ))}
-
-              {/* concentric pulse rings */}
-              <span className="ez-core__ring" aria-hidden />
-              <span className="ez-core__ring ez-core__ring--2" aria-hidden />
-              <span className="ez-core__ring ez-core__ring--3" aria-hidden />
-
-              {/* rotating energy aura just outside the core */}
-              <span className="ez-core-halo" aria-hidden />
-
-              {/* the glowing centre */}
-              <div className="ez-core" aria-hidden>
-                <span className="ez-core__mark">
-                  <LogoMark size={30} className="text-white" />
-                </span>
-              </div>
-
-              {/* orbiting agent + vertical nodes */}
-              {NODES.map((n) => (
-                <span
-                  key={n.label}
-                  className={`ez-node${n.kind === 'vertical' ? ' ez-node--vertical' : ''}`}
-                  style={
-                    {
-                      left: `${n.x}%`,
-                      top: `${n.y}%`,
-                      '--tz': `${n.tz}px`,
-                      '--nd': n.d,
-                    } as CSSProperties
-                  }
-                >
-                  <span className="ez-node__dot" aria-hidden />
-                  {n.label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* ---- 3D orchestration core (interactive parallax) ---- */}
+        <OrbitScene />
       </Container>
 
       {/* fade into the next (light) section */}

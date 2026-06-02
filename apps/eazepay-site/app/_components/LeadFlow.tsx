@@ -26,6 +26,7 @@ type Node = {
   book?: boolean;
   score?: string[];
   tally?: string;
+  arrive?: string; // when this leaf's lead lands (= that lead's `begin`)
 };
 
 // far-left funnel sources feeding the capture node
@@ -98,6 +99,7 @@ const NODES: Node[] = [
     kind: 'leaf',
     book: true,
     tally: 'booked · 23',
+    arrive: '0s',
   },
   {
     id: 'slo',
@@ -109,6 +111,7 @@ const NODES: Node[] = [
     sub: 'instant · funds the ads',
     kind: 'leaf',
     tally: 'sold · 64',
+    arrive: '1.6s',
   },
   {
     id: 'lowoff',
@@ -120,6 +123,7 @@ const NODES: Node[] = [
     sub: 'instant checkout',
     kind: 'leaf',
     tally: 'checkout · 118',
+    arrive: '4.8s',
   },
   {
     id: 'bookS',
@@ -132,6 +136,7 @@ const NODES: Node[] = [
     kind: 'leaf',
     book: true,
     tally: 'booked · 41',
+    arrive: '3.2s',
   },
 ];
 
@@ -278,6 +283,7 @@ export function LeadFlow() {
 
             <div className="ez-tree" style={{ aspectRatio: `${VB.w} / ${VB.h}` }}>
               <div className="ez-tree__glow" aria-hidden />
+              <div className="ez-tree__scan" aria-hidden />
 
               {/* edges (behind the nodes) */}
               <svg
@@ -351,7 +357,10 @@ export function LeadFlow() {
                     } as CSSProperties
                   }
                 >
-                  <div className={cardClass(n)}>
+                  <div
+                    className={`${cardClass(n)}${n.arrive ? ' ez-leaf-live' : ''}`}
+                    style={n.arrive ? ({ animationDelay: n.arrive } as CSSProperties) : undefined}
+                  >
                     <div className="ez-tnode__code">{n.code}</div>
                     <div className="ez-tnode__title">{n.title}</div>
                     <div className="ez-tnode__sub">{n.sub}</div>
