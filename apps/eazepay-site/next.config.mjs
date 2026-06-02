@@ -2,6 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@eazepay/ui'],
+  // Standalone output for the Railway Docker image: Next traces only the
+  // files the server needs and writes a self-contained server.js. The trace
+  // root is the monorepo root so the workspace-linked @eazepay/ui resolves
+  // inside the container (mirrors partner-portal).
+  output: 'standalone',
+  outputFileTracingRoot: new URL('../..', import.meta.url).pathname,
   // Resolve `.js` specifiers in the workspace lib barrels back to their
   // `.ts` sources (NodeNext tsc emits the `.js`; webpack can't find the
   // on-disk `.ts` without this alias). Mirrors consumer-web / partner-portal.
