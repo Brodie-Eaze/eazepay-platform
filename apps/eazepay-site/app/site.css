@@ -2154,3 +2154,45 @@
     font-size: 8.5px;
   }
 }
+
+/* ============================================================
+   Ad signal — qualified-only pixel heatmap (Train your ads section)
+   ============================================================ */
+.ez-pixel-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+}
+.ez-pixel-cell {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background: rgb(255 255 255 / 0.035);
+  border: 1px solid rgb(255 255 255 / 0.05);
+}
+.ez-pixel-cell--on {
+  background: rgb(var(--brand-sky) / 0.5);
+  border-color: rgb(var(--brand-sky-soft) / 0.45);
+  box-shadow: 0 0 8px rgb(var(--brand-sky) / 0.35);
+  animation: ez-pixel-pulse 3.4s ease-in-out infinite var(--pd, 0s);
+}
+.ez-pixel-cell--hot {
+  background: linear-gradient(180deg, rgb(var(--brand-sky-soft)), rgb(var(--brand-sky)));
+  border-color: rgb(var(--brand-sky-soft) / 0.7);
+  box-shadow: 0 0 12px rgb(var(--brand-sky) / 0.6);
+  animation: ez-pixel-pulse 3.4s ease-in-out infinite var(--pd, 0s);
+}
+@keyframes ez-pixel-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ez-pixel-cell--on,
+  .ez-pixel-cell--hot {
+    animation: none;
+  }
+}

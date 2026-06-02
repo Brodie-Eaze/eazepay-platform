@@ -270,11 +270,12 @@ export const PILLARS: Array<{
     n: '01',
     tag: 'PREQUALIFICATION',
     title: 'Prequalify on real financial data, in seconds.',
-    body: 'The smart form pulls live credit and income on a soft inquiry, then makes a decision on your rules. No credit impact, no waiting, applicants see where they stand before they ever commit.',
+    body: 'The smart form pulls live credit and income on a soft inquiry, then decisions it on your rules. No credit impact, no waiting. Applicants see where they stand, and your sales team knows exactly who they are speaking with before they pick up the call.',
     bullets: [
       'Soft pull prequal · zero credit impact',
       'Credit, income and affordability pulled live · under 2s',
       'Decisions on your thresholds · routed automatically',
+      'Your sales team sees who they are speaking with before the call',
     ],
     metric: 'Soft pull · under 2s',
   },

@@ -4,6 +4,7 @@ import { TrustBar } from './_components/TrustBar';
 import { Orchestration } from './_components/Orchestration';
 import { Pillars } from './_components/Pillars';
 import { LeadFlow } from './_components/LeadFlow';
+import { AdSignal } from './_components/AdSignal';
 import { Agents } from './_components/Agents';
 import { Marketplace } from './_components/Marketplace';
 import { DealScope } from './_components/DealScope';
@@ -23,6 +24,7 @@ export default function Page() {
         <Orchestration />
         <Pillars />
         <LeadFlow />
+        <AdSignal />
         <Agents />
         <Marketplace />
         <DealScope />
