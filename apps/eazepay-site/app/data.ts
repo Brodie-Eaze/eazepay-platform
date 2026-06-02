@@ -24,7 +24,7 @@ export const NAV_LINKS = [
 export const TICKER: Array<{ value: string; label: string; delta: string }> = [
   { value: '$240M+', label: 'Orchestrated', delta: 'lifetime GMV · processing + financing' },
   { value: 'Curated', label: 'Lender marketplace', delta: 'prime → near-prime · soft pull' },
-  { value: '<2s', label: 'Avg decision', delta: 'parallel waterfall · p95' },
+  { value: '<10s', label: 'Avg decision', delta: 'parallel waterfall · p95' },
   { value: '99.8%', label: 'Uptime SLA', delta: 'rolling 12mo · audited' },
 ];
 
