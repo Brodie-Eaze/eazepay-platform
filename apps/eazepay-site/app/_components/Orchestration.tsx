@@ -32,13 +32,23 @@ export function Orchestration() {
                 A processor here, lenders there, applications you can&apos;t track, and clients
                 qualified off form questions alone.
               </p>
-              <ul className="mt-6 space-y-4">
+              <ul className="mt-6 space-y-5">
                 {STITCHED.map((row) => (
-                  <li key={row.stat} className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                    <span className="font-mono text-[13px] font-semibold text-fg-muted sm:w-[116px] sm:shrink-0">
-                      {row.stat}
+                  <li key={row.stat} className="flex gap-3">
+                    <span
+                      className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-fg-muted/10 text-fg-muted"
+                      aria-hidden
+                    >
+                      <span className="h-[2px] w-2 rounded-full bg-current" />
                     </span>
-                    <span className="text-[14px] leading-snug text-fg-secondary">{row.label}</span>
+                    <div>
+                      <div className="text-[14px] font-semibold leading-snug text-fg">
+                        {row.stat}
+                      </div>
+                      <p className="mt-1 text-[13.5px] leading-relaxed text-fg-secondary">
+                        {row.label}
+                      </p>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -63,14 +73,23 @@ export function Orchestration() {
                 One financial infrastructure behind every brand, prequalification, agents, lenders,
                 orchestration, application tracking and payments, together.
               </p>
-              <ul className="relative mt-6 space-y-4">
+              <ul className="relative mt-6 space-y-5">
                 {UNIFIED.map((row) => (
-                  <li key={row.stat} className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-                    <span className="flex items-start gap-1.5 font-mono text-[13px] font-semibold text-brand-sky-soft sm:w-[124px] sm:shrink-0">
-                      <Check size={14} className="mt-0.5 shrink-0" />
-                      {row.stat}
+                  <li key={row.stat} className="flex gap-3">
+                    <span
+                      className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-sky/15 text-brand-sky-soft"
+                      aria-hidden
+                    >
+                      <Check size={12} />
                     </span>
-                    <span className="text-[14px] leading-snug text-white/80">{row.label}</span>
+                    <div>
+                      <div className="text-[14px] font-semibold leading-snug text-white">
+                        {row.stat}
+                      </div>
+                      <p className="mt-1 text-[13.5px] leading-relaxed text-white/75">
+                        {row.label}
+                      </p>
+                    </div>
                   </li>
                 ))}
               </ul>
