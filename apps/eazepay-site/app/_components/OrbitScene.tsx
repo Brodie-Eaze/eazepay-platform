@@ -43,6 +43,7 @@ function spoke(x: number, y: number, i: number): CSSProperties {
     width: `${len}%`,
     transform: `rotate(${ang}deg)`,
     '--sd': `${(i * 0.28).toFixed(2)}s`,
+    '--se': `${(0.42 + i * 0.04).toFixed(2)}s`,
   } as CSSProperties;
 }
 
@@ -136,6 +137,7 @@ export function OrbitScene() {
                     top: `${n.y}%`,
                     '--tz': `${n.tz}px`,
                     '--nd': n.d,
+                    '--ne': `${(0.7 + n.i * 0.05).toFixed(2)}s`,
                   } as CSSProperties
                 }
               >

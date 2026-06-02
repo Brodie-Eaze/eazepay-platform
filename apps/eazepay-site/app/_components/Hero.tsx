@@ -1,30 +1,45 @@
+import type { CSSProperties } from 'react';
 import { ArrowRight } from './icons';
+import { HeroSpotlight } from './HeroSpotlight';
 import { OrbitScene } from './OrbitScene';
 import { Container, Eyebrow, ctaPrimary, ctaGhostDark } from './primitives';
+
+const rise = (i: number): CSSProperties => ({ '--ri': i }) as CSSProperties;
 
 export function Hero() {
   return (
     <section id="top" className="ez-dark relative overflow-hidden">
+      {/* atmosphere: drifting aurora + cursor spotlight, behind the grid */}
+      <div className="ez-aurora" aria-hidden />
+      <HeroSpotlight />
       <div className="ez-grid-floor" aria-hidden />
 
       <Container className="relative z-[2] grid items-center gap-14 py-20 lg:grid-cols-[1.04fr_0.96fr] lg:gap-8 lg:py-28">
         {/* ---- copy column ---- */}
         <div>
-          <Eyebrow>The orchestration platform</Eyebrow>
+          <div className="ez-hero-rise" style={rise(0)}>
+            <Eyebrow>The orchestration platform</Eyebrow>
+          </div>
 
-          <h1 className="mt-5 text-[40px] font-bold leading-[1.05] tracking-[-0.02em] text-white sm:text-[52px] lg:text-[60px]">
+          <h1
+            className="ez-hero-rise mt-5 text-[40px] font-bold leading-[1.05] tracking-[-0.02em] text-white sm:text-[52px] lg:text-[60px]"
+            style={rise(1)}
+          >
             One rail beneath
             <br />
             <span className="ez-gradient-text">every payment brand.</span>
           </h1>
 
-          <p className="mt-6 max-w-[36rem] text-[16px] leading-relaxed text-white/70">
+          <p
+            className="ez-hero-rise mt-6 max-w-[36rem] text-[16px] leading-relaxed text-white/70"
+            style={rise(2)}
+          >
             EazePay is the orchestration layer — card processing, a lender marketplace, seven
             autonomous agents and merchant-direct settlement on a single API. MedPay, TradePay and
             CoachPay are vertical brands riding the same rail.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="ez-hero-rise mt-8 flex flex-wrap items-center gap-3" style={rise(3)}>
             <a href="#cta" className={ctaPrimary}>
               Start orchestrating
               <ArrowRight size={16} />
@@ -34,7 +49,10 @@ export function Hero() {
             </a>
           </div>
 
-          <ul className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-[12.5px] font-medium text-white/55">
+          <ul
+            className="ez-hero-rise mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-[12.5px] font-medium text-white/55"
+            style={rise(4)}
+          >
             {['SOC 2 Type II', 'PCI-DSS Level 1', 'FCRA-aware agents', 'Lender marketplace'].map(
               (t) => (
                 <li key={t} className="flex items-center gap-2">
@@ -46,7 +64,7 @@ export function Hero() {
           </ul>
         </div>
 
-        {/* ---- 3D orchestration core (interactive parallax) ---- */}
+        {/* ---- 3D orchestration core (interactive parallax + boot-up assembly) ---- */}
         <OrbitScene />
       </Container>
 
