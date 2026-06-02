@@ -824,9 +824,9 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 300px;
+  max-width: 312px;
   margin: 0 auto;
-  aspect-ratio: 300 / 626;
+  aspect-ratio: 300 / 652;
   padding: 11px;
   border-radius: 46px;
   background: linear-gradient(155deg, #232c43 0%, #0a0f20 58%);

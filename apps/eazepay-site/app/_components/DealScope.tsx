@@ -89,41 +89,39 @@ export function DealScope() {
               </div>
 
               {/* body */}
-              <div className="flex-1 space-y-3 overflow-hidden px-4 py-3">
+              <div className="flex-1 space-y-4 overflow-hidden px-4 py-4">
                 {/* deal card */}
-                <div className="ez-phone-card relative overflow-hidden rounded-2xl border border-black/[0.04] bg-white p-3.5">
+                <div className="ez-phone-card relative overflow-hidden rounded-2xl border border-black/[0.04] bg-white p-4">
                   <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-brand-sky-deep via-brand-sky to-brand-sky-soft" />
                   <div className="flex items-center gap-3">
-                    <span className="ez-phone-avatar grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-brand-sky-deep to-brand-sky text-[12.5px] font-bold text-white">
+                    <span className="ez-phone-avatar grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-sky-deep to-brand-sky text-[12.5px] font-bold text-white">
                       SM
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[15px] md:text-[14px] font-bold leading-tight text-fg">
-                        Sarah M.
-                      </div>
-                      <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-brand-sky-wash px-2 py-0.5 text-[10.5px] md:text-[9.5px] font-semibold text-brand-sky-deep">
-                        MedPay · Dental implants
-                      </div>
+                    <div className="min-w-0 flex-1 truncate text-[15px] font-bold leading-tight text-fg">
+                      Sarah M.
                     </div>
-                    <div className="text-right">
-                      <div className="text-[19px] md:text-[17px] font-extrabold leading-none tracking-tight tabular-nums text-fg">
-                        $12,400
-                      </div>
-                      <div className="mt-1 text-[10.5px] md:text-[9.5px] font-medium text-fg-muted">
-                        L-8423
-                      </div>
+                    <div className="shrink-0 text-[19px] font-extrabold leading-none tracking-tight tabular-nums text-fg">
+                      $12,400
                     </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-black/[0.06] pt-2.5">
+                    <span className="truncate text-[11px] font-medium text-fg-secondary">
+                      MedPay · Dental implants
+                    </span>
+                    <span className="shrink-0 font-mono text-[10.5px] font-medium text-fg-muted">
+                      L-8423
+                    </span>
                   </div>
                 </div>
 
                 {/* soft-pull underwriting factors */}
                 <div>
-                  <div className="mb-2 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
+                  <div className="mb-3 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
                     Soft-pull check
                   </div>
                   <div className="relative">
                     <span className="ez-step-rail" />
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {CHECKS.map((c) => (
                         <li key={c.label} className="flex items-center gap-2.5">
                           <span className="ez-step-dot">
@@ -143,17 +141,17 @@ export function DealScope() {
 
                 {/* best offers */}
                 <div>
-                  <div className="mb-2 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
+                  <div className="mb-3 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
                     Best offers · soft pull
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {OFFERS.map((o, i) => (
                       <div
                         key={o.name}
                         className={
                           o.win
-                            ? 'ez-offer-win rounded-xl border border-brand-sky/40 bg-gradient-to-br from-brand-sky-wash to-white p-2.5'
-                            : 'ez-offer rounded-xl border border-black/[0.04] bg-white p-2.5'
+                            ? 'ez-offer-win rounded-xl border border-brand-sky/40 bg-gradient-to-br from-brand-sky-wash to-white p-3'
+                            : 'ez-offer rounded-xl border border-black/[0.04] bg-white p-3'
                         }
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -193,13 +191,13 @@ export function DealScope() {
                     <span className="ez-appr__indet" />
                   </div>
                   <div className="ez-appr__done">
-                    <span className="grid h-6 w-6 place-items-center rounded-full bg-white/20 ring-1 ring-white/30">
-                      <Check size={13} />
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/20 ring-1 ring-white/30">
+                      <Check size={12} />
                     </span>
-                    <span className="text-[13.5px] md:text-[12.5px] font-bold">
+                    <span className="truncate text-[12.5px] md:text-[12px] font-bold">
                       Approved · merchant-direct
                     </span>
-                    <span className="ml-auto font-mono text-[11px] md:text-[10px] font-semibold text-white/85">
+                    <span className="ml-auto shrink-0 whitespace-nowrap font-mono text-[10px] md:text-[9.5px] font-semibold text-white/85">
                       5.9% · 48–72hr
                     </span>
                   </div>
