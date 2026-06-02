@@ -2088,3 +2088,29 @@
     height: 50px;
   }
 }
+
+/* ============================================================
+   MOBILE — hero constellation: the orbit shrinks with the viewport,
+   so shrink the node pills to match and stop adjacent brands colliding.
+   ============================================================ */
+@media (max-width: 520px) {
+  .ez-core-scene .ez-node {
+    padding: 4px 8px;
+    gap: 4px;
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  .ez-core-scene .ez-node__dot {
+    width: 5px;
+    height: 5px;
+  }
+  .ez-core-scene .ez-node__dot::before {
+    inset: -2px;
+  }
+}
+@media (max-width: 400px) {
+  .ez-core-scene .ez-node {
+    padding: 3px 7px;
+    font-size: 8.5px;
+  }
+}
