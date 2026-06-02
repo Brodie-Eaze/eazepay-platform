@@ -38,7 +38,7 @@ export function Pillars() {
                     {p.title}
                   </h3>
                   <p className="mt-3 text-[14px] leading-relaxed text-fg-secondary">{p.body}</p>
-                  <ul className="mt-5 space-y-2.5">
+                  <ul className="mt-5 space-y-2.5 pb-6">
                     {p.bullets.map((b) => (
                       <li
                         key={b}

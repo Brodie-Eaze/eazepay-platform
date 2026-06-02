@@ -272,7 +272,7 @@ export const PILLARS: Array<{
     title: 'Prequalify on real financial data, in seconds.',
     body: 'The smart form pulls live credit and income on a soft inquiry, then makes a decision on your rules. No credit impact, no waiting, applicants see where they stand before they ever commit.',
     bullets: [
-      'Soft-pull prequal · zero credit impact',
+      'Soft pull prequal · zero credit impact',
       'Credit, income and affordability pulled live · under 2s',
       'Decisions on your thresholds · routed automatically',
     ],
@@ -285,7 +285,7 @@ export const PILLARS: Array<{
     body: 'Intake, enrichment, scoring, routing and attribution run as agents inside the platform, no separate AI stack to buy. Each has one job, a measurable output and an immutable, exportable audit trail.',
     bullets: [
       'Defined role + scope + measurable output per agent',
-      'Real-time scoring, routing and attribution',
+      'Real time scoring, routing and attribution',
       'Every action logged to an immutable, exportable trail',
     ],
     metric: '7 agents · one platform',
@@ -297,7 +297,7 @@ export const PILLARS: Array<{
     body: 'Every application waterfalls through a curated lender marketplace, prime through near prime, in parallel. The best offer wins by total cost of credit and the lender disburses merchant direct.',
     bullets: [
       'Parallel quoting across a curated lender panel',
-      'Best-fit offers ranked by total cost of credit',
+      'Best fit offers ranked by total cost of credit',
       'Merchant direct disbursement · 48 to 72hr',
     ],
     metric: 'Parallel quoting · merchant direct',
@@ -305,14 +305,14 @@ export const PILLARS: Array<{
   {
     n: '04',
     tag: 'PAYMENT PROCESSING',
-    title: 'Take the payment on the platform too.',
-    body: 'Card payments run through EazePay itself, so processing and financing sit on the same rail, under one contract. One platform takes the money and funds the deal.',
+    title: 'Run your deals on better processing rates.',
+    body: 'Process your card payments through our partner processor and tap into preferred industry rates. Processing and financing sit side by side, so you take the payment and offer financing in the same flow.',
     bullets: [
-      'All major card networks · one integration',
-      'Tokenized · card data never touches your servers',
-      'Merchant direct settlement',
+      'Preferred industry rates through our partner processor',
+      'All major card networks',
+      'Take payments and offer financing side by side',
     ],
-    metric: 'Cards on the same rail',
+    metric: 'Partner processor · better rates',
   },
 ];
 
@@ -373,7 +373,7 @@ export const INDUSTRIES: Array<{
   },
   {
     name: 'VetPay',
-    desc: 'Pet-care financing for veterinary clinics, specialty and emergency animal hospitals.',
+    desc: 'Pet care financing for veterinary clinics, specialty and emergency animal hospitals.',
     metric: '$3k avg ticket',
     examples: 'General vet · Surgery · Specialty · Emergency',
   },
@@ -429,7 +429,7 @@ export const FAQ: Array<{ q: string; a: string }> = [
   },
   {
     q: 'How does payment processing work?',
-    a: 'Card payments run through the EazePay platform itself, so processing and financing sit on the same rail under one contract. Cards are tokenized and never touch your servers, and funds are settled merchant direct to your business account.',
+    a: 'You process your card payments through our partner processor, which gives you access to preferred industry rates. We connect you to the processor and keep it side by side with financing, so you can take the payment and offer financing in the same flow. The processor handles the card transaction and settles funds to your business account.',
   },
   {
     q: 'How fast do merchants get funded?',

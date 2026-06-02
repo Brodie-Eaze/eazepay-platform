@@ -36,8 +36,7 @@ export function TrustBar() {
           ))}
         </div>
         <p className="mt-6 text-center text-[12px] text-fg-muted">
-          Processor, bank-partner, bureau, identity and attribution rails, orchestrated under one
-          contract.
+          Processor, bank-partner, bureau, identity and attribution rails, in one platform.
         </p>
       </div>
     </section>
