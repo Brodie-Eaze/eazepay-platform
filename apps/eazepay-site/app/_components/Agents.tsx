@@ -89,9 +89,9 @@ export function Agents() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 flex items-start gap-2 rounded-xl bg-brand-ink px-3 py-2.5">
+                  <div className="mt-3 flex items-start gap-2 rounded-xl border border-border bg-bg-muted px-3 py-2.5">
                     <span className="ez-live-dot mt-1.5 shrink-0" aria-hidden />
-                    <span className="block text-[11px] leading-relaxed text-brand-sky-soft">
+                    <span className="block text-[11px] leading-relaxed text-fg-secondary">
                       {a.lastAction}
                     </span>
                   </div>

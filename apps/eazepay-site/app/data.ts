@@ -274,7 +274,7 @@ export const PILLARS: Array<{
   {
     n: '03',
     tag: 'MARKETPLACE',
-    title: 'A lender marketplace. Best offer wins.',
+    title: 'Lender marketplace waterfall.',
     body: 'Every application waterfalls through a curated lender marketplace — prime through near-prime, in parallel. The best offer wins by total cost of credit and the lender disburses merchant-direct.',
     bullets: [
       'Parallel quoting across a curated lender panel',
