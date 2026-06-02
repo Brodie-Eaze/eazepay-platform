@@ -24,10 +24,10 @@ export default function Page() {
         <Orchestration />
         <Pillars />
         <LeadFlow />
-        <AdSignal />
         <Agents />
         <Marketplace />
         <DealScope />
+        <AdSignal />
         <Industries />
         <Proof />
         <Faq />

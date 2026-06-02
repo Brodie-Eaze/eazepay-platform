@@ -25,7 +25,7 @@ const CELLS = Array.from({ length: 84 }, (_, i) => {
 
 export function AdSignal() {
   return (
-    <section id="ad-signal" className="ez-dark ez-section-join relative overflow-hidden py-24">
+    <section id="ad-signal" className="ez-dark relative overflow-hidden py-24">
       <div className="ez-grid-floor" aria-hidden />
       <Container className="relative z-[2] grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
         {/* ---- copy ---- */}
