@@ -9,24 +9,26 @@ type OrbitNode = {
   d: string; // float animation delay
 };
 
-// Eleven nodes on ONE even ring around the orchestration core: four vertical
-// brand wrappers across the top arc, then the seven agents flowing clockwise.
+// Eleven nodes evenly spaced on ONE true ring (360/11 ≈ 32.7° apart, perfectly
+// symmetric about the vertical axis): four brand wrappers grouped across the top,
+// the seven agents filling the rest clockwise. Uniform depth per group so each
+// sits cleanly on the ring.
 const RING: OrbitNode[] = [
-  { label: 'CoachPay', kind: 'vertical', deg: -66, tz: 40, d: '1.0s' },
-  { label: 'MedPay', kind: 'vertical', deg: -22, tz: 44, d: '0.4s' },
-  { label: 'TradePay', kind: 'vertical', deg: 22, tz: 44, d: '1.5s' },
-  { label: 'VetPay', kind: 'vertical', deg: 66, tz: 40, d: '0.8s' },
-  { label: 'PRISM', kind: 'agent', deg: 95, tz: 30, d: '0s' },
-  { label: 'VEGA', kind: 'agent', deg: 123, tz: 26, d: '2.4s' },
-  { label: 'ORACLE', kind: 'agent', deg: 152, tz: 28, d: '1.1s' },
-  { label: 'HELIX', kind: 'agent', deg: 180, tz: 24, d: '2.2s' },
-  { label: 'NEXUS', kind: 'agent', deg: 208, tz: 28, d: '0.7s' },
-  { label: 'FLUX', kind: 'agent', deg: 237, tz: 26, d: '1.7s' },
-  { label: 'ECHO', kind: 'agent', deg: 265, tz: 30, d: '2.7s' },
+  { label: 'CoachPay', kind: 'vertical', deg: -49.1, tz: 38, d: '1.0s' },
+  { label: 'MedPay', kind: 'vertical', deg: -16.4, tz: 38, d: '0.4s' },
+  { label: 'TradePay', kind: 'vertical', deg: 16.4, tz: 38, d: '1.5s' },
+  { label: 'VetPay', kind: 'vertical', deg: 49.1, tz: 38, d: '0.8s' },
+  { label: 'PRISM', kind: 'agent', deg: 81.8, tz: 28, d: '0s' },
+  { label: 'VEGA', kind: 'agent', deg: 114.5, tz: 28, d: '2.4s' },
+  { label: 'ORACLE', kind: 'agent', deg: 147.3, tz: 28, d: '1.1s' },
+  { label: 'HELIX', kind: 'agent', deg: 180, tz: 28, d: '2.2s' },
+  { label: 'NEXUS', kind: 'agent', deg: 212.7, tz: 28, d: '0.7s' },
+  { label: 'FLUX', kind: 'agent', deg: 245.5, tz: 28, d: '1.7s' },
+  { label: 'ECHO', kind: 'agent', deg: 278.2, tz: 28, d: '2.7s' },
 ];
 
-const RX = 32;
-const RY = 36;
+const RX = 35;
+const RY = 35;
 const NODES = RING.map((n, i) => {
   const rad = (n.deg * Math.PI) / 180;
   return { ...n, i, x: 50 + RX * Math.sin(rad), y: 50 - RY * Math.cos(rad) };
