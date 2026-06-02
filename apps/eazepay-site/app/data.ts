@@ -305,13 +305,13 @@ export const PILLARS: Array<{
 /* ------------------------------ marketplace ------------------------------- */
 
 export const LENDERS: Array<{ name: string; tier: string; rate: string; fill: number }> = [
-  { name: 'Cross River Bank', tier: 'PRIME', rate: '5.9%', fill: 0.92 },
-  { name: 'engine.tech', tier: 'PRIME', rate: '6.4%', fill: 0.84 },
-  { name: 'FinWise', tier: 'PRIME', rate: '6.9%', fill: 0.78 },
-  { name: 'Alpine Credit', tier: 'PRIME', rate: '7.2%', fill: 0.71 },
-  { name: 'HSP Medical', tier: 'NEAR-PRIME', rate: '8.9%', fill: 0.6 },
-  { name: 'EazePay Direct', tier: 'NEAR-PRIME', rate: '9.4%', fill: 0.52 },
-  { name: 'Apex Lending', tier: 'NEAR-PRIME', rate: '10.4%', fill: 0.44 },
+  { name: 'Lender 1', tier: 'PRIME', rate: '5.9%', fill: 0.92 },
+  { name: 'Lender 2', tier: 'PRIME', rate: '6.4%', fill: 0.84 },
+  { name: 'Lender 3', tier: 'PRIME', rate: '6.9%', fill: 0.78 },
+  { name: 'Lender 4', tier: 'PRIME', rate: '7.2%', fill: 0.71 },
+  { name: 'Lender 5', tier: 'NEAR-PRIME', rate: '8.9%', fill: 0.6 },
+  { name: 'Lender 6', tier: 'NEAR-PRIME', rate: '9.4%', fill: 0.52 },
+  { name: 'Lender 7', tier: 'NEAR-PRIME', rate: '10.4%', fill: 0.44 },
 ];
 
 export const INTEGRATIONS: string[] = [

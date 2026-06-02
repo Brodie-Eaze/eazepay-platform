@@ -20,9 +20,9 @@ const CHECKS: Array<{ label: string; value: string }> = [
 
 /** Three best-fit offers (winner first) — representative, mirrors the marketplace. */
 const OFFERS: Array<{ name: string; rate: string; fill: number; win?: boolean }> = [
-  { name: 'Cross River Bank', rate: '5.9%', fill: 0.95, win: true },
-  { name: 'FinWise', rate: '6.9%', fill: 0.78 },
-  { name: 'Alpine Credit', rate: '7.2%', fill: 0.71 },
+  { name: 'Lender 1', rate: '5.9%', fill: 0.95, win: true },
+  { name: 'Lender 2', rate: '6.9%', fill: 0.78 },
+  { name: 'Lender 3', rate: '7.2%', fill: 0.71 },
 ];
 
 export function DealScope() {
