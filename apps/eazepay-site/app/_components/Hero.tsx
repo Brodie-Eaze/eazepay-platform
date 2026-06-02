@@ -36,8 +36,8 @@ export function Hero() {
           </p>
 
           <div className="ez-hero-rise mt-8 flex flex-wrap items-center gap-3" style={rise(3)}>
-            <a href="#cta" className={ctaPrimary}>
-              Start orchestrating
+            <a href="/book" className={ctaPrimary}>
+              Book a call
               <ArrowRight size={16} />
             </a>
             <a href="#flow" className={ctaGhostDark}>

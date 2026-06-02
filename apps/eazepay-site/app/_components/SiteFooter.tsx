@@ -5,33 +5,33 @@ const FOOTER_COLS: Array<{ title: string; links: Array<{ label: string; href: st
   {
     title: 'Platform',
     links: [
-      { label: 'Orchestration', href: '#platform' },
-      { label: 'Lead flow', href: '#flow' },
-      { label: 'Agents', href: '#agents' },
-      { label: 'Marketplace', href: '#marketplace' },
+      { label: 'Orchestration', href: '/#platform' },
+      { label: 'Lead flow', href: '/#flow' },
+      { label: 'Agents', href: '/#agents' },
+      { label: 'Marketplace', href: '/#marketplace' },
     ],
   },
   {
-    title: 'Verticals',
+    title: 'Brands',
     links: [
-      { label: 'MedPay', href: '#industries' },
-      { label: 'TradePay', href: '#industries' },
-      { label: 'CoachPay', href: '#industries' },
-      { label: 'Launch a vertical', href: '#cta' },
+      { label: 'MedPay', href: '/#industries' },
+      { label: 'TradePay', href: '/#industries' },
+      { label: 'CoachPay', href: '/#industries' },
+      { label: 'VetPay', href: '/#industries' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'FAQ', href: '#faq' },
-      { label: 'Book a demo', href: '#cta' },
-      { label: 'Privacy', href: '#' },
-      { label: 'Terms', href: '#' },
+      { label: 'FAQ', href: '/#faq' },
+      { label: 'Book a call', href: '/book' },
+      { label: 'Privacy', href: '/privacy' },
+      { label: 'Terms', href: '/terms' },
     ],
   },
 ];
 
-const BADGES = ['SOC 2 Type II', 'PCI-DSS Level 1', 'FCRA-aware', 'Soft pull only'];
+const BADGES = ['SOC 2 Type II', 'Encrypted end-to-end', 'Soft pull only'];
 
 export function SiteFooter() {
   return (
@@ -53,9 +53,9 @@ export function SiteFooter() {
               VetPay ride on top.
             </p>
             <p className="mt-4 max-w-xs text-[11.5px] leading-relaxed text-white/40">
-              EazePay is a technology platform, not a bank or a lender of record. Consumer financing
-              is originated by partner lenders; card processing is provided through a registered ISO
-              relationship.
+              EazePay Inc. is a technology platform, not a bank or a lender. Consumer financing is
+              originated by independent partner lenders; card processing is provided through
+              sponsoring financial institutions.
             </p>
           </div>
 
@@ -86,7 +86,7 @@ export function SiteFooter() {
               <span key={b}>{b}</span>
             ))}
           </div>
-          <p className="text-[12px] text-white/40">© 2026 EazePay. All rights reserved.</p>
+          <p className="text-[12px] text-white/40">© 2026 EazePay Inc. All rights reserved.</p>
         </div>
       </Container>
     </footer>

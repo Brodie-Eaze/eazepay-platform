@@ -13,12 +13,12 @@
    ========================================================================== */
 
 export const NAV_LINKS = [
-  { href: '#platform', label: 'Platform' },
-  { href: '#flow', label: 'Lead flow' },
-  { href: '#agents', label: 'Agents' },
-  { href: '#marketplace', label: 'Marketplace' },
-  { href: '#industries', label: 'Industries' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '/#platform', label: 'Platform' },
+  { href: '/#flow', label: 'Lead flow' },
+  { href: '/#agents', label: 'Agents' },
+  { href: '/#marketplace', label: 'Marketplace' },
+  { href: '/#industries', label: 'Industries' },
+  { href: '/#faq', label: 'FAQ' },
 ] as const;
 
 export const TICKER: Array<{ value: string; label: string; delta: string }> = [
@@ -263,7 +263,7 @@ export const PILLARS: Array<{
     n: '02',
     tag: 'AGENTS',
     title: 'Seven agents, bundled in.',
-    body: 'Intake, enrichment, scoring, routing and attribution run as agents inside the platform — no separate AI stack to buy. Each has one job, a measurable output and an FCRA-aware audit trail.',
+    body: 'Intake, enrichment, scoring, routing and attribution run as agents inside the platform — no separate AI stack to buy. Each has one job, a measurable output and an immutable, exportable audit trail.',
     bullets: [
       'Defined role + scope + measurable output per agent',
       'Real-time scoring, routing and attribution',
@@ -290,7 +290,7 @@ export const PILLARS: Array<{
     body: 'Card payments run through EazePay itself — so processing and financing sit on the same rail, under one contract. One platform takes the money and funds the deal.',
     bullets: [
       'All major card networks · one integration',
-      'Tokenized · PCI-DSS Level 1',
+      'Tokenized · card data never touches your servers',
       'Merchant-direct settlement',
     ],
     metric: 'Cards on the same rail',
@@ -376,7 +376,7 @@ export const PROOF: Array<{ value: string; unit: string; label: string; sub: str
     sub: 'Prime → near-prime · soft pull · parallel quoting',
   },
   {
-    value: '<2',
+    value: '<10',
     unit: 's',
     label: 'Average decision time',
     sub: 'p95 round-trip · soft-pull pre-qual · zero credit impact',
@@ -393,23 +393,35 @@ export const PROOF: Array<{ value: string; unit: string; label: string; sub: str
 
 export const FAQ: Array<{ q: string; a: string }> = [
   {
-    q: 'Are you a lender of record?',
-    a: 'No. EazePay is the orchestration layer. The lender on the accepted offer is the lender of record and holds the loan. EazePay routes the application, computes the best offer by total cost and runs the merchant-direct settlement rail. The bank partner / lender carries the credit risk, the regulatory obligation and the consumer-facing loan agreement.',
+    q: 'What is EazePay?',
+    a: 'EazePay is the financial infrastructure behind the brand. One platform brings together four things — prequalification software, automated agents, a lender marketplace and payment processing — so a brand can capture an applicant, qualify them, route them to financing and take the payment, all on the same rail.',
   },
   {
-    q: "What's the pricing model?",
-    a: 'Percentage of funded volume only. No monthly platform fee, no annual minimum, no multi-year contract. The platform fee is taken at settlement against the lender disbursement — EazePay is only paid when the merchant is funded. Leave with 30 days notice and we help you migrate.',
+    q: 'How do the different brands work?',
+    a: 'MedPay, TradePay, CoachPay and VetPay are brand wrappers that all run on the exact same EazePay infrastructure. The prequalification, the agents, the marketplace and the payment processing underneath are identical — only the brand, the copy and the underwriting profile change. That is why a new brand can launch in days, not months.',
   },
   {
-    q: 'How does a brand fit on top?',
-    a: 'MedPay, TradePay, CoachPay and VetPay are brand wrappers on the same infrastructure. A new brand reuses the exact same prequalification, agents, lender marketplace and payment processing — only the brand, copy and underwriting profile change. One contract, one onboarding, live in days.',
+    q: 'Does prequalification affect an applicant’s credit score?',
+    a: 'No. Prequalification runs on a soft inquiry, which does not impact the applicant’s credit score. Applicants see where they stand before they commit, and a hard inquiry only happens later if they choose to proceed with a financing offer.',
   },
   {
-    q: 'How fast is integration?',
-    a: 'Hosted page: a few hours. Standard SDK embed at POS or in-app: typically 1–3 weeks including UAT. Headless API + custom UI: 4–8 weeks. KYB (IRS TIN, Secretary of State, OFAC, PEP, FinCEN BOI) clears in 60 seconds for clean records. Sandbox is unlimited and free.',
+    q: 'How does the lender marketplace decide which offer wins?',
+    a: 'Every application is sent in parallel to a curated panel of partner lenders, prime through near-prime. The marketplace ranks the returned offers by total cost of credit and surfaces the best-fit options. The partner lender that makes the offer provides the financing and holds the loan.',
   },
   {
-    q: 'PCI / SOC 2 / FCRA?',
-    a: 'PCI-DSS Level 1 scope-minimised — card data is tokenised at the edge and never traverses your servers. SOC 2 Type II audited annually. FCRA permissible-purpose enforced at the agent layer; every soft pull and every adverse-action notice is logged to an immutable audit trail and exportable on request.',
+    q: 'How does payment processing work?',
+    a: 'Card payments run through the EazePay platform itself, so processing and financing sit on the same rail under one contract. Cards are tokenized and never touch your servers, and funds are settled merchant-direct to your business account.',
+  },
+  {
+    q: 'How fast do merchants get funded?',
+    a: 'When an applicant accepts a financing offer, the partner lender disburses funds merchant-direct — typically in 48–72 hours — with no intermediary float. Card transactions settle on standard processing timelines.',
+  },
+  {
+    q: 'Is the platform secure and compliant?',
+    a: 'Security is built in: encryption in transit and at rest, tokenization of sensitive payment data, granular access controls, and immutable, exportable audit trails on every action. Our controls are independently audited to SOC 2 Type II, and we operate a continuous security and compliance program.',
+  },
+  {
+    q: 'How do we get started?',
+    a: 'Book a call and we will walk you through the platform on your real use case, run a live application end-to-end, and share pricing, onboarding timeline and a free sandbox to build against. Most brands are live within days of signing.',
   },
 ];

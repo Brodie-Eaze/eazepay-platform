@@ -76,7 +76,7 @@ export function Marketplace() {
             </div>
             <p className="mt-6 text-[11.5px] leading-relaxed text-white/40">
               Representative panel — lender names and rates are illustrative of the marketplace, not
-              a published offer. Soft pull only; final APR is set by the lender of record.
+              a published offer. Soft pull only; final APR is set by the lender.
             </p>
           </div>
         </Reveal>

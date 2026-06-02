@@ -47,7 +47,7 @@ export function Agents() {
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
             PRISM, VEGA, ORACLE, HELIX, NEXUS, FLUX and ECHO ship in the same signup as the
             financing marketplace. Each has one job, a measurable output and an immutable,
-            FCRA-aware audit trail. This is the live console.
+            exportable audit trail. This is the live console.
           </p>
         </Reveal>
 

@@ -8,14 +8,14 @@ export function Faq() {
       <Container>
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
           <Reveal>
-            <Eyebrow>Straight answers</Eyebrow>
+            <Eyebrow>FAQ</Eyebrow>
             <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-fg sm:text-[40px]">
-              The questions <span className="ez-sky-text">that matter.</span>
+              Frequently asked <span className="ez-sky-text">questions.</span>
             </h2>
             <p className="mt-5 text-[15px] leading-relaxed text-fg-secondary">
-              {
-                "No lender-of-record sleight of hand, no hidden platform fee. If something here needs a lawyer's eye, we'll tell you."
-              }
+              The essentials on how EazePay works — the infrastructure, the brands,
+              prequalification, the marketplace and payments. Need more? Book a call and we&apos;ll
+              walk you through it.
             </p>
           </Reveal>
 

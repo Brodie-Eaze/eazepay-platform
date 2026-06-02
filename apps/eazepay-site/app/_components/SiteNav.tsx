@@ -12,7 +12,7 @@ export function SiteNav() {
     <header className="sticky top-0 z-50 border-b border-border bg-bg-elevated/80 backdrop-blur-md">
       <Container className="flex h-16 items-center justify-between gap-6">
         <a
-          href="#top"
+          href="/"
           className="flex items-center gap-2.5 no-underline"
           onClick={() => setOpen(false)}
         >
@@ -38,13 +38,13 @@ export function SiteNav() {
 
         <div className="flex items-center gap-3 sm:gap-4">
           <a
-            href="#"
+            href="https://app.eazepay.com"
             className="hidden text-[13.5px] font-semibold text-fg-secondary no-underline transition-colors hover:text-fg sm:inline"
           >
             Sign in
           </a>
-          <a href="#cta" className={`${ctaPrimary} max-sm:hidden`}>
-            Book a demo
+          <a href="/book" className={`${ctaPrimary} max-sm:hidden`}>
+            Book a call
             <ArrowRight size={15} />
           </a>
 
@@ -79,11 +79,11 @@ export function SiteNav() {
             </a>
           ))}
           <a
-            href="#cta"
+            href="/book"
             onClick={() => setOpen(false)}
             className={`${ctaPrimary} mt-2 w-full justify-center`}
           >
-            Book a demo
+            Book a call
             <ArrowRight size={15} />
           </a>
         </Container>

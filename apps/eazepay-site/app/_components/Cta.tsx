@@ -27,8 +27,8 @@ export function Cta() {
             it.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a href="#cta" className={ctaPrimary}>
-              Book a demo
+            <a href="/book" className={ctaPrimary}>
+              Book a call
               <ArrowRight size={16} />
             </a>
             <a href="#platform" className={ctaGhostDark}>

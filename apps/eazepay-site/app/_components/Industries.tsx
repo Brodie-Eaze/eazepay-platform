@@ -53,10 +53,10 @@ export function Industries() {
 
         <Reveal className="mt-8">
           <a
-            href="#cta"
+            href="/book"
             className="inline-flex items-center gap-2 text-[14px] font-semibold text-brand-sky no-underline transition-colors hover:text-brand-sky-deep"
           >
-            Launch your vertical on EazePay
+            Launch your brand on EazePay
             <ArrowRight size={15} />
           </a>
         </Reveal>
