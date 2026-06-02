@@ -2,6 +2,7 @@ import { SiteNav } from './_components/SiteNav';
 import { Hero } from './_components/Hero';
 import { TrustBar } from './_components/TrustBar';
 import { Orchestration } from './_components/Orchestration';
+import { Processing } from './_components/Processing';
 import { LeadFlow } from './_components/LeadFlow';
 import { Agents } from './_components/Agents';
 import { Marketplace } from './_components/Marketplace';
@@ -21,6 +22,7 @@ export default function Page() {
         <Hero />
         <TrustBar />
         <Orchestration />
+        <Processing />
         <LeadFlow />
         <Agents />
         <Marketplace />
