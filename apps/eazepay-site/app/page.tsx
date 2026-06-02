@@ -6,6 +6,7 @@ import { Pillars } from './_components/Pillars';
 import { LeadFlow } from './_components/LeadFlow';
 import { Agents } from './_components/Agents';
 import { Marketplace } from './_components/Marketplace';
+import { DealScope } from './_components/DealScope';
 import { Industries } from './_components/Industries';
 import { Proof } from './_components/Proof';
 import { Faq } from './_components/Faq';
@@ -24,6 +25,7 @@ export default function Page() {
         <LeadFlow />
         <Agents />
         <Marketplace />
+        <DealScope />
         <Industries />
         <Proof />
         <Faq />
