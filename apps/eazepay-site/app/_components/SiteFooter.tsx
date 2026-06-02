@@ -24,7 +24,7 @@ const FOOTER_COLS: Array<{ title: string; links: Array<{ label: string; href: st
     title: 'Company',
     links: [
       { label: 'FAQ', href: '/#faq' },
-      { label: 'Book a call', href: '/book' },
+      { label: 'Get access', href: '/book' },
       { label: 'Privacy', href: '/privacy' },
       { label: 'Terms', href: '/terms' },
     ],

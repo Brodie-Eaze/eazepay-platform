@@ -22,13 +22,14 @@ export function BookForm() {
       `Work email: ${data.get('email') || ''}`,
       `Company: ${data.get('company') || ''}`,
       `Phone: ${data.get('phone') || ''}`,
+      `Platform: ${data.get('platform') || ''}`,
       `Monthly volume: ${data.get('volume') || ''}`,
       '',
       `${data.get('message') || ''}`,
     ].join('\n');
     try {
       window.location.href = `mailto:support@eazepay.com?subject=${encodeURIComponent(
-        'Book a call, ' + (data.get('company') || data.get('name') || 'New request'),
+        'Platform access request, ' + (data.get('company') || data.get('name') || 'New request'),
       )}&body=${encodeURIComponent(body)}`;
     } catch {
       /* ignore */
@@ -44,8 +45,8 @@ export function BookForm() {
         </span>
         <h2 className="mt-5 text-[22px] font-bold tracking-tight text-fg">Request received.</h2>
         <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-fg-secondary">
-          Thanks, a member of the EazePay Inc. team will reach out within one business day to book
-          your call. If your mail client didn&apos;t open, email us directly at{' '}
+          Thanks, a member of the EazePay Inc. team will reach out within one business day to get
+          your business set up. If your mail client didn&apos;t open, email us directly at{' '}
           <a
             href="mailto:support@eazepay.com"
             className="font-semibold text-brand-sky no-underline"
@@ -104,36 +105,51 @@ export function BookForm() {
           </label>
           <input id="phone" name="phone" className={FIELD} placeholder="(555) 555-5555" />
         </div>
-        <div className="sm:col-span-2">
+        <div>
+          <label className={LABEL} htmlFor="platform">
+            Which platform?
+          </label>
+          <select id="platform" name="platform" className={FIELD} defaultValue="">
+            <option value="" disabled>
+              Select a platform
+            </option>
+            <option>MedPay, medical and dental</option>
+            <option>TradePay, home services</option>
+            <option>CoachPay, coaching and education</option>
+            <option>VetPay, veterinary</option>
+            <option>Not sure yet</option>
+          </select>
+        </div>
+        <div>
           <label className={LABEL} htmlFor="volume">
-            Estimated monthly volume <span className="font-normal text-fg-muted">(optional)</span>
+            Monthly volume <span className="font-normal text-fg-muted">(optional)</span>
           </label>
           <select id="volume" name="volume" className={FIELD} defaultValue="">
             <option value="" disabled>
               Select a range
             </option>
             <option>Under $100k / mo</option>
-            <option>$100k, $500k / mo</option>
-            <option>$500k, $2M / mo</option>
+            <option>$100k to $500k / mo</option>
+            <option>$500k to $2M / mo</option>
             <option>$2M+ / mo</option>
           </select>
         </div>
         <div className="sm:col-span-2">
           <label className={LABEL} htmlFor="message">
-            What are you building?
+            Tell us about your business
           </label>
           <textarea
             id="message"
             name="message"
             rows={4}
             className={`${FIELD} resize-none`}
-            placeholder="Tell us about your brand, vertical and what you'd like to launch."
+            placeholder="What does your business do, and which of your customers would use financing?"
           />
         </div>
       </div>
 
       <button type="submit" className={`${ctaPrimary} mt-6 w-full sm:w-auto`}>
-        Request a call
+        Request access
         <ArrowRight size={16} />
       </button>
       <p className="mt-4 text-[12.5px] leading-relaxed text-fg-muted">

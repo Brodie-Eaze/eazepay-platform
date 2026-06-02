@@ -44,7 +44,7 @@ export function SiteNav() {
             Sign in
           </a>
           <a href="/book" className={`${ctaPrimary} max-sm:hidden`}>
-            Book a call
+            Get access
             <ArrowRight size={15} />
           </a>
 
@@ -83,7 +83,7 @@ export function SiteNav() {
             onClick={() => setOpen(false)}
             className={`${ctaPrimary} mt-2 w-full justify-center`}
           >
-            Book a call
+            Get access
             <ArrowRight size={15} />
           </a>
         </Container>
