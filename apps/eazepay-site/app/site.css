@@ -1519,69 +1519,6 @@
   }
 }
 
-/* ---------- hero atmosphere: drifting aurora + cursor spotlight ---------- */
-.ez-aurora {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.ez-aurora::before,
-.ez-aurora::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-}
-.ez-aurora::before {
-  width: 52vw;
-  height: 52vw;
-  left: -12%;
-  top: -24%;
-  background: radial-gradient(circle, rgb(var(--brand-sky) / 0.5), transparent 60%);
-  animation: ez-aurora-a 19s ease-in-out infinite;
-}
-.ez-aurora::after {
-  width: 46vw;
-  height: 46vw;
-  right: -8%;
-  top: 4%;
-  background: radial-gradient(circle, rgb(var(--brand-sky-deep) / 0.6), transparent 62%);
-  animation: ez-aurora-b 23s ease-in-out infinite;
-}
-@keyframes ez-aurora-a {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(13%, 9%) scale(1.1);
-  }
-}
-@keyframes ez-aurora-b {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-11%, 11%) scale(1.08);
-  }
-}
-.ez-hero-spot {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(
-    460px circle at var(--hx, 50%) var(--hy, 38%),
-    rgb(var(--brand-sky-soft) / 0.16),
-    rgb(var(--brand-sky) / 0.06) 38%,
-    transparent 66%
-  );
-}
-
 /* ---------- boot-up choreography (plays once on load) ---------- */
 .ez-hero-rise {
   animation: ez-rise 0.8s cubic-bezier(0.2, 0.75, 0.2, 1) both;
@@ -1635,6 +1572,132 @@
   }
 }
 
+/* ---------- guided routing demo ---------- */
+.ez-tree-narrate {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgb(var(--brand-sky-soft));
+  animation: ez-narrate-in 0.4s ease-out;
+}
+@keyframes ez-narrate-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ez-tnode {
+  transition:
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    background 0.45s ease;
+}
+.ez-tnode--active {
+  border-color: rgb(var(--brand-sky-soft) / 0.7) !important;
+  background: rgb(var(--brand-sky) / 0.12);
+  box-shadow:
+    0 0 0 1px rgb(var(--brand-sky-soft) / 0.5),
+    0 0 34px -2px rgb(var(--brand-sky) / 0.8) !important;
+}
+.ez-tnode--book.ez-tnode--active {
+  border-color: rgb(110 231 183 / 0.8) !important;
+  background: rgb(52 211 153 / 0.14);
+  box-shadow:
+    0 0 0 1px rgb(110 231 183 / 0.6),
+    0 0 36px -2px rgb(52 211 153 / 0.85) !important;
+}
+
+.ez-tedge--lit {
+  stroke: rgb(var(--brand-sky-soft));
+  stroke-width: 2.5;
+}
+
+.ez-tsrc {
+  transition:
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    color 0.35s ease;
+}
+.ez-tsrc--on {
+  border-color: rgb(var(--brand-sky-soft) / 0.6);
+  color: #fff;
+  box-shadow: 0 0 18px -2px rgb(var(--brand-sky) / 0.6);
+}
+.ez-tsrc--on .ez-tsrc__dot {
+  background: rgb(var(--brand-sky-soft));
+  box-shadow: 0 0 8px rgb(var(--brand-sky-soft));
+}
+
+.ez-score-in {
+  animation: ez-score-pop 0.4s ease-out both;
+}
+@keyframes ez-score-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* the single guided lead token, gliding node → node above the rail */
+.ez-demo-tok {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+  z-index: 5;
+  background: linear-gradient(180deg, rgb(var(--brand-ink-soft) / 0.96), rgb(var(--brand-ink) / 0.96));
+  border: 1px solid rgb(var(--brand-sky-soft) / 0.5);
+  box-shadow:
+    0 12px 30px -8px rgb(0 0 0 / 0.7),
+    0 0 22px -4px rgb(var(--brand-sky) / 0.6);
+  backdrop-filter: blur(6px);
+  transition:
+    left 0.85s cubic-bezier(0.5, 0, 0.2, 1),
+    top 0.85s cubic-bezier(0.5, 0, 0.2, 1),
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+}
+.ez-demo-tok__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(var(--brand-sky-soft));
+  box-shadow: 0 0 10px rgb(var(--brand-sky-soft));
+}
+.ez-demo-tok--warm .ez-demo-tok__dot {
+  background: rgb(var(--brand-sky));
+  box-shadow: 0 0 10px rgb(var(--brand-sky));
+}
+.ez-demo-tok--cold .ez-demo-tok__dot {
+  background: rgb(148 163 184);
+  box-shadow: none;
+}
+.ez-demo-tok__amt {
+  color: rgb(255 255 255 / 0.6);
+  font-weight: 600;
+}
+.ez-demo-tok--done {
+  border-color: rgb(110 231 183 / 0.65);
+  box-shadow:
+    0 12px 30px -8px rgb(0 0 0 / 0.7),
+    0 0 26px -2px rgb(52 211 153 / 0.7);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ez-tedge--flow,
   .ez-tnode__tally-dot,
@@ -1643,10 +1706,10 @@
   .ez-leaf-live,
   .ez-core,
   .ez-offer-win,
-  .ez-aurora::before,
-  .ez-aurora::after,
   .ez-node,
-  .ez-spoke {
+  .ez-spoke,
+  .ez-tree-narrate,
+  .ez-score-in {
     animation: none !important;
   }
   .ez-core-tilt {
@@ -1660,5 +1723,8 @@
   .ez-spoke {
     opacity: 1;
     scale: 1;
+  }
+  .ez-demo-tok {
+    transition: none;
   }
 }

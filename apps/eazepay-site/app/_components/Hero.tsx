@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { ArrowRight } from './icons';
-import { HeroSpotlight } from './HeroSpotlight';
 import { OrbitScene } from './OrbitScene';
 import { Container, Eyebrow, ctaPrimary, ctaGhostDark } from './primitives';
 
@@ -9,9 +8,6 @@ const rise = (i: number): CSSProperties => ({ '--ri': i }) as CSSProperties;
 export function Hero() {
   return (
     <section id="top" className="ez-dark relative overflow-hidden">
-      {/* atmosphere: drifting aurora + cursor spotlight, behind the grid */}
-      <div className="ez-aurora" aria-hidden />
-      <HeroSpotlight />
       <div className="ez-grid-floor" aria-hidden />
 
       <Container className="relative z-[2] grid items-center gap-14 py-20 lg:grid-cols-[1.04fr_0.96fr] lg:gap-8 lg:py-28">
