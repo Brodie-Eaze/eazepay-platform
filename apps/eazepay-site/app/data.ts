@@ -249,56 +249,51 @@ export const PILLARS: Array<{
 }> = [
   {
     n: '01',
-    tag: 'ORCHESTRATION',
-    title: 'The rail every vertical runs on.',
-    body: 'EazePay is the platform layer beneath MedPay, TradePay, CoachPay and every future vertical. One API for payments, financing, settlement and agents. Spin up a new vertical brand in days — the rail underneath is already live, audited and in production.',
+    tag: 'PREQUALIFICATION',
+    title: 'Prequalify on real financial data — in seconds.',
+    body: 'The smart form pulls live credit and income on a soft inquiry, then makes a decision on your rules. No credit impact, no waiting — applicants see where they stand before they ever commit.',
     bullets: [
-      'Single SDK · embed at POS, in-app or hosted page',
-      'Processor + financing under one MID structure',
-      'Unified webhook bus · idempotent retries · DLQ inspection',
-      'One ledger across processing, financing, settlement and reconciliation',
-      'New vertical brand on the same rail in days · one contract, one onboarding',
+      'Soft-pull prequal · zero credit impact',
+      'Credit, income and affordability pulled live · under 2s',
+      'Decisions on your thresholds · routed automatically',
     ],
-    metric: 'One platform · every vertical',
+    metric: 'Soft pull · under 2s',
   },
   {
     n: '02',
-    tag: 'MARKETPLACE',
-    title: 'A lender marketplace. Soft pull. Merchant-direct.',
-    body: 'Every application waterfalls through a curated lender marketplace, prime through near-prime, in parallel. The best offer wins by total cost of credit. The lender on the offer disburses merchant-direct in 48–72hr.',
-    bullets: [
-      'Soft-pull pre-qual · zero credit impact',
-      'Three best-fit offers ranked by total cost of credit',
-      'Merchant-direct disbursement · 48–72hr to your business account',
-      'Lender carries the credit risk · no clawback on routine defaults',
-    ],
-    metric: 'Lender marketplace · parallel quoting',
-  },
-  {
-    n: '03',
-    tag: 'AGENTIC LAYER',
-    title: 'Seven agents bundled. No separate AI stack to buy.',
-    body: 'PRISM, VEGA, ORACLE, HELIX, NEXUS, FLUX and ECHO ship in the same signup as the financing marketplace. Every agent has a defined role, a defined scope and a measurable output. Every action is logged and FCRA-aware.',
+    tag: 'AGENTS',
+    title: 'Seven agents, bundled in.',
+    body: 'Intake, enrichment, scoring, routing and attribution run as agents inside the platform — no separate AI stack to buy. Each has one job, a measurable output and an FCRA-aware audit trail.',
     bullets: [
       'Defined role + scope + measurable output per agent',
-      'Real-time intake, enrichment, scoring, routing and attribution',
-      'Calibrated propensity trained on your outcomes — not a lookalike',
-      'Every action logged to an immutable, exportable audit trail',
+      'Real-time scoring, routing and attribution',
+      'Every action logged to an immutable, exportable trail',
     ],
     metric: '7 agents · one platform',
   },
   {
-    n: '04',
-    tag: 'SETTLEMENT + RECON',
-    title: 'Daily close. Multi-party split. Ledger truth.',
-    body: 'One canonical ledger across processor, lender, merchant and platform fee. Daily close runs at 02:00 ET. Multi-party splits are computed and instructed; the merchant approves payouts in their own banking surface. Every cent reconciles to the originating application and campaign.',
+    n: '03',
+    tag: 'MARKETPLACE',
+    title: 'A lender marketplace. Best offer wins.',
+    body: 'Every application waterfalls through a curated lender marketplace — prime through near-prime, in parallel. The best offer wins by total cost of credit and the lender disburses merchant-direct.',
     bullets: [
-      'Daily reconciliation close · 02:00 ET · CSV + JSON export',
-      'Multi-party split engine · platform fee, lender, merchant',
-      'Per-deal ledger trace · application → approval → settlement',
-      'PCI-DSS Level 1 scope minimisation · SOC 2 Type II audited controls',
+      'Parallel quoting across a curated lender panel',
+      'Best-fit offers ranked by total cost of credit',
+      'Merchant-direct disbursement · 48–72hr',
     ],
-    metric: 'Daily close · audited',
+    metric: 'Parallel quoting · merchant-direct',
+  },
+  {
+    n: '04',
+    tag: 'PAYMENT PROCESSING',
+    title: 'Take the payment on the platform too.',
+    body: 'Card payments run through EazePay itself — so processing and financing sit on the same rail, under one contract. One platform takes the money and funds the deal.',
+    bullets: [
+      'All major card networks · one integration',
+      'Tokenized · PCI-DSS Level 1',
+      'Merchant-direct settlement',
+    ],
+    metric: 'Cards on the same rail',
   },
 ];
 
@@ -341,9 +336,9 @@ export const INDUSTRIES: Array<{
 }> = [
   {
     name: 'MedPay',
-    desc: 'Patient financing for dental, med spa, derm, vet and vision practices.',
+    desc: 'Patient financing for dental, med spa, dermatology and vision practices.',
     metric: '$12k avg ticket',
-    examples: 'Dental · Med spa · Dermatology · Vision · Vet',
+    examples: 'Dental · Med spa · Dermatology · Vision',
   },
   {
     name: 'TradePay',
@@ -356,6 +351,12 @@ export const INDUSTRIES: Array<{
     desc: 'Tuition financing for coaching programs, certifications and bootcamps.',
     metric: '$8k avg ticket',
     examples: 'Coaching · Certification · Bootcamp · Masterminds',
+  },
+  {
+    name: 'VetPay',
+    desc: 'Pet-care financing for veterinary clinics, specialty and emergency animal hospitals.',
+    metric: '$3k avg ticket',
+    examples: 'General vet · Surgery · Specialty · Emergency',
   },
 ];
 
@@ -400,8 +401,8 @@ export const FAQ: Array<{ q: string; a: string }> = [
     a: 'Percentage of funded volume only. No monthly platform fee, no annual minimum, no multi-year contract. The platform fee is taken at settlement against the lender disbursement — EazePay is only paid when the merchant is funded. Leave with 30 days notice and we help you migrate.',
   },
   {
-    q: 'How does a vertical brand fit on top?',
-    a: 'MedPay, TradePay and CoachPay are skinned go-to-market surfaces on the same rail. A new vertical reuses the processor, the lender marketplace, the seven agents, the ledger and the settlement engine — only the brand, copy and underwriting profile change. One contract, one onboarding, live in days.',
+    q: 'How does a brand fit on top?',
+    a: 'MedPay, TradePay, CoachPay and VetPay are brand wrappers on the same infrastructure. A new brand reuses the exact same prequalification, agents, lender marketplace and payment processing — only the brand, copy and underwriting profile change. One contract, one onboarding, live in days.',
   },
   {
     q: 'How fast is integration?',

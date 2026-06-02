@@ -48,8 +48,9 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-white/55">
-              The payment orchestration platform — processing, financing, agents and settlement on
-              one rail. MedPay, TradePay and CoachPay ride on top.
+              The financial infrastructure behind the brand — prequalification, agents, a lender
+              marketplace and payment processing on one platform. MedPay, TradePay, CoachPay and
+              VetPay ride on top.
             </p>
             <p className="mt-4 max-w-xs text-[11.5px] leading-relaxed text-white/40">
               EazePay is a technology platform, not a bank or a lender of record. Consumer financing

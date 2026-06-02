@@ -1,22 +1,22 @@
 import { PILLARS } from '../data';
-import { Layers, FlowWaterfall, Spark, Shield, Check } from './icons';
+import { FlowScore, Spark, FlowWaterfall, FlowSettle, Layers, Check } from './icons';
 import { Container, Eyebrow } from './primitives';
 import { Reveal } from './Reveal';
 
-const PILLAR_ICONS = [Layers, FlowWaterfall, Spark, Shield];
+const PILLAR_ICONS = [FlowScore, Spark, FlowWaterfall, FlowSettle];
 
 export function Pillars() {
   return (
     <section className="bg-bg-muted py-24">
       <Container>
         <Reveal className="max-w-3xl">
-          <Eyebrow>Why it holds together</Eyebrow>
+          <Eyebrow>The financial infrastructure</Eyebrow>
           <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-fg sm:text-[42px]">
-            Four layers. <span className="ez-sky-text">One contract.</span>
+            One infrastructure. <span className="ez-sky-text">Four parts.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
-            Orchestration, marketplace, agents and settlement — built as one system, billed as one
-            line, audited as one platform.
+            Prequalification, agents, a lender marketplace and payment processing — built as one
+            system, behind every brand. This is what EazePay actually is.
           </p>
         </Reveal>
 

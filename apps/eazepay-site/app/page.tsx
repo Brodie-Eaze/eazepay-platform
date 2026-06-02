@@ -2,12 +2,11 @@ import { SiteNav } from './_components/SiteNav';
 import { Hero } from './_components/Hero';
 import { TrustBar } from './_components/TrustBar';
 import { Orchestration } from './_components/Orchestration';
-import { Processing } from './_components/Processing';
+import { Pillars } from './_components/Pillars';
 import { LeadFlow } from './_components/LeadFlow';
 import { Agents } from './_components/Agents';
 import { Marketplace } from './_components/Marketplace';
 import { DealScope } from './_components/DealScope';
-import { Pillars } from './_components/Pillars';
 import { Industries } from './_components/Industries';
 import { Proof } from './_components/Proof';
 import { Faq } from './_components/Faq';
@@ -22,12 +21,11 @@ export default function Page() {
         <Hero />
         <TrustBar />
         <Orchestration />
-        <Processing />
+        <Pillars />
         <LeadFlow />
         <Agents />
         <Marketplace />
         <DealScope />
-        <Pillars />
         <Industries />
         <Proof />
         <Faq />

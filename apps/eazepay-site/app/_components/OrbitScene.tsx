@@ -9,19 +9,20 @@ type OrbitNode = {
   d: string; // float animation delay
 };
 
-// Ten nodes on ONE even ring around the orchestration core: three vertical
-// brands across the top arc, then the seven agents flowing clockwise.
+// Eleven nodes on ONE even ring around the orchestration core: four vertical
+// brand wrappers across the top arc, then the seven agents flowing clockwise.
 const RING: OrbitNode[] = [
-  { label: 'CoachPay', kind: 'vertical', deg: -52, tz: 40, d: '1.0s' },
-  { label: 'MedPay', kind: 'vertical', deg: 0, tz: 44, d: '0.4s' },
-  { label: 'TradePay', kind: 'vertical', deg: 52, tz: 40, d: '1.5s' },
-  { label: 'PRISM', kind: 'agent', deg: 84, tz: 30, d: '0s' },
-  { label: 'VEGA', kind: 'agent', deg: 116, tz: 26, d: '2.4s' },
-  { label: 'ORACLE', kind: 'agent', deg: 148, tz: 28, d: '1.1s' },
+  { label: 'CoachPay', kind: 'vertical', deg: -66, tz: 40, d: '1.0s' },
+  { label: 'MedPay', kind: 'vertical', deg: -22, tz: 44, d: '0.4s' },
+  { label: 'TradePay', kind: 'vertical', deg: 22, tz: 44, d: '1.5s' },
+  { label: 'VetPay', kind: 'vertical', deg: 66, tz: 40, d: '0.8s' },
+  { label: 'PRISM', kind: 'agent', deg: 95, tz: 30, d: '0s' },
+  { label: 'VEGA', kind: 'agent', deg: 123, tz: 26, d: '2.4s' },
+  { label: 'ORACLE', kind: 'agent', deg: 152, tz: 28, d: '1.1s' },
   { label: 'HELIX', kind: 'agent', deg: 180, tz: 24, d: '2.2s' },
-  { label: 'NEXUS', kind: 'agent', deg: 212, tz: 28, d: '0.7s' },
-  { label: 'FLUX', kind: 'agent', deg: 244, tz: 26, d: '1.7s' },
-  { label: 'ECHO', kind: 'agent', deg: 276, tz: 30, d: '2.7s' },
+  { label: 'NEXUS', kind: 'agent', deg: 208, tz: 28, d: '0.7s' },
+  { label: 'FLUX', kind: 'agent', deg: 237, tz: 26, d: '1.7s' },
+  { label: 'ECHO', kind: 'agent', deg: 265, tz: 30, d: '2.7s' },
 ];
 
 const RX = 32;

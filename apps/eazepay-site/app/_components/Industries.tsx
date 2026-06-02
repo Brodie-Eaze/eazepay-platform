@@ -8,18 +8,19 @@ export function Industries() {
     <section id="industries" className="bg-bg py-24">
       <Container>
         <Reveal className="max-w-3xl">
-          <Eyebrow>Vertical brands on the rail</Eyebrow>
+          <Eyebrow>Brands on the infrastructure</Eyebrow>
           <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-fg sm:text-[42px]">
-            Same rail. <span className="ez-sky-text">Different storefront.</span>
+            Same infrastructure. <span className="ez-sky-text">Different brand.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
-            MedPay, TradePay and CoachPay are skinned go-to-market surfaces on the EazePay rail —
-            same processor, same lender marketplace, same seven agents, same ledger. Only the brand,
-            the copy and the underwriting profile change. Stand up the next vertical in days.
+            MedPay, TradePay, CoachPay and VetPay are brand wrappers on the EazePay infrastructure —
+            the exact same prequalification, agents, lender marketplace and payment processing
+            underneath. Only the brand, the copy and the underwriting profile change. Stand up the
+            next one in days.
           </p>
         </Reveal>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {INDUSTRIES.map((v, i) => (
             <Reveal key={v.name} delay={i * 90} className="h-full">
               <div className="ez-card flex h-full flex-col rounded-2xl border border-border bg-bg-elevated p-7">

@@ -8,15 +8,15 @@ export function Orchestration() {
     <section id="platform" className="bg-bg py-24">
       <Container>
         <Reveal className="max-w-3xl">
-          <Eyebrow>The orchestration layer</Eyebrow>
+          <Eyebrow>The financial infrastructure</Eyebrow>
           <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-fg sm:text-[42px]">
             Every brand. Every transaction. <span className="ez-sky-text">One platform.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
-            EazePay is the rail. MedPay, TradePay and CoachPay are go-to-market surfaces skinned on
-            top of it. Underneath, a single API carries processing, a lender marketplace, the
-            agentic layer, one ledger and merchant-direct settlement. Stand up a new vertical in
-            days — the rail beneath is already live, audited and in production.
+            EazePay is the infrastructure. MedPay, TradePay, CoachPay and VetPay are brand wrappers
+            on top of it. Underneath, one platform carries prequalification, the agents, a lender
+            marketplace and payment processing. Stand up a new brand in days — the infrastructure
+            beneath is already live, audited and in production.
           </p>
         </Reveal>
 
