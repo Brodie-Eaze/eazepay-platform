@@ -4,10 +4,10 @@ import { Container, Eyebrow } from './primitives';
 import { Reveal } from './Reveal';
 
 const POINTS = [
-  'Soft pull underwriting, credit, income and DTI in seconds',
-  'Lender marketplace waterfall · best offer by total cost of credit',
-  'Zero credit impact · no hit to the applicant’s score',
-  'Merchant direct payout · 48 to 72hr · no intermediary float',
+  'Prequalified on a soft pull · credit, income and DTI in seconds',
+  'Pre-approved offers ranked by best total cost of credit',
+  'Zero credit impact · no hit to their score',
+  'Funded fast once they accept · 48 to 72 hours',
 ];
 
 /** The soft pull underwriting factors rendered on the phone. */
@@ -31,15 +31,14 @@ export function DealScope() {
       <Container className="grid items-center gap-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10">
         {/* ---- copy column ---- */}
         <Reveal>
-          <Eyebrow>On the merchant&apos;s phone</Eyebrow>
+          <Eyebrow>On the customer&apos;s phone</Eyebrow>
           <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-fg sm:text-[42px]">
-            A deal lands, and <span className="ez-sky-text">approves itself.</span>
+            Pre-approved <span className="ez-sky-text">in seconds.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
-            This is the EazePay merchant console. A live application is scored on a soft pull,
-            credit, income and DTI, then waterfalls across the lender marketplace in parallel,
-            matched and approved in seconds and settled merchant direct. Every vertical brand sees
-            the same screen, skinned.
+            This is what your customer sees. They apply, get prequalified on a soft pull, credit,
+            income and DTI, and see their pre-approved offers in seconds, with no hit to their
+            credit. Every brand shows the same flow, skinned in its own look.
           </p>
           <ul className="mt-7 space-y-3">
             {POINTS.map((t) => (
@@ -142,7 +141,7 @@ export function DealScope() {
                 {/* best offers */}
                 <div>
                   <div className="mb-3 text-[10.5px] md:text-[8.5px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
-                    Best offers · soft pull
+                    Pre-approved offers
                   </div>
                   <div className="space-y-2.5">
                     {OFFERS.map((o, i) => (
@@ -183,11 +182,11 @@ export function DealScope() {
                 </div>
               </div>
 
-              {/* approve-itself banner pinned to the bottom */}
+              {/* pre-approved banner pinned to the bottom */}
               <div className="px-4 pb-4 pt-1">
                 <div className="ez-appr">
                   <div className="ez-appr__pending">
-                    <span className="text-[11px] font-semibold">Selecting best offer…</span>
+                    <span className="text-[11px] font-semibold">Checking offers…</span>
                     <span className="ez-appr__indet" />
                   </div>
                   <div className="ez-appr__done">
@@ -195,10 +194,10 @@ export function DealScope() {
                       <Check size={12} />
                     </span>
                     <span className="truncate text-[12.5px] md:text-[12px] font-bold">
-                      Approved · merchant direct
+                      Pre-approved
                     </span>
                     <span className="ml-auto shrink-0 whitespace-nowrap font-mono text-[10px] md:text-[9.5px] font-semibold text-white/85">
-                      5.9% · 48 to 72hr
+                      5.9% APR · best offer
                     </span>
                   </div>
                 </div>
