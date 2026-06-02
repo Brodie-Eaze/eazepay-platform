@@ -15,8 +15,8 @@ type OrbitNode = {
 // sits cleanly on the ring.
 const RING: OrbitNode[] = [
   { label: 'CoachPay', kind: 'vertical', deg: -49.1, tz: 38, d: '1.0s' },
-  { label: 'MedPay', kind: 'vertical', deg: -16.4, tz: 38, d: '0.4s' },
-  { label: 'TradePay', kind: 'vertical', deg: 16.4, tz: 38, d: '1.5s' },
+  { label: 'MedPay', kind: 'vertical', deg: -20, tz: 38, d: '0.4s' },
+  { label: 'TradePay', kind: 'vertical', deg: 20, tz: 38, d: '1.5s' },
   { label: 'VetPay', kind: 'vertical', deg: 49.1, tz: 38, d: '0.8s' },
   { label: 'PRISM', kind: 'agent', deg: 81.8, tz: 28, d: '0s' },
   { label: 'VEGA', kind: 'agent', deg: 114.5, tz: 28, d: '2.4s' },
