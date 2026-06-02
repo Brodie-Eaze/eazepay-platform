@@ -32,24 +32,27 @@ export const TICKER: Array<{ value: string; label: string; delta: string }> = [
 
 export const STITCHED: Array<{ stat: string; label: string }> = [
   {
-    stat: '4–6 vendors',
-    label: 'Processor, lender, AI, attribution, KYB and ledger stitched together by hand',
+    stat: 'Fragmented',
+    label: 'A separate payment processor and multiple lenders — each on its own platform',
   },
-  { stat: 'Manual', label: 'Lender routing — single-lender failover or human triage' },
-  { stat: 'Broken', label: 'Attribution between ad spend, applications and funded loans' },
-  { stat: '5–10 days', label: 'Settlement + reconciliation lag — funds held by an intermediary' },
+  {
+    stat: 'Blind',
+    label: 'Little to no visibility or tracking on where a finance application stands',
+  },
+  { stat: 'No support', label: 'On your own when a deal stalls or something breaks' },
+  {
+    stat: 'Manual',
+    label: 'Qualifying clients the old-fashioned way — paper forms and back-and-forth',
+  },
 ];
 
 export const UNIFIED: Array<{ stat: string; label: string }> = [
-  { stat: 'One API', label: 'Processor + financing marketplace + agentic layer on a single rail' },
+  { stat: 'One platform', label: 'Payment processing and every lender together on a single rail' },
+  { stat: 'Full view', label: 'Track every finance application end-to-end, in real time' },
+  { stat: 'Real support', label: 'A team behind you — onboarding, launch and ongoing' },
   {
-    stat: 'Parallel',
-    label: 'Every lender in the marketplace quotes at once — best offer wins by total cost',
-  },
-  { stat: 'Agentic', label: 'Seven autonomous agents on intake, scoring, routing and attribution' },
-  {
-    stat: '48–72hr',
-    label: 'Lender disburses merchant-direct — closed-loop attribution to ad spend',
+    stat: 'Instant',
+    label: 'Smart prequalification on real financial data — no paper forms',
   },
 ];
 

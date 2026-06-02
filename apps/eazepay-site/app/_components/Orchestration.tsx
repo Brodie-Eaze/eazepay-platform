@@ -26,15 +26,15 @@ export function Orchestration() {
             <div className="h-full rounded-2xl border border-border bg-bg-elevated p-7">
               <div className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-fg-muted">
                 <span className="h-2 w-2 rounded-full bg-fg-muted/60" aria-hidden />
-                Stitched together
+                The fragmented way
               </div>
               <p className="mt-2 text-[15px] font-medium text-fg-secondary">
-                The usual stack — six vendors, manual routing, broken attribution.
+                A processor here, lenders there — and barely any view of your applications.
               </p>
               <ul className="mt-6 space-y-4">
                 {STITCHED.map((row) => (
                   <li key={row.stat} className="flex gap-4">
-                    <span className="w-[88px] shrink-0 font-mono text-[13px] font-semibold text-fg-muted">
+                    <span className="w-[104px] shrink-0 font-mono text-[13px] font-semibold text-fg-muted">
                       {row.stat}
                     </span>
                     <span className="text-[14px] leading-snug text-fg-secondary">{row.label}</span>
@@ -59,12 +59,12 @@ export function Orchestration() {
                 On EazePay
               </div>
               <p className="relative mt-2 text-[15px] font-medium text-white/80">
-                One rail. Parallel quoting, agents bundled, settlement closed-loop.
+                One platform. Every lender, full visibility and real support in one place.
               </p>
               <ul className="relative mt-6 space-y-4">
                 {UNIFIED.map((row) => (
                   <li key={row.stat} className="flex gap-4">
-                    <span className="flex w-[88px] shrink-0 items-start gap-1.5 font-mono text-[13px] font-semibold text-brand-sky-soft">
+                    <span className="flex w-[124px] shrink-0 items-start gap-1.5 font-mono text-[13px] font-semibold text-brand-sky-soft">
                       <Check size={14} className="mt-0.5 shrink-0" />
                       {row.stat}
                     </span>
