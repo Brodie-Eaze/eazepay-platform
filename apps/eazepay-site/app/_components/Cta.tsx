@@ -2,12 +2,6 @@ import { ArrowRight, LogoMark } from './icons';
 import { Container, ctaPrimary, ctaGhostDark } from './primitives';
 import { Reveal } from './Reveal';
 
-const CTA_POINTS = [
-  'Percentage of funded volume — no platform fee',
-  '30-day exit',
-  'Sandbox free + unlimited',
-];
-
 export function Cta() {
   return (
     <section id="cta" className="ez-dark relative overflow-hidden py-24">
@@ -35,14 +29,6 @@ export function Cta() {
               Explore the platform
             </a>
           </div>
-          <ul className="mt-9 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12.5px] font-medium text-white/55">
-            {CTA_POINTS.map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-sky-soft" aria-hidden />
-                {t}
-              </li>
-            ))}
-          </ul>
         </Reveal>
       </Container>
     </section>
