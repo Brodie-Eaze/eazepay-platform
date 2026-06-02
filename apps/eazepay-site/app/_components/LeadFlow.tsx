@@ -20,10 +20,11 @@ export function LeadFlow() {
             One smart form, <span className="ez-gradient-text">routed in real time.</span>
           </h2>
           <p className="mt-5 text-[16px] leading-relaxed text-white/65">
-            Follow a live lead through the rail. It&apos;s captured from any funnel, qualified on
-            credit, income and available credit in seconds, then routed by ticket size and intent —
-            high-ticket buyers straight to a closer&apos;s calendar, everyone else to the right
-            nurture or offer. Each stage lights up as the lead arrives.
+            Follow a live lead through the engine. It&apos;s captured from any funnel, scored on
+            real financial data, then split on{' '}
+            <span className="text-white/85">credit first, then income</span>: qualified buyers earn
+            a 1:1 closer&apos;s calendar, everyone else drops into the SLO low-ticket funnel. Each
+            decision lights up as the lead routes.
           </p>
         </Reveal>
 

@@ -1697,6 +1697,49 @@
     0 0 26px -2px rgb(52 211 153 / 0.7);
 }
 
+/* decision nodes (credit / income gates) */
+.ez-tnode--decision {
+  border-color: rgb(var(--brand-sky) / 0.42);
+  background: rgb(var(--brand-sky) / 0.06);
+}
+.ez-tnode--decision .ez-tnode__code {
+  color: rgb(var(--brand-sky-soft));
+}
+
+/* yes/no decision result badge on the gate node */
+.ez-decide {
+  margin-top: 7px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.ez-decide--yes {
+  border: 1px solid rgb(52 211 153 / 0.45);
+  background: rgb(52 211 153 / 0.12);
+  color: rgb(110 231 183);
+}
+.ez-decide--no {
+  border: 1px solid rgb(248 113 113 / 0.42);
+  background: rgb(248 113 113 / 0.12);
+  color: rgb(252 165 165);
+}
+
+/* branch-condition labels on the decision edges */
+.ez-tedge-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  fill: rgb(255 255 255 / 0.38);
+  letter-spacing: 0.02em;
+}
+.ez-tedge-label--lit {
+  fill: rgb(var(--brand-sky-soft));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ez-tedge--flow,
   .ez-tnode__tally-dot,

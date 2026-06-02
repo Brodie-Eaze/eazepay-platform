@@ -4,18 +4,21 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 /**
- * Guided smart-routing walkthrough. One lead at a time is driven through the
- * pipeline by a small state machine: Capture → Qualify (scores reveal) →
- * Route (the chosen branch lights up) → Match → Booked (leaf counter ticks).
- * Each stage activates as the lead arrives, so the routing logic narrates
- * itself. Then the next lead routes a different way. Reduced-motion shows a
- * settled end-state. The token glides between nodes via a CSS transition.
+ * Guided smart-routing DECISION TREE. One lead at a time:
+ *   Capture (smart form) → Intelligence (pull financial data) →
+ *   DECISION 1 · credit score  →  DECISION 2 · income  →
+ *   either the SLO low-ticket funnel, or the high-ticket VSL → book-a-call.
+ *
+ * The split is credit-first (thin credit drops straight to SLO), then income
+ * (good credit but low income also drops to SLO; good credit + high income
+ * earns the closer's calendar). Each stage activates as the lead arrives and
+ * the taken branch lights up. State-machine driven; reduced-motion settles.
  */
 
-const VB = { w: 1000, h: 540 };
+const VB = { w: 1000, h: 560 };
 
-type Kind = 'stage' | 'match' | 'leaf';
-type LeafId = 'bookP' | 'slo' | 'lowoff' | 'bookS';
+type Kind = 'stage' | 'decision' | 'leaf';
+type Term = 'vsl' | 'slo';
 type NodeT = {
   id: string;
   x: number;
@@ -26,13 +29,14 @@ type NodeT = {
   sub: string;
   kind: Kind;
   book?: boolean;
+  scores?: boolean;
 };
 
 const NODES: NodeT[] = [
   {
-    id: 'form',
-    x: 150,
-    y: 270,
+    id: 'capture',
+    x: 168,
+    y: 280,
     w: 150,
     code: 'SMART FORM',
     title: 'Capture',
@@ -40,257 +44,235 @@ const NODES: NodeT[] = [
     kind: 'stage',
   },
   {
-    id: 'qualify',
-    x: 348,
-    y: 270,
-    w: 176,
-    code: 'SMART CHECK',
-    title: 'Qualify',
+    id: 'intel',
+    x: 352,
+    y: 280,
+    w: 184,
+    code: 'INTELLIGENCE',
+    title: 'Financial data',
     sub: 'soft pull · under 2s',
     kind: 'stage',
+    scores: true,
   },
   {
-    id: 'route',
-    x: 540,
-    y: 270,
+    id: 'credit',
+    x: 524,
+    y: 280,
     w: 150,
-    code: 'SMART ROUTING',
-    title: 'Route',
-    sub: 'ticket size + intent',
-    kind: 'stage',
+    code: 'DECISION · 1',
+    title: 'Credit score',
+    sub: 'threshold 680',
+    kind: 'decision',
   },
   {
-    id: 'hmatch',
-    x: 700,
-    y: 150,
-    w: 146,
-    code: 'HIGH-TICKET',
-    title: 'Premium VSL',
-    sub: 'closer track',
-    kind: 'match',
+    id: 'income',
+    x: 690,
+    y: 190,
+    w: 150,
+    code: 'DECISION · 2',
+    title: 'Income',
+    sub: 'high vs low',
+    kind: 'decision',
   },
   {
-    id: 'lmatch',
-    x: 700,
-    y: 392,
-    w: 146,
-    code: 'LOW-TICKET',
-    title: 'Fast VSL',
-    sub: 'nurture track',
-    kind: 'match',
-  },
-  {
-    id: 'bookP',
-    x: 892,
-    y: 92,
-    w: 168,
-    code: "CLOSER'S CALENDAR",
-    title: '1:1 with a closer',
-    sub: 'high-ticket · booked',
+    id: 'vsl',
+    x: 884,
+    y: 120,
+    w: 178,
+    code: 'HIGH-TICKET VSL',
+    title: 'Book a call',
+    sub: "closer's calendar · 1:1",
     kind: 'leaf',
     book: true,
   },
   {
     id: 'slo',
-    x: 892,
-    y: 214,
-    w: 168,
-    code: 'PRIORITY CALLBACK',
-    title: 'Closer follow-up',
-    sub: 'high-intent · queued',
+    x: 884,
+    y: 420,
+    w: 178,
+    code: 'SLO FUNNEL',
+    title: 'Self-liquidating offer',
+    sub: 'low-ticket · instant',
     kind: 'leaf',
-  },
-  {
-    id: 'lowoff',
-    x: 892,
-    y: 326,
-    w: 168,
-    code: 'SELF-SERVE OFFER',
-    title: 'Starter offer',
-    sub: 'instant · $97–$497',
-    kind: 'leaf',
-  },
-  {
-    id: 'bookS',
-    x: 892,
-    y: 448,
-    w: 168,
-    code: 'TEAM CALENDAR',
-    title: 'Group call',
-    sub: 'low-ticket · booked',
-    kind: 'leaf',
-    book: true,
   },
 ];
 const NODE_BY_ID: Record<string, NodeT> = Object.fromEntries(NODES.map((n) => [n.id, n]));
 
-type Edge = { from: string; to: string; d: string };
+type Edge = { from: string; to: string; d: string; label?: string; lx?: number; ly?: number };
 const EDGES: Edge[] = [
-  { from: 'form', to: 'qualify', d: 'M150,270 L348,270' },
-  { from: 'qualify', to: 'route', d: 'M348,270 L540,270' },
-  { from: 'route', to: 'hmatch', d: 'M540,270 C616,270 624,150 700,150' },
-  { from: 'route', to: 'lmatch', d: 'M540,270 C616,270 624,392 700,392' },
-  { from: 'hmatch', to: 'bookP', d: 'M700,150 C800,150 792,92 892,92' },
-  { from: 'hmatch', to: 'slo', d: 'M700,150 C800,150 792,214 892,214' },
-  { from: 'lmatch', to: 'lowoff', d: 'M700,392 C800,392 792,326 892,326' },
-  { from: 'lmatch', to: 'bookS', d: 'M700,392 C800,392 792,448 892,448' },
+  { from: 'capture', to: 'intel', d: 'M168,280 L352,280' },
+  { from: 'intel', to: 'credit', d: 'M352,280 L524,280' },
+  {
+    from: 'credit',
+    to: 'income',
+    d: 'M524,280 C604,280 614,190 690,190',
+    label: '≥ 680',
+    lx: 612,
+    ly: 220,
+  },
+  {
+    from: 'credit',
+    to: 'slo',
+    d: 'M524,280 C620,300 660,420 884,420',
+    label: '< 680',
+    lx: 636,
+    ly: 352,
+  },
+  {
+    from: 'income',
+    to: 'vsl',
+    d: 'M690,190 C784,190 794,120 884,120',
+    label: 'high',
+    lx: 792,
+    ly: 144,
+  },
+  {
+    from: 'income',
+    to: 'slo',
+    d: 'M690,190 C786,214 802,420 884,420',
+    label: 'low',
+    lx: 800,
+    ly: 312,
+  },
 ];
 
 const SOURCES = [
-  { id: 's1', x: 40, y: 196, label: 'Meta' },
-  { id: 's2', x: 40, y: 270, label: 'Google' },
-  { id: 's3', x: 40, y: 344, label: 'TikTok' },
+  { id: 's1', x: 40, y: 188, label: 'Meta' },
+  { id: 's2', x: 40, y: 280, label: 'Google' },
+  { id: 's3', x: 40, y: 372, label: 'TikTok' },
 ];
 
 type Intent = 'hot' | 'warm' | 'cold';
 type Lead = {
   id: string;
   amt: string;
-  intent: Intent;
   src: string;
-  tag: string;
-  scores: Array<{ k: string; v: string }>;
-  branch: 'high' | 'low';
-  leaf: LeafId;
-  outcome: string;
+  credit: number;
+  income: string;
+  avail: string;
+  creditPass: boolean;
+  incomePass: boolean;
+  path: string[];
+  dot: Intent;
 };
 
-// Routing rule: ticket size + intent decide the branch.
-//   HIGH ticket  → closer track → 1:1 closer's calendar / priority callback.
-//   LOW  ticket  → nurture track → TEAM calendar (group call) OR self-serve offer.
-// The team calendar is ONLY ever reached by low-ticket leads.
+// Each lead's path encodes the decision it gets: thin credit short-circuits to
+// SLO; good credit goes to the income gate; income decides VSL vs SLO.
 const LEADS: Lead[] = [
   {
     id: 'L-8419',
     amt: '$72,400',
-    intent: 'hot',
     src: 'Meta',
-    tag: 'High intent',
-    scores: [
-      { k: 'credit', v: '748' },
-      { k: 'income', v: '$14.2k/mo' },
-      { k: 'avail', v: '$61k' },
-    ],
-    branch: 'high',
-    leaf: 'bookP',
-    outcome: "closer's calendar",
+    credit: 748,
+    income: '$14.2k/mo',
+    avail: '$61k',
+    creditPass: true,
+    incomePass: true,
+    path: ['capture', 'intel', 'credit', 'income', 'vsl'],
+    dot: 'hot',
   },
   {
     id: 'L-8421',
-    amt: '$41,000',
-    intent: 'hot',
+    amt: '$9,400',
     src: 'TikTok',
-    tag: 'High intent',
-    scores: [
-      { k: 'credit', v: '712' },
-      { k: 'income', v: '$9.4k/mo' },
-      { k: 'avail', v: '$38k' },
-    ],
-    branch: 'high',
-    leaf: 'slo',
-    outcome: 'closer follow-up',
+    credit: 712,
+    income: '$6.1k/mo',
+    avail: '$22k',
+    creditPass: true,
+    incomePass: false,
+    path: ['capture', 'intel', 'credit', 'income', 'slo'],
+    dot: 'warm',
   },
   {
     id: 'L-8417',
-    amt: '$5,800',
-    intent: 'warm',
+    amt: '$2,300',
     src: 'Google',
-    tag: 'Low ticket',
-    scores: [
-      { k: 'credit', v: '690' },
-      { k: 'income', v: '$6.1k/mo' },
-      { k: 'avail', v: '$14k' },
-    ],
-    branch: 'low',
-    leaf: 'bookS',
-    outcome: 'team calendar',
+    credit: 642,
+    income: '$4.8k/mo',
+    avail: '$5k',
+    creditPass: false,
+    incomePass: false,
+    path: ['capture', 'intel', 'credit', 'slo'],
+    dot: 'cold',
   },
   {
-    id: 'L-8416',
-    amt: '$1,200',
-    intent: 'cold',
+    id: 'L-8424',
+    amt: '$54,000',
     src: 'Meta',
-    tag: 'Low ticket',
-    scores: [
-      { k: 'credit', v: 'past-due' },
-      { k: 'income', v: '$3.2k/mo' },
-      { k: 'avail', v: '$2k' },
-    ],
-    branch: 'low',
-    leaf: 'lowoff',
-    outcome: 'self-serve offer',
+    credit: 769,
+    income: '$11.8k/mo',
+    avail: '$47k',
+    creditPass: true,
+    incomePass: true,
+    path: ['capture', 'intel', 'credit', 'income', 'vsl'],
+    dot: 'hot',
   },
 ];
 
-const STEP_MS = [1000, 1500, 1500, 1200, 1900]; // capture, qualify, route, match, booked(hold)
-
-function stageNodeId(step: number, lead: Lead): string {
-  return ['form', 'qualify', 'route', lead.branch === 'high' ? 'hmatch' : 'lmatch', lead.leaf][
-    step
-  ] as string;
+function narrate(lead: Lead, nodeId: string): string {
+  switch (nodeId) {
+    case 'capture':
+      return `New lead from ${lead.src} · ${lead.amt}`;
+    case 'intel':
+      return `Pulling financial data · soft pull`;
+    case 'credit':
+      return `Credit ${lead.credit} · ${lead.creditPass ? 'qualified → income check' : 'below 680 → SLO'}`;
+    case 'income':
+      return `Income ${lead.income} · ${lead.incomePass ? 'high → high-ticket VSL' : 'low → SLO'}`;
+    case 'vsl':
+      return `Booked · 1:1 closer's calendar`;
+    case 'slo':
+      return `Routed · SLO low-ticket funnel`;
+    default:
+      return '';
+  }
 }
 
-// the four edges a lead traverses, in order
-function pathEdges(lead: Lead): Array<[string, string]> {
-  const match = lead.branch === 'high' ? 'hmatch' : 'lmatch';
-  return [
-    ['form', 'qualify'],
-    ['qualify', 'route'],
-    ['route', match],
-    [match, lead.leaf],
-  ];
-}
-
-const NARRATION: Array<(l: Lead) => string> = [
-  (l) => `New lead from ${l.src} · ${l.amt}`,
-  (l) => `Soft-pull qualify · ${l.scores[0]!.v} credit · ${l.scores[1]!.v}`,
-  (l) => `Routing · ${l.branch === 'high' ? 'high-ticket' : 'low-ticket'} · ${l.amt}`,
-  (l) => `Matched · ${l.branch === 'high' ? 'Premium VSL' : 'Fast VSL'}`,
-  (l) => `${l.leaf === 'bookP' || l.leaf === 'bookS' ? 'Booked' : 'Routed'} · ${l.outcome}`,
-];
-
-const INIT_COUNTS: Record<LeafId, number> = { bookP: 31, slo: 17, lowoff: 142, bookS: 48 };
+const INIT_COUNTS: Record<Term, number> = { vsl: 134, slo: 396 };
 
 export function RoutingTree() {
   const [leadIdx, setLeadIdx] = useState(0);
   const [step, setStep] = useState(0);
-  const [counts, setCounts] = useState<Record<LeafId, number>>(INIT_COUNTS);
+  const [counts, setCounts] = useState<Record<Term, number>>(INIT_COUNTS);
   const counted = useRef(false);
 
   const lead = LEADS[leadIdx]!;
+  const path = lead.path;
+  const last = path.length - 1;
   const reduce =
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-  // drive the state machine
   useEffect(() => {
     if (reduce) return;
     let t: ReturnType<typeof setTimeout>;
-    if (step < 4) {
-      t = setTimeout(() => setStep((s) => s + 1), STEP_MS[step]);
+    if (step < last) {
+      t = setTimeout(() => setStep((s) => s + 1), step === 0 ? 1000 : 1350);
     } else {
       t = setTimeout(() => {
         setLeadIdx((i) => (i + 1) % LEADS.length);
         setStep(0);
         counted.current = false;
-      }, STEP_MS[4]);
+      }, 2100);
     }
     return () => clearTimeout(t);
-  }, [step, leadIdx, reduce]);
+  }, [step, leadIdx, reduce, last]);
 
-  // tick the leaf counter exactly once, when the lead books
   useEffect(() => {
-    if (step === 4 && !counted.current) {
+    if (step === last && !counted.current) {
       counted.current = true;
-      setCounts((c) => ({ ...c, [lead.leaf]: c[lead.leaf] + 1 }));
+      const term = path[last] as Term;
+      setCounts((c) => ({ ...c, [term]: c[term] + 1 }));
     }
-  }, [step, lead.leaf]);
+  }, [step, leadIdx, last, path]);
 
-  const activeId = stageNodeId(step, lead);
+  const activeId = path[step] as string;
   const token = NODE_BY_ID[activeId];
-  const litEdges = pathEdges(lead).slice(0, Math.max(0, step)); // edges traversed so far
-  const isLit = (e: Edge) => litEdges.some(([f, t]) => f === e.from && t === e.to);
-  const totalBooked = counts.bookP + counts.bookS;
+  const reached = (id: string) => path.slice(0, step + 1).includes(id);
+  const isLit = (e: Edge) => {
+    for (let i = 0; i < step; i++) if (path[i] === e.from && path[i + 1] === e.to) return true;
+    return false;
+  };
 
   return (
     <div className="ez-tree-frame">
@@ -300,10 +282,10 @@ export function RoutingTree() {
           Live routing
         </span>
         <span className="ez-tree-narrate" key={`${leadIdx}-${step}`}>
-          {NARRATION[step]!(lead)}
+          {narrate(lead, activeId)}
         </span>
         <span className="ez-tree-stat">
-          {totalBooked} calls booked today · <span className="text-white/80">0 dropped</span>
+          {counts.vsl} calls booked today · <span className="text-white/80">0 dropped</span>
         </span>
       </div>
 
@@ -330,7 +312,7 @@ export function RoutingTree() {
             <path
               key={`src-${s.id}`}
               className="ez-tedge ez-tedge--src"
-              d={`M${s.x + 28},${s.y} C110,${s.y} 110,270 150,270`}
+              d={`M${s.x + 28},${s.y} C120,${s.y} 120,280 168,280`}
             />
           ))}
 
@@ -347,6 +329,17 @@ export function RoutingTree() {
               />
             ) : null,
           )}
+          {EDGES.filter((e) => e.label).map((e) => (
+            <text
+              key={`lbl-${e.from}-${e.to}`}
+              className={`ez-tedge-label${isLit(e) ? ' ez-tedge-label--lit' : ''}`}
+              x={e.lx}
+              y={e.ly}
+              textAnchor="middle"
+            >
+              {e.label}
+            </text>
+          ))}
         </svg>
 
         {SOURCES.map((s) => (
@@ -364,17 +357,16 @@ export function RoutingTree() {
 
         {NODES.map((n) => {
           const active = n.id === activeId;
-          const isLeaf = n.kind === 'leaf';
           const cls = [
             'ez-tnode',
-            n.kind === 'match' ? 'ez-tnode--match' : '',
-            isLeaf ? 'ez-tnode--leaf' : '',
+            n.kind === 'decision' ? 'ez-tnode--decision' : '',
+            n.kind === 'leaf' ? 'ez-tnode--leaf' : '',
             n.book ? 'ez-tnode--book' : '',
-            n.id === 'route' ? 'ez-tnode--hub' : '',
             active ? 'ez-tnode--active' : '',
           ]
             .filter(Boolean)
             .join(' ');
+          const passed = reached(n.id);
           return (
             <div
               key={n.id}
@@ -392,25 +384,44 @@ export function RoutingTree() {
                 <div className="ez-tnode__title">{n.title}</div>
                 <div className="ez-tnode__sub">{n.sub}</div>
 
-                {n.id === 'qualify' && step >= 1 && (
+                {n.scores && step >= 1 && (
                   <div className="ez-tnode__scores" key={leadIdx}>
-                    {lead.scores.map((s, si) => (
+                    {[
+                      ['credit', String(lead.credit)],
+                      ['income', lead.income],
+                      ['avail', lead.avail],
+                    ].map(([k, v], si) => (
                       <span
-                        key={s.k}
+                        key={k}
                         className="ez-tnode__score ez-score-in"
                         style={{ animationDelay: `${si * 0.16}s` } as CSSProperties}
                       >
-                        {s.k} {s.v}
+                        {k} {v}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {isLeaf && (
+                {n.id === 'credit' && passed && (
+                  <span
+                    className={`ez-decide ${lead.creditPass ? 'ez-decide--yes' : 'ez-decide--no'}`}
+                  >
+                    {lead.credit} {lead.creditPass ? '✓ ≥680' : '✗ <680'}
+                  </span>
+                )}
+                {n.id === 'income' && passed && (
+                  <span
+                    className={`ez-decide ${lead.incomePass ? 'ez-decide--yes' : 'ez-decide--no'}`}
+                  >
+                    {lead.income} {lead.incomePass ? '✓ high' : '✗ low'}
+                  </span>
+                )}
+
+                {n.kind === 'leaf' && (
                   <span className="ez-tnode__tally">
                     <span className="ez-tnode__tally-dot" aria-hidden />
-                    {n.book ? 'booked' : n.id === 'lowoff' ? 'checkout' : 'queued'} ·{' '}
-                    <span className="tabular-nums">{counts[n.id as LeafId]}</span>
+                    {n.id === 'vsl' ? 'booked' : 'entered'} ·{' '}
+                    <span className="tabular-nums">{counts[n.id as Term]}</span>
                   </span>
                 )}
               </div>
@@ -418,14 +429,13 @@ export function RoutingTree() {
           );
         })}
 
-        {/* the single guided lead, gliding node → node */}
         {token && (
           <div
-            className={`ez-demo-tok ez-demo-tok--${lead.intent}${step === 4 ? ' ez-demo-tok--done' : ''}`}
+            className={`ez-demo-tok ez-demo-tok--${lead.dot}${step === last ? ' ez-demo-tok--done' : ''}`}
             style={
               {
                 left: `${(token.x / VB.w) * 100}%`,
-                top: `${((token.y - 44) / VB.h) * 100}%`,
+                top: `${((token.y - 46) / VB.h) * 100}%`,
               } as CSSProperties
             }
           >
