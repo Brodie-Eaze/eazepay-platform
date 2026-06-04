@@ -22,10 +22,14 @@ export const NAV_LINKS = [
 ] as const;
 
 export const TICKER: Array<{ value: string; label: string; delta: string }> = [
-  { value: '$240M+', label: 'Orchestrated', delta: 'lifetime GMV · processing + financing' },
+  {
+    value: '$240M+',
+    label: 'Processed + financed',
+    delta: 'through the platform · processing + financing',
+  },
   { value: 'Curated', label: 'Lender marketplace', delta: 'prime → near prime · soft pull' },
   { value: '<10s', label: 'Avg decision', delta: 'parallel waterfall · p95' },
-  { value: '99.8%', label: 'Uptime SLA', delta: 'rolling 12mo · audited' },
+  { value: '$2k-$50k', label: 'Financing range', delta: 'med spas to HVAC · one rail' },
 ];
 
 /* ---- parent ↔ vertical orchestration story (stitched vs one platform) ---- */
@@ -194,12 +198,12 @@ export const AGENTS: Array<{
     role: 'Scoring Agent',
     status: 'LEARNING',
     description:
-      'Runs a calibrated propensity model trained on closed won outcomes per merchant, not a generic lookalike. Retrains nightly on every disposition and surfaces drift before it touches revenue.',
+      'Reads the room before you spend a dollar. ORACLE learns from your real closed deals, not a generic audience, to score how likely each lead is to actually buy. It re-learns every night and catches when the pattern shifts before it costs you revenue.',
     stats: [
-      { k: 'Model AUC', v: '0.89' },
-      { k: 'Last retrain', v: '4h ago' },
+      { k: 'Score quality', v: '0.89' },
+      { k: 'Last update', v: '4h ago' },
     ],
-    lastAction: 'flagged feature drift on ticket_value · recalibrated thresholds · 4h ago',
+    lastAction: 'spotted its scores drifting on big ticket deals · retuned overnight · 4h ago',
   },
   {
     n: '04',
@@ -247,12 +251,12 @@ export const AGENTS: Array<{
     status: 'ONLINE',
     wide: true,
     description:
-      'Closes the loop. Holds pixel events until an applicant clears qualification, then fires weighted conversions back to Meta and Google via server side CAPI and uploads closed won deals as offline conversions, the cleanest training signal your ad account will ever see.',
+      'Closes the loop. Most funnels tell your ad platform someone converted the second they fill out a form. ECHO waits until they actually qualify, then fires the signal, so Meta and Google learn from real buyers, not form fillers.',
     stats: [
       { k: 'Match quality', v: 'server side' },
       { k: 'Loop', v: 'closed' },
     ],
-    lastAction: 'uploaded 47 closed won deals to Meta CAPI, weighted by ticket_value · 6m ago',
+    lastAction: 'sent 47 real closed deals back to Meta, weighted by deal size · 6m ago',
   },
 ];
 
@@ -386,8 +390,8 @@ export const PROOF: Array<{ value: string; unit: string; label: string; sub: str
   {
     value: '$240',
     unit: 'M+',
-    label: 'Orchestrated through the platform',
-    sub: 'Lifetime GMV across processing + financing rails',
+    label: 'Processed + financed',
+    sub: 'Across processing and financing rails',
   },
   {
     value: 'Parallel',
@@ -438,7 +442,7 @@ export const FAQ: Array<{ q: string; a: string }> = [
   },
   {
     q: 'Is the platform secure and compliant?',
-    a: 'Security is built in: encryption in transit and at rest, tokenization of sensitive payment data, granular access controls, and immutable, exportable audit trails on every action. We operate a continuous security and compliance program.',
+    a: 'Security is built in from the ground up: encryption in transit and at rest, tokenization of sensitive payment data, granular access controls, and immutable, exportable audit trails on every action. The platform is built to SOC 2 and PCI DSS standards, with formal certification in progress, and we will never show a badge we do not yet hold.',
   },
   {
     q: 'How do we get started?',

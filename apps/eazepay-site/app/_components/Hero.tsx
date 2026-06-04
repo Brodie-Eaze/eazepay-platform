@@ -29,9 +29,8 @@ export function Hero() {
             className="ez-hero-rise mt-6 max-w-[36rem] text-[16px] leading-relaxed text-white/70"
             style={rise(2)}
           >
-            EazePay is the financial infrastructure behind the brand, prequalification, agents, a
-            lender marketplace and payment processing on one platform. MedPay, TradePay, CoachPay
-            and VetPay are brand wrappers riding the exact same rail.
+            EazePay is the financial infrastructure that lets any brand offer financing:
+            prequalification, a lender marketplace, agents and payment processing, on one platform.
           </p>
 
           <div className="ez-hero-rise mt-8 flex flex-wrap items-center gap-3" style={rise(3)}>

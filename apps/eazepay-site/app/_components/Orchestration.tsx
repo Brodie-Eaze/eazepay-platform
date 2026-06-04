@@ -15,8 +15,8 @@ export function Orchestration() {
           <p className="mt-5 text-[16px] leading-relaxed text-fg-secondary">
             EazePay is the infrastructure. MedPay, TradePay, CoachPay and VetPay are brand wrappers
             on top of it. Underneath, one platform carries prequalification, the agents, a lender
-            marketplace and payment processing. Stand up a new brand in days, the infrastructure
-            beneath is already live, audited and in production.
+            marketplace and payment processing. The infrastructure is already live. Configure a
+            brand on top, not from scratch.
           </p>
         </Reveal>
 

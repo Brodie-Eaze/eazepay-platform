@@ -9,7 +9,7 @@ export function Proof() {
         <Reveal className="max-w-3xl">
           <Eyebrow>The numbers</Eyebrow>
           <h2 className="mt-5 text-[32px] font-bold leading-[1.12] tracking-[-0.015em] text-fg sm:text-[42px]">
-            Built and proven <span className="ez-sky-text">in production.</span>
+            Real platform. <span className="ez-sky-text">Real numbers.</span>
           </h2>
         </Reveal>
 
