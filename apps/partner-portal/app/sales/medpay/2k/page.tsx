@@ -3150,6 +3150,23 @@ function BigFinaleCTA(): JSX.Element {
           </a>
         </div>
       </Reveal>
+      <Reveal delay={440}>
+        <div className="sld-finale-guarantee">
+          <span className="sld-finale-guarantee-badge">90-day guarantee</span>
+          <p className="sld-finale-guarantee-h">
+            Recoup your $2,000 in 90 days, or we refund it.
+          </p>
+          <p className="sld-finale-guarantee-sub">
+            Submit 20 applications every 30 days for three months straight. If you haven&apos;t
+            recouped your $2,000 setup fee by day 90, we refund it in full. All we ask is
+            consistency.
+          </p>
+          <p className="sld-finale-guarantee-fine">
+            Requires 20 submitted applications in each consecutive 30-day period across the full 90
+            days.
+          </p>
+        </div>
+      </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
           NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $2k setup · $3 / lead · 4%
@@ -6875,6 +6892,33 @@ const CSS = `
   color: var(--mp-mute);
   text-transform: uppercase;
   font-weight: 600;
+}
+.sld-finale-guarantee {
+  max-width: 560px;
+  margin: 22px auto 0;
+  padding: 22px 28px;
+  border-radius: 18px;
+  text-align: center;
+  background: linear-gradient(135deg, #FFFFFF 0%, #ECFFFE 100%);
+  border: 1px solid rgba(14, 124, 102, 0.28);
+  box-shadow: 0 22px 46px -30px rgba(14, 124, 102, 0.42);
+}
+.sld-finale-guarantee-badge {
+  display: inline-block;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, var(--mp-teal) 0%, var(--mp-teal-2) 100%);
+  padding: 5px 13px; border-radius: 999px; margin-bottom: 13px;
+}
+.sld-finale-guarantee-h {
+  font-size: 21px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3;
+  color: var(--mp-deep);
+}
+.sld-finale-guarantee-sub {
+  margin-top: 9px; font-size: 14px; line-height: 1.55; color: var(--mp-mute);
+}
+.sld-finale-guarantee-fine {
+  margin-top: 11px; font-size: 11px; line-height: 1.5; color: var(--mp-mute); opacity: 0.8;
 }
 
 /* ===== Responsive ===== */
