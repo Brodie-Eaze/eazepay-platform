@@ -26,7 +26,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
  * disclosure. Default is `10k` (matches the legacy /sales/medpay deck
  * which had no plan-aware decks behind it).
  */
-type PlanCode = '5k' | '10k' | '10k-guarantee';
+type PlanCode = '2k' | '5k' | '10k' | '10k-guarantee';
 type Plan = {
   tag: string;
   heroAmount: string;
@@ -39,6 +39,16 @@ type Plan = {
 };
 
 const PLANS: Record<PlanCode, Plan> = {
+  '2k': {
+    tag: '01 · PLATFORM SETUP',
+    heroAmount: '$2,000',
+    heroSubline: 'USD · charged on signing',
+    agreementLine:
+      'I agree to the $2,000 one-time platform fee, $3 per smart-form lead, and 4% of settled loan amount. I have authority to bind the named business.',
+    stripeTag: 'PAY SETUP FEE',
+    stripeAmount: '$2,000.00',
+    payButtonLabel: 'Pay $2,000 with Stripe',
+  },
   '5k': {
     tag: '01 · PLATFORM SETUP',
     heroAmount: '$5,000',
@@ -74,7 +84,7 @@ const PLANS: Record<PlanCode, Plan> = {
 };
 
 function planFromSearch(p: string | null): PlanCode {
-  if (p === '5k' || p === '10k' || p === '10k-guarantee') return p;
+  if (p === '2k' || p === '5k' || p === '10k' || p === '10k-guarantee') return p;
   return '10k';
 }
 
