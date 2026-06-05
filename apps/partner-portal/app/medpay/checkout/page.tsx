@@ -41,13 +41,13 @@ type Plan = {
 const PLANS: Record<PlanCode, Plan> = {
   '2k': {
     tag: '01 · PLATFORM SETUP',
-    heroAmount: '$2,000',
+    heroAmount: '$1,997',
     heroSubline: 'USD · charged on signing',
     agreementLine:
-      'I agree to the $2,000 one-time platform fee, $3 per smart-form lead, and 4% of settled loan amount. I have authority to bind the named business.',
+      'I agree to the $1,997 one-time platform fee, $3 per smart-form lead, and 4% of settled loan amount. I have authority to bind the named business.',
     stripeTag: 'PAY SETUP FEE',
-    stripeAmount: '$2,000.00',
-    payButtonLabel: 'Pay $2,000 with Stripe',
+    stripeAmount: '$1,997.00',
+    payButtonLabel: 'Pay $1,997 with Stripe',
   },
   '5k': {
     tag: '01 · PLATFORM SETUP',

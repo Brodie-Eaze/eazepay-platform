@@ -640,7 +640,7 @@ const SLIDES_RAW: Slide[] = [
                 </div>
               </div>
               <div className="sld-pricing-tier-r">
-                <div className="sld-pricing-tier-v">$2,000</div>
+                <div className="sld-pricing-tier-v">$1,997</div>
                 <div className="sld-pricing-tier-when">USD · paid on signing</div>
               </div>
             </div>
@@ -718,7 +718,7 @@ const SLIDES_RAW: Slide[] = [
         </Reveal>
         <Reveal delay={200}>
           <p className="sld-sub">
-            Once you sign and the $2,000 platform fee clears, our team configures the account,
+            Once you sign and the $1,997 platform fee clears, our team configures the account,
             integrates your pixel, trains your staff, and validates the first end-to-end soft pull.
             Up to 5 business days. After that you&apos;re running real traffic and financing real
             patients.
@@ -2058,8 +2058,8 @@ function SampleInvoice(): JSX.Element {
           <tr>
             <td>MedPay platform · one-time setup</td>
             <td>1</td>
-            <td>$2,000</td>
-            <td>$2,000.00</td>
+            <td>$1,997</td>
+            <td>$1,997.00</td>
           </tr>
           <tr>
             <td>Smart-form lead pass-through · sample month</td>
@@ -2092,7 +2092,7 @@ function SampleInvoice(): JSX.Element {
         </tfoot>
       </table>
       <div className="sld-invoice-foot">
-        $2,000 setup is one-time. After that you only pay $3 per smart-form lead and 4% of loans
+        $1,997 setup is one-time. After that you only pay $3 per smart-form lead and 4% of loans
         that actually settled.
       </div>
     </div>
@@ -2104,7 +2104,7 @@ function OnboardingTimeline(): JSX.Element {
   const ms = [
     {
       d: 'Day 0',
-      t: 'Agreement signed · $2k paid',
+      t: 'Agreement signed · $1,997 paid',
       b: 'KYB clears in 60s · CSM assigned · kickoff scheduled',
     },
     {
@@ -3020,7 +3020,7 @@ function ValueStack(): JSX.Element {
           <div className="sld-stack-total-row accent">
             <span className="sld-stack-total-k">MedPay</span>
             <span className="sld-stack-total-v">
-              $2,000 one-time · $3 / lead · 4% of settled loans
+              $1,997 one-time · $3 / lead · 4% of settled loans
             </span>
           </div>
         </div>
@@ -3133,14 +3133,14 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub sld-finale-sub">
-          $2,000 to set up. $3 per smart-form lead. 4% of loans that actually settle. Live in up to
+          $1,997 to set up. $3 per smart-form lead. 4% of loans that actually settle. Live in up to
           five business days. 1,000+ practices already running on MedPay.
         </p>
       </Reveal>
       <Reveal delay={360}>
         <div className="sld-finale-ctas sld-finale-ctas-single">
           <a href="/medpay/checkout?plan=2k" className="sld-finale-primary">
-            <span className="sld-finale-primary-h">Get started · $2,000</span>
+            <span className="sld-finale-primary-h">Get started · $1,997</span>
             <span className="sld-finale-primary-sub">
               Sign today · KYB clears in 60s · live in 5 days
             </span>
@@ -3154,11 +3154,11 @@ function BigFinaleCTA(): JSX.Element {
         <div className="sld-finale-guarantee">
           <span className="sld-finale-guarantee-badge">90-day guarantee</span>
           <p className="sld-finale-guarantee-h">
-            Recoup your $2,000 in 90 days, or we refund it.
+            Recoup your $1,997 in 90 days, or we refund it.
           </p>
           <p className="sld-finale-guarantee-sub">
             Submit 20 applications every 30 days for three months straight. If you haven&apos;t
-            recouped your $2,000 setup fee by day 90, we refund it in full. All we ask is
+            recouped your $1,997 setup fee by day 90, we refund it in full. All we ask is
             consistency.
           </p>
           <p className="sld-finale-guarantee-fine">
@@ -3169,7 +3169,7 @@ function BigFinaleCTA(): JSX.Element {
       </Reveal>
       <Reveal delay={480}>
         <div className="sld-finale-trust">
-          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $2k setup · $3 / lead · 4%
+          NMLS&nbsp;#2456701 · FCRA · ECOA · TILA · 1,000+ practices · $1,997 setup · $3 / lead · 4%
           settled
         </div>
       </Reveal>
