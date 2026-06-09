@@ -252,26 +252,43 @@ const KpiTile = ({
         : directionIsBad
           ? 'text-danger'
           : 'text-fg-muted';
+  const deltaBg =
+    deltaPct === 0
+      ? 'bg-bg-muted'
+      : directionIsGood
+        ? 'bg-success-bg'
+        : directionIsBad
+          ? 'bg-danger-bg'
+          : 'bg-bg-muted';
+  const accentStrip =
+    deltaPct === 0 ? 'bg-accent/50' : directionIsGood ? 'bg-success/50' : 'bg-danger/50';
   const Arrow = isUp ? TrendUpIcon : isDown ? TrendDownIcon : TrendUpIcon;
 
   return (
-    <div className="relative flex flex-col justify-between rounded-lg border border-border bg-bg-elevated px-4 py-3.5 shadow-sm min-h-[110px]">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-[10px] uppercase tracking-[0.16em] text-fg-muted font-semibold leading-tight">
+    <div className="relative overflow-hidden flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated px-5 py-5 shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-200">
+      {/* Semantic accent strip */}
+      <div className={`absolute inset-x-0 top-0 h-[3px] ${accentStrip}`} />
+
+      <div className="flex items-start justify-between gap-2 pt-0.5">
+        <span className="text-[11px] uppercase tracking-[0.14em] text-fg-muted font-semibold leading-tight">
           {label}
         </span>
-        <span className="text-fg-muted shrink-0">{icon}</span>
+        <span className="flex items-center justify-center size-8 rounded-lg bg-accent-soft text-accent shrink-0">
+          {icon}
+        </span>
       </div>
-      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
-        <span className="text-[26px] font-semibold leading-none tabular-nums tracking-tight text-fg">
-          {value}
-        </span>
-        <span
-          className={`inline-flex items-center gap-0.5 text-[11px] font-semibold tabular-nums ${tone}`}
-        >
-          <Arrow size={11} />
-          {fmtPctDelta(deltaPct)}
-        </span>
+      <div className="space-y-1.5">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="text-[28px] font-bold leading-none tabular-nums tracking-tight text-fg">
+            {value}
+          </span>
+          <span
+            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${tone} ${deltaBg}`}
+          >
+            <Arrow size={11} />
+            {fmtPctDelta(deltaPct)}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -348,7 +365,7 @@ const BarChart = ({
               width={barWidth}
               height={Math.max(0, h)}
               rx={2}
-              className="fill-fg-secondary/70"
+              className="fill-[#0d1530]/65"
             />
             <text x={cx} y={height - 6} textAnchor="middle" className="fill-fg-muted" fontSize={10}>
               {d.label}

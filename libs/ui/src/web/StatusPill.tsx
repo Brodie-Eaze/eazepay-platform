@@ -21,12 +21,20 @@ export const StatusPill: FC<{
 }> = ({ tone = 'neutral', dot, icon, children, className }) => (
   <span
     className={cn(
-      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium leading-5',
+      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] text-[12px] font-medium leading-5 tracking-[0.01em]',
       toneClasses[tone],
       className,
     )}
   >
-    {dot && <span className="size-1.5 rounded-full bg-current" />}
+    {dot && (
+      <span
+        className={cn(
+          'size-2 rounded-full bg-current shrink-0',
+          // Pulse only on success — signals "live / all systems go"
+          tone === 'success' && 'animate-pulse',
+        )}
+      />
+    )}
     {icon}
     {children}
   </span>

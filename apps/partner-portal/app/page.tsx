@@ -213,23 +213,34 @@ function Kpi({
   delta: number;
   icon?: React.ReactNode;
 }) {
-  const positive = delta >= 0;
+  const positive = delta > 0;
+  const neutral = delta === 0;
+  const deltaText = neutral ? 'text-fg-muted' : positive ? 'text-success' : 'text-danger';
+  const deltaBg = neutral ? 'bg-bg-muted' : positive ? 'bg-success-bg' : 'bg-danger-bg';
+  const accentStrip = neutral ? 'bg-accent/50' : positive ? 'bg-success/50' : 'bg-danger/50';
+
   return (
-    <div className="rounded-xl border border-border bg-bg-elevated px-5 py-4">
-      <div className="flex items-start justify-between">
-        <p className="text-[10px] uppercase tracking-[0.16em] font-semibold text-fg-muted">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-bg-elevated px-5 py-5 shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-200">
+      {/* Semantic accent strip */}
+      <div className={`absolute inset-x-0 top-0 h-[3px] ${accentStrip}`} />
+
+      <div className="flex items-start justify-between gap-2 pt-0.5">
+        <p className="text-[11px] uppercase tracking-[0.14em] font-semibold text-fg-muted">
           {label}
         </p>
-        {icon && <span className="text-fg-muted">{icon}</span>}
+        {icon && (
+          <span className="flex items-center justify-center size-8 rounded-lg bg-accent-soft text-accent shrink-0">
+            {icon}
+          </span>
+        )}
       </div>
-      <p className="mt-1 text-[20px] font-semibold tracking-tight text-fg leading-none">{value}</p>
+      <p className="mt-2 text-[28px] font-bold tracking-tight text-fg leading-none tabular-nums">
+        {value}
+      </p>
       <p
-        className={
-          'mt-2 flex items-center gap-1 text-[12px] font-semibold ' +
-          (positive ? 'text-fg' : 'text-fg-muted')
-        }
+        className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${deltaText} ${deltaBg}`}
       >
-        {positive ? <TrendUpIcon size={12} /> : <TrendDownIcon size={12} />}
+        {positive ? <TrendUpIcon size={11} /> : neutral ? null : <TrendDownIcon size={11} />}
         {positive ? '+' : ''}
         {delta}%
       </p>
@@ -295,7 +306,7 @@ function BarChartGrey({
               const h = max === 0 ? 0 : (d.value / max) * (chartH - 8);
               return (
                 <div key={d.label} className="flex-1 max-w-[28px] flex flex-col items-center">
-                  <div className="w-full rounded-t-sm bg-slate-300/80" style={{ height: h }} />
+                  <div className="w-full rounded-t-sm bg-[#0d1530]/65" style={{ height: h }} />
                 </div>
               );
             })}
