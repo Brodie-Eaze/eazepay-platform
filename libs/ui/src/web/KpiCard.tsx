@@ -55,22 +55,22 @@ export const KpiCard: FC<{
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated px-5 py-4 shadow-sm',
+        'flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3.5 shadow-sm',
         'hover:shadow-md transition-shadow duration-150',
         className,
       )}
     >
       {/* Eyebrow */}
-      <p className="text-[11px] uppercase tracking-[0.1em] font-semibold text-fg-muted">{label}</p>
+      <p className="text-[10px] uppercase tracking-[0.12em] font-semibold text-fg-muted">{label}</p>
 
       {/* Value */}
-      <p className="text-[32px] font-bold leading-none tracking-tight tabular-nums text-fg">
+      <p className="text-[24px] font-bold leading-tight tracking-tight tabular-nums text-fg">
         {value}
       </p>
 
       {/* Delta — plain coloured text, no background */}
       {delta && (
-        <p className={cn('text-[12px] font-semibold tabular-nums leading-none', deltaColor)}>
+        <p className={cn('text-[11px] font-semibold tabular-nums leading-none', deltaColor)}>
           {deltaArrow} {delta.value}
         </p>
       )}
