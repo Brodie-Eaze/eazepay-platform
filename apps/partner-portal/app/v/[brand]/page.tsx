@@ -253,22 +253,21 @@ const KpiTile = ({
   const deltaArrow = isUp ? '↑' : isDown ? '↓' : '→';
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
-      {/* Eyebrow label + inline delta — A&E MetricTile pattern */}
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[10px] uppercase tracking-[0.12em] text-fg-muted font-medium leading-tight">
-          {label}
-        </span>
-        {!neutral && (
-          <span className={`text-[11px] font-medium tabular-nums shrink-0 ${deltaColor}`}>
-            {deltaArrow} {fmtPctDelta(deltaPct)}
-          </span>
-        )}
-      </div>
+    <div className="flex flex-col gap-1 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+      {/* Eyebrow */}
+      <span className="text-[10px] uppercase tracking-[0.12em] text-fg-muted font-medium leading-tight">
+        {label}
+      </span>
       {/* Value */}
       <span className="text-[20px] font-semibold leading-tight tracking-tight text-fg tabular-nums">
         {value}
       </span>
+      {/* Delta — plain coloured text, no background */}
+      {!neutral && (
+        <span className={`text-[11px] font-medium tabular-nums leading-none ${deltaColor}`}>
+          {deltaArrow} {fmtPctDelta(deltaPct)}
+        </span>
+      )}
     </div>
   );
 };

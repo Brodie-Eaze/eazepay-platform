@@ -208,7 +208,7 @@ function Kpi({
   label: string;
   value: string;
   delta: number;
-  /** @deprecated – icon chips removed; prop kept so call-sites don't need updating */
+  /** @deprecated – icon chips removed */
   icon?: React.ReactNode;
 }) {
   const positive = delta > 0;
@@ -217,21 +217,20 @@ function Kpi({
   const deltaArrow = positive ? '↑' : delta < 0 ? '↓' : '→';
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
-      {/* Eyebrow label + inline delta — A&E MetricTile pattern */}
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-[0.12em] font-medium text-fg-muted">{label}</p>
-        {!neutral && (
-          <span className={`text-[11px] font-medium tabular-nums shrink-0 ${deltaColor}`}>
-            {deltaArrow} {positive ? '+' : ''}
-            {delta}%
-          </span>
-        )}
-      </div>
+    <div className="flex flex-col gap-1 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+      {/* Eyebrow */}
+      <p className="text-[10px] uppercase tracking-[0.12em] font-medium text-fg-muted">{label}</p>
       {/* Value */}
-      <p className="text-[20px] font-semibold leading-tight tracking-tight text-fg tabular-nums">
+      <p className="text-[20px] font-semibold leading-tight tracking-tight tabular-nums text-fg">
         {value}
       </p>
+      {/* Delta — plain coloured text, no background */}
+      {!neutral && (
+        <p className={`text-[11px] font-medium tabular-nums leading-none ${deltaColor}`}>
+          {deltaArrow} {positive ? '+' : ''}
+          {delta}%
+        </p>
+      )}
     </div>
   );
 }
