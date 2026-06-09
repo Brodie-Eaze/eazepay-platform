@@ -217,18 +217,18 @@ function Kpi({
   const deltaArrow = positive ? '↑' : delta < 0 ? '↓' : '→';
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated px-5 py-4 shadow-sm hover:shadow-md transition-shadow duration-150">
+    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3.5 shadow-sm hover:shadow-md transition-shadow duration-150">
       {/* Eyebrow */}
-      <p className="text-[11px] uppercase tracking-[0.1em] font-semibold text-fg-muted">{label}</p>
+      <p className="text-[10px] uppercase tracking-[0.12em] font-semibold text-fg-muted">{label}</p>
       {/* Value */}
-      <p className="text-[32px] font-bold leading-none tracking-tight tabular-nums text-fg">
+      <p className="text-[24px] font-bold leading-tight tracking-tight tabular-nums text-fg">
         {value}
       </p>
       {/* Delta */}
       {!neutral && (
-        <p className={`text-[12px] font-semibold tabular-nums leading-none ${deltaColor}`}>
+        <p className={`text-[11px] font-semibold tabular-nums leading-none ${deltaColor}`}>
           {deltaArrow} {positive ? '+' : ''}
-          {delta}% vs last month
+          {delta}%
         </p>
       )}
     </div>
