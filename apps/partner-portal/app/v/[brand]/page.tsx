@@ -253,18 +253,18 @@ const KpiTile = ({
   const deltaArrow = isUp ? '↑' : isDown ? '↓' : '→';
 
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated px-5 py-4 shadow-sm hover:shadow-md transition-shadow duration-150">
       {/* Eyebrow */}
-      <span className="text-[10px] uppercase tracking-[0.12em] text-fg-muted font-medium leading-tight">
+      <span className="text-[11px] uppercase tracking-[0.1em] text-fg-muted font-semibold leading-tight">
         {label}
       </span>
       {/* Value */}
-      <span className="text-[20px] font-semibold leading-tight tracking-tight text-fg tabular-nums">
+      <span className="text-[32px] font-bold leading-none tracking-tight text-fg tabular-nums">
         {value}
       </span>
-      {/* Delta — plain coloured text, no background */}
+      {/* Delta */}
       {!neutral && (
-        <span className={`text-[11px] font-medium tabular-nums leading-none ${deltaColor}`}>
+        <span className={`text-[12px] font-semibold tabular-nums leading-none ${deltaColor}`}>
           {deltaArrow} {fmtPctDelta(deltaPct)}
         </span>
       )}
