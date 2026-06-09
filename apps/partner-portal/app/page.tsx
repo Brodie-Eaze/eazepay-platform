@@ -1,41 +1,27 @@
 'use client';
 import Link from 'next/link';
-import {
-  PageHeader,
-  PageBody,
-  Card,
-  CardBody,
-  ArrowRightIcon,
-  DollarIcon,
-  XIcon,
-  ClockIcon,
-  TrophyIcon,
-} from '@eazepay/ui/web';
-import { formatCurrency } from '../lib/api-client';
-import { partners, applications, masterKpis } from '../lib/master-data';
+import { PageHeader, PageBody, Card, CardBody, ArrowRightIcon, TrophyIcon } from '@eazepay/ui/web';
+import { partners, masterKpis } from '../lib/master-data';
 
 /**
- * Master Command Centre — direct port of the Lovable reference.
+ * Master Command Centre — A&E / D2D–aligned redesign.
  *
  * Layout:
- *   ┌──── Eyebrow + page title (Command Center) ────┐
- *   │ ┌────┬────┬────┐  ← row 1: SUBMITTED / APPROVED / FUNDED
- *   │ └────┴────┴────┘
- *   │ ┌────┬────┬────┐  ← row 2: TOTAL FUNDED / DECLINED / IN REVIEW
- *   │ └────┴────┴────┘
- *   │ ┌────┬────┬────┐
- *   │ │ MS │ FV │ CI │  ← Monthly Submissions / Funded Volume / Credit Insights
- *   │ └────┴────┴────┘
- *   │ ┌──── Partner Leaderboard ────┐
- *   │ │ (5 rows w/ trophy on #1)    │
- *   │ └─────────────────────────────┘
+ *   ┌──── Page title ────────────────────────────────────┐
+ *   │ ┌────┬────┬────┬────┬────┬────┐  ← 6 KPI cards    │
+ *   │ └────┴────┴────┴────┴────┴────┘                    │
+ *   │ ┌──────────────┬──────────────┐                    │
+ *   │ │ Monthly Subs │ Funded Vol   │  ← 2-col tall bars │
+ *   │ └──────────────┴──────────────┘                    │
+ *   │ ┌──────┬───────────────────────┐                   │
+ *   │ │Credit│  Partner Leaderboard  │  ← 1/3 + 2/3     │
+ *   │ └──────┴───────────────────────┘                   │
  *
- * Every value comes from `lib/master-data` for now; once the BFF's
- * `/admin/dashboard` endpoint is wired, swap `masterKpis` for a
- * TanStack query against `useApi`.
+ * Every value comes from `lib/master-data`; swap for TanStack
+ * query against `/admin/dashboard` when BFF is wired.
  */
 
-// ── Local mock helpers ──────────────────────────────────────────────
+// ── Mock chart data ─────────────────────────────────────────────────
 const monthlySubmissions: Array<{ label: string; value: number }> = [
   { label: 'Dec', value: 250 },
   { label: 'Jan', value: 810 },
@@ -54,15 +40,12 @@ const fundedVolume: Array<{ label: string; value: number }> = [
   { label: 'May', value: 0 },
 ];
 
-// Donut palette — navy → light grey ramp. Matches the rest of the
-// platform's navy + grey + light grey colour discipline; no accent
-// indigo / violet / green outside of explicit semantic signals
-// (green = up delta, red = down delta).
+// Donut palette — navy ramp. No accent colours outside semantic signals.
 const creditInsights = [
-  { name: 'Prime', range: '700–850', pct: 18, color: '#0d1530' }, // navy
-  { name: 'NearPrime', range: '640–699', pct: 14, color: '#1e3a8a' }, // deep navy-blue
-  { name: 'Subprime', range: '580–639', pct: 6, color: '#94a3b8' }, // slate-400
-  { name: 'DeepSubprime', range: '300–579', pct: 6, color: '#cbd5e1' }, // slate-300
+  { name: 'Prime', range: '700–850', pct: 18, color: '#0d1530' },
+  { name: 'NearPrime', range: '640–699', pct: 14, color: '#1e3a8a' },
+  { name: 'Subprime', range: '580–639', pct: 6, color: '#94a3b8' },
+  { name: 'DeepSubprime', range: '300–579', pct: 6, color: '#cbd5e1' },
 ];
 
 const leaderboard = partners
@@ -90,109 +73,100 @@ export default function CommandCenter() {
         description="Real-time picture of merchants, applications, funding, and credit distribution."
       />
       <PageBody>
-        {/* ── KPI grid (6 cards) ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <Kpi label="Submitted" value="478" delta={12} />
-          <Kpi label="Approved" value="70" delta={5} />
-          <Kpi label="Funded" value="68" delta={8} />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* ── KPI grid (6 cards × 2 rows) ── */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          <Kpi label="Submitted" value="478" delta={12} hint="applications this month" />
+          <Kpi label="Approved" value="70" delta={5} hint="of 478 submitted" />
+          <Kpi label="Funded" value="68" delta={8} hint="deals closed" />
           <Kpi
             label="Total Funded"
-            value={formatCurrency(masterKpis.totalFundedCents)
-              .replace(/\.\d+/, '')
-              .replace(',000,000', 'M')}
+            value={formatFunded(masterKpis.totalFundedCents)}
             delta={22}
-            icon={<DollarIcon size={14} />}
+            hint="net of fees"
           />
-          <Kpi label="Declined" value="12" delta={-15} icon={<XIcon size={14} />} />
-          <Kpi label="In Review" value="8" delta={10} icon={<ClockIcon size={14} />} />
+          <Kpi label="Declined" value="12" delta={-15} hint="down from prior month" />
+          <Kpi label="In Review" value="8" delta={10} hint="awaiting decision" />
         </div>
 
-        {/* ── 3-up chart row ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        {/* ── 2-col bar charts ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <ChartCard title="Monthly Submissions" subtitle="Application volume over time">
-            <BarChartGrey
-              data={monthlySubmissions}
-              yTicks={[1000, 750, 500, 250, 0]}
-              yFormat={(v) => v.toString()}
-            />
+            <BarChartGrey data={monthlySubmissions} />
           </ChartCard>
           <ChartCard title="Funded Volume" subtitle="Monthly funded amount">
-            <BarChartGrey
-              data={fundedVolume}
-              yTicks={[22000, 16500, 11000, 5500, 0]}
-              yFormat={(v) => `$${(v / 1000).toFixed(0)}k`}
-            />
-          </ChartCard>
-          <ChartCard title="Credit Insights">
-            <CreditDonut />
+            <BarChartGrey data={fundedVolume} yIsDollars />
           </ChartCard>
         </div>
 
-        {/* ── Partner Leaderboard ── */}
-        <Card>
-          <CardBody className="p-0">
-            <div className="flex items-end justify-between px-5 py-4 border-b border-border">
-              <div>
-                <h2 className="text-[15px] font-semibold text-fg">Partner Leaderboard</h2>
-                <p className="text-[12px] text-fg-muted mt-0.5">Ranked by total funded volume</p>
-              </div>
-              <Link
-                href="/partners"
-                className="text-[12px] text-fg-secondary hover:text-fg flex items-center gap-1"
-              >
-                View all <ArrowRightIcon size={12} />
-              </Link>
-            </div>
+        {/* ── Credit Insights (1/3) + Partner Leaderboard (2/3) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <ChartCard title="Credit Insights" subtitle="Distribution by FICO band">
+            <CreditDonut />
+          </ChartCard>
 
-            <ul className="divide-y divide-border">
-              {leaderboard.map((row) => {
-                const pct = (row.funded / maxFunded) * 100;
-                return (
-                  <li key={row.rank}>
-                    <Link
-                      href={`/control-panel/${row.partnerId}`}
-                      className="grid grid-cols-12 items-center gap-4 px-5 py-4 hover:bg-bg-muted/30"
-                    >
-                      {/* Rank */}
-                      <div className="col-span-1 flex items-center gap-2 text-[13px]">
-                        {row.rank === 1 ? (
-                          <span className="text-fg">
-                            <TrophyIcon size={16} />
-                          </span>
-                        ) : (
-                          <span className="text-fg-muted font-medium w-4 text-center">
-                            {row.rank}
-                          </span>
-                        )}
-                      </div>
-                      {/* Name + progress bar */}
-                      <div className="col-span-7 min-w-0">
-                        <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                          <p className="text-[14px] font-semibold text-fg truncate">{row.name}</p>
-                          <p className="text-[14px] font-bold tabular-nums text-fg shrink-0">
-                            {formatFunded(row.funded)}
-                          </p>
+          <Card className="lg:col-span-2">
+            <CardBody className="p-0">
+              <div className="flex items-end justify-between px-5 py-4 border-b border-border">
+                <div>
+                  <h2 className="text-[15px] font-semibold text-fg">Partner Leaderboard</h2>
+                  <p className="text-[12px] text-fg-muted mt-0.5">Ranked by total funded volume</p>
+                </div>
+                <Link
+                  href="/partners"
+                  className="text-[12px] text-fg-secondary hover:text-fg flex items-center gap-1"
+                >
+                  View all <ArrowRightIcon size={12} />
+                </Link>
+              </div>
+
+              <ul className="divide-y divide-border">
+                {leaderboard.map((row) => {
+                  const pct = (row.funded / maxFunded) * 100;
+                  return (
+                    <li key={row.rank}>
+                      <Link
+                        href={`/control-panel/${row.partnerId}`}
+                        className="grid grid-cols-12 items-center gap-4 px-5 py-4 hover:bg-bg-muted/30"
+                      >
+                        {/* Rank */}
+                        <div className="col-span-1 flex items-center gap-2 text-[13px]">
+                          {row.rank === 1 ? (
+                            <span className="text-fg">
+                              <TrophyIcon size={16} />
+                            </span>
+                          ) : (
+                            <span className="text-fg-muted font-medium w-4 text-center">
+                              {row.rank}
+                            </span>
+                          )}
                         </div>
-                        <div className="h-1.5 rounded-full bg-bg-muted overflow-hidden">
-                          <span
-                            className="block h-full rounded-full bg-[#0d1530]"
-                            style={{ width: `${Math.max(8, pct)}%` }}
-                          />
+                        {/* Name + progress bar */}
+                        <div className="col-span-7 min-w-0">
+                          <div className="flex items-baseline justify-between gap-3 mb-1.5">
+                            <p className="text-[14px] font-semibold text-fg truncate">{row.name}</p>
+                            <p className="text-[14px] font-bold tabular-nums text-fg shrink-0">
+                              {formatFunded(row.funded)}
+                            </p>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-bg-muted overflow-hidden">
+                            <span
+                              className="block h-full rounded-full bg-[#0d1530]"
+                              style={{ width: `${Math.max(8, pct)}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      {/* 3 stat columns */}
-                      <Stat n={row.apps} label="Apps" className="col-span-1" />
-                      <Stat n={row.fundedCount} label="Funded" className="col-span-1" />
-                      <Stat n={`${row.approval}%`} label="Approval" className="col-span-2" />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </CardBody>
-        </Card>
+                        {/* Stats */}
+                        <Stat n={row.apps} label="Apps" className="col-span-1" />
+                        <Stat n={row.fundedCount} label="Funded" className="col-span-1" />
+                        <Stat n={`${row.approval}%`} label="Approval" className="col-span-2" />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </CardBody>
+          </Card>
+        </div>
       </PageBody>
     </>
   );
@@ -204,10 +178,12 @@ function Kpi({
   label,
   value,
   delta,
+  hint,
 }: {
   label: string;
   value: string;
   delta: number;
+  hint?: string;
   /** @deprecated – icon chips removed */
   icon?: React.ReactNode;
 }) {
@@ -217,11 +193,11 @@ function Kpi({
   const deltaArrow = positive ? '↑' : delta < 0 ? '↓' : '→';
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3.5 shadow-sm hover:shadow-md transition-shadow duration-150">
+    <div className="flex flex-col gap-1 rounded-xl border border-border bg-bg-elevated px-4 py-4 shadow-sm hover:shadow-md transition-shadow duration-150">
       {/* Eyebrow */}
       <p className="text-[10px] uppercase tracking-[0.12em] font-semibold text-fg-muted">{label}</p>
       {/* Value */}
-      <p className="text-[24px] font-bold leading-tight tracking-tight tabular-nums text-fg">
+      <p className="text-[26px] font-bold leading-tight tracking-tight tabular-nums text-fg">
         {value}
       </p>
       {/* Delta */}
@@ -231,6 +207,8 @@ function Kpi({
           {delta}%
         </p>
       )}
+      {/* Hint */}
+      {hint && <p className="text-[11px] text-fg-muted leading-snug mt-0.5">{hint}</p>}
     </div>
   );
 }
@@ -257,23 +235,38 @@ function ChartCard({
 
 function BarChartGrey({
   data,
+  yIsDollars = false,
 }: {
   data: Array<{ label: string; value: number }>;
-  /** @deprecated — y-axis removed; kept so call-sites don't need updating */
+  yIsDollars?: boolean;
+  /** @deprecated — y-axis removed; kept for call-site compat */
   yTicks?: number[];
   yFormat?: (v: number) => string;
 }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="flex flex-col gap-2 pt-1">
+    <div className="flex flex-col gap-2 pt-2">
       {/* Bars */}
-      <div className="flex items-end gap-1.5 h-[88px]">
+      <div className="flex items-end gap-2 h-[160px]">
         {data.map((d) => {
-          const heightPct = Math.max(4, (d.value / max) * 100);
+          const heightPct = Math.max(d.value > 0 ? 6 : 2, (d.value / max) * 100);
+          const isEmpty = d.value === 0;
           return (
-            <div key={d.label} className="flex-1 flex flex-col items-center justify-end h-full">
+            <div
+              key={d.label}
+              className="flex-1 flex flex-col items-center justify-end h-full gap-1"
+            >
+              {!isEmpty && (
+                <span className="text-[9px] tabular-nums font-medium text-fg-muted leading-none">
+                  {yIsDollars
+                    ? d.value >= 1000
+                      ? `$${Math.round(d.value / 1000)}k`
+                      : `$${d.value}`
+                    : d.value.toLocaleString()}
+                </span>
+              )}
               <div
-                className="w-full rounded-t-sm bg-[#0d1530]/70"
+                className={`w-full rounded-t-sm transition-all ${isEmpty ? 'bg-[#0d1530]/15' : 'bg-[#0d1530]/75'}`}
                 style={{ height: `${heightPct}%` }}
               />
             </div>
@@ -281,9 +274,9 @@ function BarChartGrey({
         })}
       </div>
       {/* X-axis labels */}
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         {data.map((d) => (
-          <div key={d.label} className="flex-1 text-center text-[10px] text-fg-muted">
+          <div key={d.label} className="flex-1 text-center text-[10px] text-fg-muted font-medium">
             {d.label}
           </div>
         ))}
@@ -336,7 +329,7 @@ function CreditDonut() {
         </svg>
       </div>
 
-      {/* Table */}
+      {/* Legend table */}
       <div className="grid grid-cols-12 px-1 pb-2 text-[10px] uppercase tracking-wider font-semibold text-fg-muted">
         <span className="col-span-6">Category</span>
         <span className="col-span-4 text-right">FICO Range</span>
@@ -371,7 +364,7 @@ function Stat({ n, label, className }: { n: number | string; label: string; clas
   );
 }
 
-/** Compact dollar formatter for the leaderboard ($4.2M / $890K). */
+/** Compact dollar formatter — $9.2M / $890K / $120 */
 function formatFunded(cents: number): string {
   const dollars = cents / 100;
   if (dollars >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`;

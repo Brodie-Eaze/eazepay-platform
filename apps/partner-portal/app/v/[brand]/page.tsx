@@ -10,11 +10,6 @@ import {
   CardBody,
   StatusPill,
   type StatusTone,
-  DocIcon,
-  CheckIcon,
-  XIcon,
-  DollarIcon,
-  ClockIcon,
   ArrowRightIcon,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
@@ -229,11 +224,13 @@ const KpiTile = ({
   label,
   value,
   deltaPct,
+  hint,
   goodWhenDown = false,
 }: {
   label: string;
   value: string;
   deltaPct: number;
+  hint?: string;
   /** @deprecated – icon chips removed; prop kept so call-sites don't need updating */
   icon?: React.ReactNode;
   goodWhenDown?: boolean;
@@ -253,13 +250,13 @@ const KpiTile = ({
   const deltaArrow = isUp ? '↑' : isDown ? '↓' : '→';
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3.5 shadow-sm hover:shadow-md transition-shadow duration-150">
+    <div className="flex flex-col gap-1 rounded-xl border border-border bg-bg-elevated px-4 py-4 shadow-sm hover:shadow-md transition-shadow duration-150">
       {/* Eyebrow */}
       <span className="text-[10px] uppercase tracking-[0.12em] text-fg-muted font-semibold leading-tight">
         {label}
       </span>
       {/* Value */}
-      <span className="text-[24px] font-bold leading-tight tracking-tight text-fg tabular-nums">
+      <span className="text-[26px] font-bold leading-tight tracking-tight text-fg tabular-nums">
         {value}
       </span>
       {/* Delta */}
@@ -268,6 +265,8 @@ const KpiTile = ({
           {deltaArrow} {fmtPctDelta(deltaPct)}
         </span>
       )}
+      {/* Hint */}
+      {hint && <span className="text-[11px] text-fg-muted leading-snug mt-0.5">{hint}</span>}
     </div>
   );
 };
@@ -287,7 +286,7 @@ const BarChart = ({
   yStep: number;
 }) => {
   const width = 320;
-  const height = 180;
+  const height = 220;
   const padLeft = 28;
   const padRight = 8;
   const padTop = 8;
@@ -778,54 +777,54 @@ export default function BrandHomePage() {
           </div>
         )}
         {/* ─── 6-KPI grid ─── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           <KpiTile
             label="Total submitted"
             value={String(snapshot.totalSubmitted)}
             deltaPct={snapshot.totalSubmittedDeltaPct}
-            icon={<DocIcon size={16} />}
+            hint="applications this month"
           />
           <KpiTile
             label="Approved"
             value={String(snapshot.approved)}
             deltaPct={snapshot.approvedDeltaPct}
-            icon={<CheckIcon size={16} />}
+            hint={`of ${snapshot.totalSubmitted} submitted`}
           />
           <KpiTile
             label="Funded"
             value={String(snapshot.funded)}
             deltaPct={snapshot.fundedDeltaPct}
-            icon={<DollarIcon size={16} />}
+            hint="deals closed"
           />
           <KpiTile
             label="Declined"
             value={String(snapshot.declined)}
             deltaPct={snapshot.declinedDeltaPct}
-            icon={<XIcon size={16} />}
+            hint="down is good"
             goodWhenDown
           />
           <KpiTile
             label="Total funded"
             value={fmtCompactUsd(snapshot.totalFundedCents)}
             deltaPct={snapshot.totalFundedDeltaPct}
-            icon={<DollarIcon size={16} />}
+            hint="net of fees"
           />
           <KpiTile
             label="Pending payout"
             value={fmtCompactUsd(snapshot.pendingPayoutCents)}
             deltaPct={snapshot.pendingPayoutDeltaPct}
-            icon={<ClockIcon size={16} />}
+            hint="next settlement"
           />
         </div>
 
-        {/* ─── Chart row: Submissions · Funded · Credit Insights ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-5">
+        {/* ─── 2-col bar charts ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           <Card>
             <CardHeader
               title={<span className="text-[14px]">Monthly Submissions</span>}
               description={<span className="text-[12px]">Application volume over time</span>}
             />
-            <CardBody className="pt-3">
+            <CardBody className="pt-2">
               <BarChart data={snapshot.monthlySubmissions} yMax={subsYMax} yStep={subsYMax / 2} />
             </CardBody>
           </Card>
@@ -835,11 +834,14 @@ export default function BrandHomePage() {
               title={<span className="text-[14px]">Monthly Funded</span>}
               description={<span className="text-[12px]">Funded deals over time</span>}
             />
-            <CardBody className="pt-3">
+            <CardBody className="pt-2">
               <BarChart data={snapshot.monthlyFunded} yMax={fundedYMax} yStep={fundedYMax / 2} />
             </CardBody>
           </Card>
+        </div>
 
+        {/* ─── Credit Insights (1/3) + Recent Applications (2/3) ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-0">
           <Card>
             <CardHeader
               title={<span className="text-[14px]">Credit Insights</span>}
@@ -869,135 +871,136 @@ export default function BrandHomePage() {
               </div>
             </CardBody>
           </Card>
-        </div>
 
-        {/* ─── Recent applications table ─── */}
-        <Card>
-          <CardHeader
-            title={<span className="text-[14px]">Recent Applications</span>}
-            action={
-              <Link
-                href={`/v/${brandSlug}/applications`}
-                aria-label={`View all ${productLabelForBrand(brand)} applications`}
-                className="inline-flex items-center gap-1 text-[12px] font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
-                style={{ color: spec.accentHex }}
-              >
-                View all <ArrowRightIcon size={12} aria-hidden />
-              </Link>
-            }
-          />
-          <CardBody padded={false}>
-            {recent.length === 0 ? (
-              <p className="px-5 py-10 text-center text-fg-muted text-[13px]" role="status">
-                No activity yet for {productLabelForBrand(brand)}.
-              </p>
-            ) : (
-              <div
-                className="overflow-x-auto"
-                role="region"
-                aria-label="Recent applications"
-                tabIndex={0}
-              >
-                <table className="w-full min-w-[640px] text-[12px]">
-                  <caption className="sr-only">
-                    {recent.length} most recent {productLabelForBrand(brand)} applications
-                  </caption>
-                  <thead className="bg-bg-muted/40 text-fg-muted">
-                    <tr className="text-left">
-                      <th
-                        scope="col"
-                        className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
-                      >
-                        Client
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
-                      >
-                        Amount
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
-                      >
-                        Product
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
-                      >
-                        Status
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
-                      >
-                        Submitted
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {recent.map((a) => {
-                      const pill = applicationStatusToPill(a.status);
-                      return (
-                        <tr key={a.id} className="hover:bg-bg-muted/40 transition-colors group">
-                          <td className="p-0">
-                            <Link
-                              href={`/v/${brandSlug}/applications/${a.id}`}
-                              className="block px-5 py-3"
-                              aria-label={`Open application ${a.customer}`}
-                            >
-                              <span className="font-medium text-fg">{a.customer}</span>
-                              <span className="block text-[11px] text-fg-muted">{a.partner}</span>
-                            </Link>
-                          </td>
-                          <td className="p-0">
-                            <Link
-                              href={`/v/${brandSlug}/applications/${a.id}`}
-                              className="block px-3 py-3 tabular-nums text-fg font-medium"
-                              tabIndex={-1}
-                            >
-                              {fmtUsd(a.amountCents)}
-                            </Link>
-                          </td>
-                          <td className="p-0">
-                            <Link
-                              href={`/v/${brandSlug}/applications/${a.id}`}
-                              className="block px-3 py-3 text-fg-secondary"
-                              tabIndex={-1}
-                            >
-                              {productLabelForBrand(brand)}
-                            </Link>
-                          </td>
-                          <td className="p-0">
-                            <Link
-                              href={`/v/${brandSlug}/applications/${a.id}`}
-                              className="block px-3 py-3"
-                              tabIndex={-1}
-                            >
-                              <StatusPill tone={pill.tone} dot>
-                                {pill.label}
-                              </StatusPill>
-                            </Link>
-                          </td>
-                          <td className="p-0">
-                            <Link
-                              href={`/v/${brandSlug}/applications/${a.id}`}
-                              className="block px-5 py-3 tabular-nums text-fg-muted"
-                              tabIndex={-1}
-                            >
-                              {fmtDateDDMMYYYY(a.date)}
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardBody>
-        </Card>
+          {/* ─── Recent applications table ─── */}
+          <Card className="lg:col-span-2">
+            <CardHeader
+              title={<span className="text-[14px]">Recent Applications</span>}
+              action={
+                <Link
+                  href={`/v/${brandSlug}/applications`}
+                  aria-label={`View all ${productLabelForBrand(brand)} applications`}
+                  className="inline-flex items-center gap-1 text-[12px] font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus rounded"
+                  style={{ color: spec.accentHex }}
+                >
+                  View all <ArrowRightIcon size={12} aria-hidden />
+                </Link>
+              }
+            />
+            <CardBody padded={false}>
+              {recent.length === 0 ? (
+                <p className="px-5 py-10 text-center text-fg-muted text-[13px]" role="status">
+                  No activity yet for {productLabelForBrand(brand)}.
+                </p>
+              ) : (
+                <div
+                  className="overflow-x-auto"
+                  role="region"
+                  aria-label="Recent applications"
+                  tabIndex={0}
+                >
+                  <table className="w-full min-w-[640px] text-[12px]">
+                    <caption className="sr-only">
+                      {recent.length} most recent {productLabelForBrand(brand)} applications
+                    </caption>
+                    <thead className="bg-bg-muted/40 text-fg-muted">
+                      <tr className="text-left">
+                        <th
+                          scope="col"
+                          className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                        >
+                          Client
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                        >
+                          Amount
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                        >
+                          Product
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                        >
+                          Status
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-5 py-2.5 font-semibold tracking-[0.06em] text-[10px] uppercase"
+                        >
+                          Submitted
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {recent.map((a) => {
+                        const pill = applicationStatusToPill(a.status);
+                        return (
+                          <tr key={a.id} className="hover:bg-bg-muted/40 transition-colors group">
+                            <td className="p-0">
+                              <Link
+                                href={`/v/${brandSlug}/applications/${a.id}`}
+                                className="block px-5 py-3"
+                                aria-label={`Open application ${a.customer}`}
+                              >
+                                <span className="font-medium text-fg">{a.customer}</span>
+                                <span className="block text-[11px] text-fg-muted">{a.partner}</span>
+                              </Link>
+                            </td>
+                            <td className="p-0">
+                              <Link
+                                href={`/v/${brandSlug}/applications/${a.id}`}
+                                className="block px-3 py-3 tabular-nums text-fg font-medium"
+                                tabIndex={-1}
+                              >
+                                {fmtUsd(a.amountCents)}
+                              </Link>
+                            </td>
+                            <td className="p-0">
+                              <Link
+                                href={`/v/${brandSlug}/applications/${a.id}`}
+                                className="block px-3 py-3 text-fg-secondary"
+                                tabIndex={-1}
+                              >
+                                {productLabelForBrand(brand)}
+                              </Link>
+                            </td>
+                            <td className="p-0">
+                              <Link
+                                href={`/v/${brandSlug}/applications/${a.id}`}
+                                className="block px-3 py-3"
+                                tabIndex={-1}
+                              >
+                                <StatusPill tone={pill.tone} dot>
+                                  {pill.label}
+                                </StatusPill>
+                              </Link>
+                            </td>
+                            <td className="p-0">
+                              <Link
+                                href={`/v/${brandSlug}/applications/${a.id}`}
+                                className="block px-5 py-3 tabular-nums text-fg-muted"
+                                tabIndex={-1}
+                              >
+                                {fmtDateDDMMYYYY(a.date)}
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
+        {/* end Credit Insights + Recent Apps grid */}
       </PageBody>
     </>
   );
