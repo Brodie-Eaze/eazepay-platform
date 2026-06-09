@@ -265,30 +265,28 @@ const KpiTile = ({
   const Arrow = isUp ? TrendUpIcon : isDown ? TrendDownIcon : TrendUpIcon;
 
   return (
-    <div className="relative overflow-hidden flex flex-col gap-3 rounded-xl border border-border bg-bg-elevated px-5 py-5 shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-200">
+    <div className="relative overflow-hidden flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated px-4 py-4 shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-200">
       {/* Semantic accent strip */}
       <div className={`absolute inset-x-0 top-0 h-[3px] ${accentStrip}`} />
 
-      <div className="flex items-start justify-between gap-2 pt-0.5">
-        <span className="text-[11px] uppercase tracking-[0.14em] text-fg-muted font-semibold leading-tight">
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <span className="text-[10px] uppercase tracking-[0.14em] text-fg-muted font-semibold leading-tight">
           {label}
         </span>
-        <span className="flex items-center justify-center size-8 rounded-lg bg-accent-soft text-accent shrink-0">
+        <span className="flex items-center justify-center size-7 rounded-lg bg-accent-soft text-accent shrink-0">
           {icon}
         </span>
       </div>
-      <div className="space-y-1.5">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-[28px] font-bold leading-none tabular-nums tracking-tight text-fg">
-            {value}
-          </span>
-          <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${tone} ${deltaBg}`}
-          >
-            <Arrow size={11} />
-            {fmtPctDelta(deltaPct)}
-          </span>
-        </div>
+      <div className="flex items-baseline gap-2 flex-wrap">
+        <span className="text-[22px] font-bold leading-none tabular-nums tracking-tight text-fg">
+          {value}
+        </span>
+        <span
+          className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${tone} ${deltaBg}`}
+        >
+          <Arrow size={11} />
+          {fmtPctDelta(deltaPct)}
+        </span>
       </div>
     </div>
   );
