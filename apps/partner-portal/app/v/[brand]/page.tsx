@@ -15,8 +15,6 @@ import {
   XIcon,
   DollarIcon,
   ClockIcon,
-  TrendUpIcon,
-  TrendDownIcon,
   ArrowRightIcon,
 } from '@eazepay/ui/web';
 import { BRANDS, BRAND_ORDER, type BrandCode } from '@eazepay/shared-types';
@@ -231,63 +229,46 @@ const KpiTile = ({
   label,
   value,
   deltaPct,
-  icon,
   goodWhenDown = false,
 }: {
   label: string;
   value: string;
   deltaPct: number;
-  icon: React.ReactNode;
+  /** @deprecated – icon chips removed; prop kept so call-sites don't need updating */
+  icon?: React.ReactNode;
   goodWhenDown?: boolean;
 }) => {
   const isUp = deltaPct > 0;
   const isDown = deltaPct < 0;
+  const neutral = deltaPct === 0;
   const directionIsGood = goodWhenDown ? isDown : isUp;
   const directionIsBad = goodWhenDown ? isUp : isDown;
-  const tone =
-    deltaPct === 0
-      ? 'text-fg-muted'
-      : directionIsGood
-        ? 'text-success'
-        : directionIsBad
-          ? 'text-danger'
-          : 'text-fg-muted';
-  const deltaBg =
-    deltaPct === 0
-      ? 'bg-bg-muted'
-      : directionIsGood
-        ? 'bg-success-bg'
-        : directionIsBad
-          ? 'bg-danger-bg'
-          : 'bg-bg-muted';
-  const accentStrip =
-    deltaPct === 0 ? 'bg-accent/50' : directionIsGood ? 'bg-success/50' : 'bg-danger/50';
-  const Arrow = isUp ? TrendUpIcon : isDown ? TrendDownIcon : TrendUpIcon;
+  const deltaColor = neutral
+    ? 'text-fg-muted'
+    : directionIsGood
+      ? 'text-success'
+      : directionIsBad
+        ? 'text-danger'
+        : 'text-fg-muted';
+  const deltaArrow = isUp ? '↑' : isDown ? '↓' : '→';
 
   return (
-    <div className="relative overflow-hidden flex flex-col gap-2 rounded-xl border border-border bg-bg-elevated px-4 py-4 shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-200">
-      {/* Semantic accent strip */}
-      <div className={`absolute inset-x-0 top-0 h-[3px] ${accentStrip}`} />
-
-      <div className="flex items-center justify-between gap-2 pt-0.5">
-        <span className="text-[10px] uppercase tracking-[0.14em] text-fg-muted font-semibold leading-tight">
+    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+      {/* Eyebrow label + inline delta — A&E MetricTile pattern */}
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[10px] uppercase tracking-[0.12em] text-fg-muted font-medium leading-tight">
           {label}
         </span>
-        <span className="flex items-center justify-center size-7 rounded-lg bg-accent-soft text-accent shrink-0">
-          {icon}
-        </span>
+        {!neutral && (
+          <span className={`text-[11px] font-medium tabular-nums shrink-0 ${deltaColor}`}>
+            {deltaArrow} {fmtPctDelta(deltaPct)}
+          </span>
+        )}
       </div>
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="text-[22px] font-bold leading-none tabular-nums tracking-tight text-fg">
-          {value}
-        </span>
-        <span
-          className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${tone} ${deltaBg}`}
-        >
-          <Arrow size={11} />
-          {fmtPctDelta(deltaPct)}
-        </span>
-      </div>
+      {/* Value */}
+      <span className="text-[20px] font-semibold leading-tight tracking-tight text-fg tabular-nums">
+        {value}
+      </span>
     </div>
   );
 };

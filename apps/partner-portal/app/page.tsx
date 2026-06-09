@@ -9,8 +9,6 @@ import {
   DollarIcon,
   XIcon,
   ClockIcon,
-  TrendUpIcon,
-  TrendDownIcon,
   TrophyIcon,
 } from '@eazepay/ui/web';
 import { formatCurrency } from '../lib/api-client';
@@ -206,43 +204,33 @@ function Kpi({
   label,
   value,
   delta,
-  icon,
 }: {
   label: string;
   value: string;
   delta: number;
+  /** @deprecated – icon chips removed; prop kept so call-sites don't need updating */
   icon?: React.ReactNode;
 }) {
   const positive = delta > 0;
   const neutral = delta === 0;
-  const deltaText = neutral ? 'text-fg-muted' : positive ? 'text-success' : 'text-danger';
-  const deltaBg = neutral ? 'bg-bg-muted' : positive ? 'bg-success-bg' : 'bg-danger-bg';
-  const accentStrip = neutral ? 'bg-accent/50' : positive ? 'bg-success/50' : 'bg-danger/50';
+  const deltaColor = neutral ? 'text-fg-muted' : positive ? 'text-success' : 'text-danger';
+  const deltaArrow = positive ? '↑' : delta < 0 ? '↓' : '→';
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-bg-elevated px-4 py-4 shadow-sm hover:shadow-md hover:border-border-strong transition-all duration-200">
-      {/* Semantic accent strip */}
-      <div className={`absolute inset-x-0 top-0 h-[3px] ${accentStrip}`} />
-
-      <div className="flex items-center justify-between gap-2 pt-0.5">
-        <p className="text-[10px] uppercase tracking-[0.14em] font-semibold text-fg-muted">
-          {label}
-        </p>
-        {icon && (
-          <span className="flex items-center justify-center size-7 rounded-lg bg-accent-soft text-accent shrink-0">
-            {icon}
+    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm hover:shadow-md transition-shadow duration-150">
+      {/* Eyebrow label + inline delta — A&E MetricTile pattern */}
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-[0.12em] font-medium text-fg-muted">{label}</p>
+        {!neutral && (
+          <span className={`text-[11px] font-medium tabular-nums shrink-0 ${deltaColor}`}>
+            {deltaArrow} {positive ? '+' : ''}
+            {delta}%
           </span>
         )}
       </div>
-      <p className="mt-2 text-[22px] font-bold tracking-tight text-fg leading-none tabular-nums">
+      {/* Value */}
+      <p className="text-[20px] font-semibold leading-tight tracking-tight text-fg tabular-nums">
         {value}
-      </p>
-      <p
-        className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${deltaText} ${deltaBg}`}
-      >
-        {positive ? <TrendUpIcon size={11} /> : neutral ? null : <TrendDownIcon size={11} />}
-        {positive ? '+' : ''}
-        {delta}%
       </p>
     </div>
   );
@@ -270,58 +258,36 @@ function ChartCard({
 
 function BarChartGrey({
   data,
-  yTicks,
-  yFormat,
 }: {
   data: Array<{ label: string; value: number }>;
-  yTicks: number[];
-  yFormat: (v: number) => string;
+  /** @deprecated — y-axis removed; kept so call-sites don't need updating */
+  yTicks?: number[];
+  yFormat?: (v: number) => string;
 }) {
-  const max = Math.max(...yTicks, ...data.map((d) => d.value));
-  const chartH = 220;
+  const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="relative">
-      <div className="flex">
-        {/* Y-axis labels */}
-        <div
-          className="w-12 flex flex-col justify-between text-[10px] text-fg-muted py-1"
-          style={{ height: chartH }}
-        >
-          {yTicks.map((y) => (
-            <div key={y}>{yFormat(y)}</div>
-          ))}
-        </div>
-
-        {/* Bars + grid */}
-        <div className="flex-1 relative" style={{ height: chartH }}>
-          {/* Horizontal grid */}
-          <div className="absolute inset-0 flex flex-col justify-between">
-            {yTicks.map((y) => (
-              <div key={y} className="border-t border-dashed border-border" />
-            ))}
-          </div>
-          {/* Bars */}
-          <div className="absolute inset-0 flex items-end justify-around gap-2 px-2">
-            {data.map((d) => {
-              const h = max === 0 ? 0 : (d.value / max) * (chartH - 8);
-              return (
-                <div key={d.label} className="flex-1 max-w-[28px] flex flex-col items-center">
-                  <div className="w-full rounded-t-sm bg-[#0d1530]/65" style={{ height: h }} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
+    <div className="flex flex-col gap-2 pt-1">
+      {/* Bars */}
+      <div className="flex items-end gap-1.5 h-[88px]">
+        {data.map((d) => {
+          const heightPct = Math.max(4, (d.value / max) * 100);
+          return (
+            <div key={d.label} className="flex-1 flex flex-col items-center justify-end h-full">
+              <div
+                className="w-full rounded-t-sm bg-[#0d1530]/70"
+                style={{ height: `${heightPct}%` }}
+              />
+            </div>
+          );
+        })}
       </div>
       {/* X-axis labels */}
-      <div className="flex pl-12 pt-2">
-        <div className="flex-1 flex justify-around gap-2 px-2 text-[11px] text-fg-muted">
-          {data.map((d) => (
-            <div key={d.label} className="flex-1 max-w-[28px] text-center">
-              {d.label}
-            </div>
-          ))}
-        </div>
+      <div className="flex gap-1.5">
+        {data.map((d) => (
+          <div key={d.label} className="flex-1 text-center text-[10px] text-fg-muted">
+            {d.label}
+          </div>
+        ))}
       </div>
     </div>
   );

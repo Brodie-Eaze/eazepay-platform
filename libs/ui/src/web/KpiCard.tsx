@@ -1,15 +1,30 @@
 import type { FC, ReactNode } from 'react';
 import { cn } from './cn';
 
+/**
+ * KPI card — modelled on A&E Solutions Intelligence MetricTile.
+ *
+ * Layout:
+ *   ┌──────────────────────────────┐
+ *   │ LABEL               ↑ +22%  │  ← eyebrow label + inline delta
+ *   │ $1.21M                       │  ← 20 px semibold value
+ *   │ net of fees                  │  ← optional muted hint
+ *   └──────────────────────────────┘
+ *
+ * Dense, no icon chips, no accent strips, no pill backgrounds.
+ * Delta is plain coloured text aligned to the right of the label row.
+ */
 export const KpiCard: FC<{
   label: string;
   value: ReactNode;
   delta?: { value: string; direction: 'up' | 'down' | 'flat'; isGood?: boolean };
   hint?: ReactNode;
+  /** @deprecated – icon chips removed to match A&E style */
   icon?: ReactNode;
+  /** @deprecated – sparklines removed to match A&E style */
   series?: number[];
   className?: string;
-}> = ({ label, value, delta, hint, icon, className }) => {
+}> = ({ label, value, delta, hint, className }) => {
   const isGood =
     delta === undefined
       ? null
@@ -21,74 +36,41 @@ export const KpiCard: FC<{
             ? false
             : null;
 
-  const accentStrip =
-    isGood === true ? 'bg-success/50' : isGood === false ? 'bg-danger/50' : 'bg-accent/50';
-
-  const deltaPillBg =
-    delta === undefined
-      ? ''
+  const deltaColor =
+    delta === undefined || delta.direction === 'flat'
+      ? 'text-fg-muted'
       : isGood === true
-        ? 'bg-success-bg'
+        ? 'text-success'
         : isGood === false
-          ? 'bg-danger-bg'
-          : 'bg-bg-muted';
-
-  const deltaPillText =
-    delta === undefined
-      ? ''
-      : delta.direction === 'flat'
-        ? 'text-fg-muted'
-        : isGood === true
-          ? 'text-success'
-          : isGood === false
-            ? 'text-danger'
-            : 'text-fg-secondary';
+          ? 'text-danger'
+          : 'text-fg-secondary';
 
   const deltaArrow = delta?.direction === 'up' ? '↑' : delta?.direction === 'down' ? '↓' : '→';
 
   return (
     <div
       className={cn(
-        'group relative flex flex-col gap-2 overflow-hidden rounded-xl border border-border',
-        'bg-bg-elevated px-4 py-4 shadow-sm',
-        'hover:shadow-md hover:border-border-strong transition-all duration-200',
+        'flex flex-col gap-1.5 rounded-xl border border-border bg-bg-elevated px-4 py-3 shadow-sm',
+        'hover:shadow-md transition-shadow duration-150',
         className,
       )}
     >
-      {/* 3 px semantic accent strip */}
-      <div className={cn('absolute inset-x-0 top-0 h-[3px]', accentStrip)} />
-
-      {/* Label + icon chip */}
-      <div className="flex items-center justify-between gap-2 pt-0.5">
-        <p className="text-[10px] uppercase tracking-[0.14em] text-fg-muted font-semibold">
-          {label}
-        </p>
-        {icon && (
-          <span className="flex items-center justify-center size-7 rounded-lg bg-accent-soft text-accent shrink-0">
-            {icon}
-          </span>
-        )}
-      </div>
-
-      {/* Value + delta */}
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <span className="text-[22px] font-bold leading-none tabular-nums tracking-tight text-fg">
-          {value}
-        </span>
+      {/* Eyebrow label + delta — same baseline row */}
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-[10px] uppercase tracking-[0.12em] text-fg-muted font-medium">{label}</p>
         {delta && (
-          <span
-            className={cn(
-              'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5',
-              'text-[11px] font-semibold tabular-nums',
-              deltaPillBg,
-              deltaPillText,
-            )}
-          >
+          <span className={cn('text-[11px] font-medium tabular-nums shrink-0', deltaColor)}>
             {deltaArrow} {delta.value}
           </span>
         )}
       </div>
 
+      {/* Value */}
+      <p className="text-[20px] font-semibold leading-tight tracking-tight tabular-nums text-fg">
+        {value}
+      </p>
+
+      {/* Hint */}
       {hint && <p className="text-[11px] text-fg-muted leading-snug">{hint}</p>}
     </div>
   );
