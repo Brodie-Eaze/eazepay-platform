@@ -941,6 +941,109 @@ function LenderWinLossReport({ brand, range }: { brand: BrandFilter; range: Date
   );
 }
 
+interface SpineStage {
+  label: string;
+  vol30d: number;
+  queueNow: number;
+  stepConvPct: number | null;
+  fromTopPct: number;
+  medianMs: number;
+  wowDeltaPct: number;
+  isBottleneck: boolean;
+}
+
+function fmtSpineMs(ms: number): string {
+  if (ms === 0) return '—';
+  if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
+  if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m`;
+  if (ms < 86_400_000) return `${(ms / 3_600_000).toFixed(1)}h`;
+  return `${(ms / 86_400_000).toFixed(1)}d`;
+}
+
+function ConversionSpine({ stages }: { stages: SpineStage[] }) {
+  const last = stages[stages.length - 1];
+  const totalMs = stages.reduce((s, st) => s + st.medianMs, 0);
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[640px]">
+        <div className="grid grid-cols-[1fr_72px_80px_72px_72px_72px_60px] gap-x-4 pb-2 border-b border-border text-[10px] uppercase tracking-[0.12em] font-semibold text-fg-muted">
+          <div>Stage</div>
+          <div className="text-right">Live queue</div>
+          <div className="text-right">30-day vol</div>
+          <div className="text-right">Step conv</div>
+          <div className="text-right">From top</div>
+          <div className="text-right">Med. time</div>
+          <div className="text-right">WoW Δ</div>
+        </div>
+
+        {stages.map((s) => (
+          <div
+            key={s.label}
+            className={`grid grid-cols-[1fr_72px_80px_72px_72px_72px_60px] gap-x-4 py-2.5 border-b border-border/40 last:border-0 items-center text-[12px] ${s.isBottleneck ? 'bg-amber-50/40' : ''}`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.isBottleneck ? 'bg-amber-400' : 'bg-border'}`}
+              />
+              <span
+                className={`font-medium truncate ${s.isBottleneck ? 'text-fg' : 'text-fg-secondary'}`}
+              >
+                {s.label}
+              </span>
+              {s.isBottleneck && (
+                <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">
+                  bottleneck
+                </span>
+              )}
+            </div>
+            <div className="text-right tabular-nums font-medium text-fg">
+              {s.queueNow.toLocaleString()}
+            </div>
+            <div className="text-right tabular-nums text-fg-secondary">
+              {s.vol30d.toLocaleString()}
+            </div>
+            <div className="text-right tabular-nums font-semibold">
+              {s.stepConvPct == null ? (
+                <span className="text-fg-muted font-normal">—</span>
+              ) : (
+                <span className={s.stepConvPct < 65 ? 'text-amber-600' : 'text-fg'}>
+                  {s.stepConvPct.toFixed(1)}%
+                </span>
+              )}
+            </div>
+            <div className="text-right tabular-nums text-fg-secondary">
+              {s.fromTopPct.toFixed(1)}%
+            </div>
+            <div className="text-right tabular-nums text-fg-muted">{fmtSpineMs(s.medianMs)}</div>
+            <div className="text-right tabular-nums">
+              <span className={s.wowDeltaPct >= 0 ? 'text-fg-muted' : 'text-amber-600'}>
+                {s.wowDeltaPct >= 0 ? '+' : ''}
+                {s.wowDeltaPct.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        ))}
+
+        <div className="grid grid-cols-[1fr_72px_80px_72px_72px_72px_60px] gap-x-4 pt-2.5 items-center text-[11px]">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">
+            End-to-end
+          </div>
+          <div />
+          <div className="text-right tabular-nums font-semibold text-fg">
+            {last?.vol30d.toLocaleString()}
+          </div>
+          <div />
+          <div className="text-right tabular-nums font-bold text-fg">
+            {last?.fromTopPct.toFixed(1)}%
+          </div>
+          <div className="text-right tabular-nums text-fg-muted">{fmtSpineMs(totalMs)}</div>
+          <div />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FunnelReport({
   brand,
   range,
@@ -953,73 +1056,63 @@ function FunnelReport({
   const mult = brandMultiplier(brand) * rangeMultiplier(range);
   const partnerMult = partner === 'all' ? 1 : 0.18;
   const top = Math.floor(4200 * mult * partnerMult);
-  const steps = [
-    { label: 'Leads', value: top },
-    { label: 'Pre-qual passed', value: Math.floor(top * 0.86) },
-    { label: 'KYC verified', value: Math.floor(top * 0.81) },
-    { label: 'Decisioned', value: Math.floor(top * 0.78) },
-    { label: 'Approved', value: Math.floor(top * 0.48) },
-    { label: 'Funded', value: Math.floor(top * 0.44) },
-  ];
-  const stages = steps.map((s, i) => ({
-    ...s,
-    convPct: i === 0 ? 100 : Math.round((s.value / steps[i - 1]!.value) * 100),
-    dropPct:
-      i === 0 ? 0 : Math.round(((steps[i - 1]!.value - s.value) / steps[i - 1]!.value) * 100),
-  }));
+
+  const STEP_CONFIG = [
+    { label: 'Leads received', pct: 1.0, medianMs: 0, queueF: 0.04 },
+    { label: 'Pre-qual passed', pct: 0.86, medianMs: 112_000, queueF: 0.018 },
+    { label: 'KYC verified', pct: 0.81, medianMs: 480_000, queueF: 0.014 },
+    { label: 'Decisioned', pct: 0.78, medianMs: 528_000, queueF: 0.011 },
+    { label: 'Approved', pct: 0.48, medianMs: 43_200_000, queueF: 0.05 },
+    { label: 'Funded', pct: 0.44, medianMs: 8_040_000, queueF: 0.007 },
+  ] as const;
+
+  // Deterministic WoW deltas per stage, seeded by brand
+  const r = rand(hashStr(`funnel-wow-${brand}`));
+  const volumes = STEP_CONFIG.map((s) => Math.floor(top * s.pct));
+  const drops = volumes.map((v, i) => (i === 0 ? 0 : volumes[i - 1]! - v));
+  const maxDrop = Math.max(...drops);
+
+  const spineStages: SpineStage[] = STEP_CONFIG.map((s, i) => {
+    const vol30d = volumes[i]!;
+    const prevVol = i === 0 ? null : volumes[i - 1]!;
+    return {
+      label: s.label,
+      vol30d,
+      queueNow: Math.max(1, Math.floor(vol30d * s.queueF)),
+      stepConvPct: prevVol == null ? null : (vol30d / prevVol) * 100,
+      fromTopPct: (vol30d / top) * 100,
+      medianMs: s.medianMs,
+      wowDeltaPct: parseFloat((r() * 12 - 6).toFixed(1)),
+      isBottleneck: drops[i]! === maxDrop && i > 0,
+    };
+  });
+
+  const endToEndPct = Math.round((volumes[volumes.length - 1]! / top) * 100);
+  const bottleneck = spineStages.find((s) => s.isBottleneck);
 
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi label="Top of funnel" value={top.toLocaleString()} />
+        <Kpi label="End-to-end conv." value={`${endToEndPct}%`} />
         <Kpi
-          label="End-to-end conv."
-          value={`${Math.round((stages[stages.length - 1]!.value / top) * 100)}%`}
+          label="Biggest drop"
+          value={bottleneck?.label ?? '—'}
+          hint="largest stage volume loss"
         />
-        <Kpi label="Biggest drop" value={largestDropLabel(stages)} hint="largest stage loss" />
         <Kpi label="Median time-to-fund" value="2h 14m" hint="approval → funded" />
       </div>
 
       <Card>
-        <CardHeader title="Funnel — leads through funded" />
+        <CardHeader
+          title="Application conversion spine"
+          description="Live queue = applications currently in each stage. 30-day vol = completed through stage this period. Step conv = stage-to-stage rate; bottleneck = largest absolute volume loss."
+          action={<StatusPill tone="neutral">{endToEndPct}% end-to-end</StatusPill>}
+        />
         <CardBody>
-          <FunnelSVG stages={stages} />
+          <ConversionSpine stages={spineStages} />
         </CardBody>
       </Card>
-
-      <ReportTable
-        title="Stage performance"
-        columns={[
-          {
-            key: 'label',
-            label: 'Stage',
-            render: (r: (typeof stages)[number]) => (
-              <span className="font-medium text-fg">{r.label}</span>
-            ),
-          },
-          {
-            key: 'value',
-            label: 'Volume',
-            align: 'right',
-            render: (r: (typeof stages)[number]) => r.value.toLocaleString(),
-          },
-          {
-            key: 'convPct',
-            label: 'Stage conv.',
-            align: 'right',
-            render: (r: (typeof stages)[number]) => `${r.convPct}%`,
-          },
-          {
-            key: 'dropPct',
-            label: 'Drop',
-            align: 'right',
-            render: (r: (typeof stages)[number]) => (
-              <span className={r.dropPct > 30 ? 'text-danger' : 'text-fg-muted'}>{r.dropPct}%</span>
-            ),
-          },
-        ]}
-        rows={stages}
-      />
     </>
   );
 }
@@ -2085,98 +2178,6 @@ function HorizontalBars({
   );
 }
 
-/**
- * Funnel chart — vertical bars, all anchored to the same baseline, each
- * narrower than the last (proportional to value). Navy → light grey
- * shading so the eye reads the drop-off without colour noise. Values
- * top-aligned, stage labels + cumulative conversion % below the bar
- * along a fixed y rail so labels never drift with bar height.
- */
-function FunnelSVG({
-  stages,
-}: {
-  stages: Array<{ label: string; value: number; convPct: number }>;
-}) {
-  const width = 720;
-  const height = 280;
-  const top = stages[0]!.value || 1;
-
-  // Top + bottom rails for the chart area.
-  const valueRailY = 26; // y for the "453" value above each bar
-  const baseY = 200; // bar baseline
-  const labelRailY = baseY + 22; // stage name
-  const pctRailY = baseY + 38; // cumulative conv %
-
-  const colW = width / stages.length;
-  const barW = colW * 0.7;
-
-  // Navy → light grey shading. 6 fixed stops so the ramp reads
-  // immediately and matches the rest of the platform's discipline.
-  const palette = ['#0d1530', '#1e3a8a', '#3b4f7a', '#64748b', '#94a3b8', '#cbd5e1'];
-
-  return (
-    <svg
-      width="100%"
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label="Funnel chart — leads through funded"
-      style={{ display: 'block' }}
-    >
-      {/* Baseline rail */}
-      <line x1={0} x2={width} y1={baseY + 0.5} y2={baseY + 0.5} stroke="#e2e8f0" strokeWidth={1} />
-      {stages.map((s, i) => {
-        const ratio = s.value / top;
-        const barH = Math.max(8, ratio * (baseY - valueRailY - 14));
-        const cx = i * colW + colW / 2;
-        const x = cx - barW / 2;
-        const y = baseY - barH;
-        const fill = palette[Math.min(i, palette.length - 1)]!;
-        return (
-          <g key={s.label}>
-            {/* Value above the bar */}
-            <text
-              x={cx}
-              y={valueRailY - 2}
-              fontSize={11}
-              textAnchor="middle"
-              fill="#475569"
-              fontWeight={600}
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {s.value.toLocaleString()}
-            </text>
-            {/* Bar */}
-            <rect x={x} y={y} width={barW} height={barH} rx={3} fill={fill} />
-            {/* Stage label rail */}
-            <text
-              x={cx}
-              y={labelRailY}
-              fontSize={11}
-              textAnchor="middle"
-              fill="#0f172a"
-              fontWeight={600}
-            >
-              {s.label}
-            </text>
-            {/* Conversion vs. top of funnel — cumulative */}
-            <text
-              x={cx}
-              y={pctRailY}
-              fontSize={10}
-              textAnchor="middle"
-              fill="#94a3b8"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {Math.round((s.value / top) * 100)}%
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 interface ColDef<T> {
   key: string;
   label: string;
@@ -2328,11 +2329,6 @@ function ReportTable<T>({
       </CardBody>
     </Card>
   );
-}
-
-function largestDropLabel(stages: Array<{ label: string; dropPct: number }>): string {
-  const top = [...stages].sort((a, b) => b.dropPct - a.dropPct)[0];
-  return top ? top.label : '—';
 }
 
 function Toast({ message }: { message: string }) {

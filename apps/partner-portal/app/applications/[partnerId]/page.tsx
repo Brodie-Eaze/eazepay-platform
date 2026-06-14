@@ -525,6 +525,16 @@ export default function PartnerAccountPage() {
         <div className="flex flex-wrap gap-2 mb-5">
           {STATUSES.map(({ label, icon }) => {
             const active = filter === label;
+            const count =
+              label === 'All'
+                ? totals.total
+                : label === 'Funded'
+                  ? totals.funded
+                  : label === 'Approved'
+                    ? totals.approved
+                    : label === 'Declined'
+                      ? totals.declined
+                      : totals.submitted;
             return (
               <button
                 key={label}
@@ -541,19 +551,27 @@ export default function PartnerAccountPage() {
               >
                 {icon}
                 {label}
+                <span
+                  className={
+                    'ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ' +
+                    (active ? 'bg-white/20 text-white' : 'bg-border text-fg-muted')
+                  }
+                >
+                  {count}
+                </span>
               </button>
             );
           })}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
           <Kpi label="Total Apps" value={String(totals.total)} icon={<DocIcon size={12} />} />
           <Kpi label="Funded" value={String(totals.funded)} icon={<DollarIcon size={12} />} />
           <Kpi label="Approved" value={String(totals.approved)} icon={<CheckIcon size={12} />} />
           <Kpi label="Declined" value={String(totals.declined)} icon={<XIcon size={12} />} />
           <Kpi label="Submitted" value={String(totals.submitted)} icon={<InfoIcon size={12} />} />
           <Kpi
-            label="Funded Vol."
+            label="Vol. Funded"
             value={`$${Math.round(totals.fundedVol / 1000)}K`}
             icon={<DollarIcon size={12} />}
           />
