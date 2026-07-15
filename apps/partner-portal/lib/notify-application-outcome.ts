@@ -16,6 +16,7 @@
 import { eq } from 'drizzle-orm';
 import { getDb, hasDb } from './db';
 import { applications, offers, partners } from './db/schema';
+import { decryptApplicationRow } from './db/applications-pii';
 import { sendApplicationOutcomeEmail, type SendableBrand } from './server-email';
 import { sendOutcomeSMS } from './server-sms';
 
@@ -117,8 +118,11 @@ export async function notifyApplicationOutcome(args: {
         id: applications.id,
         brand: applications.brand,
         partnerId: applications.partnerId,
-        consumerFirst: applications.consumerFirst,
-        consumerLast: applications.consumerLast,
+        // PRIV-002: select the encrypted columns; decrypt below.
+        consumerFirstEnc: applications.consumerFirstEnc,
+        consumerLastEnc: applications.consumerLastEnc,
+        consumerEmailEnc: applications.consumerEmailEnc,
+        consumerPhoneEnc: applications.consumerPhoneEnc,
         amountCents: applications.amountCents,
       })
       .from(applications)
@@ -140,7 +144,10 @@ export async function notifyApplicationOutcome(args: {
     const partner = partnerRows[0];
     if (!partner?.contactEmail) return;
 
-    const consumerLabel = `${app.consumerFirst} ${app.consumerLast?.charAt(0) ?? ''}.`.trim();
+    // PRIV-002: decrypt at the read boundary. Same masked "First L." label.
+    const consumerPii = await decryptApplicationRow(app);
+    const consumerLabel =
+      `${consumerPii.consumerFirst} ${consumerPii.consumerLast.charAt(0) ?? ''}.`.trim();
     const applicationUrl = `${APP_ORIGIN}/v/${app.brand}/applications/${app.id}`;
 
     /* Prefer the amount on the bound / funded offer over the original

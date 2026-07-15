@@ -135,13 +135,40 @@ export const applications = pgTable(
     partnerId: text('partner_id').notNull(),
     /** Raw `?ref=...` from the apply URL, kept verbatim for audit. */
     refQuery: text('ref_query'),
-    /** Consumer name + contact. In production these are encrypted at
-     * rest via the PII vault (ADR-0016); demo deployment stores plain
-     * text. Schema is identical either way — only the writer changes. */
-    consumerFirst: text('consumer_first').notNull(),
-    consumerLast: text('consumer_last').notNull(),
-    consumerEmail: text('consumer_email').notNull(),
-    consumerPhone: text('consumer_phone').notNull(),
+    /** @classification(sPII) Consumer name + contact.
+     *
+     * PRIV-002 (SOC 2 CC6.1 / GLBA Safeguards 16 CFR §314.4(c)(3)):
+     * these columns formerly held PLAINTEXT. They are retained ONLY for
+     * the expand/contract migration window — the write path no longer
+     * populates them (migration 0020 drops the NOT NULL) and the read
+     * path no longer reads them. They are dropped + the historical
+     * plaintext crypto-shredded in migration 0021 once the 0020 backfill
+     * has been verified against a DB snapshot. DO NOT add new reads of
+     * these columns.
+     *
+     * @deprecated Use `consumerFirstEnc` … `consumerPhoneEnc` (encrypted)
+     *   via `lib/db/applications-pii.ts`. */
+    consumerFirst: text('consumer_first'),
+    consumerLast: text('consumer_last'),
+    consumerEmail: text('consumer_email'),
+    consumerPhone: text('consumer_phone'),
+    /** @classification(sPII) Encrypted-at-rest consumer PII.
+     *
+     * Each column holds a base64 AES-256-GCM envelope produced by
+     * `lib/db/pii-crypto.ts::sealEdgePiiField` — fresh per-row DEK wrapped
+     * by the KEK, AAD bound to `(application id, field)`. Nullable during
+     * the 0020 expand/contract window (backfill populates existing rows);
+     * promoted to NOT NULL in migration 0021 once backfill is verified. */
+    consumerFirstEnc: text('consumer_first_enc'),
+    consumerLastEnc: text('consumer_last_enc'),
+    consumerEmailEnc: text('consumer_email_enc'),
+    consumerPhoneEnc: text('consumer_phone_enc'),
+    /** @classification(PII) Deterministic HMAC-SHA-256 blind index of the
+     * normalized (lowercased) email, for future equality lookup without
+     * decrypting. Keyed by `EDGE_PII_BLIND_INDEX_KEY` (distinct from the
+     * encryption KEK). No query is wired through it yet — see
+     * `lib/db/pii-crypto.ts::emailBlindIndex`. */
+    consumerEmailBidx: text('consumer_email_bidx'),
     /** Loan amount in cents to keep currency math integer-safe. */
     amountCents: bigint('amount_cents', { mode: 'number' }).notNull(),
     tier: text('tier'),
@@ -161,6 +188,11 @@ export const applications = pgTable(
       t.createdAt,
     ),
     requestIdUnique: uniqueIndex('applications_request_id_unique').on(t.requestId),
+    /** PRIV-002. Supports a future equality lookup on the email blind
+     *  index (dedupe / support / RTBF-by-email) without scanning. Not a
+     *  unique index — two applications from the same consumer email are
+     *  legitimate. No query reads it yet. */
+    consumerEmailBidxIdx: index('applications_consumer_email_bidx_idx').on(t.consumerEmailBidx),
   }),
 );
 
