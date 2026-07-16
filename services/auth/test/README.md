@@ -33,12 +33,12 @@ pnpm exec nx test service-auth -- --coverage
 
 ## Layout
 
-| File | Subject under test | Notes |
-|---|---|---|
-| `token-service.spec.ts` | `TokenService` (JWT mint, verify, claim shape, exp, signature, iss/aud) | Pure — no Prisma; constructs `TokenService` directly. |
-| `session-service.spec.ts` | `SessionService.rotateAtomic` (SEC-011), `revoke`, `revokeAllForUser` (SEC-009) | Uses an in-memory Prisma fake whose `$transaction` is a passthrough — we characterise the sequence of writes, not Postgres atomicity. |
-| `totp-service.spec.ts` | `TotpService` (RFC 6238 ±1 step), `LocalTotpVaultAdapter` (AES-256-GCM AAD-bound envelope) | Helper `totpAt(secret, atMs)` re-derives codes locally so we don't poke private methods. |
-| `password-and-identity.spec.ts` | `LocalIdentityAdapter` (Argon2id), `PasswordPolicyService` (HIBP k-anonymity fail-open) | `globalThis.fetch` is stubbed per test; restored in `afterEach`. |
+| File                            | Subject under test                                                                         | Notes                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `token-service.spec.ts`         | `TokenService` (JWT mint, verify, claim shape, exp, signature, iss/aud)                    | Pure — no Prisma; constructs `TokenService` directly.                                                                                 |
+| `session-service.spec.ts`       | `SessionService.rotateAtomic` (SEC-011), `revoke`, `revokeAllForUser` (SEC-009)            | Uses an in-memory Prisma fake whose `$transaction` is a passthrough — we characterise the sequence of writes, not Postgres atomicity. |
+| `totp-service.spec.ts`          | `TotpService` (RFC 6238 ±1 step), `LocalTotpVaultAdapter` (AES-256-GCM AAD-bound envelope) | Helper `totpAt(secret, atMs)` re-derives codes locally so we don't poke private methods.                                              |
+| `password-and-identity.spec.ts` | `LocalIdentityAdapter` (Argon2id), `PasswordPolicyService` (HIBP k-anonymity fail-open)    | `globalThis.fetch` is stubbed per test; restored in `afterEach`.                                                                      |
 
 ## Mocking conventions
 

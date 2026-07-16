@@ -33,11 +33,12 @@ describe('MiCamp client — Zod parse of integration responses', () => {
     const badBody = { ok: true /* missing midId, rateCard, steps... */ };
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        new Response(JSON.stringify(badBody), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify(badBody), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
       ),
     );
 
@@ -69,11 +70,12 @@ describe('MiCamp client — Zod parse of integration responses', () => {
   it('charge — mock-bad-response throws MalformedResponse', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        new Response(JSON.stringify({ status: 'magical' /* not in enum */ }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ status: 'magical' /* not in enum */ }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
       ),
     );
 

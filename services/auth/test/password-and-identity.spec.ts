@@ -27,13 +27,7 @@ function makePrismaFake(initial: UserRow[] = []) {
 
   const prisma = {
     user: {
-      create: async ({
-        data,
-        select,
-      }: {
-        data: Partial<UserRow>;
-        select?: unknown;
-      }) => {
+      create: async ({ data, select }: { data: Partial<UserRow>; select?: unknown }) => {
         const collision = users.find(
           (u) =>
             (data.email && u.email === data.email) ||
@@ -55,7 +49,13 @@ function makePrismaFake(initial: UserRow[] = []) {
         void select;
         return { id: row.id };
       },
-      findFirst: async ({ where, select }: { where: Record<string, unknown>; select?: unknown }) => {
+      findFirst: async ({
+        where,
+        select,
+      }: {
+        where: Record<string, unknown>;
+        select?: unknown;
+      }) => {
         void select;
         return (
           users.find((u) => {
@@ -66,13 +66,7 @@ function makePrismaFake(initial: UserRow[] = []) {
           }) ?? null
         );
       },
-      update: async ({
-        where,
-        data,
-      }: {
-        where: { id: string };
-        data: Partial<UserRow>;
-      }) => {
+      update: async ({ where, data }: { where: { id: string }; data: Partial<UserRow> }) => {
         const row = users.find((u) => u.id === where.id);
         if (!row) {
           const err = new Error('not found') as Error & { code?: string };
@@ -244,10 +238,11 @@ describe('PasswordPolicyService.checkBreached — SEC-015 HIBP', () => {
   it('flags a breached password whose suffix appears in the HIBP range response', async () => {
     // 'password' → SHA1 = 5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8
     // prefix=5BAA6, suffix=1E4C9B93F3F0682250B6CF8331B7EE68FD8
-    globalThis.fetch = vi.fn(async () =>
-      new Response('1E4C9B93F3F0682250B6CF8331B7EE68FD8:12345\r\nDEADBEEF:1\r\n', {
-        status: 200,
-      }),
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response('1E4C9B93F3F0682250B6CF8331B7EE68FD8:12345\r\nDEADBEEF:1\r\n', {
+          status: 200,
+        }),
     ) as typeof fetch;
     const env = makePrismaFake();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,8 +253,8 @@ describe('PasswordPolicyService.checkBreached — SEC-015 HIBP', () => {
   });
 
   it('returns not-breached when the suffix is absent from the response', async () => {
-    globalThis.fetch = vi.fn(async () =>
-      new Response('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1\r\n', { status: 200 }),
+    globalThis.fetch = vi.fn(
+      async () => new Response('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:1\r\n', { status: 200 }),
     ) as typeof fetch;
     const env = makePrismaFake();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -82,10 +82,7 @@ function newTokenString(): string {
  * with an `UPDATE ... SET consumed_at = now() WHERE consumed_at IS NULL
  * AND user_id = $1 AND kind = $2` before the insert.
  */
-export async function mintWelcomeToken(
-  userId: string,
-  kind: WelcomeTokenKind,
-): Promise<string> {
+export async function mintWelcomeToken(userId: string, kind: WelcomeTokenKind): Promise<string> {
   const token = newTokenString();
   const expiresAt = new Date(Date.now() + TTL_MS_BY_KIND[kind]);
 
@@ -127,9 +124,7 @@ export interface ConsumedWelcomeToken {
  * lock — two parallel callers cannot both win because the second
  * sees `consumed_at IS NOT NULL` and the UPDATE returns zero rows.
  */
-export async function consumeWelcomeToken(
-  token: string,
-): Promise<ConsumedWelcomeToken | null> {
+export async function consumeWelcomeToken(token: string): Promise<ConsumedWelcomeToken | null> {
   if (typeof token !== 'string' || token.length === 0) return null;
 
   if (hasDb()) {

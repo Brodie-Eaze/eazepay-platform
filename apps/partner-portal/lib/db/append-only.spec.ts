@@ -44,6 +44,8 @@ describe.skipIf(!enabled)('append-only enforcement (0019_append_only_grants)', (
   beforeAll(async () => {
     pool = new Pool({
       connectionString: TEST_URL!,
+      // nosemgrep -- test-only: connects to a local/CI Postgres that may present
+      // a self-signed cert; this Pool is never instantiated by the running app.
       ssl: TEST_URL!.includes('sslmode=disable') ? false : { rejectUnauthorized: false },
       max: 2,
     });

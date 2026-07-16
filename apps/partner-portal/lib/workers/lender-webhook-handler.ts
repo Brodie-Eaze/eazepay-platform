@@ -39,14 +39,8 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { getDb, schema } from '../db';
 import { SAMPLE_LENDERS, type SampleLender } from '../api-v1/shared';
-import {
-  publishApplicationEvent,
-  type ApplicationLifecycleEvent,
-} from '../realtime';
-import {
-  notifyApplicationOutcome,
-  type OutcomeEventType,
-} from '../notify-application-outcome';
+import { publishApplicationEvent, type ApplicationLifecycleEvent } from '../realtime';
+import { notifyApplicationOutcome, type OutcomeEventType } from '../notify-application-outcome';
 import { safeLog } from '../safe-log';
 
 /* ---------- Zod contract (mirrors the route's original schemas) ----- */
@@ -140,9 +134,7 @@ export async function handleLenderInboxRow(args: {
   try {
     event = JSON.parse(args.rawBody) as { event_type?: string };
   } catch (err) {
-    throw new Error(
-      `invalid_json:${err instanceof Error ? err.message : String(err)}`,
-    );
+    throw new Error(`invalid_json:${err instanceof Error ? err.message : String(err)}`);
   }
   const result = await persistLenderEvent({
     lender,

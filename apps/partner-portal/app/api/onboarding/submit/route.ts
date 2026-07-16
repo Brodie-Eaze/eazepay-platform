@@ -96,7 +96,6 @@ const piiRejected = z
     message: 'PII vault not yet wired; do not submit',
   });
 
-
 const beneficialOwnerSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),

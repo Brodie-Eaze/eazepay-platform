@@ -51,12 +51,7 @@ export class IntegrationTimeoutError extends Error {
   readonly elapsedMs: number;
   readonly code = 'integration_timeout' as const;
 
-  constructor(args: {
-    partner: string;
-    endpoint: string;
-    timeoutMs: number;
-    elapsedMs: number;
-  }) {
+  constructor(args: { partner: string; endpoint: string; timeoutMs: number; elapsedMs: number }) {
     super(
       `Partner request timed out after ${args.elapsedMs}ms (limit ${args.timeoutMs}ms): ${args.partner}#${args.endpoint}`,
     );

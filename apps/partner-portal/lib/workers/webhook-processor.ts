@@ -501,7 +501,11 @@ function parseWebhookEvent<T>(
   provider: 'micamp' | 'highsale',
   eventType: string,
   body: Record<string, unknown>,
-  schema: { safeParse: (v: unknown) => { success: true; data: T } | { success: false; error: { message: string } } },
+  schema: {
+    safeParse: (
+      v: unknown,
+    ) => { success: true; data: T } | { success: false; error: { message: string } };
+  },
 ): T {
   const result = schema.safeParse({ ...body, type: eventType });
   if (!result.success) {

@@ -214,7 +214,9 @@ describe('processInboxRow (Task #50 worker entry)', () => {
     // perspective (in case ops fixes upstream + replays), so it lands
     // 'pending' on first attempt — not 'failed' — like other handler
     // exceptions. Same shape as a real partner 500.
-    expect(row.failureReason).toMatch(/malformed_webhook_payload:micamp:mid\.underwriting\.approved/);
+    expect(row.failureReason).toMatch(
+      /malformed_webhook_payload:micamp:mid\.underwriting\.approved/,
+    );
   });
 
   it('NotImplementedError → terminal failed immediately (no backoff/retry budget)', async () => {
