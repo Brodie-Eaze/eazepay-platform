@@ -1585,12 +1585,12 @@ function MarketplaceViz(): JSX.Element {
   // Each row represents a lender quoting in parallel from the same
   // single submission. APRs/terms intentionally illustrative.
   const QUOTES = [
-    { lender: 'GreenSky', apr: '8.99%', mo: '$372', term: '84', winner: true },
-    { lender: 'Sunlight Financial', apr: '9.49%', mo: '$386', term: '84' },
-    { lender: 'Service Finance', apr: '10.99%', mo: '$417', term: '84' },
-    { lender: 'Synchrony Home', apr: '12.99%', mo: '$465', term: '60' },
-    { lender: 'EnerBank', apr: '13.99%', mo: '$487', term: '60' },
-    { lender: 'Mosaic', apr: '15.99%', mo: '$534', term: '60' },
+    { lender: 'GreenSky', apr: '8.99%', mo: '$290', term: '84', winner: true },
+    { lender: 'Sunlight Financial', apr: '9.49%', mo: '$294', term: '84' },
+    { lender: 'Service Finance', apr: '10.99%', mo: '$308', term: '84' },
+    { lender: 'Synchrony Home', apr: '12.99%', mo: '$409', term: '60' },
+    { lender: 'EnerBank', apr: '13.99%', mo: '$419', term: '60' },
+    { lender: 'Mosaic', apr: '15.99%', mo: '$438', term: '60' },
   ];
   return (
     <div className="sld-mp">
@@ -2023,21 +2023,23 @@ function Storyboard(): JSX.Element {
   );
 }
 
-/** Money-flow breakdown — where the $1.4M goes. Slide 2 supplement. */
+/** Money-flow breakdown — where the $1.61M goes. Slide 2 supplement. */
 function MoneyBreakdown(): JSX.Element {
-  // Quiet orange-only breakdown of where the $1.6M leaks for a trades business.
+  // Quiet orange-only breakdown of where the $1.61M leaks for a trades business.
+  // Ticket held at the deck-wide $18k trades average (sub-$25k program rule),
+  // so the walked-estimate count carries the leak rather than an inflated ticket.
   const rows = [
     {
       k: 'Lost job acceptance',
-      sub: '~28 walked estimates/yr · $42k avg ticket · 90%',
-      v: '$1,058,400',
-      pct: '66.2%',
+      sub: '~66 walked estimates/yr · $18k avg ticket · 90%',
+      v: '$1,069,200',
+      pct: '66.4%',
     },
     {
       k: 'Wasted truck-roll hours',
-      sub: '~9 unfit estimates/wk · 2.5 hr drive + estimate · $180/hr × 52',
+      sub: '~9 unfit estimates/wk · 2.5 hr drive + 2.5 hr on site · $180/hr × 52',
       v: '$421,200',
-      pct: '26.3%',
+      pct: '26.1%',
     },
     {
       k: 'Fuel + estimator opportunity cost',
@@ -2066,7 +2068,7 @@ function MoneyBreakdown(): JSX.Element {
           <div className="sld-money-row-sub">illustrative · mid-size roofing or HVAC crew</div>
         </div>
         <div className="sld-money-row-r">
-          <div className="sld-money-row-v sld-money-row-v-total">$1.60M</div>
+          <div className="sld-money-row-v sld-money-row-v-total">$1.61M</div>
         </div>
       </div>
     </div>
@@ -2106,15 +2108,15 @@ function SampleInvoice(): JSX.Element {
           </tr>
           <tr>
             <td>Smart-form lead pass-through · sample month</td>
-            <td>420</td>
+            <td>120</td>
             <td>$3.00</td>
-            <td>$1,260.00</td>
+            <td>$360.00</td>
           </tr>
           <tr>
-            <td>Origination · 4% of settled loans · sample month</td>
-            <td>$184,400</td>
-            <td>4%</td>
-            <td>$7,376.00</td>
+            <td>Origination · 2.5% of settled loans · sample month</td>
+            <td>$234,000</td>
+            <td>2.5%</td>
+            <td>$5,850.00</td>
           </tr>
           <tr>
             <td>Monthly platform fee</td>
@@ -2129,14 +2131,17 @@ function SampleInvoice(): JSX.Element {
               <strong>Month 1 total · sample</strong>
             </td>
             <td>
-              <strong>$18,636.00</strong>
+              <strong>$16,210.00</strong>
             </td>
           </tr>
         </tfoot>
       </table>
       <div className="sld-invoice-foot">
-        $10,000 setup is one-time. After that you only pay $3 per smart-form lead and 4% of loans
-        that actually settled.
+        $10,000 setup is one-time. After that you only pay $3 per smart-form lead and 2.5% of loans
+        that actually settled. Origination is 2.5% here, not the 4% our medical and coaching
+        verticals run, because a trades ticket averages roughly twice the size &mdash; 2.5% of an
+        $18,000 re-roof is $450 a deal, and the per-job economics have to work for the contractor
+        on top of whatever the lender takes in dealer fee.
       </div>
     </div>
   );
@@ -3006,6 +3011,16 @@ function ValueStack(): JSX.Element {
       alt: '$900 / mo · CAPI vendor + analytics',
     },
     {
+      head: 'Field service management',
+      items: [
+        'Dispatch + scheduling + crew calendar',
+        'Mobile field app · photos, measurements, e-sign',
+        'Good-better-best proposal + estimate builder',
+        'Service agreements + invoicing + accounting sync',
+      ],
+      alt: '$2,200 / mo · ServiceTitan-class FSM seat bundle',
+    },
+    {
       head: 'Reporting + support',
       items: [
         'Daily funded summary + monthly invoice',
@@ -3032,7 +3047,7 @@ function ValueStack(): JSX.Element {
       </Reveal>
       <Reveal delay={240}>
         <p className="sld-sub">
-          TradePay replaces a stack of six vendors that most contractors duct-tape together.
+          TradePay replaces a stack of seven vendors that most contractors duct-tape together.
           Here&apos;s everything included &mdash; and what you&apos;d typically pay if you bought it
           piecemeal.
         </p>
@@ -3061,12 +3076,12 @@ function ValueStack(): JSX.Element {
         <div className="sld-stack-total">
           <div className="sld-stack-total-row">
             <span className="sld-stack-total-k">Equivalent vendor stack</span>
-            <span className="sld-stack-total-v">~$7,700 / month · ~$92,400 / yr</span>
+            <span className="sld-stack-total-v">~$9,900 / month · ~$118,800 / yr</span>
           </div>
           <div className="sld-stack-total-row accent">
             <span className="sld-stack-total-k">TradePay</span>
             <span className="sld-stack-total-v">
-              $10,000 one-time · $3 / lead · 4% of settled loans
+              $10,000 one-time · $3 / lead · 2.5% of settled loans
             </span>
           </div>
         </div>
@@ -3210,7 +3225,10 @@ function BigFinaleCTA(): JSX.Element {
  *  with the actual math shown as a formula below each output. */
 function EconomicsSlide(): JSX.Element {
   // Defaults tuned for a mid-size contractor: 120 estimates/month, ~50%
-  // homeowner-qualifies, $18k average ticket (HVAC swap / kitchen reno).
+  // homeowner-qualifies, $18k average ticket (HVAC swap / re-roof / bath
+  // conversion). Ticket slider caps at $25k: individual tickets run to $50k,
+  // but the program's *average* is held under $25k, so the slider cannot be
+  // dragged into a figure we would not stand behind in front of a lender.
   // Close rates: 22% baseline doorstep close without financing, 65% with
   // TradePay. 80% of approved offers actually fund (some homeowners
   // back out, some lenders pull stips at funding).
@@ -3285,7 +3303,7 @@ function EconomicsSlide(): JSX.Element {
               <input
                 type="range"
                 min={5000}
-                max={80000}
+                max={25000}
                 step={500}
                 value={ticket}
                 onChange={(e) => setTicket(Number(e.target.value))}
