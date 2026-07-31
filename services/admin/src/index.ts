@@ -11,3 +11,8 @@ export * from './reason-codes.js';
 // reaching into deep paths.
 export * from './decorators/audited-read.decorator.js';
 export * from './interceptors/audited-read.interceptor.js';
+// PRIV-014 — right-to-erasure / crypto-shred surfaces.
+export * from './erasure.service.js';
+export * from './erasure.types.js';
+export * from './ports/retention-policy.port.js';
+export * from './internal/loan-backed-retention-policy.js';
