@@ -29,8 +29,8 @@
     "class-validator": "^0.15.1"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^26.1.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.0"
+    "typescript": "^7.0.2"
   }
 }
